@@ -1,0 +1,9 @@
+<!DOCTYPE kpartgui>
+<kpartplugin name="ktexteditor_includehelper" library="ktexteditor_includehelper" version="2">
+<MenuBar>
+ <Menu name="tools"><Text>&amp;Tools</Text>
+    <separator group="tools_operations" />
+    <Action name="tools_includehelper" group="tools_operations"/>
+ </Menu>
+</MenuBar>
+</kpartplugin>
