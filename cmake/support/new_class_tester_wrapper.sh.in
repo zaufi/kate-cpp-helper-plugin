@@ -1,0 +1,44 @@
+#!/bin/sh
+# Copyright 2011 Alex Turbov <i.zaufi@gmail.com>
+#
+# Helper to generate class skeletons
+#
+
+. ${CMAKE_SOURCE_DIR}/cmake/support/output-helpers.sh
+
+show_help()
+{
+    einfo "Use 'make new-class-tester class=ClassName [subdir=path/from/src/root]'"
+    einfo "Exmaple: make new-class class=some_class"
+}
+
+if [ -z "$class" ]; then
+    eerror "No class name provided"
+    show_help
+    exit 1
+fi
+
+# Ok. Lets work! At least class name defined...
+ebegin "Generate class skeleton unit-test file for class $class: $class""_tester.cc"
+rf=${CMAKE_BINARY_DIR}/$class.def
+# Generate response file for autogen
+echo "autogen definitions ${CMAKE_SOURCE_DIR}/cmake/support/class_tester.tpl;" > $rf \
+  && echo "classname=$class;" >> $rf \
+  && echo "filename=$class;" >> $rf \
+  && ${AUTOGEN_EXECUTABLE} -L ${CMAKE_SOURCE_DIR}/cmake/support $rf
+result=$?
+eend $result
+test "$result" = "0" || exit 1
+
+if [ "${CMAKE_BINARY_DIR}" != "${CMAKE_SOURCE_DIR}" ]; then
+    # Move generated files from CMAKE_BINARY_DIR to desired subdir (if exists)
+    dst=`test -d "${CMAKE_SOURCE_DIR}/$subdir" && echo "${CMAKE_SOURCE_DIR}/$subdir" || echo "${CMAKE_SOURCE_DIR}"`
+    ebegin "Move $class""_tester.cc to $dst"
+    mv -i "${CMAKE_BINARY_DIR}/$class"_tester.cc $dst
+    eend $?
+fi
+
+# Cleanup
+ebegin "Cleanup"
+rm -f $rf
+eend $?

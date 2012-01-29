@@ -1,0 +1,9 @@
+<!DOCTYPE kpartgui>
+<kpartplugin name="kateincludehelperplugin" library="kateincludehelperplugin" version="2">
+<MenuBar>
+ <Menu name="view"><Text>&amp;View</Text>
+    <separator group="view_operations" />
+    <Action name="view_open_include" group="view_operations"/>
+ </Menu>
+</MenuBar>
+</kpartplugin>

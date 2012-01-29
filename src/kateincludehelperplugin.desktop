@@ -1,0 +1,18 @@
+[Desktop Entry]
+Encoding=UTF-8
+Type=Service
+Comment=IncludeHelper
+Name=IncludeHelper
+GenericName=IncludeHelper
+Icon=text-x-c++hdr
+ServiceTypes=Kate/Plugin
+X-KDE-Library=kateincludehelperplugin
+X-KDE-PluginInfo-Author=Alex Turbov
+X-KDE-PluginInfo-Email=i.zaufi@gmail.com
+X-KDE-PluginInfo-Website=http://kate.kde.org
+X-KDE-PluginInfo-Version=0.1
+X-KDE-PluginInfo-License=GPL
+X-KDE-PluginInfo-Depends=
+X-KDE-PluginInfo-Category=Editor
+X-KDE-ParentApp=kate
+X-KDE-Version=4.0
