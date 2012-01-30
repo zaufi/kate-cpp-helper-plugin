@@ -21,10 +21,11 @@ Installation
 ============
 
 * Clone sources into (some) working dir
-* To install into your home directory type::
+* To install into your home directory u have to specify prefix like this::
+
 cd <some-work-dir>
 mkdir build && cd build
-cmake -DCMAKE_INSTALL_PREFIX=~/.kde4
+cmake -DCMAKE_INSTALL_PREFIX=~/.kde4 ..
 make
 make install
 
