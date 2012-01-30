@@ -20,18 +20,19 @@
  * with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __SRC__INCLUDE_HELPER_PLUGIN_H__
-# define __SRC__INCLUDE_HELPER_PLUGIN_H__
+#ifndef __SRC__INCLUDE_HELPER_PLUGIN_HH__
+#   define __SRC__INCLUDE_HELPER_PLUGIN_HH__
 
 // Project specific includes
+#   include <src/ui_configuration.h>
 
 // Standard includes
-#include <kate/application.h>
-#include <kate/documentmanager.h>
-#include <kate/mainwindow.h>
-#include <kate/plugin.h>
-#include <kate/pluginconfigpageinterface.h>
-#include <cassert>
+#   include <kate/application.h>
+#   include <kate/documentmanager.h>
+#   include <kate/mainwindow.h>
+#   include <kate/plugin.h>
+#   include <kate/pluginconfigpageinterface.h>
+#   include <cassert>
 
 class IncludeHelperPlugin;                                  // forward declaration
 
@@ -41,14 +42,13 @@ class IncludeHelperPlugin;                                  // forward declarati
  * [More detailed description here]
  *
  */
-
 class IncludeHelperPluginGlobalConfigPage : public Kate::PluginConfigPage
 {
     Q_OBJECT
 
 public:
     explicit IncludeHelperPluginGlobalConfigPage(QWidget* = nullptr, IncludeHelperPlugin* = nullptr);
-    ~IncludeHelperPluginGlobalConfigPage() {}
+    virtual ~IncludeHelperPluginGlobalConfigPage() {}
 
     /// \name PluginConfigPage interface implementation
     //@{
@@ -57,8 +57,19 @@ public:
     void defaults() {}
     //@}
 
+Q_SIGNALS:
+    void sessionDirsUpdated(const QStringList&);
+    void globalDirsUpdated(const QStringList&);
+
+private Q_SLOTS:
+    void addIncludeDir();                                   ///< Add directory to the list
+    void delIncludeDir();                                   ///< Remove directory from the list
+
 private:
+    bool contains(const QString&);                          ///< Check if directories list contains given item
+
     IncludeHelperPlugin* m_plugin;                          ///< Parent plugin
+    Ui_Configuration m_configuration_ui;                    ///< Configuration widget
 };
 
 /**
@@ -74,12 +85,6 @@ class IncludeHelperPluginView : public Kate::PluginView, public Kate::XMLGUIClie
 public:
     IncludeHelperPluginView(Kate::MainWindow*, const KComponentData&);
     virtual ~IncludeHelperPluginView() {}
-
-    /// \name PluginView interface implementation
-    //@{
-    void readSessionConfig(KConfigBase*, const QString&);
-    void writeSessionConfig(KConfigBase*, const QString&);
-    //@}
 
 private:
 };
@@ -102,8 +107,17 @@ public:
     /// Create a new view of this plugin for the given main window
     Kate::PluginView *createView(Kate::MainWindow*);
 
-    /// Load global plugin's config
-    void readConfig();
+    /// \name Accessors
+    //@{
+    const QStringList& sessionDirs() const
+    {
+        return m_session_dirs;
+    }
+    const QStringList& globalDirs() const
+    {
+        return m_global_dirs;
+    }
+    //@}
 
     /// \name PluginConfigPageInterface interface implementation
     //@{
@@ -113,15 +127,7 @@ public:
         return 1;
     }
     /// Create a config page w/ given number and parent
-    Kate::PluginConfigPage* configPage(uint number = 0, QWidget* parent = nullptr, const char* = nullptr)
-    {
-        assert("This plugin have the only configuration page" && number == 0);
-        if (number != 0)
-        {
-            return nullptr;
-        }
-        return new IncludeHelperPluginGlobalConfigPage(parent, this);
-    }
+    Kate::PluginConfigPage* configPage(uint = 0, QWidget* = nullptr, const char* = nullptr);
     /// Get short name of a config page by number
     QString configPageName(uint number = 0) const
     {
@@ -140,7 +146,19 @@ public:
     }
     //@}
 
+    /// \name Plugin interface implementation
+    //@{
+    void readSessionConfig(KConfigBase*, const QString&);
+    void writeSessionConfig(KConfigBase*, const QString&);
+    //@}
+
+private Q_SLOTS:
+    void updateSessionDirs(const QStringList&);
+    void updateGlobalDirs(const QStringList&);
+
 private:
+    QStringList m_global_dirs;
+    QStringList m_session_dirs;
 };
 
-#endif                                                      // __SRC__INCLUDE_HELPER_PLUGIN_H__
+#endif                                                      // __SRC__INCLUDE_HELPER_PLUGIN_HH__

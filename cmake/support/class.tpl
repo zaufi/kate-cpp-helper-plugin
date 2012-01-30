@@ -14,7 +14,7 @@
  */
 /*
  * [+ (gpl "KateIncludeHelperPlugin" " * ") +]
- */[+define incguard+]__[+ (string-upcase (get "guard_base")) +]__[+ (string-upcase (get "filename")) +]_H__[+enddef +][+
+ */[+define incguard+]__[+ (string-upcase (get "guard_base")) +]__[+ (string-upcase (get "filename")) +]_HH__[+enddef +][+
 IF ( == (suffix) "hh") +]
 [+(out-move (sprintf "%s.hh" (get "filename"))) +]
 #ifndef [+ incguard +]

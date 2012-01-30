@@ -5,8 +5,6 @@
 #---------------------------------------------------------
 # Section: Init cmake
 #---------------------------------------------------------
-cmake_minimum_required(VERSION 2.6)
-
 project(kate_include_helper_plugin C CXX)
 
 set(VERSION_MAJOR 0)
@@ -45,6 +43,8 @@ include_directories(${KDE4_INCLUDES} ${QT_INCLUDES} ${Boost_INCLUDE_DIRS})
 add_definitions(-DBOOST_RESULT_OF_USE_DECLTYPE)
 # Add Qt/KDE defines
 add_definitions(${QT_DEFINITIONS} ${KDE4_DEFINITIONS})
+# Use Kate plugins debug area as default
+# add_definitions(-DDEBUG_AREA=13040)
 
 # Do not link w/ libraries which isn't provide undefined symbols.
 # (they are specified as dependencies for other targets from this
