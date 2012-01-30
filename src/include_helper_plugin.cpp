@@ -133,12 +133,16 @@ IncludeHelperPluginGlobalConfigPage::IncludeHelperPluginGlobalConfigPage(
   , m_plugin(plugin)
 {
     m_configuration_ui.setupUi(this);
-    m_configuration_ui.addButton->setIcon(KIcon("list-add"));
-    m_configuration_ui.delButton->setIcon(KIcon("list-remove"));
+    m_configuration_ui.addToGlobalButton->setIcon(KIcon("list-add"));
+    m_configuration_ui.delFromGlobalButton->setIcon(KIcon("list-remove"));
+    m_configuration_ui.addToSessionButton->setIcon(KIcon("list-add"));
+    m_configuration_ui.delFromSessionButton->setIcon(KIcon("list-remove"));
 
     // Connect add/del buttons to actions
-    connect(m_configuration_ui.addButton, SIGNAL(clicked()), this, SLOT(addIncludeDir()));
-    connect(m_configuration_ui.delButton, SIGNAL(clicked()), this, SLOT(delIncludeDir()));
+    connect(m_configuration_ui.addToGlobalButton, SIGNAL(clicked()), this, SLOT(addGlobalIncludeDir()));
+    connect(m_configuration_ui.delFromGlobalButton, SIGNAL(clicked()), this, SLOT(delGlobalIncludeDir()));
+    connect(m_configuration_ui.addToSessionButton, SIGNAL(clicked()), this, SLOT(addSessionIncludeDir()));
+    connect(m_configuration_ui.delFromSessionButton, SIGNAL(clicked()), this, SLOT(delSessionIncludeDir()));
 
     // Populate configuration w/ dirs
     reset();
@@ -146,42 +150,69 @@ IncludeHelperPluginGlobalConfigPage::IncludeHelperPluginGlobalConfigPage(
 
 void IncludeHelperPluginGlobalConfigPage::apply()
 {
-    // Form a list of configured dirs
-    QStringList dirs;
-    for (int i = 0; i < m_configuration_ui.dirsList->count(); ++i)
+    // Notify about configuration changes
     {
-        dirs.append(m_configuration_ui.dirsList->item(i)->text());
+        QStringList dirs;
+        for (int i = 0; i < m_configuration_ui.sessionDirsList->count(); ++i)
+        {
+            dirs.append(m_configuration_ui.sessionDirsList->item(i)->text());
+        }
+        Q_EMIT(sessionDirsUpdated(dirs));
     }
-    Q_EMIT(sessionDirsUpdated(dirs));
+    {
+        QStringList dirs;
+        for (int i = 0; i < m_configuration_ui.globalDirsList->count(); ++i)
+        {
+            dirs.append(m_configuration_ui.globalDirsList->item(i)->text());
+        }
+        Q_EMIT(globalDirsUpdated(dirs));
+    }
 }
 
 void IncludeHelperPluginGlobalConfigPage::reset()
 {
     kDebug() << "Reseting configuration";
     // Put dirs to the list
-    m_configuration_ui.dirsList->addItems(m_plugin->sessionDirs());
+    m_configuration_ui.globalDirsList->addItems(m_plugin->globalDirs());
+    m_configuration_ui.sessionDirsList->addItems(m_plugin->sessionDirs());
 }
 
-void IncludeHelperPluginGlobalConfigPage::addIncludeDir()
+void IncludeHelperPluginGlobalConfigPage::addSessionIncludeDir()
 {
     KUrl dir_uri = KDirSelectDialog::selectDirectory(KUrl(), true, this);
     if (dir_uri != KUrl())
     {
         const QString& dir_str = dir_uri.toLocalFile();
-        if (!contains(dir_str))
-            new QListWidgetItem(dir_str, m_configuration_ui.dirsList);
+        if (!contains(dir_str, m_configuration_ui.sessionDirsList))
+            new QListWidgetItem(dir_str, m_configuration_ui.sessionDirsList);
     }
 }
 
-void IncludeHelperPluginGlobalConfigPage::delIncludeDir()
+void IncludeHelperPluginGlobalConfigPage::delSessionIncludeDir()
 {
-    delete m_configuration_ui.dirsList->currentItem();
+    delete m_configuration_ui.sessionDirsList->currentItem();
 }
 
-bool IncludeHelperPluginGlobalConfigPage::contains(const QString& dir)
+void IncludeHelperPluginGlobalConfigPage::addGlobalIncludeDir()
 {
-    for (int i = 0; i < m_configuration_ui.dirsList->count(); ++i)
-        if (m_configuration_ui.dirsList->item(i)->text() == dir)
+    KUrl dir_uri = KDirSelectDialog::selectDirectory(KUrl(), true, this);
+    if (dir_uri != KUrl())
+    {
+        const QString& dir_str = dir_uri.toLocalFile();
+        if (!contains(dir_str, m_configuration_ui.globalDirsList))
+            new QListWidgetItem(dir_str, m_configuration_ui.globalDirsList);
+    }
+}
+
+void IncludeHelperPluginGlobalConfigPage::delGlobalIncludeDir()
+{
+    delete m_configuration_ui.globalDirsList->currentItem();
+}
+
+bool IncludeHelperPluginGlobalConfigPage::contains(const QString& dir, const KListWidget* list)
+{
+    for (int i = 0; i < list->count(); ++i)
+        if (list->item(i)->text() == dir)
             return true;
     return false;
 }

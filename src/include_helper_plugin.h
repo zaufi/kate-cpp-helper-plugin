@@ -62,11 +62,13 @@ Q_SIGNALS:
     void globalDirsUpdated(const QStringList&);
 
 private Q_SLOTS:
-    void addIncludeDir();                                   ///< Add directory to the list
-    void delIncludeDir();                                   ///< Remove directory from the list
+    void addGlobalIncludeDir();                             ///< Add directory to the list
+    void delGlobalIncludeDir();                             ///< Remove directory from the list
+    void addSessionIncludeDir();                            ///< Add directory to the list
+    void delSessionIncludeDir();                            ///< Remove directory from the list
 
 private:
-    bool contains(const QString&);                          ///< Check if directories list contains given item
+    bool contains(const QString&, const KListWidget*);      ///< Check if directories list contains given item
 
     IncludeHelperPlugin* m_plugin;                          ///< Parent plugin
     Ui_Configuration m_configuration_ui;                    ///< Configuration widget
