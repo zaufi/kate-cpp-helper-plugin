@@ -38,4 +38,4 @@ TODO
 
 * Add autocompleter for ``#include`` files
 * Handle multiple matches
-* Passive popups if nothing found
+* Passive popups if nothing found (done)
