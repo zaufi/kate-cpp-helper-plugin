@@ -21,14 +21,18 @@ Installation
 ============
 
 * Clone sources into (some) working dir
-* To install into your home directory type:
-
-::
+* To install into your home directory type::
  cd <some-work-dir>
  mkdir build && cd build
  cmake -DCMAKE_INSTALL_PREFIX=~/.kde4
  make
  make install
 
+* To make a system-wide installation, set prefix to /usr and become a superuser to ``make install``
+* After that u have to enable it from `Settings->Configure Kate...->Plugins` and configure include path
+  global and/or per session...
 
-* To make a system-wide installation, set prefix to /usr and become a superuser to `make install'
+TODO
+====
+
+* Add autocompleter for #include files
