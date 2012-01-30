@@ -36,4 +36,4 @@ Installation
 TODO
 ====
 
-* Add autocompleter for #include files
+* Add autocompleter for ``#include`` files
