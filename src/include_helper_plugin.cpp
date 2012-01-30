@@ -29,11 +29,12 @@
 #include <KActionCollection>
 #include <KDebug>
 #include <KDirSelectDialog>
+#include <KPassivePopup>
 #include <KPluginFactory>
 #include <KPluginLoader>
 #include <KTextEditor/Document>
 #include <KTextEditor/View>
-#include <QFile>
+#include <QFileInfo>
 
 namespace {
 inline int area()
@@ -262,7 +263,8 @@ void IncludeHelperPluginView::openHeader()
     {
         const QString uri = dir + "/" + filename;
         kDebug() << "Trying " << uri;
-        if (QFile(uri).exists())
+        const QFileInfo fi = QFileInfo(uri);
+        if (fi.exists() && fi.isFile() && fi.isReadable())
             candidates.append(uri);
     }
     // 1) search global dirs next
@@ -270,7 +272,8 @@ void IncludeHelperPluginView::openHeader()
     {
         const QString uri = dir + "/" + filename;
         kDebug() << "Trying " << (dir + "/" + filename);
-        if (QFile(uri).exists())
+        const QFileInfo fi = QFileInfo(uri);
+        if (fi.exists() && fi.isFile() && fi.isReadable())
             candidates.append(uri);
     }
     //
@@ -279,6 +282,8 @@ void IncludeHelperPluginView::openHeader()
     // If there is no ambiguity, then just emit a signal to open the file
     if (candidates.size() == 1)
         mainWindow()->openUrl(candidates.first());
+    else if (candidates.isEmpty())
+        KPassivePopup::message(i18n("Header not found"), filename, qobject_cast<QWidget*>(this));
 }
 
 QString IncludeHelperPluginView::currentWord()
