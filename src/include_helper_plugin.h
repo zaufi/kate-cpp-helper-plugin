@@ -47,7 +47,7 @@ class IncludeHelperPluginGlobalConfigPage : public Kate::PluginConfigPage
     Q_OBJECT
 
 public:
-    explicit IncludeHelperPluginGlobalConfigPage(QWidget* = nullptr, IncludeHelperPlugin* = nullptr);
+    explicit IncludeHelperPluginGlobalConfigPage(QWidget* = 0, IncludeHelperPlugin* = 0);
     virtual ~IncludeHelperPluginGlobalConfigPage() {}
 
     /// \name PluginConfigPage interface implementation
@@ -85,10 +85,17 @@ class IncludeHelperPluginView : public Kate::PluginView, public Kate::XMLGUIClie
     Q_OBJECT
 
 public:
-    IncludeHelperPluginView(Kate::MainWindow*, const KComponentData&);
-    virtual ~IncludeHelperPluginView() {}
+    IncludeHelperPluginView(Kate::MainWindow*, const KComponentData&, IncludeHelperPlugin*);
+    virtual ~IncludeHelperPluginView();
+
+private Q_SLOTS:
+    void openHeader();
 
 private:
+    /// Get word under cursor
+    QString currentWord();
+
+    IncludeHelperPlugin* m_plugin;                          ///< Parent plugin
 };
 
 /**
@@ -129,7 +136,7 @@ public:
         return 1;
     }
     /// Create a config page w/ given number and parent
-    Kate::PluginConfigPage* configPage(uint = 0, QWidget* = nullptr, const char* = nullptr);
+    Kate::PluginConfigPage* configPage(uint = 0, QWidget* = 0, const char* = 0);
     /// Get short name of a config page by number
     QString configPageName(uint number = 0) const
     {

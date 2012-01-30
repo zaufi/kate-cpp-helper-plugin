@@ -25,10 +25,15 @@
 
 // Standard includes
 #include <KAboutData>
+#include <KAction>
+#include <KActionCollection>
 #include <KDebug>
 #include <KDirSelectDialog>
 #include <KPluginFactory>
 #include <KPluginLoader>
+#include <KTextEditor/Document>
+#include <KTextEditor/View>
+#include <QFile>
 
 namespace {
 inline int area()
@@ -63,14 +68,14 @@ IncludeHelperPlugin::IncludeHelperPlugin(
 
 Kate::PluginView* IncludeHelperPlugin::createView(Kate::MainWindow* parent)
 {
-    return new IncludeHelperPluginView(parent, IncludeHelperPluginFactory::componentData());
+    return new IncludeHelperPluginView(parent, IncludeHelperPluginFactory::componentData(), this);
 }
 
 Kate::PluginConfigPage* IncludeHelperPlugin::configPage(uint number, QWidget* parent, const char*)
 {
     assert("This plugin have the only configuration page" && number == 0);
     if (number != 0)
-        return nullptr;
+        return 0;
     IncludeHelperPluginGlobalConfigPage* cfg_page = new IncludeHelperPluginGlobalConfigPage(parent, this);
     // Subscribe self for config updates
     connect(
@@ -78,6 +83,12 @@ Kate::PluginConfigPage* IncludeHelperPlugin::configPage(uint number, QWidget* pa
         , SIGNAL(sessionDirsUpdated(const QStringList&))
         , this
         , SLOT(updateSessionDirs(const QStringList&))
+        );
+    connect(
+        cfg_page
+        , SIGNAL(globalDirsUpdated(const QStringList&))
+        , this
+        , SLOT(updateGlobalDirs(const QStringList&))
         );
     return cfg_page;
 }
@@ -220,10 +231,145 @@ bool IncludeHelperPluginGlobalConfigPage::contains(const QString& dir, const KLi
 
 //BEGIN IncludeHelperPluginView
 
-IncludeHelperPluginView::IncludeHelperPluginView(Kate::MainWindow* mw, const KComponentData& data)
+IncludeHelperPluginView::IncludeHelperPluginView(Kate::MainWindow* mw, const KComponentData& data, IncludeHelperPlugin* plugin)
   : Kate::PluginView(mw)
   , Kate::XMLGUIClient(data)
+  , m_plugin(plugin)
 {
+    KAction* open_header = actionCollection()->addAction("view_open_header");
+    open_header->setText(i18n("Open header"));
+    open_header->setShortcut(QKeySequence(Qt::Key_F10));
+    connect(open_header, SIGNAL(triggered(bool)), this, SLOT(openHeader()));
 
+    mainWindow()->guiFactory()->addClient(this);
+}
+
+IncludeHelperPluginView::~IncludeHelperPluginView() {
+    mainWindow()->guiFactory()->removeClient(this);
+}
+
+void IncludeHelperPluginView::openHeader()
+{
+    QString filename = currentWord();
+    if (filename.isEmpty())
+        return;                                             // Nothing todo if cursor not at any word
+
+    QStringList candidates;
+    // Try to find full filename to open
+    /// \todo Is there any way to make a joint view for both containers?
+    // 0) search session dirs list first
+    foreach(const QString& dir, m_plugin->sessionDirs())
+    {
+        const QString uri = dir + "/" + filename;
+        kDebug() << "Trying " << uri;
+        if (QFile(uri).exists())
+            candidates.append(uri);
+    }
+    // 1) search global dirs next
+    foreach(const QString& dir, m_plugin->globalDirs())
+    {
+        const QString uri = dir + "/" + filename;
+        kDebug() << "Trying " << (dir + "/" + filename);
+        if (QFile(uri).exists())
+            candidates.append(uri);
+    }
+    //
+    kDebug() << "Found candidates: " << candidates;
+
+    // If there is no ambiguity, then just emit a signal to open the file
+    if (candidates.size() == 1)
+        mainWindow()->openUrl(candidates.first());
+}
+
+QString IncludeHelperPluginView::currentWord()
+{
+    KTextEditor::View* kv = mainWindow()->activeView();
+    if (!kv)
+    {
+        kDebug() << "no KTextEditor::View";
+        return QString();
+    }
+
+    // Return selected text if any
+    if (kv->selection())
+        return kv->selectionText();
+
+    if (!kv->cursorPosition().isValid())
+    {
+        kDebug() << "cursor not valid!";
+        return QString();
+    }
+
+    // Obtain a line under cursor
+    int line = kv->cursorPosition().line();
+    QString line_str = kv->document()->line(line);
+
+    // Check if current line starts w/ #include
+    int start = 0;
+    while (line_str[start].isSpace()) ++start;              // Skip possible leading spaces
+    if (line_str[start++] == '#')                           // Check for preprocessor directive
+    {
+        // Ok, preprocessor directive is here... Skip possible spaces (again)
+        while (line_str[start].isSpace()) ++start;
+        // Check for "include" keyword right under current position
+        if (line_str.indexOf("include", start) == start)
+        {
+            start += 7;                                     // sizeof "include"
+            while (line_str[start].isSpace()) ++start;      // Skip possible spaces (again)
+            // check for opening '<' or '"'
+            const QChar close_ch = line_str[start] == '<'
+              ? '>'
+              : line_str[start] == '"'
+                ? '"'
+                : 0;
+            if (close_ch != 0)
+            {
+                // Ok, go forward 'till closing char, space or line end
+                int end;
+                for (
+                    end = ++start
+                  ; end < line_str.length() && line_str[end] != close_ch && !line_str[end].isSpace()
+                  ; ++end
+                  );
+                if  (start == end)
+                {
+                    kDebug() << ":-( it seems just #include here w/ file... " << start << ',' << end;
+                    return QString();
+                }
+                // Yeah! We've got it!
+                kDebug() << line_str.mid(start, end - start);
+                return line_str.mid(start, end - start);
+            }
+        }
+    }
+
+    // No #include parsed... fallback to the default way:
+    // just search a word under cursor...
+
+    // Get cirsor line/column
+    int col = kv->cursorPosition().column();
+
+    start = qMax(qMin(col, line_str.length() - 1), 0);
+    int end = start;
+    kDebug() << "Arghh... trying w/ word under cursor starting from " << start;
+
+    // Seeking for start of current word
+    while (start > 0 && !line_str[start].isSpace() && line_str[start] != '<' && line_str[start] != '"')
+    {
+        --start;
+    }
+    // Seeking for end of current word
+    while (end < line_str.length() && !line_str[end].isSpace() && line_str[end] != '>' && line_str[end] != '"')
+    {
+        ++end;
+    }
+    if  (start == end)
+    {
+        kDebug() << "no word found!";
+        return QString();
+    }
+
+    kDebug() << line_str.mid(start + 1, end - start - 1);
+    return line_str.mid(start + 1, end - start - 1);
 }
 //END IncludeHelperPluginView
