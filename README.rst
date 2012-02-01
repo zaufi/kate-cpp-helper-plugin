@@ -41,3 +41,4 @@ TODO
 * Handle multiple matches
 * Passive popups if nothing found (done)
 * Handle #include files w/ relative path
+* Use Shift+F10 to go back in stack

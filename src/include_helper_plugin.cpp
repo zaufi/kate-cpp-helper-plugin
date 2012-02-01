@@ -237,8 +237,8 @@ IncludeHelperPluginView::IncludeHelperPluginView(Kate::MainWindow* mw, const KCo
   , Kate::XMLGUIClient(data)
   , m_plugin(plugin)
 {
-    KAction* open_header = actionCollection()->addAction("view_open_header");
-    open_header->setText(i18n("Open header"));
+    KAction* open_header = actionCollection()->addAction("file_open_included_header");
+    open_header->setText(i18n("Open header under cursor"));
     open_header->setShortcut(QKeySequence(Qt::Key_F10));
     connect(open_header, SIGNAL(triggered(bool)), this, SLOT(openHeader()));
 
