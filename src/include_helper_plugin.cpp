@@ -255,9 +255,16 @@ IncludeHelperPluginView::~IncludeHelperPluginView() {
 
 void IncludeHelperPluginView::openHeader()
 {
-    QString filename = currentWord();
-    if (filename.isEmpty())
-        return;                                             // Nothing todo if cursor not at any word
+    KTextEditor::Range r = currentWord();
+    kDebug() << "currentWord() = " << r;
+    if (r.isEmpty())
+        return;                                             // Nothing todo if range is empty
+    // NOTE Non empty range means that main window is valid
+    // and active view present as well!
+    assert("Main window and active view expected to be valid!" && mainWindow()->activeView());
+    QString filename = mainWindow()->activeView()->document()->text(r);
+    assert("Getting text on non-empty range should return smth!" && !filename.isEmpty());
+    kDebug() << "filename = " << filename;
 
     QStringList candidates;
     // Try to find full filename to open
@@ -316,23 +323,115 @@ void IncludeHelperPluginView::viewChanged()
     m_open_header->setEnabled(enable_open_header_action);
 }
 
-QString IncludeHelperPluginView::currentWord()
+/**
+ * Return a range w/ filename if given line contains a valid \c #include
+ * directive, empty range otherwise.
+ *
+ * \param line a string w/ line to parse
+ * \param strict return failure if closing \c '>' or \c '"' missed
+ *
+ * \return a range w/ filename of \c #include directive
+ */
+KTextEditor::Range IncludeHelperPluginView::parseIncludeDirective(const QString& line, const bool strict) const
 {
+    KTextEditor::Range result;
+    enum State {
+        skipInitialSpaces
+      , foundHash
+      , checkInclude
+      , skipSpaces
+      , foundOpenChar
+      , findCloseChar
+      , stop
+    };
+    int start = 0;
+    int end = 0;
+    int tmp = 0;
+    QChar close = 0;
+    State state = skipInitialSpaces;
+    for (int pos = 0; pos < line.length() && state != stop; ++pos)
+    {
+        switch (state)
+        {
+            case skipInitialSpaces:
+                if (!line[pos].isSpace())
+                {
+                    if (line[pos] == '#')
+                    {
+                        state = foundHash;
+                        continue;
+                    }
+                    return result;
+                }
+                break;
+            case foundHash:
+                if (line[pos].isSpace())
+                    continue;
+                else
+                    state = checkInclude;
+                // NOTE No `break' here!
+            case checkInclude:
+                if ("include"[tmp++] != line[pos])
+                    return result;
+                if (tmp == 7)
+                    state = skipSpaces;
+                break;
+            case skipSpaces:
+                if (line[pos].isSpace())
+                    continue;
+                close = (line[pos] == '<') ? '>' : (line[pos] == '"') ? '"' : 0;
+                if (close == 0)
+                    return result;
+                state = foundOpenChar;
+                break;
+            case foundOpenChar:
+                state = findCloseChar;
+                start = pos;
+                end = pos;
+                // NOTE No `break' here!
+            case findCloseChar:
+                if (line[pos] == close)
+                {
+                    end = pos;
+                    state = stop;
+                }
+                else
+                {
+                    if (line[pos].isSpace())
+                    {
+                        if (strict)
+                            return result;
+                        end = pos;
+                        state = stop;
+                    }
+                }
+                break;
+            case stop:
+            default:
+                assert(!"Parsing FSM broken!");
+        }
+    }
+    return KTextEditor::Range(0, start, 0, end);
+}
+
+KTextEditor::Range IncludeHelperPluginView::currentWord() const
+{
+    KTextEditor::Range result;                              // default range is empty
     KTextEditor::View* kv = mainWindow()->activeView();
     if (!kv)
     {
         kDebug() << "no KTextEditor::View";
-        return QString();
+        return result;
     }
 
     // Return selected text if any
     if (kv->selection())
-        return kv->selectionText();
+        return kv->selectionRange();
 
     if (!kv->cursorPosition().isValid())
     {
         kDebug() << "cursor not valid!";
-        return QString();
+        return result;
     }
 
     // Obtain a line under cursor
@@ -340,42 +439,11 @@ QString IncludeHelperPluginView::currentWord()
     QString line_str = kv->document()->line(line);
 
     // Check if current line starts w/ #include
-    int start = 0;
-    while (line_str[start].isSpace()) ++start;              // Skip possible leading spaces
-    if (line_str[start++] == '#')                           // Check for preprocessor directive
+    KTextEditor::Range r = parseIncludeDirective(line_str, false);
+    if (!r.isEmpty())
     {
-        // Ok, preprocessor directive is here... Skip possible spaces (again)
-        while (line_str[start].isSpace()) ++start;
-        // Check for "include" keyword right under current position
-        if (line_str.indexOf("include", start) == start)
-        {
-            start += 7;                                     // sizeof "include"
-            while (line_str[start].isSpace()) ++start;      // Skip possible spaces (again)
-            // check for opening '<' or '"'
-            const QChar close_ch = line_str[start] == '<'
-              ? '>'
-              : line_str[start] == '"'
-                ? '"'
-                : 0;
-            if (close_ch != 0)
-            {
-                // Ok, go forward 'till closing char, space or line end
-                int end;
-                for (
-                    end = ++start
-                  ; end < line_str.length() && line_str[end] != close_ch && !line_str[end].isSpace()
-                  ; ++end
-                  );
-                if  (start == end)
-                {
-                    kDebug() << ":-( it seems just #include here w/ file... " << start << ',' << end;
-                    return QString();
-                }
-                // Yeah! We've got it!
-                kDebug() << line_str.mid(start, end - start);
-                return line_str.mid(start, end - start);
-            }
-        }
+        r.setBothLines(line);
+        return r;
     }
 
     // No #include parsed... fallback to the default way:
@@ -384,28 +452,26 @@ QString IncludeHelperPluginView::currentWord()
     // Get cirsor line/column
     int col = kv->cursorPosition().column();
 
-    start = qMax(qMin(col, line_str.length() - 1), 0);
+    int start = qMax(qMin(col, line_str.length() - 1), 0);
     int end = start;
     kDebug() << "Arghh... trying w/ word under cursor starting from " << start;
 
     // Seeking for start of current word
-    while (start > 0 && !line_str[start].isSpace() && line_str[start] != '<' && line_str[start] != '"')
+    for (; start > 0; --start)
     {
-        --start;
+        if (line_str[start].isSpace() || line_str[start] == '<' || line_str[start] == '"')
+        {
+            start++;
+            break;
+        }
     }
     // Seeking for end of current word
     while (end < line_str.length() && !line_str[end].isSpace() && line_str[end] != '>' && line_str[end] != '"')
     {
         ++end;
     }
-    if  (start == end)
-    {
-        kDebug() << "no word found!";
-        return QString();
-    }
 
-    kDebug() << line_str.mid(start + 1, end - start - 1);
-    return line_str.mid(start + 1, end - start - 1);
+    return KTextEditor::Range(line, start, line, end);
 }
 //END IncludeHelperPluginView
 

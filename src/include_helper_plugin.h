@@ -29,6 +29,7 @@
 // Standard includes
 #   include <KAction>
 #   include <KListWidget>
+#   include <KTextEditor/Range>
 #   include <kate/application.h>
 #   include <kate/documentmanager.h>
 #   include <kate/mainwindow.h>
@@ -95,8 +96,9 @@ private Q_SLOTS:
     void viewChanged();
 
 private:
-    /// Get word under cursor
-    QString currentWord();
+    KTextEditor::Range currentWord() const;                 ///< Get word under cursor as range
+    /// Get filename of \c #include directive at given line
+    KTextEditor::Range parseIncludeDirective(const QString&, const bool) const;
 
     IncludeHelperPlugin* m_plugin;                          ///< Parent plugin
     KAction* m_open_header;                                 ///< <em>Open header</em> action
