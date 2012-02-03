@@ -38,7 +38,10 @@ TODO
 ====
 
 * Add autocompleter for ``#include`` files
-* Handle multiple matches
+* Handle multiple matches (done)
 * Passive popups if nothing found (done)
 * Handle #include files w/ relative path
 * Use Shift+F10 to go back in stack
+* Form an ``#include`` directive w/ filename currently active in a clipboard
+* List of currently ``#included`` files in a dialog and/or menu
+* OpenFile dialog for current ``#include`` line
