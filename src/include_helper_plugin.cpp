@@ -25,7 +25,6 @@
 
 // Standard includes
 #include <KAboutData>
-#include <KAction>
 #include <KActionCollection>
 #include <KDebug>
 #include <KDirSelectDialog>
@@ -54,6 +53,7 @@ K_EXPORT_PLUGIN(
           , ki18n("Include Helper Plugin")
           , "0.1"
           , ki18n("Helps to work w/ C/C++ headers little more easy")
+          , KAboutData::License_LGPL_V3
           )
       )
   )
@@ -236,12 +236,16 @@ IncludeHelperPluginView::IncludeHelperPluginView(Kate::MainWindow* mw, const KCo
   : Kate::PluginView(mw)
   , Kate::XMLGUIClient(data)
   , m_plugin(plugin)
+  , m_open_header(actionCollection()->addAction("file_open_included_header"))
 {
-    KAction* open_header = actionCollection()->addAction("file_open_included_header");
-    open_header->setText(i18n("Open header under cursor"));
-    open_header->setShortcut(QKeySequence(Qt::Key_F10));
-    connect(open_header, SIGNAL(triggered(bool)), this, SLOT(openHeader()));
+    m_open_header->setText(i18n("Open header under cursor"));
+    m_open_header->setShortcut(QKeySequence(Qt::Key_F10));
+    connect(m_open_header, SIGNAL(triggered(bool)), this, SLOT(openHeader()));
 
+    // We want to enable/disable open header action depending on
+    // mime-type of the current document, so we have to subscribe
+    // to view changes...
+    connect(mainWindow(), SIGNAL(viewChanged()), this, SLOT(viewChanged()));
     mainWindow()->guiFactory()->addClient(this);
 }
 
@@ -284,6 +288,24 @@ void IncludeHelperPluginView::openHeader()
         mainWindow()->openUrl(candidates.first());
     else if (candidates.isEmpty())
         KPassivePopup::message(i18n("Header not found"), filename, qobject_cast<QWidget*>(this));
+}
+
+void IncludeHelperPluginView::viewChanged()
+{
+    KTextEditor::View* kv = mainWindow()->activeView();
+    if (!kv)
+    {
+        kDebug() << "no KTextEditor::View -- leave `open header' action as is...";
+        return;
+    }
+    const QString& mime_str = mainWindow()->activeView()->document()->mimeType();
+    kDebug() << "Current document type: " << mime_str;
+    const bool enable_open_header_action = (mime_str == "text/x-c++src")
+      || (mime_str == "text/x-c++hdr")
+      || (mime_str == "text/x-csrc")
+      || (mime_str == "text/x-chdr")
+      ;
+    m_open_header->setEnabled(enable_open_header_action);
 }
 
 QString IncludeHelperPluginView::currentWord()

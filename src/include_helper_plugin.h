@@ -27,6 +27,7 @@
 #   include <src/ui_configuration.h>
 
 // Standard includes
+#   include <KAction>
 #   include <kate/application.h>
 #   include <kate/documentmanager.h>
 #   include <kate/mainwindow.h>
@@ -90,12 +91,14 @@ public:
 
 private Q_SLOTS:
     void openHeader();
+    void viewChanged();
 
 private:
     /// Get word under cursor
     QString currentWord();
 
     IncludeHelperPlugin* m_plugin;                          ///< Parent plugin
+    KAction* m_open_header;                                 ///< <em>Open header</em> action
 };
 
 /**
