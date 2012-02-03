@@ -238,7 +238,7 @@ IncludeHelperPluginView::IncludeHelperPluginView(Kate::MainWindow* mw, const KCo
   , m_plugin(plugin)
   , m_open_header(actionCollection()->addAction("file_open_included_header"))
 {
-    m_open_header->setText(i18n("Open header under cursor"));
+    m_open_header->setText(i18n("Open Header Under Cursor"));
     m_open_header->setShortcut(QKeySequence(Qt::Key_F10));
     connect(m_open_header, SIGNAL(triggered(bool)), this, SLOT(openHeader()));
 
@@ -263,7 +263,7 @@ void IncludeHelperPluginView::openHeader()
     // Try to find full filename to open
     /// \todo Is there any way to make a joint view for both containers?
     // 0) search session dirs list first
-    foreach(const QString& dir, m_plugin->sessionDirs())
+    Q_FOREACH(const QString& dir, m_plugin->sessionDirs())
     {
         const QString uri = dir + "/" + filename;
         kDebug() << "Trying " << uri;
@@ -272,7 +272,7 @@ void IncludeHelperPluginView::openHeader()
             candidates.append(uri);
     }
     // 1) search global dirs next
-    foreach(const QString& dir, m_plugin->globalDirs())
+    Q_FOREACH(const QString& dir, m_plugin->globalDirs())
     {
         const QString uri = dir + "/" + filename;
         kDebug() << "Trying " << (dir + "/" + filename);
@@ -288,6 +288,14 @@ void IncludeHelperPluginView::openHeader()
         mainWindow()->openUrl(candidates.first());
     else if (candidates.isEmpty())
         KPassivePopup::message(i18n("Header not found"), filename, qobject_cast<QWidget*>(this));
+    else
+    {
+        QStringList selected = ChooseFromListDialog::select(qobject_cast<QWidget*>(this), candidates);
+        Q_FOREACH(const QString& dir, selected)
+        {
+            mainWindow()->openUrl(dir);
+        }
+    }
 }
 
 void IncludeHelperPluginView::viewChanged()
@@ -400,3 +408,39 @@ QString IncludeHelperPluginView::currentWord()
     return line_str.mid(start + 1, end - start - 1);
 }
 //END IncludeHelperPluginView
+
+//BEGIN ChooseFromListDialog
+ChooseFromListDialog::ChooseFromListDialog(QWidget* parent)
+  : KDialog(parent)
+{
+    setModal(true);
+    setButtons(KDialog::Ok | KDialog::Cancel);
+    showButtonSeparator(true);
+    setCaption(i18n("Choose Header File to Open"));
+
+    m_list = new KListWidget(this);
+    setMainWidget(m_list);
+
+    connect(m_list, SIGNAL(executed(QListWidgetItem*)), this, SLOT(accept()));
+}
+
+QStringList ChooseFromListDialog::select(QWidget* parent, const QStringList& strings)
+{
+    KConfigGroup gcg(KGlobal::config(), "IncludeHelperChooserDialog");
+    ChooseFromListDialog dialog(parent);
+    dialog.m_list->addItems(strings);                       // append gien items to the list
+    dialog.restoreDialogSize(gcg);                          // restore dialog geometry from config
+
+    QStringList result;
+    if (dialog.exec() == QDialog::Accepted)
+    {
+        Q_FOREACH(QListWidgetItem* item, dialog.m_list->selectedItems())
+        {
+            result.append(item->text());
+        }
+    }
+    dialog.saveDialogSize(gcg);                             // write dialog geometry to config
+    gcg.sync();
+    return result;
+}
+//END ChooseFromListDialog

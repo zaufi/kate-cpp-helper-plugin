@@ -28,6 +28,7 @@
 
 // Standard includes
 #   include <KAction>
+#   include <KListWidget>
 #   include <kate/application.h>
 #   include <kate/documentmanager.h>
 #   include <kate/mainwindow.h>
@@ -99,6 +100,18 @@ private:
 
     IncludeHelperPlugin* m_plugin;                          ///< Parent plugin
     KAction* m_open_header;                                 ///< <em>Open header</em> action
+};
+
+class ChooseFromListDialog : public KDialog
+{
+    Q_OBJECT
+
+public:
+    ChooseFromListDialog(QWidget*);
+    static QStringList select(QWidget*, const QStringList&);
+
+private:
+    KListWidget* m_list;
 };
 
 /**
