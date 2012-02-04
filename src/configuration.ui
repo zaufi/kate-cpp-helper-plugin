@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
+ <author>Alex Turbov &lt;i.zaufi@gmail.com&gt;</author>
  <class>Configuration</class>
  <widget class="QWidget" name="Configuration">
   <property name="geometry">
@@ -16,10 +17,16 @@
   <layout class="QHBoxLayout" name="horizontalLayout_2">
    <item>
     <widget class="KTabWidget" name="ktabwidget">
+     <property name="layoutDirection">
+      <enum>Qt::LeftToRight</enum>
+     </property>
      <property name="currentIndex">
       <number>1</number>
      </property>
      <widget class="QWidget" name="tabGlobal">
+      <property name="layoutDirection">
+       <enum>Qt::LeftToRight</enum>
+      </property>
       <attribute name="title">
        <string>Global include dirs</string>
       </attribute>
@@ -138,6 +145,24 @@
         </widget>
        </item>
       </layout>
+     </widget>
+     <widget class="QWidget" name="tabSettings">
+      <attribute name="title">
+       <string>Other Settins</string>
+      </attribute>
+      <widget class="QCheckBox" name="includeMarkersSwitch">
+       <property name="geometry">
+        <rect>
+         <x>10</x>
+         <y>10</y>
+         <width>421</width>
+         <height>21</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>#include session headers w/ '&lt;'/'&gt;'</string>
+       </property>
+      </widget>
      </widget>
     </widget>
    </item>

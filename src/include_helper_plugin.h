@@ -92,7 +92,8 @@ public:
     virtual ~IncludeHelperPluginView();
 
 private Q_SLOTS:
-    void openHeader();
+    void openHeader();                                      ///< Open header file under cursor
+    void copyInclude();                                     ///< From #include directive w/ current file in the clipboard
     void viewChanged();
 
 private:
@@ -102,6 +103,7 @@ private:
 
     IncludeHelperPlugin* m_plugin;                          ///< Parent plugin
     KAction* m_open_header;                                 ///< <em>Open header</em> action
+    KAction* m_copy_include;                                ///< <em>Copy #include to clipboard</em> action
 };
 
 class ChooseFromListDialog : public KDialog
@@ -144,6 +146,26 @@ public:
     {
         return m_global_dirs;
     }
+    bool useLtGt() const
+    {
+        return m_use_ltgt;
+    }
+    //@}
+
+    /// \name Modifiers
+    //@{
+    void setSessionDirs(QStringList& dirs)
+    {
+        m_session_dirs.swap(dirs);
+    }
+    void setGlobalDirs(QStringList& dirs)
+    {
+        m_global_dirs.swap(dirs);
+    }
+    void setUseLtGt(const bool state)
+    {
+        m_use_ltgt = state;
+    }
     //@}
 
     /// \name PluginConfigPageInterface interface implementation
@@ -179,13 +201,12 @@ public:
     void writeSessionConfig(KConfigBase*, const QString&);
     //@}
 
-private Q_SLOTS:
-    void updateSessionDirs(const QStringList&);
-    void updateGlobalDirs(const QStringList&);
-
 private:
     QStringList m_global_dirs;
     QStringList m_session_dirs;
+    /// If \c true <em>Copy #include</em> action would put filename into \c '<' and \c '>'
+    /// instead of \c '"'
+    bool m_use_ltgt;
 };
 
 #endif                                                      // __SRC__INCLUDE_HELPER_PLUGIN_HH__

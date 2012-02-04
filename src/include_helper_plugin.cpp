@@ -33,13 +33,23 @@
 #include <KPluginLoader>
 #include <KTextEditor/Document>
 #include <KTextEditor/View>
-#include <QFileInfo>
+#include <QtCore/QFileInfo>
+#include <QtGui/QClipboard>
 
 namespace {
 inline int area()
 {
     static int s_area = KDebug::registerArea("include-helper", true);
     return s_area;
+}
+/// \c true if given MIME type string belongs to C/C++ source
+inline bool isCOrPPSource(const QString& mime_str)
+{
+    return (mime_str == "text/x-c++src")
+      || (mime_str == "text/x-c++hdr")
+      || (mime_str == "text/x-csrc")
+      || (mime_str == "text/x-chdr")
+      ;
 }
 }                                                           // anonymous namespace
 
@@ -77,21 +87,7 @@ Kate::PluginConfigPage* IncludeHelperPlugin::configPage(uint number, QWidget* pa
     assert("This plugin have the only configuration page" && number == 0);
     if (number != 0)
         return 0;
-    IncludeHelperPluginGlobalConfigPage* cfg_page = new IncludeHelperPluginGlobalConfigPage(parent, this);
-    // Subscribe self for config updates
-    connect(
-        cfg_page
-        , SIGNAL(sessionDirsUpdated(const QStringList&))
-        , this
-        , SLOT(updateSessionDirs(const QStringList&))
-        );
-    connect(
-        cfg_page
-        , SIGNAL(globalDirsUpdated(const QStringList&))
-        , this
-        , SLOT(updateGlobalDirs(const QStringList&))
-        );
-    return cfg_page;
+    return new IncludeHelperPluginGlobalConfigPage(parent, this);
 }
 
 void IncludeHelperPlugin::readSessionConfig(KConfigBase* config, const QString& groupPrefix)
@@ -104,9 +100,11 @@ void IncludeHelperPlugin::readSessionConfig(KConfigBase* config, const QString& 
     KConfigGroup gcg(KGlobal::config(), "IncludeHelper");
     QStringList dirs = gcg.readPathEntry("ConfiguredDirs", QStringList());
     kDebug() << "Got global configured include path list: " << dirs;
+    QVariant use_ltgt = gcg.readEntry("UseLtGt", QVariant(false));
     // Assign configuration
     m_session_dirs = session_dirs;
     m_global_dirs = dirs;
+    m_use_ltgt = use_ltgt.toBool();
 }
 
 void IncludeHelperPlugin::writeSessionConfig(KConfigBase* config, const QString& groupPrefix)
@@ -120,20 +118,10 @@ void IncludeHelperPlugin::writeSessionConfig(KConfigBase* config, const QString&
     kDebug() << "Write global configured include path list: " << m_global_dirs;
     KConfigGroup gcg(KGlobal::config(), "IncludeHelper");
     gcg.writePathEntry("ConfiguredDirs", m_global_dirs);
+    gcg.writeEntry("UseLtGt", QVariant(m_use_ltgt));
     gcg.sync();
 }
 
-void IncludeHelperPlugin::updateSessionDirs(const QStringList& list)
-{
-    m_session_dirs = list;
-    kDebug() << "Session dirs updated to: " << m_session_dirs;
-}
-
-void IncludeHelperPlugin::updateGlobalDirs(const QStringList& list)
-{
-    m_global_dirs = list;
-    kDebug() << "Global dirs updated to: " << m_global_dirs;
-}
 //END IncludeHelperPlugin
 
 //BEGIN IncludeHelperPluginGlobalConfigPage
@@ -169,7 +157,7 @@ void IncludeHelperPluginGlobalConfigPage::apply()
         {
             dirs.append(m_configuration_ui.sessionDirsList->item(i)->text());
         }
-        Q_EMIT(sessionDirsUpdated(dirs));
+        m_plugin->setSessionDirs(dirs);
     }
     {
         QStringList dirs;
@@ -177,8 +165,9 @@ void IncludeHelperPluginGlobalConfigPage::apply()
         {
             dirs.append(m_configuration_ui.globalDirsList->item(i)->text());
         }
-        Q_EMIT(globalDirsUpdated(dirs));
+        m_plugin->setGlobalDirs(dirs);
     }
+    m_plugin->setUseLtGt(m_configuration_ui.includeMarkersSwitch->checkState() == Qt::Checked);
 }
 
 void IncludeHelperPluginGlobalConfigPage::reset()
@@ -187,6 +176,9 @@ void IncludeHelperPluginGlobalConfigPage::reset()
     // Put dirs to the list
     m_configuration_ui.globalDirsList->addItems(m_plugin->globalDirs());
     m_configuration_ui.sessionDirsList->addItems(m_plugin->sessionDirs());
+    m_configuration_ui.includeMarkersSwitch->setCheckState(
+        m_plugin->useLtGt() ? Qt::Checked : Qt::Unchecked
+      );
 }
 
 void IncludeHelperPluginGlobalConfigPage::addSessionIncludeDir()
@@ -237,10 +229,15 @@ IncludeHelperPluginView::IncludeHelperPluginView(Kate::MainWindow* mw, const KCo
   , Kate::XMLGUIClient(data)
   , m_plugin(plugin)
   , m_open_header(actionCollection()->addAction("file_open_included_header"))
+  , m_copy_include(actionCollection()->addAction("edit_copy_include"))
 {
     m_open_header->setText(i18n("Open Header Under Cursor"));
     m_open_header->setShortcut(QKeySequence(Qt::Key_F10));
     connect(m_open_header, SIGNAL(triggered(bool)), this, SLOT(openHeader()));
+
+    m_copy_include->setText(i18n("Copy #include to Clipboard"));
+    m_copy_include->setShortcut(QKeySequence(Qt::SHIFT + Qt::Key_F10));
+    connect(m_copy_include, SIGNAL(triggered(bool)), this, SLOT(copyInclude()));
 
     // We want to enable/disable open header action depending on
     // mime-type of the current document, so we have to subscribe
@@ -299,9 +296,46 @@ void IncludeHelperPluginView::openHeader()
     {
         QStringList selected = ChooseFromListDialog::select(qobject_cast<QWidget*>(this), candidates);
         Q_FOREACH(const QString& dir, selected)
-        {
             mainWindow()->openUrl(dir);
-        }
+    }
+}
+
+void IncludeHelperPluginView::copyInclude()
+{
+    KTextEditor::View* kv = mainWindow()->activeView();
+    if (!kv)
+    {
+        kDebug() << "no KTextEditor::View";
+        return;
+    }
+    const KUrl& uri = kv->document()->url().prettyUrl();
+    QString current_dir = uri.directory();
+    QString longest_matched;
+    QChar open = m_plugin->useLtGt() ? '<' : '"';
+    QChar close = m_plugin->useLtGt() ? '>' : '"';
+    kDebug() << "Got document name: " << uri;
+    // Try to match local (per session) dirs first
+    Q_FOREACH(const QString& dir, m_plugin->sessionDirs())
+        if (current_dir.startsWith(dir) && longest_matched.length() < dir.length())
+            longest_matched = dir;
+    if (longest_matched.isEmpty())
+    {
+        open = '<';
+        close = '>';
+        // Try to match global dirs next
+        Q_FOREACH(const QString& dir, m_plugin->globalDirs())
+            if (current_dir.startsWith(dir) && longest_matched.length() < dir.length())
+                longest_matched = dir;
+    }
+    if (!longest_matched.isEmpty())
+    {
+        const QString filename = current_dir.remove(0, longest_matched.length()) + '/' + uri.fileName();
+        kDebug() << "filename = " << filename;
+        const QString& mime_str = kv->document()->mimeType();
+        if (isCOrPPSource(mime_str))
+            QApplication::clipboard()->setText(QString("#include %1%2%3").arg(open).arg(filename).arg(close));
+        else
+            QApplication::clipboard()->setText(uri.prettyUrl());
     }
 }
 
@@ -313,14 +347,14 @@ void IncludeHelperPluginView::viewChanged()
         kDebug() << "no KTextEditor::View -- leave `open header' action as is...";
         return;
     }
-    const QString& mime_str = mainWindow()->activeView()->document()->mimeType();
+    const QString& mime_str = kv->document()->mimeType();
     kDebug() << "Current document type: " << mime_str;
-    const bool enable_open_header_action = (mime_str == "text/x-c++src")
-      || (mime_str == "text/x-c++hdr")
-      || (mime_str == "text/x-csrc")
-      || (mime_str == "text/x-chdr")
-      ;
+    const bool enable_open_header_action = isCOrPPSource(mime_str);
     m_open_header->setEnabled(enable_open_header_action);
+    if (enable_open_header_action)
+        m_copy_include->setText(i18n("Copy #include to Clipboard"));
+    else
+        m_copy_include->setText(i18n("Copy File URI to Clipboard"));
 }
 
 /**

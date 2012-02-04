@@ -1,8 +1,11 @@
 <!DOCTYPE kpartgui>
-<kpartplugin name="kateincludehelper" library="kateincludehelperplugin" version="1">
+<gui name="kateincludehelper" library="kateincludehelperplugin" version="2">
 <MenuBar>
- <Menu name="file"><text>&amp;File</text>
-    <Action name="file_open_included_header" group="open_merge"/>
- </Menu>
+        <Menu name="file"><text>&amp;File</text>
+            <Action name="file_open_included_header" group="open_merge"/>
+        </Menu>
+        <Menu name="edit" noMerge="1"><text>&amp;Edit</text>
+            <Action name="edit_copy_include" group="edit_paste_merge"/>
+        </Menu>
 </MenuBar>
-</kpartplugin>
+</gui>
