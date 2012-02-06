@@ -12,7 +12,7 @@
  * \date [+ (shell "LC_ALL=C date") +] -- Initial design
  */
 /*
- * [+ (gpl2 "KateIncludeHelperPlugin" "" " * ") +]
+ * [+ (gpl "KateIncludeHelperPlugin" " * ") +]
  */
 
 // Project specific includes
