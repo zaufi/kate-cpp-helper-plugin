@@ -1,4 +1,4 @@
-[+ AutoGen5 template cc=%s_tester.cc
+[+ AutoGen5 template cc=%s_tester.cpp
 #
 #
 # This is the autogen template file to produce header and module for new fixture tester class.
@@ -16,11 +16,7 @@
  */
 
 // Project specific includes
-#include <[+ filename +].hh>
-// Debugging helpers from dzen::debug namespace
-#include <dzen/debug/dump_memory.hh>
-#include <dzen/debug/out_any.hh>
-#include <dzen/debug/type_name.hh>
+#include <[+ filename +].h>
 
 // Standard includes
 // ALERT The following #define must be enabled only in one translation unit
@@ -32,15 +28,13 @@
 // #include <boost/test/output_test_stream.hpp>
 #include <iostream>
 
-namespace dbg = dzen::debug;
-
 // Uncomment if u want to use boost test output streams.
 //  Then just output smth to it and valida an output by
 //  BOOST_CHECK(out_stream.is_equal("Test text"))
 // using boost::test_tools::output_test_stream;
 
 // Your first test function :)
-BOOST_AUTO_TEST_CASE([+ classname +]Test)
+BOOST_AUTO_TEST_CASE([+ classname +]_test)
 {
     // Your test code here...
 }

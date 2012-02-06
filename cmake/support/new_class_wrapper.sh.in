@@ -24,7 +24,7 @@ if [ -z "$subdir" ]; then
 fi
 
 # Ok. Lets work!
-ebegin "Generate class skeleton files for $class: $class.cc and $class.hh"
+ebegin "Generate class skeleton files for $class: $class.cpp and $class.h"
 rf=${CMAKE_BINARY_DIR}/$class.def
 # Generate response file for autogen
 echo "autogen definitions ${CMAKE_SOURCE_DIR}/cmake/support/class.tpl;" > $rf \
@@ -45,7 +45,7 @@ if [ "${CMAKE_BINARY_DIR}" != "${CMAKE_SOURCE_DIR}" ]; then
     # Move generated files from CMAKE_BINARY_DIR to desired subdir (if exists)
     dst=`test -d "${CMAKE_SOURCE_DIR}/$subdir" && echo "${CMAKE_SOURCE_DIR}/$subdir" || echo "${CMAKE_SOURCE_DIR}"`
     ebegin "Move generated files to $dst"
-    mv -i ${CMAKE_BINARY_DIR}/$class.hh ${CMAKE_BINARY_DIR}/$class.cc $dst
+    mv -i ${CMAKE_BINARY_DIR}/$class.h ${CMAKE_BINARY_DIR}/$class.cpp $dst
     eend $?
 fi
 

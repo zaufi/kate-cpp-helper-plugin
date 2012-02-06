@@ -1,4 +1,4 @@
-[+ AutoGen5 template hh=%s.hh cc=%s.cc
+[+ AutoGen5 template h=%s.h cpp=%s.cpp
 #
 #
 # This is the autogen template file to produce header and module for new class.
@@ -8,17 +8,17 @@
 /**
  * \file
  *
- * \brief Class \c [+ FOR namespace +][+ namespace +]::[+ ENDFOR +][+ classname +] [+ IF ( == (suffix) "hh") +](interface)[+ ELSE +](implementation)[+ ENDIF +]
+ * \brief Class \c [+ FOR namespace +][+ namespace +]::[+ ENDFOR +][+ classname +] [+ IF ( == (suffix) "h") +](interface)[+ ELSE +](implementation)[+ ENDIF +]
  *
  * \date [+ (shell "LC_ALL=C date") +] -- Initial design
  */
 /*
  * [+ (gpl "KateIncludeHelperPlugin" " * ") +]
- */[+define incguard+]__[+ (string-upcase (get "guard_base")) +]__[+ (string-upcase (get "filename")) +]_HH__[+enddef +][+
-IF ( == (suffix) "hh") +]
-[+(out-move (sprintf "%s.hh" (get "filename"))) +]
+ */[+define incguard+]__[+ (string-upcase (get "guard_base")) +]__[+ (string-upcase (get "filename")) +]_H__[+enddef +][+
+IF ( == (suffix) "h") +]
+[+(out-move (sprintf "%s.h" (get "filename"))) +]
 #ifndef [+ incguard +]
-# define [+ incguard +]
+#  define [+ incguard +]
 
 // Project specific includes
 
@@ -49,7 +49,7 @@ public:
 ELSE +]
 
 // Project specific includes
-#include <[+ subdir +]/[+ filename +].hh>
+#include <[+ subdir +]/[+ filename +].h>
 
 // Standard includes
 
