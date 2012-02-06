@@ -21,102 +21,19 @@
  */
 
 #ifndef __SRC__INCLUDE_HELPER_PLUGIN_HH__
-#   define __SRC__INCLUDE_HELPER_PLUGIN_HH__
+#  define __SRC__INCLUDE_HELPER_PLUGIN_HH__
 
 // Project specific includes
-#   include <src/ui_configuration.h>
 
 // Standard includes
 #   include <KAction>
-#   include <KListWidget>
-#   include <KTextEditor/Range>
-#   include <kate/application.h>
-#   include <kate/documentmanager.h>
-#   include <kate/mainwindow.h>
+// #   include <kate/application.h>
+// #   include <kate/mainwindow.h>
 #   include <kate/plugin.h>
 #   include <kate/pluginconfigpageinterface.h>
 #   include <cassert>
 
-class IncludeHelperPlugin;                                  // forward declaration
-
-/**
- * \brief [Type brief class description here]
- *
- * [More detailed description here]
- *
- */
-class IncludeHelperPluginGlobalConfigPage : public Kate::PluginConfigPage
-{
-    Q_OBJECT
-
-public:
-    explicit IncludeHelperPluginGlobalConfigPage(QWidget* = 0, IncludeHelperPlugin* = 0);
-    virtual ~IncludeHelperPluginGlobalConfigPage() {}
-
-    /// \name PluginConfigPage interface implementation
-    //@{
-    void apply();
-    void reset();
-    void defaults() {}
-    //@}
-
-Q_SIGNALS:
-    void sessionDirsUpdated(const QStringList&);
-    void globalDirsUpdated(const QStringList&);
-
-private Q_SLOTS:
-    void addGlobalIncludeDir();                             ///< Add directory to the list
-    void delGlobalIncludeDir();                             ///< Remove directory from the list
-    void addSessionIncludeDir();                            ///< Add directory to the list
-    void delSessionIncludeDir();                            ///< Remove directory from the list
-
-private:
-    bool contains(const QString&, const KListWidget*);      ///< Check if directories list contains given item
-
-    IncludeHelperPlugin* m_plugin;                          ///< Parent plugin
-    Ui_Configuration m_configuration_ui;                    ///< Configuration widget
-};
-
-/**
- * \brief [Type brief class description here]
- *
- * [More detailed description here]
- *
- */
-class IncludeHelperPluginView : public Kate::PluginView, public Kate::XMLGUIClient
-{
-    Q_OBJECT
-
-public:
-    IncludeHelperPluginView(Kate::MainWindow*, const KComponentData&, IncludeHelperPlugin*);
-    virtual ~IncludeHelperPluginView();
-
-private Q_SLOTS:
-    void openHeader();                                      ///< Open header file under cursor
-    void copyInclude();                                     ///< From #include directive w/ current file in the clipboard
-    void viewChanged();
-
-private:
-    KTextEditor::Range currentWord() const;                 ///< Get word under cursor as range
-    /// Get filename of \c #include directive at given line
-    KTextEditor::Range parseIncludeDirective(const QString&, const bool) const;
-
-    IncludeHelperPlugin* m_plugin;                          ///< Parent plugin
-    KAction* m_open_header;                                 ///< <em>Open header</em> action
-    KAction* m_copy_include;                                ///< <em>Copy #include to clipboard</em> action
-};
-
-class ChooseFromListDialog : public KDialog
-{
-    Q_OBJECT
-
-public:
-    ChooseFromListDialog(QWidget*);
-    static QStringList select(QWidget*, const QStringList&);
-
-private:
-    KListWidget* m_list;
-};
+namespace kate {
 
 /**
  * \brief [Type brief class description here]
@@ -208,5 +125,5 @@ private:
     /// instead of \c '"'
     bool m_use_ltgt;
 };
-
+}                                                           // namespace kate
 #endif                                                      // __SRC__INCLUDE_HELPER_PLUGIN_HH__

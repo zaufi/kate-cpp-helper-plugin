@@ -16,6 +16,8 @@ set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/modules" ${CMAKE_MODULE_PATH}
 #---------------------------------------------------------
 # Section: Include aux cmake functions
 #---------------------------------------------------------
+include(CTest)
+include(AddBoostTests)
 
 #---------------------------------------------------------
 # Section: Find used stuff
@@ -26,9 +28,11 @@ find_package(KDE4 REQUIRED)
 include(KDE4Defaults)
 
 # find boost
-#find_package(Boost 1.46.1 REQUIRED COMPONENTS
-#    filesystem
-#  )
+if (BUILD_TESTING)
+    find_package(Boost 1.42 REQUIRED COMPONENTS
+        unit_test_framework
+      )
+endif()
 
 #---------------------------------------------------------
 # Section: Configure building process
