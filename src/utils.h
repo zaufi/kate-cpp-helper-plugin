@@ -43,7 +43,27 @@ struct IncludeParseResult
 {
     KTextEditor::Range m_range;                             ///< A range w/ filename of \c #include directive
     IncludeStyle::type m_type;
-    bool m_is_complete;
+    bool m_has_include;                                     ///< Is there \c #include on the line?
+    bool m_is_complete;                                     ///< Is this valid \c #include directive?
+
+    char open_char() const
+    {
+        return m_type == IncludeStyle::local
+          ? '"'
+          : m_type == IncludeStyle::global
+              ? '<'
+              : 0
+          ;
+    }
+    char close_char() const
+    {
+        return m_type == IncludeStyle::local
+          ? '"'
+          : m_type == IncludeStyle::global
+              ? '>'
+              : 0
+          ;
+    }
 };
 
 /// Get filename of \c #include directive at given line

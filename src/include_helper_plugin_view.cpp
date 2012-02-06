@@ -180,7 +180,7 @@ void IncludeHelperPluginView::viewCreated(KTextEditor::View* view)
 {
     if (isCOrPPSource(view->document()->mimeType()))
     {
-        kDebug() << "C/C++ source: register completer";
+        kDebug() << "C/C++ source: register #include completer";
         KTextEditor::CodeCompletionInterface* cc_iface =
             qobject_cast<KTextEditor::CodeCompletionInterface*>(view);
         if (cc_iface)

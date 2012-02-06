@@ -87,7 +87,7 @@ public:
 
 private:
     /// Update \c m_completions for given string
-    void updateCompletionList(const QString&);
+    void updateCompletionList(const QString&, const bool);
 
     IncludeHelperPlugin* m_plugin;
     QStringList m_dir_completions;                          ///< List of dirs suggested
