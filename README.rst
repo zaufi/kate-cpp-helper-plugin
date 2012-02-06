@@ -37,11 +37,12 @@ Installation
 TODO
 ====
 
-* Add autocompleter for ``#include`` files
+* Add autocompleter for ``#include`` files (done)
 * Handle multiple matches (done)
 * Passive popups if nothing found (done)
 * Handle #include files w/ relative path
 * Use Shift+F10 to go back in stack
-* Form an ``#include`` directive w/ filename currently active in a clipboard
+* Form an ``#include`` directive w/ filename currently active in a clipboard (done)
 * List of currently ``#included`` files in a dialog and/or menu
 * OpenFile dialog for current ``#include`` line
+* Is it possible to use annotations iface somehow to indicate 'not-found' #include file?
