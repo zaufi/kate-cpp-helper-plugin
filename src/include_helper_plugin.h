@@ -26,12 +26,10 @@
 // Project specific includes
 
 // Standard includes
-#   include <KAction>
-// #   include <kate/application.h>
-// #   include <kate/mainwindow.h>
-#   include <kate/plugin.h>
-#   include <kate/pluginconfigpageinterface.h>
-#   include <cassert>
+#  include <KAction>
+#  include <kate/plugin.h>
+#  include <kate/pluginconfigpageinterface.h>
+#  include <cassert>
 
 namespace kate {
 
@@ -97,16 +95,19 @@ public:
     /// Get short name of a config page by number
     QString configPageName(uint number = 0) const
     {
+        Q_UNUSED(number)
         assert("This plugin have the only configuration page" && number == 0);
         return "Include Dirs";
     }
     QString configPageFullName(uint number = 0) const
     {
+        Q_UNUSED(number)
         assert("This plugin have the only configuration page" && number == 0);
         return "List of include directories";
     }
     KIcon configPageIcon(uint number = 0) const
     {
+        Q_UNUSED(number)
         assert("This plugin have the only configuration page" && number == 0);
         return KIcon("text-x-c++hdr");
     }

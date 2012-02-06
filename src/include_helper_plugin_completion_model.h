@@ -26,8 +26,15 @@
 // Project specific includes
 
 // Standard includes
+#  if (__GNUC__ >=4 && __GNUC_MINOR__ >= 5)
+#    pragma GCC push_options
+#    pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#  endif                                                    // (__GNUC__ >=4 && __GNUC_MINOR__ >= 5)
 #  include <KTextEditor/CodeCompletionModel>
 #  include <KTextEditor/CodeCompletionModelControllerInterface>
+#  if (__GNUC__ >=4 && __GNUC_MINOR__ >= 5)
+#    pragma GCC pop_options
+#  endif                                                    // (__GNUC__ >=4 && __GNUC_MINOR__ >= 5)
 
 namespace kate {
 class IncludeHelperPlugin;                                  // forward declaration
