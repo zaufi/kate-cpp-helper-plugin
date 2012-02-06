@@ -35,12 +35,14 @@ namespace kate {
  * \param line a string w/ line to parse
  * \param strict return failure if closing \c '>' or \c '"' missed
  *
- * \return a range w/ filename of \c #include directive
+ * \return instance of \c IncludeParseResult
+ *
+ * \warning Line would always 0 in a range! U have to set it after call this function!
  */
-KTextEditor::Range parseIncludeDirective(const QString& line, const bool strict)
+IncludeParseResult parseIncludeDirective(const QString& line, const bool strict)
 {
     kDebug() << "text2parse=" << line << ", strict=" << strict;
-    KTextEditor::Range result;
+
     enum State {
         skipInitialSpaces
       , foundHash
@@ -50,6 +52,12 @@ KTextEditor::Range parseIncludeDirective(const QString& line, const bool strict)
       , findCloseChar
       , stop
     };
+
+    // Perpare 'default' result
+    IncludeParseResult result;
+    result.m_type = IncludeStyle::unknown;
+    result.m_is_complete = false;
+
     int start = 0;
     int end = 0;
     int tmp = 0;
@@ -60,36 +68,45 @@ KTextEditor::Range parseIncludeDirective(const QString& line, const bool strict)
         switch (state)
         {
             case skipInitialSpaces:
-                if (!line[pos].isSpace())
+                if (line[pos] != ' ' && line[pos] != '\t')
                 {
                     if (line[pos] == '#')
                     {
                         state = foundHash;
                         continue;
                     }
-                    return result;
+                    return result;                          // Error: smth other than '#' first char in a line
                 }
                 break;
             case foundHash:
-                if (line[pos].isSpace())
+                if (line[pos] == ' ' || line[pos] == '\t')
                     continue;
                 else
                     state = checkInclude;
                 // NOTE No `break' here!
             case checkInclude:
                 if ("include"[tmp++] != line[pos])
-                    return result;
+                    return result;                          // Error: not 'include' after '#'
                 if (tmp == 7)
                     state = skipSpaces;
                 break;
             case skipSpaces:
-                if (line[pos].isSpace())
+                if (line[pos] == ' ' || line[pos] == '\t')
                     continue;
-                close = (line[pos] == '<') ? '>' : (line[pos] == '"') ? '"' : 0;
-                if (close == 0)
-                    return result;
+                // Check open char type
+                if (line[pos] == '<')
+                {
+                    close = '>';
+                    result.m_type = IncludeStyle::global;
+                }
+                else if (line[pos] == '"')
+                {
+                    close = '"';
+                    result.m_type = IncludeStyle::local;
+                }
+                else return result;
                 state = foundOpenChar;
-                break;
+                break;                                      // NOTE We have to move to next char (if remain smth)
             case foundOpenChar:
                 state = findCloseChar;
                 start = pos;
@@ -98,14 +115,15 @@ KTextEditor::Range parseIncludeDirective(const QString& line, const bool strict)
             case findCloseChar:
                 if (line[pos] == close)
                 {
+                    result.m_is_complete = true;            // Found close char! #include complete...
                     state = stop;
                     end = pos;
                 }
-                else if (line[pos].isSpace())
+                else if (line[pos] == ' ' || line[pos] == '\t')
                 {
                     if (strict)
-                        return result;
-                    state = stop;
+                        return result;                      // in strict mode return false for incomplete #include
+                    state = stop;                           // otherwise, it is Ok to have incomplete string...
                     end = pos;
                 }
                 break;
@@ -117,21 +135,26 @@ KTextEditor::Range parseIncludeDirective(const QString& line, const bool strict)
     // Check state after EOL occurs
     switch (state)
     {
+        case foundOpenChar:
+            if (!strict)
+                result.m_range = KTextEditor::Range(0, line.length(), 0, line.length() + 1);
+            break;
+        case findCloseChar:
+            if (!strict)
+                result.m_range = KTextEditor::Range(0, start, 0, line.length());
+            break;
+        case stop:
+            result.m_range = KTextEditor::Range(0, start, 0, end);
+            break;
         case skipInitialSpaces:
         case foundHash:
         case checkInclude:
         case skipSpaces:
-            return result;
-        case foundOpenChar:
-            return KTextEditor::Range(0, line.length(), 0, line.length() + 1);
-        case findCloseChar:
-            return KTextEditor::Range(0, start, 0, line.length());
-        case stop:
             break;
         default:
             assert(!"Parsing FSM broken!");
     }
-    return KTextEditor::Range(0, start, 0, end);
+    return result;
 }
 
 }                                                           // namespace kate

@@ -74,15 +74,15 @@ bool IncludeHelperPluginCompletionModel::shouldStartCompletion(
 {
     kDebug() << "position=" << position << ", inserted_text=" << inserted_text << ", ui=" << user_insertion;
     QString left_text = view->document()->line(position.line()).left(position.column());
-    KTextEditor::Range r = kate::parseIncludeDirective(left_text, false);
-    kDebug() << "got range: " << r;
-    m_should_complete = !r.isEmpty();
+    IncludeParseResult r = parseIncludeDirective(left_text, false);
+    kDebug() << "got range: " << r.m_range;
+    m_should_complete = !r.m_range.isEmpty();
     if (m_should_complete)
         return KTextEditor::CodeCompletionModelControllerInterface3::shouldStartCompletion(
             view, inserted_text, user_insertion, position
           );
-    r.setBothLines(position.line());
-    m_closer = left_text[r.start().column() - 1];
+    r.m_range.setBothLines(position.line());
+    m_closer = left_text[r.m_range.start().column() - 1];
     kDebug() << "closer=" << m_closer;
     return m_should_complete;
 }
@@ -143,10 +143,10 @@ void IncludeHelperPluginCompletionModel::completionInvoked(
         kDebug() << range << ", " << doc->text(range);
         const QString& t = doc->line(range.start().line()).left(range.start().column());
         kDebug() << "text to parse: " << t;
-        KTextEditor::Range r = kate::parseIncludeDirective(t, false);
-        r.setBothLines(range.start().line());
-        kDebug() << "parsed range: " << r;
-        updateCompletionList(doc->text(r));
+        IncludeParseResult r = parseIncludeDirective(t, false);
+        r.m_range.setBothLines(range.start().line());
+        kDebug() << "parsed range: " << r.m_range;
+        updateCompletionList(doc->text(r.m_range));
     }
 }
 
@@ -287,7 +287,6 @@ void IncludeHelperPluginCompletionModel::executeCompletionItem2(
   , const QModelIndex& index
   ) const
 {
-    // Call default handler
     QString p = index.row() < m_dir_completions.size()
       ? m_dir_completions[index.row()]
       : m_file_completions[index.row() - m_dir_completions.size()]

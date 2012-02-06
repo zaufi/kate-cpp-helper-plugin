@@ -29,8 +29,25 @@
 #  include <KTextEditor/Range>
 
 namespace kate {
+struct IncludeStyle
+{
+    enum type
+    {
+        unknown                                             ///< Pase errors seems occurs before complete
+      , local                                               ///< \c '"' used to \c #include a file
+      , global                                              ///< \c '<',\c '>' used to \c #include a file
+    };
+};
+
+struct IncludeParseResult
+{
+    KTextEditor::Range m_range;                             ///< A range w/ filename of \c #include directive
+    IncludeStyle::type m_type;
+    bool m_is_complete;
+};
+
 /// Get filename of \c #include directive at given line
-KTextEditor::Range parseIncludeDirective(const QString&, const bool);
+IncludeParseResult parseIncludeDirective(const QString&, const bool);
 /// \c true if given MIME type string belongs to C/C++ source
 inline bool isCOrPPSource(const QString& mime_str)
 {

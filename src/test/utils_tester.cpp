@@ -45,108 +45,158 @@ void ok_parser_test(const bool f)
 {
     BOOST_TEST_MESSAGE("Testing parser w/ stric flag: " << f);
     {
-        KTextEditor::Range r = parseIncludeDirective("#include <foo.h>", f);
-        BOOST_CHECK_EQUAL(r.start().column(), 10);
-        BOOST_CHECK_EQUAL(r.end().column(), 15);
+        kate::IncludeParseResult r = parseIncludeDirective("#include <foo.h>", f);
+        BOOST_CHECK_EQUAL(r.m_range.start().column(), 10);
+        BOOST_CHECK_EQUAL(r.m_range.end().column(), 15);
+        BOOST_CHECK_EQUAL(r.m_is_complete, true);
     }
     {
-        KTextEditor::Range r = parseIncludeDirective("#include <", f);
-        BOOST_CHECK_EQUAL(r.start().column(), 10);
-        BOOST_CHECK_EQUAL(r.end().column(), 11);
+        kate::IncludeParseResult r = parseIncludeDirective("#  include <foo.h>", f);
+        BOOST_CHECK_EQUAL(r.m_range.start().column(), 12);
+        BOOST_CHECK_EQUAL(r.m_range.end().column(), 17);
+        BOOST_CHECK_EQUAL(r.m_is_complete, true);
     }
     {
-        KTextEditor::Range r = parseIncludeDirective("#include <f", f);
-        BOOST_CHECK_EQUAL(r.start().column(), 10);
-        BOOST_CHECK_EQUAL(r.end().column(), 11);
+        kate::IncludeParseResult r = parseIncludeDirective("  #  include <foo.h>", f);
+        BOOST_CHECK_EQUAL(r.m_range.start().column(), 14);
+        BOOST_CHECK_EQUAL(r.m_range.end().column(), 19);
+        BOOST_CHECK_EQUAL(r.m_is_complete, true);
     }
     {
-        KTextEditor::Range r = parseIncludeDirective("#  include <foo.h>", f);
-        BOOST_CHECK_EQUAL(r.start().column(), 12);
-        BOOST_CHECK_EQUAL(r.end().column(), 17);
+        kate::IncludeParseResult r = parseIncludeDirective("  #include <foo.h>", f);
+        BOOST_CHECK_EQUAL(r.m_range.start().column(), 12);
+        BOOST_CHECK_EQUAL(r.m_range.end().column(), 17);
+        BOOST_CHECK_EQUAL(r.m_is_complete, true);
     }
     {
-        KTextEditor::Range r = parseIncludeDirective("  #  include <foo.h>", f);
-        BOOST_CHECK_EQUAL(r.start().column(), 14);
-        BOOST_CHECK_EQUAL(r.end().column(), 19);
+        kate::IncludeParseResult r = parseIncludeDirective("#include <foo.h>  ", f);
+        BOOST_CHECK_EQUAL(r.m_range.start().column(), 10);
+        BOOST_CHECK_EQUAL(r.m_range.end().column(), 15);
+        BOOST_CHECK_EQUAL(r.m_is_complete, true);
     }
     {
-        KTextEditor::Range r = parseIncludeDirective("  #include <foo.h>", f);
-        BOOST_CHECK_EQUAL(r.start().column(), 12);
-        BOOST_CHECK_EQUAL(r.end().column(), 17);
+        kate::IncludeParseResult r = parseIncludeDirective("#include <foo.h>  // comment", f);
+        BOOST_CHECK_EQUAL(r.m_range.start().column(), 10);
+        BOOST_CHECK_EQUAL(r.m_range.end().column(), 15);
+        BOOST_CHECK_EQUAL(r.m_is_complete, true);
     }
+
+    {
+        kate::IncludeParseResult r = parseIncludeDirective("#include <", f);
+        if (f)
+        {
+            BOOST_CHECK_EQUAL(r.m_range.start().column(), 0);
+            BOOST_CHECK_EQUAL(r.m_range.end().column(), 0);
+        }
+        else
+        {
+            BOOST_CHECK_EQUAL(r.m_range.start().column(), 10);
+            BOOST_CHECK_EQUAL(r.m_range.end().column(), 11);
+        }
+        BOOST_CHECK_EQUAL(r.m_is_complete, false);
+    }
+    {
+        kate::IncludeParseResult r = parseIncludeDirective("#include <f", f);
+        if (f)
+        {
+            BOOST_CHECK_EQUAL(r.m_range.start().column(), 0);
+            BOOST_CHECK_EQUAL(r.m_range.end().column(), 0);
+        }
+        else
+        {
+            BOOST_CHECK_EQUAL(r.m_range.start().column(), 10);
+            BOOST_CHECK_EQUAL(r.m_range.end().column(), 11);
+        }
+        BOOST_CHECK_EQUAL(r.m_is_complete, false);
+    }
+
 }
 
 void fail_parser_test(const bool f)
 {
     {
-        KTextEditor::Range r = parseIncludeDirective("", f);
-        BOOST_CHECK_EQUAL(r.start().column(), 0);
-        BOOST_CHECK_EQUAL(r.end().column(), 0);
+        kate::IncludeParseResult r = parseIncludeDirective("", f);
+        BOOST_CHECK_EQUAL(r.m_range.start().column(), 0);
+        BOOST_CHECK_EQUAL(r.m_range.end().column(), 0);
+        BOOST_CHECK_EQUAL(r.m_is_complete, false);
     }
     {
-        KTextEditor::Range r = parseIncludeDirective("#", f);
-        BOOST_CHECK_EQUAL(r.start().column(), 0);
-        BOOST_CHECK_EQUAL(r.end().column(), 0);
+        kate::IncludeParseResult r = parseIncludeDirective("#", f);
+        BOOST_CHECK_EQUAL(r.m_range.start().column(), 0);
+        BOOST_CHECK_EQUAL(r.m_range.end().column(), 0);
+        BOOST_CHECK_EQUAL(r.m_is_complete, false);
     }
     {
-        KTextEditor::Range r = parseIncludeDirective("  ", f);
-        BOOST_CHECK_EQUAL(r.start().column(), 0);
-        BOOST_CHECK_EQUAL(r.end().column(), 0);
+        kate::IncludeParseResult r = parseIncludeDirective("  ", f);
+        BOOST_CHECK_EQUAL(r.m_range.start().column(), 0);
+        BOOST_CHECK_EQUAL(r.m_range.end().column(), 0);
+        BOOST_CHECK_EQUAL(r.m_is_complete, false);
     }
     {
-        KTextEditor::Range r = parseIncludeDirective(" #", f);
-        BOOST_CHECK_EQUAL(r.start().column(), 0);
-        BOOST_CHECK_EQUAL(r.end().column(), 0);
+        kate::IncludeParseResult r = parseIncludeDirective(" #", f);
+        BOOST_CHECK_EQUAL(r.m_range.start().column(), 0);
+        BOOST_CHECK_EQUAL(r.m_range.end().column(), 0);
+        BOOST_CHECK_EQUAL(r.m_is_complete, false);
     }
     {
-        KTextEditor::Range r = parseIncludeDirective(" # ", f);
-        BOOST_CHECK_EQUAL(r.start().column(), 0);
-        BOOST_CHECK_EQUAL(r.end().column(), 0);
+        kate::IncludeParseResult r = parseIncludeDirective(" # ", f);
+        BOOST_CHECK_EQUAL(r.m_range.start().column(), 0);
+        BOOST_CHECK_EQUAL(r.m_range.end().column(), 0);
+        BOOST_CHECK_EQUAL(r.m_is_complete, false);
     }
     {
-        KTextEditor::Range r = parseIncludeDirective("# ", f);
-        BOOST_CHECK_EQUAL(r.start().column(), 0);
-        BOOST_CHECK_EQUAL(r.end().column(), 0);
+        kate::IncludeParseResult r = parseIncludeDirective("# ", f);
+        BOOST_CHECK_EQUAL(r.m_range.start().column(), 0);
+        BOOST_CHECK_EQUAL(r.m_range.end().column(), 0);
+        BOOST_CHECK_EQUAL(r.m_is_complete, false);
     }
     {
-        KTextEditor::Range r = parseIncludeDirective("#s", f);
-        BOOST_CHECK_EQUAL(r.start().column(), 0);
-        BOOST_CHECK_EQUAL(r.end().column(), 0);
+        kate::IncludeParseResult r = parseIncludeDirective("#s", f);
+        BOOST_CHECK_EQUAL(r.m_range.start().column(), 0);
+        BOOST_CHECK_EQUAL(r.m_range.end().column(), 0);
+        BOOST_CHECK_EQUAL(r.m_is_complete, false);
     }
     {
-        KTextEditor::Range r = parseIncludeDirective("#smth", f);
-        BOOST_CHECK_EQUAL(r.start().column(), 0);
-        BOOST_CHECK_EQUAL(r.end().column(), 0);
+        kate::IncludeParseResult r = parseIncludeDirective("#smth", f);
+        BOOST_CHECK_EQUAL(r.m_range.start().column(), 0);
+        BOOST_CHECK_EQUAL(r.m_range.end().column(), 0);
+        BOOST_CHECK_EQUAL(r.m_is_complete, false);
     }
     {
-        KTextEditor::Range r = parseIncludeDirective("# s", f);
-        BOOST_CHECK_EQUAL(r.start().column(), 0);
-        BOOST_CHECK_EQUAL(r.end().column(), 0);
+        kate::IncludeParseResult r = parseIncludeDirective("# s", f);
+        BOOST_CHECK_EQUAL(r.m_range.start().column(), 0);
+        BOOST_CHECK_EQUAL(r.m_range.end().column(), 0);
+        BOOST_CHECK_EQUAL(r.m_is_complete, false);
     }
     {
-        KTextEditor::Range r = parseIncludeDirective("# smth", f);
-        BOOST_CHECK_EQUAL(r.start().column(), 0);
-        BOOST_CHECK_EQUAL(r.end().column(), 0);
+        kate::IncludeParseResult r = parseIncludeDirective("# smth", f);
+        BOOST_CHECK_EQUAL(r.m_range.start().column(), 0);
+        BOOST_CHECK_EQUAL(r.m_range.end().column(), 0);
+        BOOST_CHECK_EQUAL(r.m_is_complete, false);
     }
     {
-        KTextEditor::Range r = parseIncludeDirective("#include", f);
-        BOOST_CHECK_EQUAL(r.start().column(), 0);
-        BOOST_CHECK_EQUAL(r.end().column(), 0);
+        kate::IncludeParseResult r = parseIncludeDirective("#include", f);
+        BOOST_CHECK_EQUAL(r.m_range.start().column(), 0);
+        BOOST_CHECK_EQUAL(r.m_range.end().column(), 0);
+        BOOST_CHECK_EQUAL(r.m_is_complete, false);
     }
     {
-        KTextEditor::Range r = parseIncludeDirective("#incude ", f);
-        BOOST_CHECK_EQUAL(r.start().column(), 0);
-        BOOST_CHECK_EQUAL(r.end().column(), 0);
+        kate::IncludeParseResult r = parseIncludeDirective("#incude ", f);
+        BOOST_CHECK_EQUAL(r.m_range.start().column(), 0);
+        BOOST_CHECK_EQUAL(r.m_range.end().column(), 0);
+        BOOST_CHECK_EQUAL(r.m_is_complete, false);
     }
     {
-        KTextEditor::Range r = parseIncludeDirective("#incuded", f);
-        BOOST_CHECK_EQUAL(r.start().column(), 0);
-        BOOST_CHECK_EQUAL(r.end().column(), 0);
+        kate::IncludeParseResult r = parseIncludeDirective("#incuded", f);
+        BOOST_CHECK_EQUAL(r.m_range.start().column(), 0);
+        BOOST_CHECK_EQUAL(r.m_range.end().column(), 0);
+        BOOST_CHECK_EQUAL(r.m_is_complete, false);
     }
     {
-        KTextEditor::Range r = parseIncludeDirective("#include smth", f);
-        BOOST_CHECK_EQUAL(r.start().column(), 0);
-        BOOST_CHECK_EQUAL(r.end().column(), 0);
+        kate::IncludeParseResult r = parseIncludeDirective("#include smth", f);
+        BOOST_CHECK_EQUAL(r.m_range.start().column(), 0);
+        BOOST_CHECK_EQUAL(r.m_range.end().column(), 0);
+        BOOST_CHECK_EQUAL(r.m_is_complete, false);
     }
 }
 }                                                           // anonymous namespace

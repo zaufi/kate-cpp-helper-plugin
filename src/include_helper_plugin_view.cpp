@@ -217,11 +217,11 @@ KTextEditor::Range IncludeHelperPluginView::currentWord() const
     QString line_str = kv->document()->line(line);
 
     // Check if current line starts w/ #include
-    KTextEditor::Range r = parseIncludeDirective(line_str, false);
-    if (!r.isEmpty())
+    kate::IncludeParseResult r = parseIncludeDirective(line_str, false);
+    if (!r.m_range.isEmpty())
     {
-        r.setBothLines(line);
-        return r;
+        r.m_range.setBothLines(line);
+        return r.m_range;
     }
 
     // No #include parsed... fallback to the default way:
