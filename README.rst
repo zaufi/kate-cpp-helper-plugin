@@ -46,3 +46,5 @@ TODO
 * List of currently ``#included`` files in a dialog and/or menu
 * OpenFile dialog for current ``#include`` line
 * Is it possible to use annotations iface somehow to indicate 'not-found' #include file?
+* Add quick open dialog -- like quick document switcher, but allows to find file to open
+  based on configured include paths by partial name match...
