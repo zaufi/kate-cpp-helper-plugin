@@ -68,7 +68,7 @@ QModelIndex IncludeHelperPluginCompletionModel::index(int row, int column, const
 /**
  * Initiate completion when there is \c #include on a line (\c m_range
  * in a result of \c parseIncludeDirective() not empty -- i.e. there is some file present)
- * and cursor placed withing that range...
+ * and cursor placed withing that range... despite of completeness of the whole line.
  */
 bool IncludeHelperPluginCompletionModel::shouldStartCompletion(
     KTextEditor::View* view
@@ -81,7 +81,8 @@ bool IncludeHelperPluginCompletionModel::shouldStartCompletion(
     QString line = view->document()->line(position.line()); // Get current line
     // Try to parse it...
     IncludeParseResult r = parseIncludeDirective(line, false);
-    if (!r.m_range.isEmpty())
+    m_should_complete = !r.m_range.isEmpty();
+    if (m_should_complete)
     {
         kDebug() << "range=" << r.m_range;
         m_should_complete = position.column() >= r.m_range.start().column()
@@ -89,18 +90,15 @@ bool IncludeHelperPluginCompletionModel::shouldStartCompletion(
         if (m_should_complete)
         {
             m_closer = r.close_char();
-            r.m_range.setBothLines(position.line());
             kDebug() << "closer=" << m_closer;
         }
     }
-    return m_should_complete || KTextEditor::CodeCompletionModelControllerInterface3::shouldStartCompletion(
-        view, inserted_text, user_insertion, position
-      );
+    return m_should_complete;
 }
 
 /**
- * We have to stop \c #include completion when...
- * \todo TBD
+ * We have to stop \c #include completion when current line would parsed well
+ * (i.e. contains complete \c #include expression) or have no \c #include at all.
  */
 bool IncludeHelperPluginCompletionModel::shouldAbortCompletion(
     KTextEditor::View* view
@@ -110,44 +108,41 @@ bool IncludeHelperPluginCompletionModel::shouldAbortCompletion(
 {
     kDebug() << "range=" << range << ", current_completion=" << current_completion;
     kDebug() << "m_should_complete=" << m_should_complete << ", closer=" << m_closer;
-    kDebug() << "last=" << current_completion[current_completion.length() - 1];
-    if (m_should_complete)
-    {
-        const bool done = !current_completion.isEmpty()
-          && current_completion[current_completion.length() - 1] == m_closer;
-        if (done)
-        {
-            m_should_complete = false;
-            m_dir_completions.clear();
-            m_file_completions.clear();
-            m_closer = 0;
-        }
-        kDebug() << "done=" << done;
-        return done;
-    }
-    return KTextEditor::CodeCompletionModelControllerInterface3::shouldAbortCompletion(
-        view, range, current_completion
-      );
+
+    // Get current line
+    QString line = view->document()->line(range.end().line());
+    // Try to parse it...
+    IncludeParseResult r = parseIncludeDirective(line, false);
+    const bool need_abort = r.m_range.isEmpty()             // nothing to complete for lines w/o #include
+      || range.end().column() < r.m_range.start().column()
+      || range.end().column() > (r.m_range.end().column() + 1)
+      ;
+    kDebug() << "result=" << need_abort;
+    return need_abort;
 }
 
 void IncludeHelperPluginCompletionModel::completionInvoked(
     KTextEditor::View* view
   , const KTextEditor::Range& range
-  , InvocationType invocationType
+  , InvocationType
   )
 {
-    if (invocationType != KTextEditor::CodeCompletionModel2::AutomaticInvocation || m_should_complete)
+    KTextEditor::Document* doc = view->document();
+    kDebug() << range << ", " << doc->text(range);
+    const QString& t = doc->line(range.start().line()).left(range.start().column());
+    kDebug() << "text to parse: " << t;
+    IncludeParseResult r = parseIncludeDirective(t, false);
+    if (!r.m_range.isEmpty())
     {
-        KTextEditor::Document* doc = view->document();
-        kDebug() << range << ", " << doc->text(range);
-        const QString& t = doc->line(range.start().line()).left(range.start().column());
-        kDebug() << "text to parse: " << t;
-        IncludeParseResult r = parseIncludeDirective(t, false);
-        r.m_range.setBothLines(range.start().line());
-        kDebug() << "parsed range: " << r.m_range;
-        m_should_complete = true;
-        m_closer = r.close_char();
-        updateCompletionList(doc->text(r.m_range), r.m_type == IncludeStyle::local);
+        m_should_complete = range.start().column() >= r.m_range.start().column()
+            && range.start().column() <= r.m_range.end().column();
+        if (m_should_complete)
+        {
+            r.m_range.setBothLines(range.start().line());
+            kDebug() << "parsed range: " << r.m_range;
+            m_closer = r.close_char();
+            updateCompletionList(doc->text(r.m_range), r.m_type == IncludeStyle::local);
+        }
     }
 }
 
@@ -289,7 +284,6 @@ void IncludeHelperPluginCompletionModel::executeCompletionItem2(
   ) const
 {
     kDebug() << "rword=" << word;
-    kDebug() << "word=" << document->text(word);
     QString p = index.row() < m_dir_completions.size()
       ? m_dir_completions[index.row()]
       : m_file_completions[index.row() - m_dir_completions.size()]
@@ -312,16 +306,29 @@ KTextEditor::Range IncludeHelperPluginCompletionModel::completionRange(
   )
 {
     kDebug() << "cursor: " << position;
-//     if (m_should_complete)
-//     {
-//         QString text = view->document()->line(position.line());
-//         kDebug() << "t2p: " << text;
-//         KTextEditor::Range result = parseIncludeDirective(text, false);
-//         result.setBothLines(position.line());
-//         kDebug() << "result: " << result;
-//         return result;
-//     }
+    QString line = view->document()->line(position.line());
+    IncludeParseResult r = parseIncludeDirective(line, false);
+    if (!r.m_range.isEmpty())
+    {
+        int start = line.lastIndexOf('/', r.m_range.end().column() - 1);
+        kDebug() << "init start=" << start;
+        start = start == -1 ? r.m_range.start().column() : start + 1;
+        kDebug() << "fixed start=" << start;
+        KTextEditor::Range range(
+            position.line()
+          , start
+          , position.line()
+          , r.m_range.end().column()
+          );
+        kDebug() << "selected range: " << range;
+        return range;
+    }
+    kDebug() << "default select";
+#if 0
+    return KTextEditor::Range();
+#else
     return KTextEditor::CodeCompletionModelControllerInterface3::completionRange(view, position);
+#endif
 }
 //END IncludeHelperPluginCompletionModel
 }                                                           // namespace kate

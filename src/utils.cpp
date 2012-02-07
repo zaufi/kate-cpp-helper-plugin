@@ -75,6 +75,7 @@ IncludeParseResult parseIncludeDirective(const QString& line, const bool strict)
                         state = foundHash;
                         continue;
                     }
+                    kDebug() << "pase failure: smth other than '#' first char in a line";
                     return result;                          // Error: smth other than '#' first char in a line
                 }
                 break;
@@ -86,7 +87,10 @@ IncludeParseResult parseIncludeDirective(const QString& line, const bool strict)
                 // NOTE No `break' here!
             case checkInclude:
                 if ("include"[tmp++] != line[pos])
-                    return result;                          // Error: not 'include' after '#'
+                {
+                    kDebug() << "pase failure: is not 'include' after '#'";
+                    return result;                          // Error: is not 'include' after '#'
+                }
                 if (tmp == 7)
                     state = skipSpaces;
                 break;
@@ -104,7 +108,11 @@ IncludeParseResult parseIncludeDirective(const QString& line, const bool strict)
                     close = '"';
                     result.m_type = IncludeStyle::local;
                 }
-                else return result;
+                else
+                {
+                    kDebug() << "pase failure: not a valid open char";
+                    return result;
+                }
                 state = foundOpenChar;
                 break;                                      // NOTE We have to move to next char (if remain smth)
             case foundOpenChar:
@@ -122,7 +130,10 @@ IncludeParseResult parseIncludeDirective(const QString& line, const bool strict)
                 else if (line[pos] == ' ' || line[pos] == '\t')
                 {
                     if (strict)
+                    {
+                        kDebug() << "pase failure: space before close char met";
                         return result;                      // in strict mode return false for incomplete #include
+                    }
                     state = stop;                           // otherwise, it is Ok to have incomplete string...
                     end = pos;
                 }
@@ -138,10 +149,12 @@ IncludeParseResult parseIncludeDirective(const QString& line, const bool strict)
         case foundOpenChar:
             if (!strict)
                 result.m_range = KTextEditor::Range(0, line.length(), 0, line.length() + 1);
+            kDebug() << "pase failure: EOL after open char";
             break;
         case findCloseChar:
             if (!strict)
                 result.m_range = KTextEditor::Range(0, start, 0, line.length());
+            kDebug() << "pase failure: EOL before close char";
             break;
         case stop:
             result.m_range = KTextEditor::Range(0, start, 0, end);
@@ -154,6 +167,7 @@ IncludeParseResult parseIncludeDirective(const QString& line, const bool strict)
         default:
             assert(!"Parsing FSM broken!");
     }
+    kDebug() << "result-range=" << result.m_range << ", is_complete=" << result.m_is_complete;
     return result;
 }
 
