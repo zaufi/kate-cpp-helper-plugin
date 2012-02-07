@@ -248,6 +248,8 @@ QVariant IncludeHelperPluginCompletionModel::data(const QModelIndex& index, int 
                     // kDebug() << "Prefix";
                     if (!index.parent().isValid())
                         return i18n("Include Helper");
+                    else if (index.row() < m_dir_completions.size())
+                        return i18n("dir");
                 case KTextEditor::CodeCompletionModel::Scope:
                     // kDebug() << "Scope";
                     break;
