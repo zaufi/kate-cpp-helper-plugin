@@ -14,16 +14,28 @@
   <property name="windowTitle">
    <string>Form</string>
   </property>
-  <layout class="QHBoxLayout" name="horizontalLayout_2">
+  <layout class="QVBoxLayout" name="verticalLayout_3">
    <item>
     <widget class="KTabWidget" name="ktabwidget">
      <property name="layoutDirection">
       <enum>Qt::LeftToRight</enum>
      </property>
      <property name="currentIndex">
-      <number>2</number>
+      <number>1</number>
      </property>
      <widget class="QWidget" name="tabGlobal">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>16777215</width>
+        <height>16777215</height>
+       </size>
+      </property>
       <property name="layoutDirection">
        <enum>Qt::LeftToRight</enum>
       </property>
@@ -32,34 +44,33 @@
       </attribute>
       <layout class="QGridLayout" name="gridLayout">
        <item row="0" column="0">
-        <widget class="QGroupBox" name="groupBox">
+        <widget class="QGroupBox" name="g_groupBox">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>16777215</width>
+           <height>16777215</height>
+          </size>
+         </property>
          <property name="title">
           <string/>
          </property>
-         <layout class="QHBoxLayout" name="horizontalLayout">
-          <item>
+         <layout class="QGridLayout" name="gridLayout_3">
+          <item row="0" column="0">
            <widget class="KListWidget" name="globalDirsList">
             <property name="toolTip">
              <string>List of directories to lookup header files</string>
             </property>
            </widget>
           </item>
-          <item>
-           <layout class="QGridLayout" name="gridLayout_2">
-            <item row="2" column="0">
-             <spacer name="verticalSpacer">
-              <property name="orientation">
-               <enum>Qt::Vertical</enum>
-              </property>
-              <property name="sizeHint" stdset="0">
-               <size>
-                <width>1</width>
-                <height>1</height>
-               </size>
-              </property>
-             </spacer>
-            </item>
-            <item row="0" column="0">
+          <item row="0" column="1">
+           <layout class="QVBoxLayout" name="g_verticalLayout">
+            <item>
              <widget class="QPushButton" name="addToGlobalButton">
               <property name="toolTip">
                <string>Add directory to the list</string>
@@ -69,7 +80,7 @@
               </property>
              </widget>
             </item>
-            <item row="1" column="0">
+            <item>
              <widget class="QPushButton" name="delFromGlobalButton">
               <property name="toolTip">
                <string>Remove directory from the list</string>
@@ -79,6 +90,39 @@
               </property>
              </widget>
             </item>
+            <item>
+             <widget class="QPushButton" name="moveGlobalUpButton">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Move current directory up&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+              <property name="text">
+               <string>Move Up</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="moveGlobalDownButton">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Move current directory down&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+              <property name="text">
+               <string>Move Down</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <spacer name="g_verticalSpacer">
+              <property name="orientation">
+               <enum>Qt::Vertical</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>13</width>
+                <height>13</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
            </layout>
           </item>
          </layout>
@@ -87,16 +131,40 @@
       </layout>
      </widget>
      <widget class="QWidget" name="tabSession">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>16777215</width>
+        <height>16777215</height>
+       </size>
+      </property>
       <attribute name="title">
        <string>Per session include dirs</string>
       </attribute>
       <layout class="QGridLayout" name="gridLayout_5">
        <item row="0" column="0">
-        <widget class="QGroupBox" name="groupBox_2">
+        <widget class="QGroupBox" name="s_groupBox">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>16777215</width>
+           <height>16777215</height>
+          </size>
+         </property>
          <property name="title">
           <string/>
          </property>
-         <layout class="QGridLayout" name="gridLayout_4">
+         <layout class="QGridLayout" name="gridLayout_2">
           <item row="0" column="0">
            <widget class="KListWidget" name="sessionDirsList">
             <property name="toolTip">
@@ -105,21 +173,8 @@
            </widget>
           </item>
           <item row="0" column="1">
-           <layout class="QGridLayout" name="gridLayout_3">
-            <item row="2" column="0">
-             <spacer name="verticalSpacer_2">
-              <property name="orientation">
-               <enum>Qt::Vertical</enum>
-              </property>
-              <property name="sizeHint" stdset="0">
-               <size>
-                <width>1</width>
-                <height>1</height>
-               </size>
-              </property>
-             </spacer>
-            </item>
-            <item row="0" column="0">
+           <layout class="QVBoxLayout" name="s_verticalLayout">
+            <item>
              <widget class="QPushButton" name="addToSessionButton">
               <property name="toolTip">
                <string>Add directory to the list</string>
@@ -129,7 +184,7 @@
               </property>
              </widget>
             </item>
-            <item row="1" column="0">
+            <item>
              <widget class="QPushButton" name="delFromSessionButton">
               <property name="toolTip">
                <string>Remove directory from the list</string>
@@ -138,6 +193,39 @@
                <string>Remove</string>
               </property>
              </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="moveSessionUpButton">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Move current directory up&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+              <property name="text">
+               <string>Move Up</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="moveSessionDownButton">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Move current directory down&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+              <property name="text">
+               <string>Move Down</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <spacer name="s_verticalSpacer">
+              <property name="orientation">
+               <enum>Qt::Vertical</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>13</width>
+                <height>13</height>
+               </size>
+              </property>
+             </spacer>
             </item>
            </layout>
           </item>
@@ -184,6 +272,20 @@
    <container>1</container>
   </customwidget>
  </customwidgets>
+ <tabstops>
+  <tabstop>ktabwidget</tabstop>
+  <tabstop>sessionDirsList</tabstop>
+  <tabstop>addToSessionButton</tabstop>
+  <tabstop>delFromSessionButton</tabstop>
+  <tabstop>moveSessionUpButton</tabstop>
+  <tabstop>moveSessionDownButton</tabstop>
+  <tabstop>globalDirsList</tabstop>
+  <tabstop>addToGlobalButton</tabstop>
+  <tabstop>delFromGlobalButton</tabstop>
+  <tabstop>moveGlobalUpButton</tabstop>
+  <tabstop>moveGlobalDownButton</tabstop>
+  <tabstop>includeMarkersSwitch</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>

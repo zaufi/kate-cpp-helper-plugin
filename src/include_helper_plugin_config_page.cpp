@@ -40,14 +40,23 @@ IncludeHelperPluginConfigPage::IncludeHelperPluginConfigPage(
     m_configuration_ui.setupUi(this);
     m_configuration_ui.addToGlobalButton->setIcon(KIcon("list-add"));
     m_configuration_ui.delFromGlobalButton->setIcon(KIcon("list-remove"));
+    m_configuration_ui.moveGlobalUpButton->setIcon(KIcon("arrow-up"));
+    m_configuration_ui.moveGlobalDownButton->setIcon(KIcon("arrow-down"));
     m_configuration_ui.addToSessionButton->setIcon(KIcon("list-add"));
     m_configuration_ui.delFromSessionButton->setIcon(KIcon("list-remove"));
+    m_configuration_ui.moveSessionUpButton->setIcon(KIcon("arrow-up"));
+    m_configuration_ui.moveSessionDownButton->setIcon(KIcon("arrow-down"));
 
     // Connect add/del buttons to actions
     connect(m_configuration_ui.addToGlobalButton, SIGNAL(clicked()), this, SLOT(addGlobalIncludeDir()));
     connect(m_configuration_ui.delFromGlobalButton, SIGNAL(clicked()), this, SLOT(delGlobalIncludeDir()));
+    connect(m_configuration_ui.moveGlobalUpButton, SIGNAL(clicked()), this, SLOT(moveGlobalDirUp()));
+    connect(m_configuration_ui.moveGlobalDownButton, SIGNAL(clicked()), this, SLOT(moveGlobalDirDown()));
+
     connect(m_configuration_ui.addToSessionButton, SIGNAL(clicked()), this, SLOT(addSessionIncludeDir()));
     connect(m_configuration_ui.delFromSessionButton, SIGNAL(clicked()), this, SLOT(delSessionIncludeDir()));
+    connect(m_configuration_ui.moveSessionUpButton, SIGNAL(clicked()), this, SLOT(moveSessionDirUp()));
+    connect(m_configuration_ui.moveSessionDownButton, SIGNAL(clicked()), this, SLOT(moveSessionDirDown()));
 
     // Populate configuration w/ dirs
     reset();
@@ -99,7 +108,31 @@ void IncludeHelperPluginConfigPage::addSessionIncludeDir()
 
 void IncludeHelperPluginConfigPage::delSessionIncludeDir()
 {
-    delete m_configuration_ui.sessionDirsList->currentItem();
+    m_configuration_ui.sessionDirsList->removeItemWidget(
+        m_configuration_ui.sessionDirsList->currentItem()
+      );
+}
+
+void IncludeHelperPluginConfigPage::moveSessionDirUp() {
+    const int current = m_configuration_ui.sessionDirsList->currentRow();
+    if (current) {
+        m_configuration_ui.sessionDirsList->insertItem(
+            current - 1
+          , m_configuration_ui.sessionDirsList->takeItem(current)
+          );
+        m_configuration_ui.sessionDirsList->setCurrentRow(current - 1);
+    }
+}
+
+void IncludeHelperPluginConfigPage::moveSessionDirDown() {
+    const int current = m_configuration_ui.sessionDirsList->currentRow();
+    if (current < m_configuration_ui.sessionDirsList->count() - 1) {
+        m_configuration_ui.sessionDirsList->insertItem(
+            current + 1
+          , m_configuration_ui.sessionDirsList->takeItem(current)
+          );
+        m_configuration_ui.sessionDirsList->setCurrentRow(current + 1);
+    }
 }
 
 void IncludeHelperPluginConfigPage::addGlobalIncludeDir()
@@ -115,7 +148,31 @@ void IncludeHelperPluginConfigPage::addGlobalIncludeDir()
 
 void IncludeHelperPluginConfigPage::delGlobalIncludeDir()
 {
-    delete m_configuration_ui.globalDirsList->currentItem();
+    m_configuration_ui.globalDirsList->removeItemWidget(
+        m_configuration_ui.globalDirsList->currentItem()
+      );
+}
+
+void IncludeHelperPluginConfigPage::moveGlobalDirUp() {
+    const int current = m_configuration_ui.globalDirsList->currentRow();
+    if (current) {
+        m_configuration_ui.globalDirsList->insertItem(
+            current - 1
+          , m_configuration_ui.globalDirsList->takeItem(current)
+          );
+        m_configuration_ui.globalDirsList->setCurrentRow(current - 1);
+    }
+}
+
+void IncludeHelperPluginConfigPage::moveGlobalDirDown() {
+    const int current = m_configuration_ui.globalDirsList->currentRow();
+    if (current < m_configuration_ui.globalDirsList->count() - 1) {
+        m_configuration_ui.globalDirsList->insertItem(
+            current + 1
+          , m_configuration_ui.globalDirsList->takeItem(current)
+          );
+        m_configuration_ui.globalDirsList->setCurrentRow(current + 1);
+    }
 }
 
 bool IncludeHelperPluginConfigPage::contains(const QString& dir, const KListWidget* list)

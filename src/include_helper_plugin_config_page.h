@@ -61,8 +61,12 @@ Q_SIGNALS:
 private Q_SLOTS:
     void addGlobalIncludeDir();                             ///< Add directory to the list
     void delGlobalIncludeDir();                             ///< Remove directory from the list
+    void moveGlobalDirUp();
+    void moveGlobalDirDown();
     void addSessionIncludeDir();                            ///< Add directory to the list
     void delSessionIncludeDir();                            ///< Remove directory from the list
+    void moveSessionDirUp();
+    void moveSessionDirDown();
 
 private:
     bool contains(const QString&, const KListWidget*);      ///< Check if directories list contains given item

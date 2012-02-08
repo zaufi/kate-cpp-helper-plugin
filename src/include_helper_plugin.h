@@ -103,7 +103,7 @@ public:
     {
         Q_UNUSED(number)
         assert("This plugin have the only configuration page" && number == 0);
-        return "List of include directories";
+        return "Inlcude Helper Settings";
     }
     KIcon configPageIcon(uint number = 0) const
     {
