@@ -21,7 +21,7 @@
       <enum>Qt::LeftToRight</enum>
      </property>
      <property name="currentIndex">
-      <number>1</number>
+      <number>2</number>
      </property>
      <widget class="QWidget" name="tabGlobal">
       <property name="layoutDirection">
@@ -158,6 +158,9 @@
          <width>421</width>
          <height>21</height>
         </rect>
+       </property>
+       <property name="whatsThis">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Enclose &lt;code&gt;#include&lt;/code&gt; directive into &lt;code&gt;&amp;lt;...&amp;gt;&lt;/code&gt; instead of &lt;code&gt;&amp;quot;...&amp;quot;&lt;/code&gt; for session include dirs&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
        </property>
        <property name="text">
         <string>#include session headers w/ '&lt;'/'&gt;'</string>

@@ -26,6 +26,7 @@
 #include <src/include_helper_plugin_view.h>
 
 // Standard includes
+#include <kate/application.h>
 #include <KAboutData>
 #include <KDebug>
 #include <KPluginFactory>
