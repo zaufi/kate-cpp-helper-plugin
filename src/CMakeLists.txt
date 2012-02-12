@@ -1,4 +1,5 @@
 set(KATE_INCLUDE_HELPER_PLUGIN_SOURCES
+    document_info.cpp
     include_helper_plugin_config_page.cpp
     include_helper_plugin_completion_model.cpp
     include_helper_plugin_view.cpp

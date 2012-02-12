@@ -27,7 +27,6 @@
 
 // Standard includes
 #  include <kate/plugin.h>
-#  include <KTextEditor/CodeCompletionInterface>
 #  include <KTextEditor/View>
 #  include <KAction>
 #  include <KDialog>
@@ -51,6 +50,12 @@ class IncludeHelperPluginView
 public:
     IncludeHelperPluginView(Kate::MainWindow*, const KComponentData&, IncludeHelperPlugin*);
     virtual ~IncludeHelperPluginView();
+
+    /// \name PluginView interface implementation
+    //@{
+    void readSessionConfig(KConfigBase*, const QString&);
+    void writeSessionConfig(KConfigBase*, const QString&);
+    //@}
 
 private Q_SLOTS:
     void openHeader();                                      ///< Open header file under cursor

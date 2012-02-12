@@ -53,6 +53,8 @@ IncludeHelperPlugin::IncludeHelperPlugin(
   , const QList<QVariant>&
   )
   : Kate::Plugin(static_cast<Kate::Application*>(application), "kate_includehelper_plugin")
+  , m_use_ltgt(true)
+  , m_config_dirty(false)
 {
 }
 
@@ -71,34 +73,50 @@ Kate::PluginConfigPage* IncludeHelperPlugin::configPage(uint number, QWidget* pa
 
 void IncludeHelperPlugin::readSessionConfig(KConfigBase* config, const QString& groupPrefix)
 {
+    kDebug() << "Reading session config: " << groupPrefix;
     // Read session config
+    /// \todo Rename it!
     KConfigGroup scg(config, groupPrefix + ":include-helper");
     QStringList session_dirs = scg.readPathEntry("ConfiguredDirs", QStringList());
     kDebug() << "Got per session configured include path list: " << session_dirs;
     // Read global config
+    kDebug() << "Reading global config: " << KGlobal::config()->name();
     KConfigGroup gcg(KGlobal::config(), "IncludeHelper");
     QStringList dirs = gcg.readPathEntry("ConfiguredDirs", QStringList());
     kDebug() << "Got global configured include path list: " << dirs;
     QVariant use_ltgt = gcg.readEntry("UseLtGt", QVariant(false));
     // Assign configuration
     m_session_dirs = session_dirs;
-    m_global_dirs = dirs;
+    m_system_dirs = dirs;
     m_use_ltgt = use_ltgt.toBool();
+    m_config_dirty = false;
 }
 
 void IncludeHelperPlugin::writeSessionConfig(KConfigBase* config, const QString& groupPrefix)
 {
+    kDebug() << "writing session config: " << groupPrefix;
+    if (!m_config_dirty)
+    {
+        /// \todo Maybe I don't understand smth, but rally strange things r going on here:
+        /// after plugin gets enabled, \c writeSessionConfig() would be called \b BEFORE
+        /// any attempt to read configuration...
+        kDebug() << "Config isn't dirty!!!";
+        readSessionConfig(config, groupPrefix);
+        return;
+    }
+
     // Write session config
     kDebug() << "Write per session configured include path list: " << m_session_dirs;
     KConfigGroup scg(config, groupPrefix + ":include-helper");
     scg.writePathEntry("ConfiguredDirs", m_session_dirs);
     scg.sync();
     // Read global config
-    kDebug() << "Write global configured include path list: " << m_global_dirs;
+    kDebug() << "Write global configured include path list: " << m_system_dirs;
     KConfigGroup gcg(KGlobal::config(), "IncludeHelper");
-    gcg.writePathEntry("ConfiguredDirs", m_global_dirs);
+    gcg.writePathEntry("ConfiguredDirs", m_system_dirs);
     gcg.writeEntry("UseLtGt", QVariant(m_use_ltgt));
     gcg.sync();
+    m_config_dirty = false;
 }
 
 //END IncludeHelperPlugin

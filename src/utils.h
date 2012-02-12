@@ -27,6 +27,8 @@
 
 // Standard includes
 #  include <KTextEditor/Range>
+#  include <QtCore/QFile>
+#  include <QtCore/QStringList>
 
 namespace kate {
 struct IncludeStyle
@@ -68,6 +70,7 @@ struct IncludeParseResult
 
 /// Get filename of \c #include directive at given line
 IncludeParseResult parseIncludeDirective(const QString&, const bool);
+
 /// \c true if given MIME type string belongs to C/C++ source
 inline bool isCOrPPSource(const QString& mime_str)
 {
@@ -77,5 +80,27 @@ inline bool isCOrPPSource(const QString& mime_str)
       || (mime_str == "text/x-chdr")
       ;
 }
+
+/// Find given header withing list of paths
+inline QStringList findHeader(const QString& file, const QStringList& locals, const QStringList& system)
+{
+    QStringList result;
+    // Try locals first
+    Q_FOREACH(const QString& path, locals)
+    {
+        QFile f(path + "/" + file);
+        if (f.exists())
+            result.push_back(path);
+    }
+    // Then try system paths
+    Q_FOREACH(const QString& path, system)
+    {
+        QFile f(path + "/" + file);
+        if (f.exists())
+            result.push_back(path);
+    }
+    return result;
+}
+
 }                                                           // namespace kate
 #endif                                                      // __SRC__UTILS_H__

@@ -26,12 +26,14 @@
 // Project specific includes
 
 // Standard includes
-#  include <KAction>
 #  include <kate/plugin.h>
 #  include <kate/pluginconfigpageinterface.h>
+#  include <KTextEditor/Document>
+#  include <KAction>
 #  include <cassert>
 
 namespace kate {
+class DocumentInfo;                                         // forward declaration
 
 /**
  * \brief [Type brief class description here]
@@ -45,6 +47,8 @@ class IncludeHelperPlugin : public Kate::Plugin, public Kate::PluginConfigPageIn
     Q_INTERFACES(Kate::PluginConfigPageInterface)
 
 public:
+    typedef QMap<KTextEditor::Document*, DocumentInfo*> doc_info_type;
+
     explicit IncludeHelperPlugin(QObject* parent = 0, const QList<QVariant>& = QList<QVariant>());
     virtual ~IncludeHelperPlugin() {}
 
@@ -59,11 +63,19 @@ public:
     }
     const QStringList& globalDirs() const
     {
-        return m_global_dirs;
+        return m_system_dirs;
     }
     bool useLtGt() const
     {
         return m_use_ltgt;
+    }
+    doc_info_type::mapped_type operator[](KTextEditor::Document* const doc) const
+    {
+        return m_doc_info[doc];
+    }
+    doc_info_type::mapped_type& operator[](KTextEditor::Document* const doc)
+    {
+        return m_doc_info[doc];
     }
     //@}
 
@@ -71,11 +83,21 @@ public:
     //@{
     void setSessionDirs(QStringList& dirs)
     {
-        m_session_dirs.swap(dirs);
+        if (m_session_dirs != dirs)
+        {
+            m_session_dirs.swap(dirs);
+            m_config_dirty = true;
+            Q_EMIT(sessionDirsChanged());
+        }
     }
     void setGlobalDirs(QStringList& dirs)
     {
-        m_global_dirs.swap(dirs);
+        if (m_system_dirs != dirs)
+        {
+            m_system_dirs.swap(dirs);
+            m_config_dirty = true;
+            Q_EMIT(systemDirsChanged());
+        }
     }
     void setUseLtGt(const bool state)
     {
@@ -119,12 +141,18 @@ public:
     void writeSessionConfig(KConfigBase*, const QString&);
     //@}
 
+Q_SIGNALS:
+    void sessionDirsChanged();
+    void systemDirsChanged();
+
 private:
-    QStringList m_global_dirs;
+    QStringList m_system_dirs;
     QStringList m_session_dirs;
+    doc_info_type m_doc_info;
     /// If \c true <em>Copy #include</em> action would put filename into \c '<' and \c '>'
     /// instead of \c '"'
     bool m_use_ltgt;
+    bool m_config_dirty;
 };
 }                                                           // namespace kate
 #endif                                                      // __SRC__INCLUDE_HELPER_PLUGIN_HH__

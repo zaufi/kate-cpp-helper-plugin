@@ -24,11 +24,14 @@
 #include <src/include_helper_plugin_view.h>
 #include <src/include_helper_plugin_completion_model.h>
 #include <src/include_helper_plugin.h>
+#include <src/document_info.h>
 #include <src/utils.h>
 
 // Standard includes
 #include <kate/mainwindow.h>
+#include <KTextEditor/CodeCompletionInterface>
 #include <KTextEditor/Document>
+#include <KTextEditor/MovingInterface>
 #include <KActionCollection>
 #include <KLocalizedString>                                 /// \todo Where is \c i18n() defiend?
 #include <KPassivePopup>
@@ -66,6 +69,16 @@ IncludeHelperPluginView::IncludeHelperPluginView(Kate::MainWindow* mw, const KCo
 
 IncludeHelperPluginView::~IncludeHelperPluginView() {
     mainWindow()->guiFactory()->removeClient(this);
+}
+
+void IncludeHelperPluginView::readSessionConfig(KConfigBase*, const QString& groupPrefix)
+{
+    kDebug() << "Reading session config: " << groupPrefix;
+}
+
+void IncludeHelperPluginView::writeSessionConfig(KConfigBase*, const QString& groupPrefix)
+{
+    kDebug() << "Writing session config: " << groupPrefix;
 }
 
 void IncludeHelperPluginView::openHeader()
@@ -190,6 +203,32 @@ void IncludeHelperPluginView::viewCreated(KTextEditor::View* view)
             cc_iface->setAutomaticInvocationEnabled(true);
         }
     }
+
+    KTextEditor::Document* doc = view->document();
+    KTextEditor::MovingInterface* mv_iface = qobject_cast<KTextEditor::MovingInterface*>(doc);
+
+    if (!mv_iface)
+    {
+        kDebug() << "No moving iface!!!!!!!!!!!";
+        return;
+    }
+    DocumentInfo* di = new DocumentInfo(m_plugin);
+
+    // Search lines and filenames #include'd in this document
+    for (int i = 0; i < doc->lines(); i++) {
+        const QString& line_str = doc->line(i);
+        kate::IncludeParseResult r = parseIncludeDirective(line_str, false);
+        if (!r.m_range.isEmpty()) {
+            r.m_range.setBothLines(i);
+            di->addRange(
+                mv_iface->newMovingRange(
+                    r.m_range
+                  , KTextEditor::MovingRange::ExpandLeft | KTextEditor::MovingRange::ExpandRight
+                  )
+              );
+        }
+    }
+    (*m_plugin)[doc] = di;
 }
 
 KTextEditor::Range IncludeHelperPluginView::currentWord() const
