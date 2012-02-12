@@ -35,9 +35,9 @@
 #include <KActionCollection>
 #include <KLocalizedString>                                 /// \todo Where is \c i18n() defiend?
 #include <KPassivePopup>
-#include <QApplication>
-#include <QClipboard>
-#include <QFileInfo>
+#include <QtGui/QApplication>
+#include <QtGui/QClipboard>
+#include <QtCore/QFileInfo>
 #include <cassert>
 
 namespace kate {
@@ -162,11 +162,23 @@ void IncludeHelperPluginView::copyInclude()
     {
         QString text;
         if (isCOrPPSource(kv->document()->mimeType()))
+        {
+            kDebug() << "current_dir=" << current_dir << ", lm=" << longest_matched;
+            int count = longest_matched.size();
+            for (; count < current_dir.size() && current_dir[count] == '/'; ++count) {}
+            current_dir.remove(0, count);
+            kDebug() << "current_dir=" << current_dir << ", lm=" << longest_matched;
+            if (!current_dir.isEmpty() && !current_dir.endsWith('/'))
+                current_dir += '/';
             text = QString("#include %1%2%3")
               .arg(open)
-              .arg(current_dir.remove(0, longest_matched.length()) + '/' + uri.fileName())
+              .arg(current_dir + uri.fileName())
               .arg(close);
-        else text = uri.prettyUrl();
+        }
+        else
+        {
+            text = uri.prettyUrl();
+        }
         QApplication::clipboard()->setText(text);
     }
 }

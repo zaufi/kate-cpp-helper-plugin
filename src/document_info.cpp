@@ -67,7 +67,7 @@ void DocumentInfo::updateStatus(State& s)
             s.m_status = Ok;
         else
             s.m_status = MultipleMatches;
-        kDebug() << "#include filename=" << filename << ", status=" << s.m_status;
+        kDebug() << "#include filename=" << filename << ", status=" << s.m_status << ", r=" << s.m_range;
 
         KTextEditor::MarkInterface* iface = qobject_cast<KTextEditor::MarkInterface*>(doc);
         const int line = s.m_range->start().line();
