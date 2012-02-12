@@ -29,7 +29,7 @@
 // Standard includes
 #include <KTextEditor/Document>
 #include <KTextEditor/View>
-#include <QDir>
+#include <QtCore/QDir>
 
 namespace kate {
 //BEGIN IncludeHelperPluginCompletionModel
@@ -81,7 +81,7 @@ bool IncludeHelperPluginCompletionModel::shouldStartCompletion(
     QString line = view->document()->line(position.line()); // Get current line
     // Try to parse it...
     IncludeParseResult r = parseIncludeDirective(line, false);
-    m_should_complete = !r.m_range.isEmpty();
+    m_should_complete = r.m_range.isValid();
     if (m_should_complete)
     {
         kDebug() << "range=" << r.m_range;
@@ -113,7 +113,8 @@ bool IncludeHelperPluginCompletionModel::shouldAbortCompletion(
     QString line = view->document()->line(range.end().line());
     // Try to parse it...
     IncludeParseResult r = parseIncludeDirective(line, false);
-    const bool need_abort = r.m_range.isEmpty()             // nothing to complete for lines w/o #include
+    // nothing to complete for lines w/o #include
+    const bool need_abort = !r.m_range.isValid()
       || range.end().column() < r.m_range.start().column()
       || range.end().column() > (r.m_range.end().column() + 1)
       ;
@@ -132,7 +133,7 @@ void IncludeHelperPluginCompletionModel::completionInvoked(
     const QString& t = doc->line(range.start().line()).left(range.start().column());
     kDebug() << "text to parse: " << t;
     IncludeParseResult r = parseIncludeDirective(t, false);
-    if (!r.m_range.isEmpty())
+    if (r.m_range.isValid())
     {
         m_should_complete = range.start().column() >= r.m_range.start().column()
             && range.start().column() <= r.m_range.end().column();
@@ -296,7 +297,7 @@ void IncludeHelperPluginCompletionModel::executeCompletionItem2(
         // Get line to be replaced and check if #include hase close char...
         QString line = document->line(word.start().line());
         IncludeParseResult r = parseIncludeDirective(line, false);
-        if (!r.m_range.isEmpty() && !r.m_is_complete)
+        if (r.m_range.isValid() && !r.m_is_complete)
             p += r.close_char();
     }
     document->replaceText(word, p);
@@ -310,7 +311,7 @@ KTextEditor::Range IncludeHelperPluginCompletionModel::completionRange(
     kDebug() << "cursor: " << position;
     QString line = view->document()->line(position.line());
     IncludeParseResult r = parseIncludeDirective(line, false);
-    if (!r.m_range.isEmpty())
+    if (r.m_range.isValid())
     {
         int start = line.lastIndexOf('/', r.m_range.end().column() - 1);
         kDebug() << "init start=" << start;

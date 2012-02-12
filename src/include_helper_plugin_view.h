@@ -62,6 +62,8 @@ private Q_SLOTS:
     void copyInclude();                                     ///< From #include directive w/ current file in the clipboard
     void viewChanged();
     void viewCreated(KTextEditor::View*);
+    void updateDocumentInfo(KTextEditor::Document*);
+    void textInserted(KTextEditor::Document*, const KTextEditor::Range&);
 
 private:
     KTextEditor::Range currentWord() const;                 ///< Get word under cursor as range

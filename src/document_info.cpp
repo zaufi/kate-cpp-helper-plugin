@@ -39,6 +39,15 @@ DocumentInfo::DocumentInfo(IncludeHelperPlugin* p)
     connect(m_plugin, SIGNAL(systemDirsChanged()), this, SLOT(updateStatus()));
 }
 
+DocumentInfo::~DocumentInfo()
+{
+    Q_FOREACH(const State& s, m_ranges)
+    {
+        kDebug() << "cleanup range: " << s.m_range;
+        delete s.m_range;
+    }
+}
+
 void DocumentInfo::addRange(KTextEditor::MovingRange* r)
 {
     assert("Sanity check" && r->onSingleLine());
@@ -59,7 +68,17 @@ void DocumentInfo::updateStatus(State& s)
     if (!s.m_range->isEmpty())
     {
         KTextEditor::Document* doc = s.m_range->document();
-        const QString filename = doc->text(s.m_range->toRange());
+        QString filename = doc->text(s.m_range->toRange());
+        // NOTE after autocompletion it is possible that closing '>' or '"' could
+        // appear as last symbol of the range... just try to exclude it!
+        if (filename.endsWith('>') || filename.endsWith('"'))
+        {
+            filename.resize(filename.size() - 1);
+            KTextEditor::Range shrinked = s.m_range->toRange();
+            shrinked.end().setColumn(shrinked.end().column() - 1);
+            s.m_range->setRange(shrinked);
+        }
+        // Check if given header available
         QStringList paths = findHeader(filename, m_plugin->sessionDirs(), m_plugin->globalDirs());
         if (paths.empty())
             s.m_status = NotFound;
@@ -98,7 +117,7 @@ DocumentInfo::registered_ranges_type::iterator DocumentInfo::findRange(KTextEdit
         registered_ranges_type::iterator it = m_ranges.begin()
       ; it != last
       ; ++it
-      ) if (it->m_range == range) return it;
+      ) if (it->m_range->toRange() == range->toRange()) return it;
     return last;
 }
 
@@ -111,11 +130,7 @@ void DocumentInfo::caretExitedRange(KTextEditor::MovingRange* range, KTextEditor
     }
 }
 
-#if 1
 void DocumentInfo::rangeEmpty(KTextEditor::MovingRange* range)
-#else
-void DocumentInfo::rangeInvalid(KTextEditor::MovingRange* range)
-#endif
 {
     registered_ranges_type::iterator it = findRange(range);
     if (it != m_ranges.end())
@@ -126,8 +141,14 @@ void DocumentInfo::rangeInvalid(KTextEditor::MovingRange* range)
     }
 }
 
-void DocumentInfo::updateStatus()
+/**
+ * \note Range invalidation event may occur only if document gets relaoded
+ * cuz we've made it w/ \c EmptyAllow option
+ */
+void DocumentInfo::rangeInvalid(KTextEditor::MovingRange* range)
 {
+    kDebug() << "It seems document reloaded... cleanup range...";
+    rangeEmpty(range);
 }
 
 }                                                           // namespace kate

@@ -50,7 +50,7 @@ public:
     typedef QMap<KTextEditor::Document*, DocumentInfo*> doc_info_type;
 
     explicit IncludeHelperPlugin(QObject* parent = 0, const QList<QVariant>& = QList<QVariant>());
-    virtual ~IncludeHelperPlugin() {}
+    virtual ~IncludeHelperPlugin();
 
     /// Create a new view of this plugin for the given main window
     Kate::PluginView *createView(Kate::MainWindow*);
@@ -69,13 +69,13 @@ public:
     {
         return m_use_ltgt;
     }
-    doc_info_type::mapped_type operator[](KTextEditor::Document* const doc) const
+    const doc_info_type& managed_docs() const
     {
-        return m_doc_info[doc];
+        return m_doc_info;
     }
-    doc_info_type::mapped_type& operator[](KTextEditor::Document* const doc)
+    doc_info_type& managed_docs()
     {
-        return m_doc_info[doc];
+        return m_doc_info;
     }
     //@}
 

@@ -85,13 +85,13 @@ void ok_parser_test(const bool f)
         kate::IncludeParseResult r = parseIncludeDirective("#include <", f);
         if (f)
         {
-            BOOST_CHECK_EQUAL(r.m_range.start().column(), 0);
-            BOOST_CHECK_EQUAL(r.m_range.end().column(), 0);
+            BOOST_CHECK_EQUAL(r.m_range.start().column(), -1);
+            BOOST_CHECK_EQUAL(r.m_range.end().column(), -1);
         }
         else
         {
             BOOST_CHECK_EQUAL(r.m_range.start().column(), 10);
-            BOOST_CHECK_EQUAL(r.m_range.end().column(), 11);
+            BOOST_CHECK_EQUAL(r.m_range.end().column(), 10);
         }
         BOOST_CHECK_EQUAL(r.m_is_complete, false);
     }
@@ -99,8 +99,8 @@ void ok_parser_test(const bool f)
         kate::IncludeParseResult r = parseIncludeDirective("#include <f", f);
         if (f)
         {
-            BOOST_CHECK_EQUAL(r.m_range.start().column(), 0);
-            BOOST_CHECK_EQUAL(r.m_range.end().column(), 0);
+            BOOST_CHECK_EQUAL(r.m_range.start().column(), -1);
+            BOOST_CHECK_EQUAL(r.m_range.end().column(), -1);
         }
         else
         {
@@ -116,86 +116,86 @@ void fail_parser_test(const bool f)
 {
     {
         kate::IncludeParseResult r = parseIncludeDirective("", f);
-        BOOST_CHECK_EQUAL(r.m_range.start().column(), 0);
-        BOOST_CHECK_EQUAL(r.m_range.end().column(), 0);
+        BOOST_CHECK_EQUAL(r.m_range.start().column(), -1);
+        BOOST_CHECK_EQUAL(r.m_range.end().column(), -1);
         BOOST_CHECK_EQUAL(r.m_is_complete, false);
     }
     {
         kate::IncludeParseResult r = parseIncludeDirective("#", f);
-        BOOST_CHECK_EQUAL(r.m_range.start().column(), 0);
-        BOOST_CHECK_EQUAL(r.m_range.end().column(), 0);
+        BOOST_CHECK_EQUAL(r.m_range.start().column(), -1);
+        BOOST_CHECK_EQUAL(r.m_range.end().column(), -1);
         BOOST_CHECK_EQUAL(r.m_is_complete, false);
     }
     {
         kate::IncludeParseResult r = parseIncludeDirective("  ", f);
-        BOOST_CHECK_EQUAL(r.m_range.start().column(), 0);
-        BOOST_CHECK_EQUAL(r.m_range.end().column(), 0);
+        BOOST_CHECK_EQUAL(r.m_range.start().column(), -1);
+        BOOST_CHECK_EQUAL(r.m_range.end().column(), -1);
         BOOST_CHECK_EQUAL(r.m_is_complete, false);
     }
     {
         kate::IncludeParseResult r = parseIncludeDirective(" #", f);
-        BOOST_CHECK_EQUAL(r.m_range.start().column(), 0);
-        BOOST_CHECK_EQUAL(r.m_range.end().column(), 0);
+        BOOST_CHECK_EQUAL(r.m_range.start().column(), -1);
+        BOOST_CHECK_EQUAL(r.m_range.end().column(), -1);
         BOOST_CHECK_EQUAL(r.m_is_complete, false);
     }
     {
         kate::IncludeParseResult r = parseIncludeDirective(" # ", f);
-        BOOST_CHECK_EQUAL(r.m_range.start().column(), 0);
-        BOOST_CHECK_EQUAL(r.m_range.end().column(), 0);
+        BOOST_CHECK_EQUAL(r.m_range.start().column(), -1);
+        BOOST_CHECK_EQUAL(r.m_range.end().column(), -1);
         BOOST_CHECK_EQUAL(r.m_is_complete, false);
     }
     {
         kate::IncludeParseResult r = parseIncludeDirective("# ", f);
-        BOOST_CHECK_EQUAL(r.m_range.start().column(), 0);
-        BOOST_CHECK_EQUAL(r.m_range.end().column(), 0);
+        BOOST_CHECK_EQUAL(r.m_range.start().column(), -1);
+        BOOST_CHECK_EQUAL(r.m_range.end().column(), -1);
         BOOST_CHECK_EQUAL(r.m_is_complete, false);
     }
     {
         kate::IncludeParseResult r = parseIncludeDirective("#s", f);
-        BOOST_CHECK_EQUAL(r.m_range.start().column(), 0);
-        BOOST_CHECK_EQUAL(r.m_range.end().column(), 0);
+        BOOST_CHECK_EQUAL(r.m_range.start().column(), -1);
+        BOOST_CHECK_EQUAL(r.m_range.end().column(), -1);
         BOOST_CHECK_EQUAL(r.m_is_complete, false);
     }
     {
         kate::IncludeParseResult r = parseIncludeDirective("#smth", f);
-        BOOST_CHECK_EQUAL(r.m_range.start().column(), 0);
-        BOOST_CHECK_EQUAL(r.m_range.end().column(), 0);
+        BOOST_CHECK_EQUAL(r.m_range.start().column(), -1);
+        BOOST_CHECK_EQUAL(r.m_range.end().column(), -1);
         BOOST_CHECK_EQUAL(r.m_is_complete, false);
     }
     {
         kate::IncludeParseResult r = parseIncludeDirective("# s", f);
-        BOOST_CHECK_EQUAL(r.m_range.start().column(), 0);
-        BOOST_CHECK_EQUAL(r.m_range.end().column(), 0);
+        BOOST_CHECK_EQUAL(r.m_range.start().column(), -1);
+        BOOST_CHECK_EQUAL(r.m_range.end().column(), -1);
         BOOST_CHECK_EQUAL(r.m_is_complete, false);
     }
     {
         kate::IncludeParseResult r = parseIncludeDirective("# smth", f);
-        BOOST_CHECK_EQUAL(r.m_range.start().column(), 0);
-        BOOST_CHECK_EQUAL(r.m_range.end().column(), 0);
+        BOOST_CHECK_EQUAL(r.m_range.start().column(), -1);
+        BOOST_CHECK_EQUAL(r.m_range.end().column(), -1);
         BOOST_CHECK_EQUAL(r.m_is_complete, false);
     }
     {
         kate::IncludeParseResult r = parseIncludeDirective("#include", f);
-        BOOST_CHECK_EQUAL(r.m_range.start().column(), 0);
-        BOOST_CHECK_EQUAL(r.m_range.end().column(), 0);
+        BOOST_CHECK_EQUAL(r.m_range.start().column(), -1);
+        BOOST_CHECK_EQUAL(r.m_range.end().column(), -1);
         BOOST_CHECK_EQUAL(r.m_is_complete, false);
     }
     {
         kate::IncludeParseResult r = parseIncludeDirective("#incude ", f);
-        BOOST_CHECK_EQUAL(r.m_range.start().column(), 0);
-        BOOST_CHECK_EQUAL(r.m_range.end().column(), 0);
+        BOOST_CHECK_EQUAL(r.m_range.start().column(), -1);
+        BOOST_CHECK_EQUAL(r.m_range.end().column(), -1);
         BOOST_CHECK_EQUAL(r.m_is_complete, false);
     }
     {
         kate::IncludeParseResult r = parseIncludeDirective("#incuded", f);
-        BOOST_CHECK_EQUAL(r.m_range.start().column(), 0);
-        BOOST_CHECK_EQUAL(r.m_range.end().column(), 0);
+        BOOST_CHECK_EQUAL(r.m_range.start().column(), -1);
+        BOOST_CHECK_EQUAL(r.m_range.end().column(), -1);
         BOOST_CHECK_EQUAL(r.m_is_complete, false);
     }
     {
         kate::IncludeParseResult r = parseIncludeDirective("#include smth", f);
-        BOOST_CHECK_EQUAL(r.m_range.start().column(), 0);
-        BOOST_CHECK_EQUAL(r.m_range.end().column(), 0);
+        BOOST_CHECK_EQUAL(r.m_range.start().column(), -1);
+        BOOST_CHECK_EQUAL(r.m_range.end().column(), -1);
         BOOST_CHECK_EQUAL(r.m_is_complete, false);
     }
 }

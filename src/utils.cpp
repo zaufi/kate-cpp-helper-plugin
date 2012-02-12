@@ -55,11 +55,12 @@ IncludeParseResult parseIncludeDirective(const QString& line, const bool strict)
 
     // Perpare 'default' result
     IncludeParseResult result;
+    result.m_range = KTextEditor::Range(-1, -1, -1, -1);
     result.m_type = IncludeStyle::unknown;
     result.m_is_complete = false;
 
-    int start = 0;
-    int end = 0;
+    int start = -1;
+    int end = -1;
     int tmp = 0;
     QChar close = 0;
     State state = skipInitialSpaces;
@@ -148,7 +149,7 @@ IncludeParseResult parseIncludeDirective(const QString& line, const bool strict)
     {
         case foundOpenChar:
             if (!strict)
-                result.m_range = KTextEditor::Range(0, line.length(), 0, line.length() + 1);
+                result.m_range = KTextEditor::Range(0, line.length(), 0, line.length());
 //             kDebug() << "pase failure: EOL after open char";
             break;
         case findCloseChar:

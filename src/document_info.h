@@ -55,10 +55,10 @@ public:
     };
 
     explicit DocumentInfo(IncludeHelperPlugin*);
+    ~DocumentInfo();
 
 public Q_SLOTS:
     void addRange(KTextEditor::MovingRange*);
-    void updateStatus();
 
 private:
     struct State
@@ -74,9 +74,7 @@ private:
     //BEGIN MovingRangeFeedback interface
     void caretExitedRange(KTextEditor::MovingRange*, KTextEditor::View*);
     void rangeEmpty(KTextEditor::MovingRange*);
-#if 0
     void rangeInvalid(KTextEditor::MovingRange*);
-#endif
     //END MovingRangeFeedback interface
 
     IncludeHelperPlugin* m_plugin;                          ///< Parent plugin

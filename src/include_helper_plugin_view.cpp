@@ -185,6 +185,7 @@ void IncludeHelperPluginView::copyInclude()
 
 void IncludeHelperPluginView::viewChanged()
 {
+    kDebug() << "update view?";
     KTextEditor::View* kv = mainWindow()->activeView();
     if (!kv)
     {
@@ -203,6 +204,7 @@ void IncludeHelperPluginView::viewChanged()
 
 void IncludeHelperPluginView::viewCreated(KTextEditor::View* view)
 {
+    kDebug() << "view created";
     if (isCOrPPSource(view->document()->mimeType()))
     {
         kDebug() << "C/C++ source: register #include completer";
@@ -215,8 +217,29 @@ void IncludeHelperPluginView::viewCreated(KTextEditor::View* view)
             cc_iface->setAutomaticInvocationEnabled(true);
         }
     }
+    // Scan document for #include...
+    updateDocumentInfo(view->document());
+    // Schedule updates after document gets reloaded
+    connect(
+        view->document()
+      , SIGNAL(reloaded(KTextEditor::Document*))
+      , this
+      , SLOT(updateDocumentInfo(KTextEditor::Document*))
+      );
+    // Schedule updates after new text gets inserted
+#if 0
+    connect(
+        view->document()
+      , SIGNAL(textInserted(KTextEditor::Document*, const KTextEditor::Range&))
+      , this
+      , SLOT(textInserted(KTextEditor::Document*, const KTextEditor::Range&))
+      );
+#endif
+}
 
-    KTextEditor::Document* doc = view->document();
+void IncludeHelperPluginView::updateDocumentInfo(KTextEditor::Document* doc)
+{
+    kDebug() << "(re)scan document " << doc << " for #includes...";
     KTextEditor::MovingInterface* mv_iface = qobject_cast<KTextEditor::MovingInterface*>(doc);
 
     if (!mv_iface)
@@ -224,13 +247,24 @@ void IncludeHelperPluginView::viewCreated(KTextEditor::View* view)
         kDebug() << "No moving iface!!!!!!!!!!!";
         return;
     }
+
+    // Try to remove prev collected info
+    {
+        IncludeHelperPlugin::doc_info_type::iterator it = m_plugin->managed_docs().find(doc);
+        if (it != m_plugin->managed_docs().end())
+        {
+            delete *it;
+            m_plugin->managed_docs().erase(it);
+        }
+    }
+
     DocumentInfo* di = new DocumentInfo(m_plugin);
 
     // Search lines and filenames #include'd in this document
     for (int i = 0; i < doc->lines(); i++) {
         const QString& line_str = doc->line(i);
         kate::IncludeParseResult r = parseIncludeDirective(line_str, false);
-        if (!r.m_range.isEmpty()) {
+        if (r.m_range.isValid()) {
             r.m_range.setBothLines(i);
             di->addRange(
                 mv_iface->newMovingRange(
@@ -240,7 +274,12 @@ void IncludeHelperPluginView::viewCreated(KTextEditor::View* view)
               );
         }
     }
-    (*m_plugin)[doc] = di;
+    m_plugin->managed_docs().insert(doc, di);
+}
+
+void IncludeHelperPluginView::textInserted(KTextEditor::Document* doc, const KTextEditor::Range& range)
+{
+    kDebug() << doc << " new text: " << doc->text(range);
 }
 
 KTextEditor::Range IncludeHelperPluginView::currentWord() const
@@ -269,7 +308,7 @@ KTextEditor::Range IncludeHelperPluginView::currentWord() const
 
     // Check if current line starts w/ #include
     kate::IncludeParseResult r = parseIncludeDirective(line_str, false);
-    if (!r.m_range.isEmpty())
+    if (r.m_range.isValid())
     {
         r.m_range.setBothLines(line);
         return r.m_range;

@@ -24,6 +24,7 @@
 #include <src/include_helper_plugin.h>
 #include <src/include_helper_plugin_config_page.h>
 #include <src/include_helper_plugin_view.h>
+#include <src/document_info.h>
 
 // Standard includes
 #include <kate/application.h>
@@ -56,6 +57,18 @@ IncludeHelperPlugin::IncludeHelperPlugin(
   , m_use_ltgt(true)
   , m_config_dirty(false)
 {
+}
+
+IncludeHelperPlugin::~IncludeHelperPlugin()
+{
+    kDebug() << "Unloading...";
+    // We don't care actually about that ranges...
+#if 0
+    Q_FOREACH(doc_info_type::mapped_type info, m_doc_info)
+    {
+        delete info;
+    }
+#endif
 }
 
 Kate::PluginView* IncludeHelperPlugin::createView(Kate::MainWindow* parent)
