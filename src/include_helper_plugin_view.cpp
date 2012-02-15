@@ -227,21 +227,18 @@ void IncludeHelperPluginView::viewCreated(KTextEditor::View* view)
       , SLOT(updateDocumentInfo(KTextEditor::Document*))
       );
     // Schedule updates after new text gets inserted
-#if 0
     connect(
         view->document()
       , SIGNAL(textInserted(KTextEditor::Document*, const KTextEditor::Range&))
       , this
       , SLOT(textInserted(KTextEditor::Document*, const KTextEditor::Range&))
       );
-#endif
 }
 
 void IncludeHelperPluginView::updateDocumentInfo(KTextEditor::Document* doc)
 {
     kDebug() << "(re)scan document " << doc << " for #includes...";
     KTextEditor::MovingInterface* mv_iface = qobject_cast<KTextEditor::MovingInterface*>(doc);
-
     if (!mv_iface)
     {
         kDebug() << "No moving iface!!!!!!!!!!!";
@@ -280,6 +277,46 @@ void IncludeHelperPluginView::updateDocumentInfo(KTextEditor::Document* doc)
 void IncludeHelperPluginView::textInserted(KTextEditor::Document* doc, const KTextEditor::Range& range)
 {
     kDebug() << doc << " new text: " << doc->text(range);
+    KTextEditor::MovingInterface* mv_iface = qobject_cast<KTextEditor::MovingInterface*>(doc);
+    if (!mv_iface)
+    {
+        kDebug() << "No moving iface!!!!!!!!!!!";
+        return;
+    }
+    // Find corresponding document info
+    IncludeHelperPlugin::doc_info_type::iterator it = m_plugin->managed_docs().find(doc);
+    if (it == m_plugin->managed_docs().end())
+    {
+        it = m_plugin->managed_docs().insert(doc, new DocumentInfo(m_plugin));
+    }
+    // Search lines and filenames #include'd in this range
+    for (int i = range.start().line(); i < range.end().line() + 1; i++) {
+        const QString& line_str = doc->line(i);
+        kate::IncludeParseResult r = parseIncludeDirective(line_str, true);
+        if (r.m_range.isValid()) {
+            r.m_range.setBothLines(i);
+            if (!(*it)->isRangeWithSameExists(r.m_range))
+            {
+                (*it)->addRange(
+                    mv_iface->newMovingRange(
+                        r.m_range
+                      , KTextEditor::MovingRange::ExpandLeft | KTextEditor::MovingRange::ExpandRight
+                      )
+                  );
+            } else kDebug() << "range already registered";
+        }
+        else kDebug() << "no valid #include found";
+    }
+}
+
+void IncludeHelperPluginView::textChanged(
+    KTextEditor::Document* doc
+    , const KTextEditor::Range& old_range
+    , const QString& old_text
+    , const KTextEditor::Range& new_range
+    )
+{
+    kDebug() << doc << " change text: new=" << doc->text(new_range) << ", " << old_text;
 }
 
 KTextEditor::Range IncludeHelperPluginView::currentWord() const

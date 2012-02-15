@@ -36,7 +36,7 @@ class IncludeHelperPlugin;                                  // forward declarati
 /**
  * \brief [Type brief class description here]
  *
- * [More detailed description here]
+ * \todo Use file monitor to watch for file changes...
  *
  */
 class DocumentInfo
@@ -56,6 +56,8 @@ public:
 
     explicit DocumentInfo(IncludeHelperPlugin*);
     ~DocumentInfo();
+
+    bool isRangeWithSameExists(const KTextEditor::Range&) const;
 
 public Q_SLOTS:
     void addRange(KTextEditor::MovingRange*);

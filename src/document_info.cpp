@@ -63,6 +63,11 @@ void DocumentInfo::addRange(KTextEditor::MovingRange* r)
     kDebug() << "MovingRange registered: " << r;
 }
 
+/**
+ * \todo Good idea is to check \c #include directive again and realize what kind of
+ * open/close chars are used... depending on this do search for files in all configured
+ * paths or session's only...
+ */
 void DocumentInfo::updateStatus(State& s)
 {
     if (!s.m_range->isEmpty())
@@ -96,10 +101,12 @@ void DocumentInfo::updateStatus(State& s)
                 iface->removeMark(line, KTextEditor::MarkInterface::Error | KTextEditor::MarkInterface::Warning);
                 break;
             case NotFound:
+                iface->removeMark(line, KTextEditor::MarkInterface::Error | KTextEditor::MarkInterface::Warning);
                 iface->addMark(line, KTextEditor::MarkInterface::Error);
                 iface->setMarkPixmap(KTextEditor::MarkInterface::Error, KIcon("task-reject").pixmap(QSize(16, 16)));
                 break;
             case MultipleMatches:
+                iface->removeMark(line, KTextEditor::MarkInterface::Error | KTextEditor::MarkInterface::Warning);
                 iface->addMark(line, KTextEditor::MarkInterface::Warning);
                 iface->setMarkPixmap(KTextEditor::MarkInterface::Warning, KIcon("task-attention").pixmap(QSize(16, 16)));
                 break;
@@ -149,6 +156,18 @@ void DocumentInfo::rangeInvalid(KTextEditor::MovingRange* range)
 {
     kDebug() << "It seems document reloaded... cleanup range...";
     rangeEmpty(range);
+}
+
+bool DocumentInfo::isRangeWithSameExists(const KTextEditor::Range& range) const
+{
+    // std::find_if + lambda!
+    const registered_ranges_type::const_iterator last = m_ranges.end();
+    for (
+        registered_ranges_type::const_iterator it = m_ranges.begin()
+      ; it != last
+      ; ++it
+      ) if (it->m_range->toRange().start().line() == range.start().line()) return true;
+    return false;
 }
 
 }                                                           // namespace kate
