@@ -62,13 +62,10 @@ IncludeHelperPlugin::IncludeHelperPlugin(
 IncludeHelperPlugin::~IncludeHelperPlugin()
 {
     kDebug() << "Unloading...";
-    // We don't care actually about that ranges...
-#if 0
     Q_FOREACH(doc_info_type::mapped_type info, m_doc_info)
     {
         delete info;
     }
-#endif
 }
 
 Kate::PluginView* IncludeHelperPlugin::createView(Kate::MainWindow* parent)
@@ -91,17 +88,19 @@ void IncludeHelperPlugin::readSessionConfig(KConfigBase* config, const QString& 
     /// \todo Rename it!
     KConfigGroup scg(config, groupPrefix + ":include-helper");
     QStringList session_dirs = scg.readPathEntry("ConfiguredDirs", QStringList());
+    QVariant use_ltgt = scg.readEntry("UseLtGt", QVariant(false));
+    QVariant use_cwd = scg.readEntry("UseCwd", QVariant(false));
     kDebug() << "Got per session configured include path list: " << session_dirs;
     // Read global config
     kDebug() << "Reading global config: " << KGlobal::config()->name();
     KConfigGroup gcg(KGlobal::config(), "IncludeHelper");
     QStringList dirs = gcg.readPathEntry("ConfiguredDirs", QStringList());
     kDebug() << "Got global configured include path list: " << dirs;
-    QVariant use_ltgt = gcg.readEntry("UseLtGt", QVariant(false));
     // Assign configuration
     m_session_dirs = session_dirs;
     m_system_dirs = dirs;
     m_use_ltgt = use_ltgt.toBool();
+    m_use_cwd = use_cwd.toBool();
     m_config_dirty = false;
 }
 
@@ -122,12 +121,13 @@ void IncludeHelperPlugin::writeSessionConfig(KConfigBase* config, const QString&
     kDebug() << "Write per session configured include path list: " << m_session_dirs;
     KConfigGroup scg(config, groupPrefix + ":include-helper");
     scg.writePathEntry("ConfiguredDirs", m_session_dirs);
+    scg.writeEntry("UseLtGt", QVariant(m_use_ltgt));
+    scg.writeEntry("UseCwd", QVariant(m_use_cwd));
     scg.sync();
     // Read global config
     kDebug() << "Write global configured include path list: " << m_system_dirs;
     KConfigGroup gcg(KGlobal::config(), "IncludeHelper");
     gcg.writePathEntry("ConfiguredDirs", m_system_dirs);
-    gcg.writeEntry("UseLtGt", QVariant(m_use_ltgt));
     gcg.sync();
     m_config_dirty = false;
 }

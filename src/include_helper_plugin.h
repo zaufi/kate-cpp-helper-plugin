@@ -69,6 +69,10 @@ public:
     {
         return m_use_ltgt;
     }
+    bool useCwd() const
+    {
+        return m_use_cwd;
+    }
     const doc_info_type& managed_docs() const
     {
         return m_doc_info;
@@ -102,6 +106,12 @@ public:
     void setUseLtGt(const bool state)
     {
         m_use_ltgt = state;
+        m_config_dirty = true;
+    }
+    void setUseCwd(const bool state)
+    {
+        m_use_cwd = state;
+        m_config_dirty = true;
     }
     //@}
 
@@ -152,6 +162,7 @@ private:
     /// If \c true <em>Copy #include</em> action would put filename into \c '<' and \c '>'
     /// instead of \c '"'
     bool m_use_ltgt;
+    bool m_use_cwd;
     bool m_config_dirty;
 };
 }                                                           // namespace kate

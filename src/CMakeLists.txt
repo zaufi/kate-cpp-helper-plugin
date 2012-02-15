@@ -7,7 +7,7 @@ set(KATE_INCLUDE_HELPER_PLUGIN_SOURCES
     utils.cpp
   )
 
-kde4_add_ui_files(KATE_INCLUDE_HELPER_PLUGIN_SOURCES configuration.ui)
+kde4_add_ui_files(KATE_INCLUDE_HELPER_PLUGIN_SOURCES path_config.ui other_settings.ui)
 
 kde4_add_plugin(kateincludehelperplugin ${KATE_INCLUDE_HELPER_PLUGIN_SOURCES})
 

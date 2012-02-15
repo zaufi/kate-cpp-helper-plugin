@@ -311,7 +311,7 @@ void IncludeHelperPluginView::textInserted(KTextEditor::Document* doc, const KTe
 
 void IncludeHelperPluginView::textChanged(
     KTextEditor::Document* doc
-    , const KTextEditor::Range& old_range
+    , const KTextEditor::Range& /*old_range*/
     , const QString& old_text
     , const KTextEditor::Range& new_range
     )

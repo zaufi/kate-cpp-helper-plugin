@@ -27,6 +27,7 @@
 // Standard includes
 #include <KDebug>
 #include <KDirSelectDialog>
+#include <KTabWidget>
 
 namespace kate {
 //BEGIN IncludeHelperPluginConfigPage
@@ -36,27 +37,45 @@ IncludeHelperPluginConfigPage::IncludeHelperPluginConfigPage(
   )
   : Kate::PluginConfigPage(parent)
   , m_plugin(plugin)
+  , m_pss_config(new Ui_PerSessionSettingsConfigWidget())
+  , m_system_list(new Ui_PathListConfigWidget())
+  , m_session_list(new Ui_PathListConfigWidget())
 {
-    m_configuration_ui.setupUi(this);
-    m_configuration_ui.addToGlobalButton->setIcon(KIcon("list-add"));
-    m_configuration_ui.delFromGlobalButton->setIcon(KIcon("list-remove"));
-    m_configuration_ui.moveGlobalUpButton->setIcon(KIcon("arrow-up"));
-    m_configuration_ui.moveGlobalDownButton->setIcon(KIcon("arrow-down"));
-    m_configuration_ui.addToSessionButton->setIcon(KIcon("list-add"));
-    m_configuration_ui.delFromSessionButton->setIcon(KIcon("list-remove"));
-    m_configuration_ui.moveSessionUpButton->setIcon(KIcon("arrow-up"));
-    m_configuration_ui.moveSessionDownButton->setIcon(KIcon("arrow-down"));
+    QLayout* layout = new QVBoxLayout(this);
+    KTabWidget* tab = new KTabWidget(this);
+    layout->addWidget(tab);
+    layout->setMargin(0);
+
+    QWidget* system_tab = new QWidget(tab);
+    m_system_list->setupUi(system_tab);
+    m_system_list->addButton->setIcon(KIcon("list-add"));
+    m_system_list->delButton->setIcon(KIcon("list-remove"));
+    m_system_list->moveUpButton->setIcon(KIcon("arrow-up"));
+    m_system_list->moveDownButton->setIcon(KIcon("arrow-down"));
+    tab->addTab(system_tab, i18n("System Paths List"));
+
+    QWidget* session_tab = new QWidget(tab);
+    m_session_list->setupUi(session_tab);
+    m_session_list->addButton->setIcon(KIcon("list-add"));
+    m_session_list->delButton->setIcon(KIcon("list-remove"));
+    m_session_list->moveUpButton->setIcon(KIcon("arrow-up"));
+    m_session_list->moveDownButton->setIcon(KIcon("arrow-down"));
+    tab->addTab(session_tab, i18n("Session Paths List"));
+
+    QWidget* pss_tab = new QWidget(tab);
+    m_pss_config->setupUi(pss_tab);
+    tab->addTab(pss_tab, i18n("Other Settings"));
 
     // Connect add/del buttons to actions
-    connect(m_configuration_ui.addToGlobalButton, SIGNAL(clicked()), this, SLOT(addGlobalIncludeDir()));
-    connect(m_configuration_ui.delFromGlobalButton, SIGNAL(clicked()), this, SLOT(delGlobalIncludeDir()));
-    connect(m_configuration_ui.moveGlobalUpButton, SIGNAL(clicked()), this, SLOT(moveGlobalDirUp()));
-    connect(m_configuration_ui.moveGlobalDownButton, SIGNAL(clicked()), this, SLOT(moveGlobalDirDown()));
+    connect(m_system_list->addButton, SIGNAL(clicked()), this, SLOT(addGlobalIncludeDir()));
+    connect(m_system_list->delButton, SIGNAL(clicked()), this, SLOT(delGlobalIncludeDir()));
+    connect(m_system_list->moveUpButton, SIGNAL(clicked()), this, SLOT(moveGlobalDirUp()));
+    connect(m_system_list->moveDownButton, SIGNAL(clicked()), this, SLOT(moveGlobalDirDown()));
 
-    connect(m_configuration_ui.addToSessionButton, SIGNAL(clicked()), this, SLOT(addSessionIncludeDir()));
-    connect(m_configuration_ui.delFromSessionButton, SIGNAL(clicked()), this, SLOT(delSessionIncludeDir()));
-    connect(m_configuration_ui.moveSessionUpButton, SIGNAL(clicked()), this, SLOT(moveSessionDirUp()));
-    connect(m_configuration_ui.moveSessionDownButton, SIGNAL(clicked()), this, SLOT(moveSessionDirDown()));
+    connect(m_session_list->addButton, SIGNAL(clicked()), this, SLOT(addSessionIncludeDir()));
+    connect(m_session_list->delButton, SIGNAL(clicked()), this, SLOT(delSessionIncludeDir()));
+    connect(m_session_list->moveUpButton, SIGNAL(clicked()), this, SLOT(moveSessionDirUp()));
+    connect(m_session_list->moveDownButton, SIGNAL(clicked()), this, SLOT(moveSessionDirDown()));
 
     // Populate configuration w/ dirs
     reset();
@@ -67,31 +86,35 @@ void IncludeHelperPluginConfigPage::apply()
     // Notify about configuration changes
     {
         QStringList dirs;
-        for (int i = 0; i < m_configuration_ui.sessionDirsList->count(); ++i)
+        for (int i = 0; i < m_session_list->pathsList->count(); ++i)
         {
-            dirs.append(m_configuration_ui.sessionDirsList->item(i)->text());
+            dirs.append(m_session_list->pathsList->item(i)->text());
         }
         m_plugin->setSessionDirs(dirs);
     }
     {
         QStringList dirs;
-        for (int i = 0; i < m_configuration_ui.globalDirsList->count(); ++i)
+        for (int i = 0; i < m_system_list->pathsList->count(); ++i)
         {
-            dirs.append(m_configuration_ui.globalDirsList->item(i)->text());
+            dirs.append(m_system_list->pathsList->item(i)->text());
         }
         m_plugin->setGlobalDirs(dirs);
     }
-    m_plugin->setUseLtGt(m_configuration_ui.includeMarkersSwitch->checkState() == Qt::Checked);
+    m_plugin->setUseLtGt(m_pss_config->includeMarkersSwitch->checkState() == Qt::Checked);
+    m_plugin->setUseCwd(m_pss_config->useCurrentDirSwitch->checkState() == Qt::Checked);
 }
 
 void IncludeHelperPluginConfigPage::reset()
 {
     kDebug() << "Reseting configuration";
     // Put dirs to the list
-    m_configuration_ui.globalDirsList->addItems(m_plugin->globalDirs());
-    m_configuration_ui.sessionDirsList->addItems(m_plugin->sessionDirs());
-    m_configuration_ui.includeMarkersSwitch->setCheckState(
+    m_system_list->pathsList->addItems(m_plugin->globalDirs());
+    m_session_list->pathsList->addItems(m_plugin->sessionDirs());
+    m_pss_config->includeMarkersSwitch->setCheckState(
         m_plugin->useLtGt() ? Qt::Checked : Qt::Unchecked
+      );
+    m_pss_config->useCurrentDirSwitch->setCheckState(
+        m_plugin->useCwd() ? Qt::Checked : Qt::Unchecked
       );
 }
 
@@ -101,37 +124,37 @@ void IncludeHelperPluginConfigPage::addSessionIncludeDir()
     if (dir_uri != KUrl())
     {
         const QString& dir_str = dir_uri.toLocalFile();
-        if (!contains(dir_str, m_configuration_ui.sessionDirsList))
-            new QListWidgetItem(dir_str, m_configuration_ui.sessionDirsList);
+        if (!contains(dir_str, m_session_list->pathsList))
+            new QListWidgetItem(dir_str, m_session_list->pathsList);
     }
 }
 
 void IncludeHelperPluginConfigPage::delSessionIncludeDir()
 {
-    m_configuration_ui.sessionDirsList->removeItemWidget(
-        m_configuration_ui.sessionDirsList->currentItem()
+    m_session_list->pathsList->removeItemWidget(
+        m_session_list->pathsList->currentItem()
       );
 }
 
 void IncludeHelperPluginConfigPage::moveSessionDirUp() {
-    const int current = m_configuration_ui.sessionDirsList->currentRow();
+    const int current = m_session_list->pathsList->currentRow();
     if (current) {
-        m_configuration_ui.sessionDirsList->insertItem(
+        m_session_list->pathsList->insertItem(
             current - 1
-          , m_configuration_ui.sessionDirsList->takeItem(current)
+          , m_session_list->pathsList->takeItem(current)
           );
-        m_configuration_ui.sessionDirsList->setCurrentRow(current - 1);
+        m_session_list->pathsList->setCurrentRow(current - 1);
     }
 }
 
 void IncludeHelperPluginConfigPage::moveSessionDirDown() {
-    const int current = m_configuration_ui.sessionDirsList->currentRow();
-    if (current < m_configuration_ui.sessionDirsList->count() - 1) {
-        m_configuration_ui.sessionDirsList->insertItem(
+    const int current = m_session_list->pathsList->currentRow();
+    if (current < m_session_list->pathsList->count() - 1) {
+        m_session_list->pathsList->insertItem(
             current + 1
-          , m_configuration_ui.sessionDirsList->takeItem(current)
+          , m_session_list->pathsList->takeItem(current)
           );
-        m_configuration_ui.sessionDirsList->setCurrentRow(current + 1);
+        m_session_list->pathsList->setCurrentRow(current + 1);
     }
 }
 
@@ -141,37 +164,37 @@ void IncludeHelperPluginConfigPage::addGlobalIncludeDir()
     if (dir_uri != KUrl())
     {
         const QString& dir_str = dir_uri.toLocalFile();
-        if (!contains(dir_str, m_configuration_ui.globalDirsList))
-            new QListWidgetItem(dir_str, m_configuration_ui.globalDirsList);
+        if (!contains(dir_str, m_system_list->pathsList))
+            new QListWidgetItem(dir_str, m_system_list->pathsList);
     }
 }
 
 void IncludeHelperPluginConfigPage::delGlobalIncludeDir()
 {
-    m_configuration_ui.globalDirsList->removeItemWidget(
-        m_configuration_ui.globalDirsList->currentItem()
+    m_system_list->pathsList->removeItemWidget(
+        m_system_list->pathsList->currentItem()
       );
 }
 
 void IncludeHelperPluginConfigPage::moveGlobalDirUp() {
-    const int current = m_configuration_ui.globalDirsList->currentRow();
+    const int current = m_system_list->pathsList->currentRow();
     if (current) {
-        m_configuration_ui.globalDirsList->insertItem(
+        m_system_list->pathsList->insertItem(
             current - 1
-          , m_configuration_ui.globalDirsList->takeItem(current)
+          , m_system_list->pathsList->takeItem(current)
           );
-        m_configuration_ui.globalDirsList->setCurrentRow(current - 1);
+        m_system_list->pathsList->setCurrentRow(current - 1);
     }
 }
 
 void IncludeHelperPluginConfigPage::moveGlobalDirDown() {
-    const int current = m_configuration_ui.globalDirsList->currentRow();
-    if (current < m_configuration_ui.globalDirsList->count() - 1) {
-        m_configuration_ui.globalDirsList->insertItem(
+    const int current = m_system_list->pathsList->currentRow();
+    if (current < m_system_list->pathsList->count() - 1) {
+        m_system_list->pathsList->insertItem(
             current + 1
-          , m_configuration_ui.globalDirsList->takeItem(current)
+          , m_system_list->pathsList->takeItem(current)
           );
-        m_configuration_ui.globalDirsList->setCurrentRow(current + 1);
+        m_system_list->pathsList->setCurrentRow(current + 1);
     }
 }
 

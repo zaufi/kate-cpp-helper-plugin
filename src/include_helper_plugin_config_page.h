@@ -24,7 +24,8 @@
 #  define __SRC__INCLUDE_HELPER_PLUGIN_CONFIG_PAGE_H__
 
 // Project specific includes
-#  include <src/ui_configuration.h>
+#  include <src/ui_path_config.h>
+#  include <src/ui_other_settings.h>
 
 // Standard includes
 #  include <kate/plugin.h>
@@ -72,7 +73,9 @@ private:
     bool contains(const QString&, const KListWidget*);      ///< Check if directories list contains given item
 
     IncludeHelperPlugin* m_plugin;                          ///< Parent plugin
-    Ui_Configuration m_configuration_ui;                    ///< Configuration widget
+    Ui_PerSessionSettingsConfigWidget* const m_pss_config;
+    Ui_PathListConfigWidget* const m_system_list;
+    Ui_PathListConfigWidget* const m_session_list;
 };
 
 }                                                           // namespace kate
