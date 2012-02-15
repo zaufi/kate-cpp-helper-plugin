@@ -27,7 +27,7 @@
 
 // Standard includes
 #  include <KTextEditor/Range>
-#  include <QtCore/QFile>
+#  include <QtCore/QFileInfo>
 #  include <QtCore/QStringList>
 
 namespace kate {
@@ -88,14 +88,14 @@ inline QStringList findHeader(const QString& file, const QStringList& locals, co
     // Try locals first
     Q_FOREACH(const QString& path, locals)
     {
-        QFile f(path + "/" + file);
+        QFileInfo f(path + "/" + file);
         if (f.exists())
             result.push_back(path);
     }
     // Then try system paths
     Q_FOREACH(const QString& path, system)
     {
-        QFile f(path + "/" + file);
+        QFileInfo f(path + "/" + file);
         if (f.exists())
             result.push_back(path);
     }

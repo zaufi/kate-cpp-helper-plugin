@@ -74,8 +74,17 @@ void DocumentInfo::updateStatus(State& s)
     {
         KTextEditor::Document* doc = s.m_range->document();
         QString filename = doc->text(s.m_range->toRange());
+        // NOTE After editing it is possible that opening '<' or '"' could
+        // appear as a start symbol of the range... just try to exclude it!
+        if (filename.startsWith('>') || filename.startsWith('"'))
+        {
+            filename.remove(0, 1);
+            KTextEditor::Range shrinked = s.m_range->toRange();
+            shrinked.end().setColumn(shrinked.start().column() + 1);
+            s.m_range->setRange(shrinked);
+        }
         // NOTE after autocompletion it is possible that closing '>' or '"' could
-        // appear as last symbol of the range... just try to exclude it!
+        // appear as the last symbol of the range... just try to exclude it!
         if (filename.endsWith('>') || filename.endsWith('"'))
         {
             filename.resize(filename.size() - 1);
@@ -83,12 +92,24 @@ void DocumentInfo::updateStatus(State& s)
             shrinked.end().setColumn(shrinked.end().column() - 1);
             s.m_range->setRange(shrinked);
         }
+        // Reset status
+        s.m_status = Dunno;
+
         // Check if given header available
+        // 0) check CWD first if allowed
+        if (m_plugin->useCwd())
+        {
+            const KUrl& uri = doc->url().prettyUrl();
+            const QString cur2check = uri.directory() + '/' + filename;
+            kDebug() << "check current dir 4: " << cur2check;
+            s.m_status = (QFileInfo(cur2check).exists()) ? Ok : NotFound;
+        }
+        // 1) Try configured dirs then
         QStringList paths = findHeader(filename, m_plugin->sessionDirs(), m_plugin->globalDirs());
         if (paths.empty())
-            s.m_status = NotFound;
+            s.m_status = (s.m_status == Ok) ? Ok : NotFound;
         else if (paths.size() == 1)
-            s.m_status = Ok;
+            s.m_status = (s.m_status == Ok) ? MultipleMatches : Ok;
         else
             s.m_status = MultipleMatches;
         kDebug() << "#include filename=" << filename << ", status=" << s.m_status << ", r=" << s.m_range;

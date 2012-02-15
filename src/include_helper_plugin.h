@@ -129,7 +129,7 @@ public:
     {
         Q_UNUSED(number)
         assert("This plugin have the only configuration page" && number == 0);
-        return "Include Dirs";
+        return "Include Helper";
     }
     QString configPageFullName(uint number = 0) const
     {

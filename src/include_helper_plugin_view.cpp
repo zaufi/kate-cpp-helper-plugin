@@ -94,7 +94,17 @@ void IncludeHelperPluginView::openHeader()
     assert("Getting text on non-empty range should return smth!" && !filename.isEmpty());
     kDebug() << "filename = " << filename;
 
+    // Check CWD first if allowed
     QStringList candidates;
+    if (m_plugin->useCwd())
+    {
+        const KUrl& current_url = mainWindow()->activeView()->document()->url().prettyUrl();
+        const QString uri = current_url.directory() + '/' + filename;
+        const QFileInfo fi = QFileInfo(uri);
+        if (fi.exists() && fi.isFile() && fi.isReadable())
+            candidates.append(uri);
+    }
+
     // Try to find full filename to open
     /// \todo Is there any way to make a joint view for both containers?
     // 0) search session dirs list first
