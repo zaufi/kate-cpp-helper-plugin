@@ -26,8 +26,9 @@
 #include <src/utils.h>
 
 // Standard includes
-#include <KTextEditor/MarkInterface>
 #include <KDebug>
+#include <KLocalizedString>                                 /// \todo Where is \c i18n() defiend?
+#include <KTextEditor/MarkInterface>
 
 namespace kate {
 
@@ -123,13 +124,15 @@ void DocumentInfo::updateStatus(State& s)
                 break;
             case NotFound:
                 iface->removeMark(line, KTextEditor::MarkInterface::Error | KTextEditor::MarkInterface::Warning);
-                iface->addMark(line, KTextEditor::MarkInterface::Error);
                 iface->setMarkPixmap(KTextEditor::MarkInterface::Error, KIcon("task-reject").pixmap(QSize(16, 16)));
+                iface->setMarkDescription(KTextEditor::MarkInterface::Error, i18n("File not found"));
+                iface->addMark(line, KTextEditor::MarkInterface::Error);
                 break;
             case MultipleMatches:
                 iface->removeMark(line, KTextEditor::MarkInterface::Error | KTextEditor::MarkInterface::Warning);
-                iface->addMark(line, KTextEditor::MarkInterface::Warning);
                 iface->setMarkPixmap(KTextEditor::MarkInterface::Warning, KIcon("task-attention").pixmap(QSize(16, 16)));
+                iface->setMarkDescription(KTextEditor::MarkInterface::Error, i18n("Multiple files matched"));
+                iface->addMark(line, KTextEditor::MarkInterface::Warning);
                 break;
             default:
                 assert(!"Impossible");
