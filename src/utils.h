@@ -86,18 +86,30 @@ inline QStringList findHeader(const QString& file, const QStringList& locals, co
 {
     QStringList result;
     // Try locals first
+    kDebug() << "Trying locals first...";
     Q_FOREACH(const QString& path, locals)
     {
         QFileInfo f(path + "/" + file);
+        kDebug() << "... checking " << f.filePath();
         if (f.exists())
+        {
             result.push_back(path);
+            kDebug() << " ... Ok";
+        }
+        else kDebug() << " ... not exists/readable";
     }
     // Then try system paths
+    kDebug() << "Trying system paths...";
     Q_FOREACH(const QString& path, system)
     {
         QFileInfo f(path + "/" + file);
+        kDebug() << "... checking " << f.filePath();
         if (f.exists())
+        {
             result.push_back(path);
+            kDebug() << " ... Ok";
+        }
+        else kDebug() << " ... not exists/readable";
     }
     return result;
 }

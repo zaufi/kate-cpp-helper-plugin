@@ -163,6 +163,13 @@ void DocumentInfo::caretExitedRange(KTextEditor::MovingRange* range, KTextEditor
 
 void DocumentInfo::rangeEmpty(KTextEditor::MovingRange* range)
 {
+    // Remove possible mark on a line
+    KTextEditor::MarkInterface* iface = qobject_cast<KTextEditor::MarkInterface*>(range->document());
+    iface->removeMark(
+        range->start().line()
+      , KTextEditor::MarkInterface::Error | KTextEditor::MarkInterface::Warning
+      );
+    // Erase internal data
     registered_ranges_type::iterator it = findRange(range);
     if (it != m_ranges.end())
     {
