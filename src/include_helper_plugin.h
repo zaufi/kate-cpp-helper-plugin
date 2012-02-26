@@ -29,7 +29,6 @@
 #  include <kate/plugin.h>
 #  include <kate/pluginconfigpageinterface.h>
 #  include <KTextEditor/Document>
-#  include <KAction>
 #  include <cassert>
 
 namespace kate {
