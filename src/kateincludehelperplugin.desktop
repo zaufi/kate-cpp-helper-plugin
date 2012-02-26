@@ -8,7 +8,7 @@ ServiceTypes=Kate/Plugin
 X-KDE-Library=kateincludehelperplugin
 X-KDE-PluginInfo-Author=Alex Turbov
 X-KDE-PluginInfo-Email=i.zaufi@gmail.com
-X-KDE-PluginInfo-Website=http://kate.kde.org
+X-KDE-PluginInfo-Website=http://kde-apps.org/content/show.php/?content=148606
 X-KDE-PluginInfo-Version=0.2
 X-KDE-PluginInfo-License=GPL
 X-KDE-PluginInfo-Depends=
