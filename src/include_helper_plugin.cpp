@@ -40,7 +40,7 @@ K_EXPORT_PLUGIN(
             "kateincludehelperplugin"
           , "kate_includehelper_plugin"
           , ki18n("Include Helper Plugin")
-          , "0.1"
+          , "0.3"
           , ki18n("Helps to work w/ C/C++ headers little more easy")
           , KAboutData::License_LGPL_V3
           )

@@ -48,7 +48,7 @@ class IncludeHelperPlugin : public Kate::Plugin, public Kate::PluginConfigPageIn
 public:
     typedef QMap<KTextEditor::Document*, DocumentInfo*> doc_info_type;
 
-    explicit IncludeHelperPlugin(QObject* parent = 0, const QList<QVariant>& = QList<QVariant>());
+    explicit IncludeHelperPlugin(QObject* = 0, const QList<QVariant>& = QList<QVariant>());
     virtual ~IncludeHelperPlugin();
 
     /// Create a new view of this plugin for the given main window
