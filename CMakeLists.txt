@@ -5,13 +5,13 @@
 #---------------------------------------------------------
 # Section: Init cmake
 #---------------------------------------------------------
-project(kate_include_helper_plugin C CXX)
+project(KateIncludeHelperPlugin C CXX)
 
 set(VERSION_MAJOR 0)
 set(VERSION_MINOR 2)
 set(VERSION_PATCH 0)
 set(VERSION_STRING ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})
-set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/modules" ${CMAKE_MODULE_PATH})
+set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/modules" ${CMAKE_MODULE_PATH})
 
 #---------------------------------------------------------
 # Section: Include aux cmake functions

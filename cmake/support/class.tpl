@@ -13,7 +13,7 @@
  * \date [+ (shell "LC_ALL=C date") +] -- Initial design
  */
 /*
- * [+ (gpl "KateIncludeHelperPlugin" " * ") +]
+[+ (gpl (get "project") " * ") +]
  */[+define incguard+]__[+ (string-upcase (get "guard_base")) +]__[+ (string-upcase (get "filename")) +]_H__[+enddef +][+
 IF ( == (suffix) "h") +]
 [+(out-move (sprintf "%s.h" (get "filename"))) +]

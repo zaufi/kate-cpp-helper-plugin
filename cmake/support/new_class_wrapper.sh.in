@@ -24,14 +24,16 @@ if [ -z "$subdir" ]; then
 fi
 
 # Ok. Lets work!
-ebegin "Generate class skeleton files for $class: $class.cpp and $class.h"
-rf=${CMAKE_BINARY_DIR}/$class.def
+transformed_name=`echo $class | LC_ALL=C sed -e 's,\([A-Z]\),_\L\1,g' -e 's,^_,,'`
+ebegin "Generate class skeleton files for $class: $transformed_name.cpp and $transformed_name.h"
+rf=${CMAKE_BINARY_DIR}/$transformed_name.def
 # Generate response file for autogen
 echo "autogen definitions ${CMAKE_SOURCE_DIR}/cmake/support/class.tpl;" > $rf \
   && echo "subdir=$subdir;" >> $rf \
   && echo "guard_base=`echo "$subdir" | sed -e 's,/,__,g' -e 's,[^0-9A-Za-z],_,g'`;" >> $rf \
   && echo "classname=$class;" >> $rf \
-  && echo "filename=$class;" >> $rf \
+  && echo "project=${PROJECT_NAME};" >> $rf \
+  && echo "filename=$transformed_name;" >> $rf \
   && ( test -n "$ns" && echo "$ns" | awk -F '::' -f ${CMAKE_SOURCE_DIR}/cmake/support/mknslist.awk >> $rf \
       || ( test -f ${CMAKE_SOURCE_DIR}/cmake/support/tpl-defaults.def && cat ${CMAKE_SOURCE_DIR}/cmake/support/tpl-defaults.def >> $rf ) \
       ) \
@@ -45,7 +47,7 @@ if [ "${CMAKE_BINARY_DIR}" != "${CMAKE_SOURCE_DIR}" ]; then
     # Move generated files from CMAKE_BINARY_DIR to desired subdir (if exists)
     dst=`test -d "${CMAKE_SOURCE_DIR}/$subdir" && echo "${CMAKE_SOURCE_DIR}/$subdir" || echo "${CMAKE_SOURCE_DIR}"`
     ebegin "Move generated files to $dst"
-    mv -i ${CMAKE_BINARY_DIR}/$class.h ${CMAKE_BINARY_DIR}/$class.cpp $dst
+    mv -i ${CMAKE_BINARY_DIR}/$transformed_name.h ${CMAKE_BINARY_DIR}/$transformed_name.cpp $dst
     eend $?
 fi
 

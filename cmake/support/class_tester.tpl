@@ -12,7 +12,7 @@
  * \date [+ (shell "LC_ALL=C date") +] -- Initial design
  */
 /*
- * [+ (gpl "KateIncludeHelperPlugin" " * ") +]
+[+ (gpl (get "project") " * ") +]
  */
 
 // Project specific includes
@@ -34,7 +34,7 @@
 // using boost::test_tools::output_test_stream;
 
 // Your first test function :)
-BOOST_AUTO_TEST_CASE([+ classname +]_test)
+BOOST_AUTO_TEST_CASE([+ classname +]Test)
 {
     // Your test code here...
 }

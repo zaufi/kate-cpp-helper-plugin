@@ -1,7 +1,7 @@
 #!/bin/sh
 # Copyright 2011 Alex Turbov <i.zaufi@gmail.com>
 #
-# Helper to generate class skeletons
+# Helper to generate unit test skeletons
 #
 
 . ${CMAKE_SOURCE_DIR}/cmake/support/output-helpers.sh
@@ -19,12 +19,14 @@ if [ -z "$class" ]; then
 fi
 
 # Ok. Lets work! At least class name defined...
-ebegin "Generate class skeleton unit-test file for class $class: $class""_tester.cpp"
-rf=${CMAKE_BINARY_DIR}/$class.def
+transformed_name=`echo $class | LC_ALL=C sed -e 's,\([A-Z]\),_\L\1,g' -e 's,^_,,'`
+ebegin "Generate class skeleton unit-test file for class $class: $transformed_name""_tester.cpp"
+rf=${CMAKE_BINARY_DIR}/$transformed_name.def
 # Generate response file for autogen
 echo "autogen definitions ${CMAKE_SOURCE_DIR}/cmake/support/class_tester.tpl;" > $rf \
   && echo "classname=$class;" >> $rf \
-  && echo "filename=$class;" >> $rf \
+  && echo "filename=$transformed_name;" >> $rf \
+  && echo "project=${PROJECT_NAME};" >> $rf \
   && ${AUTOGEN_EXECUTABLE} -L ${CMAKE_SOURCE_DIR}/cmake/support $rf
 result=$?
 eend $result
@@ -33,8 +35,8 @@ test "$result" = "0" || exit 1
 if [ "${CMAKE_BINARY_DIR}" != "${CMAKE_SOURCE_DIR}" ]; then
     # Move generated files from CMAKE_BINARY_DIR to desired subdir (if exists)
     dst=`test -d "${CMAKE_SOURCE_DIR}/$subdir" && echo "${CMAKE_SOURCE_DIR}/$subdir" || echo "${CMAKE_SOURCE_DIR}"`
-    ebegin "Move $class""_tester.cpp to $dst"
-    mv -i "${CMAKE_BINARY_DIR}/$class"_tester.cpp $dst
+    ebegin "Move $transformed_name""_tester.cpp to $dst"
+    mv -i "${CMAKE_BINARY_DIR}/$transformed_name"_tester.cpp $dst
     eend $?
 fi
 
