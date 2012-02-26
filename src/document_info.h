@@ -61,6 +61,7 @@ public:
 
 public Q_SLOTS:
     void addRange(KTextEditor::MovingRange*);
+    void updateStatus();
 
 private:
     struct State

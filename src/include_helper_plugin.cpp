@@ -106,7 +106,7 @@ void IncludeHelperPlugin::readSessionConfig(KConfigBase* config, const QString& 
 
 void IncludeHelperPlugin::writeSessionConfig(KConfigBase* config, const QString& groupPrefix)
 {
-    kDebug() << "writing session config: " << groupPrefix;
+    kDebug() << "Writing session config: " << groupPrefix;
     if (!m_config_dirty)
     {
         /// \todo Maybe I don't understand smth, but rally strange things r going on here:

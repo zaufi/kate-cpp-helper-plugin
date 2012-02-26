@@ -64,6 +64,16 @@ void DocumentInfo::addRange(KTextEditor::MovingRange* r)
     kDebug() << "MovingRange registered: " << r;
 }
 
+void DocumentInfo::updateStatus()
+{
+    for (
+        registered_ranges_type::iterator it = m_ranges.begin()
+      , last = m_ranges.end()
+      ; it != last
+      ; updateStatus(*it++)
+      );
+}
+
 /**
  * \todo Good idea is to check \c #include directive again and realize what kind of
  * open/close chars are used... depending on this do search for files in all configured
