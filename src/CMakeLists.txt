@@ -1,3 +1,6 @@
+configure_file(config.h.in config.h)
+configure_file(kateincludehelperplugin.desktop.in kateincludehelperplugin.desktop)
+
 set(KATE_INCLUDE_HELPER_PLUGIN_SOURCES
     document_info.cpp
     include_helper_plugin_config_page.cpp
@@ -20,7 +23,7 @@ target_link_libraries(kateincludehelperplugin
 
 install(TARGETS kateincludehelperplugin DESTINATION ${PLUGIN_INSTALL_DIR})
 install(FILES ui.rc DESTINATION ${DATA_INSTALL_DIR}/kateincludehelperplugin)
-install(FILES kateincludehelperplugin.desktop DESTINATION ${SERVICES_INSTALL_DIR})
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/kateincludehelperplugin.desktop DESTINATION ${SERVICES_INSTALL_DIR})
 
 if (BUILD_TESTING)
     add_subdirectory(test)

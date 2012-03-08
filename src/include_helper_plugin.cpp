@@ -21,6 +21,7 @@
  */
 
 // Project specific includes
+#include <src/config.h>
 #include <src/include_helper_plugin.h>
 #include <src/include_helper_plugin_config_page.h>
 #include <src/include_helper_plugin_view.h>
@@ -40,7 +41,7 @@ K_EXPORT_PLUGIN(
             "kateincludehelperplugin"
           , "kate_includehelper_plugin"
           , ki18n("Include Helper Plugin")
-          , "0.3"
+          , PLUGIN_VERSION
           , ki18n("Helps to work w/ C/C++ headers little more easy")
           , KAboutData::License_LGPL_V3
           )
