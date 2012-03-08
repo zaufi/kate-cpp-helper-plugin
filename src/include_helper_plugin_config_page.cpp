@@ -107,6 +107,7 @@ void IncludeHelperPluginConfigPage::apply()
 void IncludeHelperPluginConfigPage::reset()
 {
     kDebug() << "Reseting configuration";
+    m_plugin->readConfig();
     // Put dirs to the list
     m_system_list->pathsList->addItems(m_plugin->globalDirs());
     m_session_list->pathsList->addItems(m_plugin->sessionDirs());

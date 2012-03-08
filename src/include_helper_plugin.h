@@ -149,6 +149,7 @@ public:
     void readSessionConfig(KConfigBase*, const QString&);
     void writeSessionConfig(KConfigBase*, const QString&);
     //@}
+    void readConfig();                                      ///< Read global config
 
 Q_SIGNALS:
     void sessionDirsChanged();
