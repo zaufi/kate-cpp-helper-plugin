@@ -2,17 +2,19 @@
 
 # check if autogen is even installed
 find_program(AUTOGEN_EXECUTABLE autogen)
-if (AUTOGEN_EXECUTABLE)
+if(AUTOGEN_EXECUTABLE)
 
     # prepare autogen wrapper for new class skeleton creation
     configure_file(
         ${CMAKE_SOURCE_DIR}/cmake/support/new_class_wrapper.sh.in
         ${CMAKE_BINARY_DIR}/cmake/support/new_class_wrapper.sh
+        @ONLY
       )
     # prepare autogen wrapper for unit tests
     configure_file(
         ${CMAKE_SOURCE_DIR}/cmake/support/new_class_tester_wrapper.sh.in
         ${CMAKE_BINARY_DIR}/cmake/support/new_class_tester_wrapper.sh
+        @ONLY
       )
 
     # add new-class as target
@@ -25,4 +27,4 @@ if (AUTOGEN_EXECUTABLE)
     add_dependencies(new-class-tester ${CMAKE_BINARY_DIR}/cmake/support/new_class_tester_wrapper.sh)
     add_dependencies(new-class-tester ${CMAKE_SOURCE_DIR}/cmake/support/class_tester.tpl)
 
-endif (AUTOGEN_EXECUTABLE)
+endif(AUTOGEN_EXECUTABLE)
