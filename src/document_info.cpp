@@ -35,18 +35,20 @@ namespace kate {
 DocumentInfo::DocumentInfo(IncludeHelperPlugin* p)
   : m_plugin(p)
 {
-    // Subscribe slef to configuration changes
+    // Subscribe self to configuration changes
     connect(m_plugin, SIGNAL(sessionDirsChanged()), this, SLOT(updateStatus()));
     connect(m_plugin, SIGNAL(systemDirsChanged()), this, SLOT(updateStatus()));
 }
 
+/**
+ * \bug Why it crashed sometime on exit???
+ */
 DocumentInfo::~DocumentInfo()
 {
+#if 0
     Q_FOREACH(const State& s, m_ranges)
-    {
-        kDebug() << "cleanup range: " << s.m_range;
         delete s.m_range;
-    }
+#endif
 }
 
 void DocumentInfo::addRange(KTextEditor::MovingRange* r)

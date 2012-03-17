@@ -1,7 +1,7 @@
 /**
  * \file
  *
- * \brief Class \c IncludeHelperPlugin (interface)
+ * \brief Class \c kate::IncludeHelperPlugin (interface)
  *
  * \date Sun Jan 29 09:15:53 MSK 2012 -- Initial design
  */

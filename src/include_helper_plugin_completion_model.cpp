@@ -1,7 +1,7 @@
 /**
  * \file
  *
- * \brief Class \c kate::include_helper_plugin_complation_model (implementation)
+ * \brief Class \c kate::IncludeHelperPluginCompletionModel (implementation)
  *
  * \date Mon Feb  6 06:12:41 MSK 2012 -- Initial design
  */

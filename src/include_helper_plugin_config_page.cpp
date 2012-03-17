@@ -1,7 +1,7 @@
 /**
  * \file
  *
- * \brief Class \c kate::include_helper_plugin_config_page (implementation)
+ * \brief Class \c kate::IncludeHelperPluginConfigPage (implementation)
  *
  * \date Mon Feb  6 06:04:17 MSK 2012 -- Initial design
  */
