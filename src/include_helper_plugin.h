@@ -52,7 +52,7 @@ public:
     virtual ~IncludeHelperPlugin();
 
     /// Create a new view of this plugin for the given main window
-    Kate::PluginView *createView(Kate::MainWindow*);
+    Kate::PluginView* createView(Kate::MainWindow*);
 
     /// \name Accessors
     //@{

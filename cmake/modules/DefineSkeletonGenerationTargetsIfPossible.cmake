@@ -6,25 +6,25 @@ if(AUTOGEN_EXECUTABLE)
 
     # prepare autogen wrapper for new class skeleton creation
     configure_file(
-        ${CMAKE_SOURCE_DIR}/cmake/support/new_class_wrapper.sh.in
-        ${CMAKE_BINARY_DIR}/cmake/support/new_class_wrapper.sh
+        ${PROJECT_SOURCE_DIR}/cmake/support/new_class_wrapper.sh.in
+        ${PROJECT_BINARY_DIR}/cmake/support/new_class_wrapper.sh
         @ONLY
       )
     # prepare autogen wrapper for unit tests
     configure_file(
-        ${CMAKE_SOURCE_DIR}/cmake/support/new_class_tester_wrapper.sh.in
-        ${CMAKE_BINARY_DIR}/cmake/support/new_class_tester_wrapper.sh
+        ${PROJECT_SOURCE_DIR}/cmake/support/new_class_tester_wrapper.sh.in
+        ${PROJECT_BINARY_DIR}/cmake/support/new_class_tester_wrapper.sh
         @ONLY
       )
 
     # add new-class as target
-    add_custom_target(new-class /bin/sh ${CMAKE_BINARY_DIR}/cmake/support/new_class_wrapper.sh)
-    add_dependencies(new-class ${CMAKE_BINARY_DIR}/cmake/support/new_class_wrapper.sh)
-    add_dependencies(new-class ${CMAKE_SOURCE_DIR}/cmake/support/class.tpl)
+    add_custom_target(new-class /bin/sh ${PROJECT_BINARY_DIR}/cmake/support/new_class_wrapper.sh)
+    add_dependencies(new-class ${PROJECT_BINARY_DIR}/cmake/support/new_class_wrapper.sh)
+    add_dependencies(new-class ${PROJECT_SOURCE_DIR}/cmake/support/class.tpl)
 
     # add new-class-tester as target
-    add_custom_target(new-class-tester /bin/sh ${CMAKE_BINARY_DIR}/cmake/support/new_class_tester_wrapper.sh)
-    add_dependencies(new-class-tester ${CMAKE_BINARY_DIR}/cmake/support/new_class_tester_wrapper.sh)
-    add_dependencies(new-class-tester ${CMAKE_SOURCE_DIR}/cmake/support/class_tester.tpl)
+    add_custom_target(new-class-tester /bin/sh ${PROJECT_BINARY_DIR}/cmake/support/new_class_tester_wrapper.sh)
+    add_dependencies(new-class-tester ${PROJECT_BINARY_DIR}/cmake/support/new_class_tester_wrapper.sh)
+    add_dependencies(new-class-tester ${PROJECT_SOURCE_DIR}/cmake/support/class_tester.tpl)
 
 endif(AUTOGEN_EXECUTABLE)
