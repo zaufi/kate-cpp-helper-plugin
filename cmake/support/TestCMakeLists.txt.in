@@ -1,3 +1,4 @@
+# kate: hl cmake;
 set(UNIT_TESTS unit_tests)
 set(UNIT_TESTS_SOURCES FIRST_SOURCE_FILE)
 
@@ -5,7 +6,6 @@ add_executable(${UNIT_TESTS} ${UNIT_TESTS_SOURCES})
 
 target_link_libraries(
     ${UNIT_TESTS}
-    entell
     ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}
   )
 
