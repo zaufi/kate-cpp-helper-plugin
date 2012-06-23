@@ -1,6 +1,7 @@
 #
 # Copyright 2012 by Alex Turbov <i.zaufi@gmail.com>
 #
+# kate: hl cmake;
 
 #---------------------------------------------------------
 # Section: Init cmake
@@ -9,7 +10,7 @@ project(KateIncludeHelperPlugin C CXX)
 
 set(VERSION_MAJOR 0)
 set(VERSION_MINOR 4)
-set(VERSION_PATCH 0)
+set(VERSION_PATCH 1)
 set(VERSION_STRING ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/modules" ${CMAKE_MODULE_PATH})
 
@@ -49,30 +50,26 @@ add_definitions(${QT_DEFINITIONS} ${KDE4_DEFINITIONS})
 # Use Kate plugins debug area as default
 # add_definitions(-DDEBUG_AREA=13040)
 
-# Do not link w/ libraries which isn't provide undefined symbols.
-# (they are specified as dependencies for other targets from this
-# project, but listed as unused by `ldd -u binary`)
-#set(CMAKE_EXE_LINKER_FLAGS "-Wl,--as-needed ${CMAKE_EXE_LINKER_FLAGS}")
-#set(CMAKE_MODULE_LINKER_FLAGS "-Wl,--as-needed ${CMAKE_MODULE_LINKER_FLAGS}")
 # Set generic compiler flags
-#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pipe ${KDE4_ENABLE_EXCEPTIONS}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${KDE4_ENABLE_EXCEPTIONS}")
+# make sure build-time configuration header file will be included in
+# EVERY translation unit
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -include ${PROJECT_SOURCE_DIR}/config.h")
 
-# Setup compiler options depending on build type
-#message(STATUS "Setting options for ${CMAKE_BUILD_TYPE} build type")
-#if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-  # Show all warnings in debug mode
-#  set(CMAKE_CXX_FLAGS_DEBUG "-ggdb3 -Wall")
-  # Allow additional security measures
-#  add_definitions(-D_FORTIFY_SOURCE=2)
-#else()
-  # More linker optimizations in release mode
-#  set(CMAKE_EXE_LINKER_FLAGS_RELEASE
-#      "-Wl,-O1 -Wl,--sort-common ${CMAKE_EXE_LINKER_FLAGS_RELEASE}"
-#    )
-#  set(CMAKE_MODULE_LINKER_FLAGS_RELEASE
-#      "-Wl,-O1 -Wl,--sort-common ${CMAKE_MODULE_LINKER_FLAGS_RELEASE}"
-#    )
-#endif()
+message(
+    WARNING "
+    ---[ATTENTION]------------------------------------------------------------
+    as I found QListWidget::removeItemWidget() doesn't work for KDE(4.8.3) +
+    Qt(4.8.2) compiled w/ gcc 4.7.1, so if you are unable to remove
+    #include paths from plugin configuration page, please report your versions
+    and reconfigure w/ -DFORCE_BUG_WORKAROUND=1 ...
+    --------------------------------------------------------------------------"
+  )
+
+if(FORCE_BUG_WORKAROUND)
+    add_definitions(-DIHP_FORCE_BUG_WORKAROUND)
+endif()
+
 
 #---------------------------------------------------------
 # Section: Define some helpful targets (using included)

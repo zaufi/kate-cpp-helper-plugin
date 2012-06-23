@@ -43,7 +43,7 @@ using kate::parseIncludeDirective;
 namespace {
 void ok_parser_test(const bool f)
 {
-    BOOST_TEST_MESSAGE("Testing parser w/ stric flag: " << f);
+    BOOST_TEST_MESSAGE("Testing parser w/ strict flag: " << f);
     {
         kate::IncludeParseResult r = parseIncludeDirective("#include <foo.h>", f);
         BOOST_CHECK_EQUAL(r.m_range.start().column(), 10);

@@ -84,34 +84,10 @@ public:
 
     /// \name Modifiers
     //@{
-    void setSessionDirs(QStringList& dirs)
-    {
-        if (m_session_dirs != dirs)
-        {
-            m_session_dirs.swap(dirs);
-            m_config_dirty = true;
-            Q_EMIT(sessionDirsChanged());
-        }
-    }
-    void setGlobalDirs(QStringList& dirs)
-    {
-        if (m_system_dirs != dirs)
-        {
-            m_system_dirs.swap(dirs);
-            m_config_dirty = true;
-            Q_EMIT(systemDirsChanged());
-        }
-    }
-    void setUseLtGt(const bool state)
-    {
-        m_use_ltgt = state;
-        m_config_dirty = true;
-    }
-    void setUseCwd(const bool state)
-    {
-        m_use_cwd = state;
-        m_config_dirty = true;
-    }
+    void setSessionDirs(QStringList& dirs);
+    void setGlobalDirs(QStringList& dirs);
+    void setUseLtGt(const bool state);
+    void setUseCwd(const bool state);
     //@}
 
     /// \name PluginConfigPageInterface interface implementation

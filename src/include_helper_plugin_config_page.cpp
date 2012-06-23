@@ -83,21 +83,18 @@ IncludeHelperPluginConfigPage::IncludeHelperPluginConfigPage(
 
 void IncludeHelperPluginConfigPage::apply()
 {
+    kDebug() << "** CONFIG-PAGE **: Applying configuration";
     // Notify about configuration changes
     {
         QStringList dirs;
         for (int i = 0; i < m_session_list->pathsList->count(); ++i)
-        {
             dirs.append(m_session_list->pathsList->item(i)->text());
-        }
         m_plugin->setSessionDirs(dirs);
     }
     {
         QStringList dirs;
         for (int i = 0; i < m_system_list->pathsList->count(); ++i)
-        {
             dirs.append(m_system_list->pathsList->item(i)->text());
-        }
         m_plugin->setGlobalDirs(dirs);
     }
     m_plugin->setUseLtGt(m_pss_config->includeMarkersSwitch->checkState() == Qt::Checked);
@@ -106,7 +103,7 @@ void IncludeHelperPluginConfigPage::apply()
 
 void IncludeHelperPluginConfigPage::reset()
 {
-    kDebug() << "Reseting configuration";
+    kDebug() << "** CONFIG-PAGE **: Reseting configuration";
     m_plugin->readConfig();
     // Put dirs to the list
     m_system_list->pathsList->addItems(m_plugin->globalDirs());
@@ -135,11 +132,23 @@ void IncludeHelperPluginConfigPage::delSessionIncludeDir()
     m_session_list->pathsList->removeItemWidget(
         m_session_list->pathsList->currentItem()
       );
+#ifndef IHP_BROKEN_REMOVE_ITEM_WIDGET
+    m_system_list->pathsList->removeItemWidget(
+        m_system_list->pathsList->currentItem()
+      );
+#else
+    QListWidgetItem* item = m_system_list->pathsList->takeItem(
+        m_system_list->pathsList->currentRow()
+      );
+    delete item;
+#endif                                                      // IHP_BROKEN_REMOVE_ITEM_WIDGET
 }
 
-void IncludeHelperPluginConfigPage::moveSessionDirUp() {
+void IncludeHelperPluginConfigPage::moveSessionDirUp()
+{
     const int current = m_session_list->pathsList->currentRow();
-    if (current) {
+    if (current)
+    {
         m_session_list->pathsList->insertItem(
             current - 1
           , m_session_list->pathsList->takeItem(current)
@@ -148,9 +157,11 @@ void IncludeHelperPluginConfigPage::moveSessionDirUp() {
     }
 }
 
-void IncludeHelperPluginConfigPage::moveSessionDirDown() {
+void IncludeHelperPluginConfigPage::moveSessionDirDown()
+{
     const int current = m_session_list->pathsList->currentRow();
-    if (current < m_session_list->pathsList->count() - 1) {
+    if (current < m_session_list->pathsList->count() - 1)
+    {
         m_session_list->pathsList->insertItem(
             current + 1
           , m_session_list->pathsList->takeItem(current)
@@ -172,14 +183,24 @@ void IncludeHelperPluginConfigPage::addGlobalIncludeDir()
 
 void IncludeHelperPluginConfigPage::delGlobalIncludeDir()
 {
+
+#ifndef IHP_BROKEN_REMOVE_ITEM_WIDGET
     m_system_list->pathsList->removeItemWidget(
         m_system_list->pathsList->currentItem()
       );
+#else
+    QListWidgetItem* item = m_system_list->pathsList->takeItem(
+        m_system_list->pathsList->currentRow()
+      );
+    delete item;
+#endif                                                      // IHP_BROKEN_REMOVE_ITEM_WIDGET
 }
 
-void IncludeHelperPluginConfigPage::moveGlobalDirUp() {
+void IncludeHelperPluginConfigPage::moveGlobalDirUp()
+{
     const int current = m_system_list->pathsList->currentRow();
-    if (current) {
+    if (current)
+    {
         m_system_list->pathsList->insertItem(
             current - 1
           , m_system_list->pathsList->takeItem(current)
@@ -188,9 +209,11 @@ void IncludeHelperPluginConfigPage::moveGlobalDirUp() {
     }
 }
 
-void IncludeHelperPluginConfigPage::moveGlobalDirDown() {
+void IncludeHelperPluginConfigPage::moveGlobalDirDown()
+{
     const int current = m_system_list->pathsList->currentRow();
-    if (current < m_system_list->pathsList->count() - 1) {
+    if (current < m_system_list->pathsList->count() - 1)
+    {
         m_system_list->pathsList->insertItem(
             current + 1
           , m_system_list->pathsList->takeItem(current)

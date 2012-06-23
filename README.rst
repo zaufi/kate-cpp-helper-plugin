@@ -48,3 +48,10 @@ TODO
 * Is it possible to use annotations iface somehow to indicate 'not-found' #include file?
 * Add quick open dialog -- like quick document switcher, but allows to find file to open
   based on configured include paths by partial name match...
+
+Changes
+=======
+
+Version 0.4.1
+
+* workaround for undefined bug w/ KDE(4.8.3)+Qt(4.8.2): QListWidget::removeItemWidget()

@@ -85,7 +85,7 @@ Kate::PluginConfigPage* IncludeHelperPlugin::configPage(uint number, QWidget* pa
 void IncludeHelperPlugin::readConfig()
 {
     // Read global config
-    kDebug() << "Reading global config: " << KGlobal::config()->name();
+    kDebug() << "** PLUGIN **: Reading global config: " << KGlobal::config()->name();
     KConfigGroup gcg(KGlobal::config(), "IncludeHelper");
     QStringList dirs = gcg.readPathEntry("ConfiguredDirs", QStringList());
     kDebug() << "Got global configured include path list: " << dirs;
@@ -94,7 +94,7 @@ void IncludeHelperPlugin::readConfig()
 
 void IncludeHelperPlugin::readSessionConfig(KConfigBase* config, const QString& groupPrefix)
 {
-    kDebug() << "Reading session config: " << groupPrefix;
+    kDebug() << "** PLUGIN **: Reading session config: " << groupPrefix;
     // Read session config
     /// \todo Rename it!
     KConfigGroup scg(config, groupPrefix + ":include-helper");
@@ -117,8 +117,10 @@ void IncludeHelperPlugin::writeSessionConfig(KConfigBase* config, const QString&
     if (!m_config_dirty)
     {
         /// \todo Maybe I don't understand smth, but rally strange things r going on here:
-        /// after plugin gets enabled, \c writeSessionConfig() would be called \b BEFORE
+        /// after plugin gets enabled, \c writeSessionConfig() will be called \b BEFORE
         /// any attempt to read configuration...
+        /// The only thing came into my mind that it is attempt to initialize config w/ default
+        /// values... but in that case everything stored before get lost!
         kDebug() << "Config isn't dirty!!!";
         readSessionConfig(config, groupPrefix);
         return;
@@ -131,12 +133,52 @@ void IncludeHelperPlugin::writeSessionConfig(KConfigBase* config, const QString&
     scg.writeEntry("UseLtGt", QVariant(m_use_ltgt));
     scg.writeEntry("UseCwd", QVariant(m_use_cwd));
     scg.sync();
-    // Read global config
+    // Write global config
     kDebug() << "Write global configured include path list: " << m_system_dirs;
     KConfigGroup gcg(KGlobal::config(), "IncludeHelper");
     gcg.writePathEntry("ConfiguredDirs", m_system_dirs);
     gcg.sync();
     m_config_dirty = false;
+}
+
+void IncludeHelperPlugin::setSessionDirs(QStringList& dirs)
+{
+    kDebug() << "Got session dirs: " << m_session_dirs;
+    kDebug() << "... session dirs: " << dirs;
+    if (m_session_dirs != dirs)
+    {
+        m_session_dirs.swap(dirs);
+        m_config_dirty = true;
+        Q_EMIT(sessionDirsChanged());
+        kDebug() << "** set config to `dirty' state!! **";
+    }
+}
+
+void IncludeHelperPlugin::setGlobalDirs(QStringList& dirs)
+{
+    kDebug() << "Got system dirs: " << m_system_dirs;
+    kDebug() << "... system dirs: " << dirs;
+    if (m_system_dirs != dirs)
+    {
+        m_system_dirs.swap(dirs);
+        m_config_dirty = true;
+        Q_EMIT(systemDirsChanged());
+        kDebug() << "** set config to `dirty' state!! **";
+    }
+}
+
+void IncludeHelperPlugin::setUseLtGt(const bool state)
+{
+    m_use_ltgt = state;
+    m_config_dirty = true;
+    kDebug() << "** set config to `dirty' state!! **";
+}
+
+void IncludeHelperPlugin::setUseCwd(const bool state)
+{
+    m_use_cwd = state;
+    m_config_dirty = true;
+    kDebug() << "** set config to `dirty' state!! **";
 }
 
 //END IncludeHelperPlugin

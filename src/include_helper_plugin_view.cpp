@@ -73,12 +73,12 @@ IncludeHelperPluginView::~IncludeHelperPluginView() {
 
 void IncludeHelperPluginView::readSessionConfig(KConfigBase*, const QString& groupPrefix)
 {
-    kDebug() << "Reading session config: " << groupPrefix;
+    kDebug() << "** VIEW **: Reading session config: " << groupPrefix;
 }
 
 void IncludeHelperPluginView::writeSessionConfig(KConfigBase*, const QString& groupPrefix)
 {
-    kDebug() << "Writing session config: " << groupPrefix;
+    kDebug() << "** VIEW **: Writing session config: " << groupPrefix;
 }
 
 void IncludeHelperPluginView::openHeader()
@@ -132,7 +132,11 @@ void IncludeHelperPluginView::openHeader()
     if (candidates.size() == 1)
         mainWindow()->openUrl(candidates.first());
     else if (candidates.isEmpty())
-        KPassivePopup::message(i18n("Header not found"), filename, qobject_cast<QWidget*>(this));
+        KPassivePopup::message(
+            i18n("Error")
+          , "Unable to find a file: <tt>" + filename +"</tt>"
+          , qobject_cast<QWidget*>(this)
+          );
     else
     {
         QStringList selected = ChooseFromListDialog::select(qobject_cast<QWidget*>(this), candidates);
