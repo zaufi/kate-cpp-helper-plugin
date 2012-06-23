@@ -128,6 +128,21 @@ void IncludeHelperPluginView::openHeader()
     //
     kDebug() << "Found candidates: " << candidates;
 
+    // Remove duplicates
+    /// \todo Is there analog of \c std::unique?
+    candidates.sort();
+    for (
+        QStringList::iterator it = candidates.begin()
+      , prev = candidates.end()
+      , last = candidates.end()
+      ; it != last
+      ;
+      )
+    {
+        if (prev != last && *it == *prev) candidates.erase(it++);
+        else prev = it++;
+    }
+
     // If there is no ambiguity, then just emit a signal to open the file
     if (candidates.size() == 1)
         mainWindow()->openUrl(candidates.first());

@@ -111,6 +111,21 @@ inline QStringList findHeader(const QString& file, const QStringList& locals, co
         }
         else kDebug() << " ... not exists/readable";
     }
+    // Remove possible duplicates
+    /// \todo Is there analog of \c std::unique?
+    /// \todo Same code used by View... is this a reason to extract as a function?
+    result.sort();
+    for (
+        QStringList::iterator it = result.begin()
+      , prev = result.end()
+      , last = result.end()
+      ; it != last
+      ;
+      )
+    {
+        if (prev != last && *it == *prev) result.erase(it++);
+        else prev = it++;
+    }
     return result;
 }
 
