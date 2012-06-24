@@ -29,6 +29,7 @@
 #include <KDebug>
 #include <KLocalizedString>                                 /// \todo Where is \c i18n() defiend?
 #include <KTextEditor/MarkInterface>
+#include <QtCore/QFileInfo>
 
 namespace kate {
 

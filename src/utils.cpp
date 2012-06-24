@@ -25,6 +25,8 @@
 
 // Standard includes
 #include <KDebug>
+#include <KTextEditor/Range>
+#include <QtCore/QFileInfo>
 #include <cassert>
 
 namespace kate {
@@ -169,6 +171,55 @@ IncludeParseResult parseIncludeDirective(const QString& line, const bool strict)
             assert(!"Parsing FSM broken!");
     }
 //     kDebug() << "result-range=" << result.m_range << ", is_complete=" << result.m_is_complete;
+    return result;
+}
+
+/**
+ * \param[in] uri name of the file to lookup
+ */
+inline bool isPresentAndReadable(const QString& uri)
+{
+    const QFileInfo fi = QFileInfo(uri);
+    kDebug() << "... checking " << fi.filePath();
+    return fi.exists() && fi.isFile() && fi.isReadable();
+}
+
+/**
+ * \todo Is there any way to make a joint view for both containers?
+ *
+ * \param[in] file filename to look for in the next 2 lists...
+ * \param[in] locals per session \c #include search paths list
+ * \param[in] system global \c #include search paths list
+ * \return list of absolute filenames
+ */
+QStringList findHeader(const QString& file, const QStringList& locals, const QStringList& system)
+{
+    QStringList result;
+    // Try locals first
+    kDebug() << "Trying locals first...";
+    Q_FOREACH(const QString& path, locals)
+    {
+        const QString uri = path + '/' + file;
+        if (isPresentAndReadable(uri))
+        {
+            result.push_back(uri);
+            kDebug() << " ... Ok";
+        }
+        else kDebug() << " ... not exists/readable";
+    }
+    // Then try system paths
+    kDebug() << "Trying system paths...";
+    Q_FOREACH(const QString& path, system)
+    {
+        const QString uri = path + '/' + file;
+        if (isPresentAndReadable(uri))
+        {
+            result.push_back(uri);
+            kDebug() << " ... Ok";
+        }
+        else kDebug() << " ... not exists/readable";
+    }
+    removeDuplicates(result);                               // Remove possible duplicates
     return result;
 }
 

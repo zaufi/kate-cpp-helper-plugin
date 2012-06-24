@@ -2,12 +2,12 @@ configure_file(config.h.in config.h)
 configure_file(kateincludehelperplugin.desktop.in kateincludehelperplugin.desktop)
 
 set(KATE_INCLUDE_HELPER_PLUGIN_SOURCES
+    utils.cpp
     document_info.cpp
     include_helper_plugin_config_page.cpp
     include_helper_plugin_completion_model.cpp
     include_helper_plugin_view.cpp
     include_helper_plugin.cpp
-    utils.cpp
   )
 
 kde4_add_ui_files(KATE_INCLUDE_HELPER_PLUGIN_SOURCES path_config.ui other_settings.ui)

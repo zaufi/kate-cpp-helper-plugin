@@ -73,6 +73,8 @@ private Q_SLOTS:
 
 private:
     KTextEditor::Range currentWord() const;                 ///< Get word under cursor as range
+    void openFiles(const QStringList&);                     ///< Open documents for all URIs in a given list
+    QStringList findFileLocations(const QString&);          ///< Get list of absolute paths to filename
 
     IncludeHelperPlugin* m_plugin;                          ///< Parent plugin
     KAction* m_open_header;                                 ///< <em>Open header</em> action

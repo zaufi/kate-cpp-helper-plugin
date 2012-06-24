@@ -18,6 +18,7 @@ Requeriments
 
 * `Kate <http://kate-editor.org  />`_ editor version >= 2.9.
 
+
 Installation
 ============
 
@@ -34,6 +35,7 @@ Installation
 * After that u have to enable it from `Settings->Configure Kate...->Plugins` and configure the include path
   globally and/or per session...
 
+
 TODO
 ====
 
@@ -43,15 +45,17 @@ TODO
 * Handle #include files w/ relative path
 * Use Shift+F10 to go back in stack
 * Form an ``#include`` directive w/ filename currently active in a clipboard (done)
-* List of currently ``#included`` files in a dialog and/or menu
+* List of currently ``#included`` files in a dialog and/or menu (done)
 * OpenFile dialog for current ``#include`` line
 * Is it possible to use annotations iface somehow to indicate 'not-found' #include file?
 * Add quick open dialog -- like quick document switcher, but allows to find file to open
   based on configured include paths by partial name match...
+
 
 Changes
 =======
 
 Version 0.4.1
 
-* workaround for undefined bug w/ KDE(4.8.3)+Qt(4.8.2): QListWidget::removeItemWidget()
+* open dialog w/ currently ``#included`` files, if unable to open a file under cursor
+  (or cursor not on a word at all)

@@ -83,81 +83,84 @@ void IncludeHelperPluginView::writeSessionConfig(KConfigBase*, const QString& gr
 
 void IncludeHelperPluginView::openHeader()
 {
+    QStringList candidates;
+    QString filename;
+    KTextEditor::Document* doc = mainWindow()->activeView()->document();
+
     KTextEditor::Range r = currentWord();
     kDebug() << "currentWord() = " << r;
-    if (r.isEmpty())
-        return;                                             // Nothing todo if range is empty
-    // NOTE Non empty range means that main window is valid
-    // and active view present as well!
-    assert("Main window and active view expected to be valid!" && mainWindow()->activeView());
-    QString filename = mainWindow()->activeView()->document()->text(r);
-    assert("Getting text on non-empty range should return smth!" && !filename.isEmpty());
-    kDebug() << "filename = " << filename;
+    if (!r.isEmpty())
+    {
+        // NOTE Non empty range means that main window is valid
+        // and active view present as well!
+        assert("Main window and active view expected to be valid!" && mainWindow()->activeView());
 
-    // Check CWD first if allowed
-    QStringList candidates;
-    if (m_plugin->useCwd())
-    {
-        const KUrl& current_url = mainWindow()->activeView()->document()->url().prettyUrl();
-        const QString uri = current_url.directory() + '/' + filename;
-        const QFileInfo fi = QFileInfo(uri);
-        if (fi.exists() && fi.isFile() && fi.isReadable())
-            candidates.append(uri);
-    }
+        filename = doc->text(r);
+        assert("Getting text on non-empty range should return smth!" && !filename.isEmpty());
 
-    // Try to find full filename to open
-    /// \todo Is there any way to make a joint view for both containers?
-    // 0) search session dirs list first
-    Q_FOREACH(const QString& dir, m_plugin->sessionDirs())
-    {
-        const QString uri = dir + "/" + filename;
-        kDebug() << "Trying " << uri;
-        const QFileInfo fi = QFileInfo(uri);
-        if (fi.exists() && fi.isFile() && fi.isReadable())
-            candidates.append(uri);
-    }
-    // 1) search global dirs next
-    Q_FOREACH(const QString& dir, m_plugin->globalDirs())
-    {
-        const QString uri = dir + "/" + filename;
-        kDebug() << "Trying " << (dir + "/" + filename);
-        const QFileInfo fi = QFileInfo(uri);
-        if (fi.exists() && fi.isFile() && fi.isReadable())
-            candidates.append(uri);
-    }
-    //
-    kDebug() << "Found candidates: " << candidates;
-
-    // Remove duplicates
-    /// \todo Is there analog of \c std::unique?
-    candidates.sort();
-    for (
-        QStringList::iterator it = candidates.begin()
-      , prev = candidates.end()
-      , last = candidates.end()
-      ; it != last
-      ;
-      )
-    {
-        if (prev != last && *it == *prev) candidates.erase(it++);
-        else prev = it++;
+        // Try to find an absolute path to given filename
+        candidates = findFileLocations(filename);
+        kDebug() << "Found candidates: " << candidates;
     }
 
     // If there is no ambiguity, then just emit a signal to open the file
     if (candidates.size() == 1)
-        mainWindow()->openUrl(candidates.first());
-    else if (candidates.isEmpty())
-        KPassivePopup::message(
-            i18n("Error")
-          , "Unable to find a file: <tt>" + filename +"</tt>"
-          , qobject_cast<QWidget*>(this)
-          );
-    else
     {
-        QStringList selected = ChooseFromListDialog::select(qobject_cast<QWidget*>(this), candidates);
-        Q_FOREACH(const QString& dir, selected)
-            mainWindow()->openUrl(dir);
+        mainWindow()->openUrl(candidates.first());
+        return;
     }
+    else if (candidates.isEmpty())
+    {
+        if (!filename.isEmpty())
+            KPassivePopup::message(
+                i18n("Error")
+              , "Unable to find a file: <tt>" + filename +"</tt>.<br/> Here is the list of #included headers..."
+              , qobject_cast<QWidget*>(this)
+              );
+        // Scan current document for #include files
+        for (int i = 0; i < doc->lines(); i++)
+        {
+            const QString& line_str = doc->line(i);
+            kate::IncludeParseResult r = parseIncludeDirective(line_str, false);
+            if (r.m_range.isValid())
+            {
+                r.m_range.setBothLines(i);
+                candidates.push_back(doc->text(r.m_range));
+            }
+        }
+        // Resolve relative filenames to absolute
+        QStringList all;
+        Q_FOREACH(const QString& file, candidates)
+        {
+            QStringList cfpl = findFileLocations(file);     // current file paths list ;-)
+            /// \todo WTF! List doesn't have a \c merge() ???
+            all.append(cfpl);
+        }
+        candidates.swap(all);
+    }
+    openFiles(ChooseFromListDialog::select(qobject_cast<QWidget*>(this), candidates));
+}
+
+QStringList IncludeHelperPluginView::findFileLocations(const QString& filename)
+{
+    KTextEditor::Document* doc = mainWindow()->activeView()->document();
+    // Try to find full filename to open
+    QStringList candidates = findHeader(filename, m_plugin->sessionDirs(), m_plugin->globalDirs());
+    // Check CWD as well, if allowed
+    if (m_plugin->useCwd())
+    {
+        const QString uri = doc->url().prettyUrl() + '/' + filename;
+        if (isPresentAndReadable(uri))
+            candidates.push_front(uri);                     // Push to front cuz more likely that user wants it
+    }
+    removeDuplicates(candidates);                           // Remove possible duplicates
+    return candidates;
+}
+
+inline void IncludeHelperPluginView::openFiles(const QStringList& files)
+{
+    Q_FOREACH(const QString& file, files)
+        mainWindow()->openUrl(file);
 }
 
 void IncludeHelperPluginView::copyInclude()
@@ -287,10 +290,12 @@ void IncludeHelperPluginView::updateDocumentInfo(KTextEditor::Document* doc)
     DocumentInfo* di = new DocumentInfo(m_plugin);
 
     // Search lines and filenames #include'd in this document
-    for (int i = 0; i < doc->lines(); i++) {
+    for (int i = 0; i < doc->lines(); i++)
+    {
         const QString& line_str = doc->line(i);
         kate::IncludeParseResult r = parseIncludeDirective(line_str, false);
-        if (r.m_range.isValid()) {
+        if (r.m_range.isValid())
+        {
             r.m_range.setBothLines(i);
             di->addRange(
                 mv_iface->newMovingRange(
@@ -319,10 +324,12 @@ void IncludeHelperPluginView::textInserted(KTextEditor::Document* doc, const KTe
         it = m_plugin->managed_docs().insert(doc, new DocumentInfo(m_plugin));
     }
     // Search lines and filenames #include'd in this range
-    for (int i = range.start().line(); i < range.end().line() + 1; i++) {
+    for (int i = range.start().line(); i < range.end().line() + 1; i++)
+    {
         const QString& line_str = doc->line(i);
         kate::IncludeParseResult r = parseIncludeDirective(line_str, true);
-        if (r.m_range.isValid()) {
+        if (r.m_range.isValid())
+        {
             r.m_range.setBothLines(i);
             if (!(*it)->isRangeWithSameExists(r.m_range))
             {
@@ -399,11 +406,9 @@ KTextEditor::Range IncludeHelperPluginView::currentWord() const
             break;
         }
     }
-    // Seeking for end of current word
+    // Seeking for end of the current word
     while (end < line_str.length() && !line_str[end].isSpace() && line_str[end] != '>' && line_str[end] != '"')
-    {
         ++end;
-    }
 
     return KTextEditor::Range(line, start, line, end);
 }
@@ -429,15 +434,19 @@ QStringList ChooseFromListDialog::select(QWidget* parent, const QStringList& str
     KConfigGroup gcg(KGlobal::config(), "IncludeHelperChooserDialog");
     ChooseFromListDialog dialog(parent);
     dialog.m_list->addItems(strings);                       // append gien items to the list
+    if (!strings.isEmpty())                                 // if strings list isn't empty
+    {
+        dialog.m_list->setCurrentRow(0);                    // select 1st row in the list
+        dialog.m_list->setFocus(Qt::TabFocusReason);        // and give focus to it
+    }
     dialog.restoreDialogSize(gcg);                          // restore dialog geometry from config
 
     QStringList result;
-    if (dialog.exec() == QDialog::Accepted)
+    if (dialog.exec() == QDialog::Accepted)                 // if user accept smth
     {
+        // grab seleted items into a result list
         Q_FOREACH(QListWidgetItem* item, dialog.m_list->selectedItems())
-        {
             result.append(item->text());
-        }
     }
     dialog.saveDialogSize(gcg);                             // write dialog geometry to config
     gcg.sync();

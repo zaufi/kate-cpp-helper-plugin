@@ -21,14 +21,13 @@
  */
 
 #ifndef __SRC__UTILS_H__
-#  define __SRC__UTILS_H__
+# define __SRC__UTILS_H__
 
 // Project specific includes
 
 // Standard includes
-#  include <KTextEditor/Range>
-#  include <QtCore/QFileInfo>
-#  include <QtCore/QStringList>
+# include <KTextEditor/Range>
+# include <QtCore/QStringList>
 
 namespace kate {
 struct IncludeStyle
@@ -81,53 +80,26 @@ inline bool isCOrPPSource(const QString& mime_str)
       ;
 }
 
-/// Find given header withing list of paths
-inline QStringList findHeader(const QString& file, const QStringList& locals, const QStringList& system)
+/// \todo Is there analog of \c std::unique?
+inline void removeDuplicates(QStringList& list)
 {
-    QStringList result;
-    // Try locals first
-    kDebug() << "Trying locals first...";
-    Q_FOREACH(const QString& path, locals)
-    {
-        QFileInfo f(path + "/" + file);
-        kDebug() << "... checking " << f.filePath();
-        if (f.exists())
-        {
-            result.push_back(path);
-            kDebug() << " ... Ok";
-        }
-        else kDebug() << " ... not exists/readable";
-    }
-    // Then try system paths
-    kDebug() << "Trying system paths...";
-    Q_FOREACH(const QString& path, system)
-    {
-        QFileInfo f(path + "/" + file);
-        kDebug() << "... checking " << f.filePath();
-        if (f.exists())
-        {
-            result.push_back(path);
-            kDebug() << " ... Ok";
-        }
-        else kDebug() << " ... not exists/readable";
-    }
-    // Remove possible duplicates
-    /// \todo Is there analog of \c std::unique?
-    /// \todo Same code used by View... is this a reason to extract as a function?
-    result.sort();
+    list.sort();
     for (
-        QStringList::iterator it = result.begin()
-      , prev = result.end()
-      , last = result.end()
+        QStringList::iterator it = list.begin()
+      , prev = list.end()
+      , last = list.end()
       ; it != last
       ;
       )
     {
-        if (prev != last && *it == *prev) result.erase(it++);
+        if (prev != last && *it == *prev) list.erase(it++);
         else prev = it++;
     }
-    return result;
 }
 
+/// Try to find a file in a given location
+bool isPresentAndReadable(const QString&);
+/// Find given header withing list of paths
+QStringList findHeader(const QString&, const QStringList&, const QStringList&);
 }                                                           // namespace kate
 #endif                                                      // __SRC__UTILS_H__

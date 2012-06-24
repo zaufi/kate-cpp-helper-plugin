@@ -132,7 +132,8 @@ void IncludeHelperPluginConfigPage::delSessionIncludeDir()
     m_session_list->pathsList->removeItemWidget(
         m_session_list->pathsList->currentItem()
       );
-#ifndef IHP_BROKEN_REMOVE_ITEM_WIDGET
+#ifndef IHP_FORCE_BUG_WORKAROUND
+# warning "ATTENTION: Removing items from paths list may not work..."
     m_system_list->pathsList->removeItemWidget(
         m_system_list->pathsList->currentItem()
       );
@@ -141,7 +142,7 @@ void IncludeHelperPluginConfigPage::delSessionIncludeDir()
         m_system_list->pathsList->currentRow()
       );
     delete item;
-#endif                                                      // IHP_BROKEN_REMOVE_ITEM_WIDGET
+#endif                                                      // IHP_FORCE_BUG_WORKAROUND
 }
 
 void IncludeHelperPluginConfigPage::moveSessionDirUp()
@@ -183,8 +184,8 @@ void IncludeHelperPluginConfigPage::addGlobalIncludeDir()
 
 void IncludeHelperPluginConfigPage::delGlobalIncludeDir()
 {
-
-#ifndef IHP_BROKEN_REMOVE_ITEM_WIDGET
+#ifndef IHP_FORCE_BUG_WORKAROUND
+# warning "ATTENTION: Removing items from paths list may not work..."
     m_system_list->pathsList->removeItemWidget(
         m_system_list->pathsList->currentItem()
       );
@@ -193,7 +194,7 @@ void IncludeHelperPluginConfigPage::delGlobalIncludeDir()
         m_system_list->pathsList->currentRow()
       );
     delete item;
-#endif                                                      // IHP_BROKEN_REMOVE_ITEM_WIDGET
+#endif                                                      // IHP_FORCE_BUG_WORKAROUND
 }
 
 void IncludeHelperPluginConfigPage::moveGlobalDirUp()

@@ -52,24 +52,10 @@ add_definitions(${QT_DEFINITIONS} ${KDE4_DEFINITIONS})
 
 # Set generic compiler flags
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${KDE4_ENABLE_EXCEPTIONS}")
-# make sure build-time configuration header file will be included in
-# EVERY translation unit
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -include ${PROJECT_SOURCE_DIR}/config.h")
-
-message(
-    WARNING "
-    ---[ATTENTION]------------------------------------------------------------
-    as I found QListWidget::removeItemWidget() doesn't work for KDE(4.8.3) +
-    Qt(4.8.2) compiled w/ gcc 4.7.1, so if you are unable to remove
-    #include paths from plugin configuration page, please report your versions
-    and reconfigure w/ -DFORCE_BUG_WORKAROUND=1 ...
-    --------------------------------------------------------------------------"
-  )
 
 if(FORCE_BUG_WORKAROUND)
     add_definitions(-DIHP_FORCE_BUG_WORKAROUND)
 endif()
-
 
 #---------------------------------------------------------
 # Section: Define some helpful targets (using included)
