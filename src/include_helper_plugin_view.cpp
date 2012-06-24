@@ -114,7 +114,11 @@ void IncludeHelperPluginView::openHeader()
         if (!filename.isEmpty())
             KPassivePopup::message(
                 i18n("Error")
-              , "Unable to find a file: <tt>" + filename +"</tt>.<br/> Here is the list of #included headers..."
+              , i18n(
+                    "<qt>Unable to find a file: `<tt>%1</tt>'."
+                    "<p>Here is the list of #included headers...</p><qt>"
+                  , filename
+                  )
               , qobject_cast<QWidget*>(this)
               );
         // Scan current document for #include files
@@ -138,7 +142,7 @@ void IncludeHelperPluginView::openHeader()
         }
         candidates.swap(all);
     }
-    openFiles(ChooseFromListDialog::select(qobject_cast<QWidget*>(this), candidates));
+    openFiles(ChooseFromListDialog::selectHeaderToOpen(qobject_cast<QWidget*>(this), candidates));
 }
 
 QStringList IncludeHelperPluginView::findFileLocations(const QString& filename)
@@ -429,7 +433,7 @@ ChooseFromListDialog::ChooseFromListDialog(QWidget* parent)
     connect(m_list, SIGNAL(executed(QListWidgetItem*)), this, SLOT(accept()));
 }
 
-QStringList ChooseFromListDialog::select(QWidget* parent, const QStringList& strings)
+QStringList ChooseFromListDialog::selectHeaderToOpen(QWidget* parent, const QStringList& strings)
 {
     KConfigGroup gcg(KGlobal::config(), "IncludeHelperChooserDialog");
     ChooseFromListDialog dialog(parent);
