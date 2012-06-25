@@ -136,7 +136,7 @@ void IncludeHelperPluginView::openHeader()
         QStringList all;
         Q_FOREACH(const QString& file, candidates)
         {
-            QStringList cfpl = findFileLocations(file);     // current file paths list ;-)
+            QStringList cfpl = findFileLocations(file);     // fill `Current File Paths List' ;-)
             /// \todo WTF! List doesn't have a \c merge() ???
             all.append(cfpl);
         }
@@ -149,7 +149,7 @@ QStringList IncludeHelperPluginView::findFileLocations(const QString& filename)
 {
     KTextEditor::Document* doc = mainWindow()->activeView()->document();
     // Try to find full filename to open
-    QStringList candidates = findHeader(filename, m_plugin->sessionDirs(), m_plugin->globalDirs());
+    QStringList candidates = findHeader(filename, m_plugin->sessionDirs(), m_plugin->systemDirs());
     // Check CWD as well, if allowed
     if (m_plugin->useCwd())
     {
@@ -190,7 +190,7 @@ void IncludeHelperPluginView::copyInclude()
         open = '<';
         close = '>';
         // Try to match global dirs next
-        Q_FOREACH(const QString& dir, m_plugin->globalDirs())
+        Q_FOREACH(const QString& dir, m_plugin->systemDirs())
             if (current_dir.startsWith(dir) && longest_matched.length() < dir.length())
                 longest_matched = dir;
     }

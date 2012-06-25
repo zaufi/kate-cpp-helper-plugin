@@ -119,7 +119,7 @@ void DocumentInfo::updateStatus(State& s)
             s.m_status = (QFileInfo(cur2check).exists()) ? Ok : NotFound;
         }
         // 1) Try configured dirs then
-        QStringList paths = findHeader(filename, m_plugin->sessionDirs(), m_plugin->globalDirs());
+        QStringList paths = findHeader(filename, m_plugin->sessionDirs(), m_plugin->systemDirs());
         if (paths.empty())
             s.m_status = (s.m_status == Ok) ? Ok : NotFound;
         else if (paths.size() == 1)

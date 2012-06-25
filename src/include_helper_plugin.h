@@ -60,7 +60,7 @@ public:
     {
         return m_session_dirs;
     }
-    const QStringList& globalDirs() const
+    const QStringList& systemDirs() const
     {
         return m_system_dirs;
     }

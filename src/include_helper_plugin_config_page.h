@@ -57,7 +57,7 @@ public:
 
 Q_SIGNALS:
     void sessionDirsUpdated(const QStringList&);
-    void globalDirsUpdated(const QStringList&);
+    void systemDirsUpdated(const QStringList&);
 
 private Q_SLOTS:
     void addGlobalIncludeDir();                             ///< Add directory to the list

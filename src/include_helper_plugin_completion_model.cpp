@@ -29,7 +29,6 @@
 // Standard includes
 #include <KTextEditor/Document>
 #include <KTextEditor/View>
-#include <QtCore/QDir>
 
 namespace kate {
 //BEGIN IncludeHelperPluginCompletionModel
@@ -160,50 +159,13 @@ void IncludeHelperPluginCompletionModel::updateCompletionList(const QString& sta
     mask.append(name);
     kDebug() << "mask=" << mask;
     // Complete session dirst first
-    Q_FOREACH(const QString& d, m_plugin->sessionDirs())
-    {
-        const QString dir = QDir::cleanPath(d + '/' + path);
-        kDebug() << "Trying " << dir;
-        {
-            QStringList result = QDir(dir).entryList(
-                mask
-              , QDir::Dirs | QDir::NoDotAndDotDot | QDir::CaseSensitive | QDir::Readable
-              );
-            Q_FOREACH(const QString& r, result)
-                m_dir_completions.append(r + "/");
-        }
-        {
-            QStringList result = QDir(dir).entryList(
-                mask
-              , QDir::Files | QDir::NoDotAndDotDot | QDir::CaseSensitive | QDir::Readable
-              );
-            m_file_completions.append(result);
-        }
-    }
+    updateListsFromFS(path, m_plugin->sessionDirs(), mask, m_dir_completions, m_file_completions);
     if (!only_local)
     {
         // Complete global dirs next
-        Q_FOREACH(const QString& d, m_plugin->globalDirs())
-        {
-            const QString dir = QDir::cleanPath(d + '/' + path);
-            kDebug() << "Trying " << dir;
-            {
-                QStringList result = QDir(dir).entryList(
-                    mask
-                  , QDir::Dirs | QDir::NoDotAndDotDot | QDir::CaseSensitive | QDir::Readable
-                  );
-                Q_FOREACH(const QString& r, result)
-                    m_dir_completions.append(r + "/");
-            }
-            {
-                QStringList result = QDir(dir).entryList(
-                    mask
-                  , QDir::Files | QDir::NoDotAndDotDot | QDir::CaseSensitive | QDir::Readable
-                  );
-                m_file_completions.append(result);
-            }
-        }
+        updateListsFromFS(path, m_plugin->systemDirs(), mask, m_dir_completions, m_file_completions);
     }
+    //
     kDebug() << "Got file completions: " << m_file_completions;
     kDebug() << "Got dir completions: " << m_dir_completions;
     endResetModel();

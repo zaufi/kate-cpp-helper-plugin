@@ -97,6 +97,14 @@ inline void removeDuplicates(QStringList& list)
     }
 }
 
+/// Scan for files and dirs
+void updateListsFromFS(
+    const QString&
+  , const QStringList&
+  , const QStringList&
+  , QStringList&
+  , QStringList&
+  );
 /// Try to find a file in a given location
 bool isPresentAndReadable(const QString&);
 /// Find given header withing list of paths

@@ -106,7 +106,7 @@ void IncludeHelperPluginConfigPage::reset()
     kDebug() << "** CONFIG-PAGE **: Reseting configuration";
     m_plugin->readConfig();
     // Put dirs to the list
-    m_system_list->pathsList->addItems(m_plugin->globalDirs());
+    m_system_list->pathsList->addItems(m_plugin->systemDirs());
     m_session_list->pathsList->addItems(m_plugin->sessionDirs());
     m_pss_config->includeMarkersSwitch->setCheckState(
         m_plugin->useLtGt() ? Qt::Checked : Qt::Unchecked

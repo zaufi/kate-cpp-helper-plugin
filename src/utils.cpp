@@ -26,6 +26,7 @@
 // Standard includes
 #include <KDebug>
 #include <KTextEditor/Range>
+#include <QtCore/QDir>
 #include <QtCore/QFileInfo>
 #include <cassert>
 
@@ -184,6 +185,22 @@ inline bool isPresentAndReadable(const QString& uri)
     return fi.exists() && fi.isFile() && fi.isReadable();
 }
 
+namespace {
+inline void findFiles(const QString& file, const QStringList& paths, QStringList& result)
+{
+    Q_FOREACH(const QString& path, paths)
+    {
+        const QString uri = path + '/' + file;
+        if (isPresentAndReadable(uri))
+        {
+            result.push_back(uri);
+            kDebug() << " ... Ok";
+        }
+        else kDebug() << " ... not exists/readable";
+    }
+}
+}                                                           // anonymous namespace
+
 /**
  * \todo Is there any way to make a joint view for both containers?
  *
@@ -195,32 +212,44 @@ inline bool isPresentAndReadable(const QString& uri)
 QStringList findHeader(const QString& file, const QStringList& locals, const QStringList& system)
 {
     QStringList result;
-    // Try locals first
     kDebug() << "Trying locals first...";
-    Q_FOREACH(const QString& path, locals)
-    {
-        const QString uri = path + '/' + file;
-        if (isPresentAndReadable(uri))
-        {
-            result.push_back(uri);
-            kDebug() << " ... Ok";
-        }
-        else kDebug() << " ... not exists/readable";
-    }
-    // Then try system paths
+    findFiles(file, locals, result);                        // Try locals first
     kDebug() << "Trying system paths...";
-    Q_FOREACH(const QString& path, system)
-    {
-        const QString uri = path + '/' + file;
-        if (isPresentAndReadable(uri))
-        {
-            result.push_back(uri);
-            kDebug() << " ... Ok";
-        }
-        else kDebug() << " ... not exists/readable";
-    }
+    findFiles(file, system, result);                        // Then try system paths
     removeDuplicates(result);                               // Remove possible duplicates
     return result;
+}
+
+void updateListsFromFS(
+    const QString& path                                     ///< Path to append to every dir in a list to scan
+  , const QStringList& dirs2scan                            ///< List of directories to scan
+  , const QStringList& masks                                ///< Filename masks used for globbing
+  , QStringList& dirs                                       ///< Directories list to append to
+  , QStringList& files                                      ///< Files list to append to
+  )
+{
+    const QDir::Filters common_flags = QDir::NoDotAndDotDot | QDir::CaseSensitive | QDir::Readable;
+    Q_FOREACH(const QString& d, dirs2scan)
+    {
+        const QString dir = QDir::cleanPath(d + '/' + path);
+        kDebug() << "Trying " << dir;
+        {
+            QStringList result = QDir(dir).entryList(masks, QDir::Dirs | common_flags);
+            Q_FOREACH(const QString& r, result)
+            {
+                const QString d = r + "/";
+                if (!dirs.contains(d)) dirs.append(d);
+            }
+        }
+        {
+            QStringList result = QDir(dir).entryList(masks, QDir::Files | common_flags);
+            Q_FOREACH(const QString& r, result)
+            {
+                if (!files.contains(r))
+                    files.append(r);
+            }
+        }
+    }
 }
 
 }                                                           // namespace kate
