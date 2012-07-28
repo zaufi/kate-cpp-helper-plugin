@@ -40,7 +40,11 @@
 
 namespace kate {
 //BEGIN IncludeHelperPluginView
-IncludeHelperPluginView::IncludeHelperPluginView(Kate::MainWindow* mw, const KComponentData& data, IncludeHelperPlugin* plugin)
+IncludeHelperPluginView::IncludeHelperPluginView(
+    Kate::MainWindow* mw
+  , const KComponentData& data
+  , IncludeHelperPlugin* plugin
+  )
   : Kate::PluginView(mw)
   , Kate::XMLGUIClient(data)
   , m_plugin(plugin)
@@ -56,7 +60,12 @@ IncludeHelperPluginView::IncludeHelperPluginView(Kate::MainWindow* mw, const KCo
     connect(m_copy_include, SIGNAL(triggered(bool)), this, SLOT(copyInclude()));
 
     // On viewCreated we have to registerCompletionModel...
-    connect(mainWindow(), SIGNAL(viewCreated(KTextEditor::View*)), this, SLOT(viewCreated(KTextEditor::View*)));
+    connect(
+        mainWindow()
+      , SIGNAL(viewCreated(KTextEditor::View*))
+      , this
+      , SLOT(viewCreated(KTextEditor::View*))
+      );
 
     // We want to enable/disable open header action depending on
     // mime-type of the current document, so we have to subscribe
