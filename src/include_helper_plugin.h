@@ -29,6 +29,7 @@
 #  include <kate/plugin.h>
 #  include <kate/pluginconfigpageinterface.h>
 #  include <KTextEditor/Document>
+#  include <KDirWatch>
 #  include <cassert>
 
 namespace kate {
@@ -46,6 +47,8 @@ class IncludeHelperPlugin : public Kate::Plugin, public Kate::PluginConfigPageIn
     Q_INTERFACES(Kate::PluginConfigPageInterface)
 
 public:
+    /// \todo Where is smth similar \c std::unique_ptr in this damn Qt??
+    /// Only in C++11 mode?
     typedef QMap<KTextEditor::Document*, DocumentInfo*> doc_info_type;
 
     explicit IncludeHelperPlugin(QObject* = 0, const QList<QVariant>& = QList<QVariant>());
@@ -131,10 +134,27 @@ Q_SIGNALS:
     void sessionDirsChanged();
     void systemDirsChanged();
 
+public Q_SLOTS:
+    void updateDocumentInfo(KTextEditor::Document* doc);
+    void textInserted(KTextEditor::Document*, const KTextEditor::Range&);
+
+private Q_SLOTS:
+    void createdPath(const QString&);
+    void deletedPath(const QString&);
+    void updateCurrentView();
+
 private:
+    /// Update warcher to monitor currently configured directories
+    void updateDirWatcher();
+    /// Update warcher to monitor w/ particular entry
+    void updateDirWatcher(const QString&);
+
     QStringList m_system_dirs;
     QStringList m_session_dirs;
     doc_info_type m_doc_info;
+    /// \todo Fuck! I want \c std::unique_ptr. Where is it in Qt?
+    /// Only \c QSharedPtr here?
+    QSharedPointer<KDirWatch> m_dir_watcher;
     /// If \c true <em>Copy #include</em> action would put filename into \c '<' and \c '>'
     /// instead of \c '"'
     bool m_use_ltgt;

@@ -24,14 +24,12 @@
 #include <src/include_helper_plugin_view.h>
 #include <src/include_helper_plugin_completion_model.h>
 #include <src/include_helper_plugin.h>
-#include <src/document_info.h>
 #include <src/utils.h>
 
 // Standard includes
 #include <kate/mainwindow.h>
 #include <KTextEditor/CodeCompletionInterface>
 #include <KTextEditor/Document>
-#include <KTextEditor/MovingInterface>
 #include <KActionCollection>
 #include <KLocalizedString>                                 /// \todo Where is \c i18n() defiend?
 #include <KPassivePopup>
@@ -222,20 +220,23 @@ void IncludeHelperPluginView::copyInclude()
 void IncludeHelperPluginView::viewChanged()
 {
     kDebug() << "update view?";
-    KTextEditor::View* kv = mainWindow()->activeView();
-    if (!kv)
+    KTextEditor::View* view = mainWindow()->activeView();
+    if (!view)
     {
         kDebug() << "no KTextEditor::View -- leave `open header' action as is...";
         return;
     }
-    const QString& mime_str = kv->document()->mimeType();
+    const QString& mime_str = view->document()->mimeType();
     kDebug() << "Current document type: " << mime_str;
     const bool enable_open_header_action = isCOrPPSource(mime_str);
     m_open_header->setEnabled(enable_open_header_action);
     if (enable_open_header_action)
+    {
         m_copy_include->setText(i18n("Copy #include to Clipboard"));
-    else
-        m_copy_include->setText(i18n("Copy File URI to Clipboard"));
+        // Update current view (possible some dirs/files has changed)
+        m_plugin->updateDocumentInfo(view->document());
+    }
+    else m_copy_include->setText(i18n("Copy File URI to Clipboard"));
 }
 
 void IncludeHelperPluginView::viewCreated(KTextEditor::View* view)
@@ -254,101 +255,25 @@ void IncludeHelperPluginView::viewCreated(KTextEditor::View* view)
         }
     }
     // Scan document for #include...
-    updateDocumentInfo(view->document());
+    m_plugin->updateDocumentInfo(view->document());
     // Schedule updates after document gets reloaded
     connect(
         view->document()
       , SIGNAL(reloaded(KTextEditor::Document*))
-      , this
+      , m_plugin
       , SLOT(updateDocumentInfo(KTextEditor::Document*))
       );
     // Schedule updates after new text gets inserted
     connect(
         view->document()
       , SIGNAL(textInserted(KTextEditor::Document*, const KTextEditor::Range&))
-      , this
+      , m_plugin
       , SLOT(textInserted(KTextEditor::Document*, const KTextEditor::Range&))
       );
 }
 
-void IncludeHelperPluginView::updateDocumentInfo(KTextEditor::Document* doc)
-{
-    kDebug() << "(re)scan document " << doc << " for #includes...";
-    KTextEditor::MovingInterface* mv_iface = qobject_cast<KTextEditor::MovingInterface*>(doc);
-    if (!mv_iface)
-    {
-        kDebug() << "No moving iface!!!!!!!!!!!";
-        return;
-    }
-
-    // Try to remove prev collected info
-    {
-        IncludeHelperPlugin::doc_info_type::iterator it = m_plugin->managed_docs().find(doc);
-        if (it != m_plugin->managed_docs().end())
-        {
-            delete *it;
-            m_plugin->managed_docs().erase(it);
-        }
-    }
-
-    DocumentInfo* di = new DocumentInfo(m_plugin);
-
-    // Search lines and filenames #include'd in this document
-    for (int i = 0; i < doc->lines(); i++)
-    {
-        const QString& line_str = doc->line(i);
-        kate::IncludeParseResult r = parseIncludeDirective(line_str, false);
-        if (r.m_range.isValid())
-        {
-            r.m_range.setBothLines(i);
-            di->addRange(
-                mv_iface->newMovingRange(
-                    r.m_range
-                  , KTextEditor::MovingRange::ExpandLeft | KTextEditor::MovingRange::ExpandRight
-                  )
-              );
-        }
-    }
-    m_plugin->managed_docs().insert(doc, di);
-}
-
-void IncludeHelperPluginView::textInserted(KTextEditor::Document* doc, const KTextEditor::Range& range)
-{
-    kDebug() << doc << " new text: " << doc->text(range);
-    KTextEditor::MovingInterface* mv_iface = qobject_cast<KTextEditor::MovingInterface*>(doc);
-    if (!mv_iface)
-    {
-        kDebug() << "No moving iface!!!!!!!!!!!";
-        return;
-    }
-    // Find corresponding document info
-    IncludeHelperPlugin::doc_info_type::iterator it = m_plugin->managed_docs().find(doc);
-    if (it == m_plugin->managed_docs().end())
-    {
-        it = m_plugin->managed_docs().insert(doc, new DocumentInfo(m_plugin));
-    }
-    // Search lines and filenames #include'd in this range
-    for (int i = range.start().line(); i < range.end().line() + 1; i++)
-    {
-        const QString& line_str = doc->line(i);
-        kate::IncludeParseResult r = parseIncludeDirective(line_str, true);
-        if (r.m_range.isValid())
-        {
-            r.m_range.setBothLines(i);
-            if (!(*it)->isRangeWithSameExists(r.m_range))
-            {
-                (*it)->addRange(
-                    mv_iface->newMovingRange(
-                        r.m_range
-                      , KTextEditor::MovingRange::ExpandLeft | KTextEditor::MovingRange::ExpandRight
-                      )
-                  );
-            } else kDebug() << "range already registered";
-        }
-        else kDebug() << "no valid #include found";
-    }
-}
-
+#if 0
+/// \todo Do we really need this?
 void IncludeHelperPluginView::textChanged(
     KTextEditor::Document* doc
     , const KTextEditor::Range& /*old_range*/
@@ -358,6 +283,7 @@ void IncludeHelperPluginView::textChanged(
 {
     kDebug() << doc << " change text: new=" << doc->text(new_range) << ", " << old_text;
 }
+#endif
 
 KTextEditor::Range IncludeHelperPluginView::currentWord() const
 {

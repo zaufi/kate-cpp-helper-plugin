@@ -26,13 +26,17 @@
 #include <src/include_helper_plugin_config_page.h>
 #include <src/include_helper_plugin_view.h>
 #include <src/document_info.h>
+#include <src/utils.h>
 
 // Standard includes
 #include <kate/application.h>
+#include <kate/mainwindow.h>
 #include <KAboutData>
 #include <KDebug>
 #include <KPluginFactory>
 #include <KPluginLoader>
+#include <KTextEditor/MovingInterface>
+#include <QtCore/QFileInfo>
 
 K_PLUGIN_FACTORY(IncludeHelperPluginFactory, registerPlugin<kate::IncludeHelperPlugin>();)
 K_EXPORT_PLUGIN(
@@ -90,6 +94,7 @@ void IncludeHelperPlugin::readConfig()
     QStringList dirs = gcg.readPathEntry("ConfiguredDirs", QStringList());
     kDebug() << "Got global configured include path list: " << dirs;
     m_system_dirs = dirs;
+    updateDirWatcher();
 }
 
 void IncludeHelperPlugin::readSessionConfig(KConfigBase* config, const QString& groupPrefix)
@@ -150,6 +155,7 @@ void IncludeHelperPlugin::setSessionDirs(QStringList& dirs)
         m_session_dirs.swap(dirs);
         m_config_dirty = true;
         Q_EMIT(sessionDirsChanged());
+        updateDirWatcher();
         kDebug() << "** set config to `dirty' state!! **";
     }
 }
@@ -163,6 +169,7 @@ void IncludeHelperPlugin::setGlobalDirs(QStringList& dirs)
         m_system_dirs.swap(dirs);
         m_config_dirty = true;
         Q_EMIT(systemDirsChanged());
+        updateDirWatcher();
         kDebug() << "** set config to `dirty' state!! **";
     }
 }
@@ -179,6 +186,140 @@ void IncludeHelperPlugin::setUseCwd(const bool state)
     m_use_cwd = state;
     m_config_dirty = true;
     kDebug() << "** set config to `dirty' state!! **";
+}
+
+void IncludeHelperPlugin::updateDirWatcher(const QString& path)
+{
+    m_dir_watcher->addDir(path, KDirWatch::WatchSubDirs | KDirWatch::WatchFiles);
+    connect(
+        m_dir_watcher.data()
+      , SIGNAL(created(const QString&))
+      , this
+      , SLOT(createdPath(const QString&))
+      );
+    connect(
+        m_dir_watcher.data()
+      , SIGNAL(deleted(const QString&))
+      , this
+      , SLOT(deletedPath(const QString&))
+      );
+}
+
+void IncludeHelperPlugin::updateDirWatcher()
+{
+    if (m_dir_watcher)
+        m_dir_watcher->stopScan();
+    m_dir_watcher = QSharedPointer<KDirWatch>(new KDirWatch(0));
+    m_dir_watcher->stopScan();
+
+    Q_FOREACH(const QString& path, m_system_dirs)
+        updateDirWatcher(path);
+    Q_FOREACH(const QString& path, m_session_dirs)
+        updateDirWatcher(path);
+
+    m_dir_watcher->startScan(true);
+}
+
+void IncludeHelperPlugin::createdPath(const QString& path)
+{
+    kDebug() << "DirWatcher said created: " << path;
+    // No reason to call update if it is just a dir was created...
+    if (QFileInfo(path).isFile())
+        updateCurrentView();
+}
+
+void IncludeHelperPlugin::deletedPath(const QString& path)
+{
+    kDebug() << "DirWatcher said deleted: " << path;
+    updateCurrentView();
+}
+
+void IncludeHelperPlugin::updateCurrentView()
+{
+    KTextEditor::View* view = application()->activeMainWindow()->activeView();
+    if (view)
+    {
+        updateDocumentInfo(view->document());
+    }
+}
+
+void IncludeHelperPlugin::updateDocumentInfo(KTextEditor::Document* doc)
+{
+    assert("Valid document expected" && doc);
+    kDebug() << "(re)scan document " << doc << " for #includes...";
+    KTextEditor::MovingInterface* mv_iface = qobject_cast<KTextEditor::MovingInterface*>(doc);
+    if (!mv_iface)
+    {
+        kDebug() << "No moving iface!!!!!!!!!!!";
+        return;
+    }
+
+    // Try to remove prev collected info
+    {
+        IncludeHelperPlugin::doc_info_type::iterator it = managed_docs().find(doc);
+        if (it != managed_docs().end())
+        {
+            delete *it;
+            managed_docs().erase(it);
+        }
+    }
+
+    DocumentInfo* di = new DocumentInfo(this);
+
+    // Search lines and filenames #include'd in this document
+    for (int i = 0, end_line = doc->lines(); i < end_line; i++)
+    {
+        const QString& line_str = doc->line(i);
+        kate::IncludeParseResult r = parseIncludeDirective(line_str, false);
+        if (r.m_range.isValid())
+        {
+            r.m_range.setBothLines(i);
+            di->addRange(
+                mv_iface->newMovingRange(
+                    r.m_range
+                  , KTextEditor::MovingRange::ExpandLeft | KTextEditor::MovingRange::ExpandRight
+                  )
+              );
+        }
+    }
+    managed_docs().insert(doc, di);
+}
+
+void IncludeHelperPlugin::textInserted(KTextEditor::Document* doc, const KTextEditor::Range& range)
+{
+    kDebug() << doc << " new text: " << doc->text(range);
+    KTextEditor::MovingInterface* mv_iface = qobject_cast<KTextEditor::MovingInterface*>(doc);
+    if (!mv_iface)
+    {
+        kDebug() << "No moving iface!!!!!!!!!!!";
+        return;
+    }
+    // Find corresponding document info, insert if needed
+    IncludeHelperPlugin::doc_info_type::iterator it = managed_docs().find(doc);
+    if (it == managed_docs().end())
+    {
+        it = managed_docs().insert(doc, new DocumentInfo(this));
+    }
+    // Search lines and filenames #include'd in this range
+    for (int i = range.start().line(); i < range.end().line() + 1; i++)
+    {
+        const QString& line_str = doc->line(i);
+        kate::IncludeParseResult r = parseIncludeDirective(line_str, true);
+        if (r.m_range.isValid())
+        {
+            r.m_range.setBothLines(i);
+            if (!(*it)->isRangeWithSameExists(r.m_range))
+            {
+                (*it)->addRange(
+                    mv_iface->newMovingRange(
+                        r.m_range
+                      , KTextEditor::MovingRange::ExpandLeft | KTextEditor::MovingRange::ExpandRight
+                      )
+                  );
+            } else kDebug() << "range already registered";
+        }
+        else kDebug() << "no valid #include found";
+    }
 }
 
 //END IncludeHelperPlugin
