@@ -27,6 +27,7 @@
 
 // Standard includes
 # include <KTextEditor/Range>
+# include <QtCore/QFileInfo>
 # include <QtCore/QStringList>
 
 namespace kate {
@@ -97,6 +98,16 @@ inline void removeDuplicates(QStringList& list)
     }
 }
 
+/**
+ * \brief Try to find a file in a given location
+ * \param[in] uri name of the file to lookup
+ */
+inline bool isPresentAndReadable(const QString& uri)
+{
+    const QFileInfo fi = QFileInfo(uri);
+    return fi.exists() && fi.isFile() && fi.isReadable();
+}
+
 /// Scan for files and dirs
 void updateListsFromFS(
     const QString&
@@ -105,8 +116,7 @@ void updateListsFromFS(
   , QStringList&
   , QStringList&
   );
-/// Try to find a file in a given location
-bool isPresentAndReadable(const QString&);
+
 /// Find given header withing list of paths
 QStringList findHeader(const QString&, const QStringList&, const QStringList&);
 }                                                           // namespace kate

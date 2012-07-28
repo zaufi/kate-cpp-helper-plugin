@@ -27,7 +27,6 @@
 #include <KDebug>
 #include <KTextEditor/Range>
 #include <QtCore/QDir>
-#include <QtCore/QFileInfo>
 #include <cassert>
 
 namespace kate {
@@ -173,16 +172,6 @@ IncludeParseResult parseIncludeDirective(const QString& line, const bool strict)
     }
 //     kDebug() << "result-range=" << result.m_range << ", is_complete=" << result.m_is_complete;
     return result;
-}
-
-/**
- * \param[in] uri name of the file to lookup
- */
-inline bool isPresentAndReadable(const QString& uri)
-{
-    const QFileInfo fi = QFileInfo(uri);
-    kDebug() << "... checking " << fi.filePath();
-    return fi.exists() && fi.isFile() && fi.isReadable();
 }
 
 namespace {
