@@ -46,10 +46,13 @@ DocumentInfo::DocumentInfo(IncludeHelperPlugin* p)
  */
 DocumentInfo::~DocumentInfo()
 {
-#if 0
+    kDebug() << "Removing " << m_ranges.size() << " ranges:";
     Q_FOREACH(const State& s, m_ranges)
+    {
+        kDebug() << " deleting " << s.m_range;
+        s.m_range->setFeedback(0);
         delete s.m_range;
-#endif
+    }
 }
 
 void DocumentInfo::addRange(KTextEditor::MovingRange* r)
@@ -84,6 +87,7 @@ void DocumentInfo::updateStatus()
  */
 void DocumentInfo::updateStatus(State& s)
 {
+    kDebug() << "Update status for range: " << s.m_range;
     if (!s.m_range->isEmpty())
     {
         KTextEditor::Document* doc = s.m_range->document();
@@ -133,17 +137,32 @@ void DocumentInfo::updateStatus(State& s)
         switch (s.m_status)
         {
             case Ok:
-                iface->removeMark(line, KTextEditor::MarkInterface::Error | KTextEditor::MarkInterface::Warning);
+                iface->removeMark(
+                    line
+                  , KTextEditor::MarkInterface::Error | KTextEditor::MarkInterface::Warning
+                  );
                 break;
             case NotFound:
-                iface->removeMark(line, KTextEditor::MarkInterface::Error | KTextEditor::MarkInterface::Warning);
-                iface->setMarkPixmap(KTextEditor::MarkInterface::Error, KIcon("task-reject").pixmap(QSize(16, 16)));
+                iface->removeMark(
+                    line
+                  , KTextEditor::MarkInterface::Error | KTextEditor::MarkInterface::Warning
+                  );
+                iface->setMarkPixmap(
+                    KTextEditor::MarkInterface::Error
+                  , KIcon("task-reject").pixmap(QSize(16, 16))
+                  );
                 iface->setMarkDescription(KTextEditor::MarkInterface::Error, i18n("File not found"));
                 iface->addMark(line, KTextEditor::MarkInterface::Error);
                 break;
             case MultipleMatches:
-                iface->removeMark(line, KTextEditor::MarkInterface::Error | KTextEditor::MarkInterface::Warning);
-                iface->setMarkPixmap(KTextEditor::MarkInterface::Warning, KIcon("task-attention").pixmap(QSize(16, 16)));
+                iface->removeMark(
+                    line
+                  , KTextEditor::MarkInterface::Error | KTextEditor::MarkInterface::Warning
+                  );
+                iface->setMarkPixmap(
+                    KTextEditor::MarkInterface::Warning
+                  , KIcon("task-attention").pixmap(QSize(16, 16))
+                  );
                 iface->setMarkDescription(KTextEditor::MarkInterface::Error, i18n("Multiple files matched"));
                 iface->addMark(line, KTextEditor::MarkInterface::Warning);
                 break;
@@ -153,6 +172,9 @@ void DocumentInfo::updateStatus(State& s)
     }
 }
 
+/**
+ * \attention Find range by given address
+ */
 DocumentInfo::registered_ranges_type::iterator DocumentInfo::findRange(KTextEditor::MovingRange* range)
 {
     // std::find_if + lambda!
@@ -161,7 +183,7 @@ DocumentInfo::registered_ranges_type::iterator DocumentInfo::findRange(KTextEdit
         registered_ranges_type::iterator it = m_ranges.begin()
       ; it != last
       ; ++it
-      ) if (it->m_range->toRange() == range->toRange()) return it;
+      ) if (range == it->m_range) return it;
     return last;
 }
 
@@ -176,17 +198,20 @@ void DocumentInfo::caretExitedRange(KTextEditor::MovingRange* range, KTextEditor
 
 void DocumentInfo::rangeEmpty(KTextEditor::MovingRange* range)
 {
+    assert(
+        "Range must be valid (possible empty, but valid)"
+      && range->start().line() != -1 && range->end().line() != -1
+      && range->start().column() != -1 && range->end().column() != -1
+      );
     // Remove possible mark on a line
     KTextEditor::MarkInterface* iface = qobject_cast<KTextEditor::MarkInterface*>(range->document());
-    iface->removeMark(
-        range->start().line()
-      , KTextEditor::MarkInterface::Error | KTextEditor::MarkInterface::Warning
-      );
+    iface->clearMark(range->start().line());
     // Erase internal data
     registered_ranges_type::iterator it = findRange(range);
     if (it != m_ranges.end())
     {
-        kDebug() << "MovingRange deleted: " << range;
+        kDebug() << "MovingRange: empty range deleted: " << range;
+        it->m_range->setFeedback(0);
         delete it->m_range;
         m_ranges.erase(it);
     }
@@ -198,19 +223,28 @@ void DocumentInfo::rangeEmpty(KTextEditor::MovingRange* range)
  */
 void DocumentInfo::rangeInvalid(KTextEditor::MovingRange* range)
 {
-    kDebug() << "It seems document reloaded... cleanup range...";
-    rangeEmpty(range);
+    kDebug() << "It seems document reloaded... cleanup ranges???";
+    // Erase internal data
+    registered_ranges_type::iterator it = findRange(range);
+    if (it != m_ranges.end())
+    {
+        kDebug() << "MovingRange: invalid range deleted: " << range;
+        it->m_range->setFeedback(0);
+        delete it->m_range;
+        m_ranges.erase(it);
+    }
 }
 
 bool DocumentInfo::isRangeWithSameExists(const KTextEditor::Range& range) const
 {
     // std::find_if + lambda!
+    /// \todo Use \c containsLine() ??
     const registered_ranges_type::const_iterator last = m_ranges.end();
     for (
         registered_ranges_type::const_iterator it = m_ranges.begin()
       ; it != last
       ; ++it
-      ) if (it->m_range->toRange().start().line() == range.start().line()) return true;
+      ) if (it->m_range->start().line() == range.start().line()) return true;
     return false;
 }
 
