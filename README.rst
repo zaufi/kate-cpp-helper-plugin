@@ -46,7 +46,8 @@ Notes
   _strange_ messages from ``DirWatch``).
   So if your system short on resources just try to avoid live ``#include`` files status updates.
   Otherwise one may incrase a number of available files/dirs watches by doing this:
-    $ echo 16384 >/proc/sys/fs/inotify/max_user_watches
+
+    # echo 16384 >/proc/sys/fs/inotify/max_user_watches
 
 
 TODO
@@ -65,7 +66,7 @@ TODO
   based on configured include paths by partial name match...
 * Add view to explore a tree of #included files
 * Add option(s) to include/exclude files from completion list
-
+* Issue a warning if /proc/sys/fs/inotify/max_user_watches is not high enough
 
 Changes
 =======
