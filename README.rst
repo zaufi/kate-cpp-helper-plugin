@@ -45,7 +45,7 @@ Notes
   return a ``ENOSPC`` error (use ``strace`` to find out and/or check kate's console log for
   _strange_ messages from ``DirWatch``).
   So if your system short on resources just try to avoid live ``#include`` files status updates.
-  Otherwise one may incrase a number of available files/dirs watches by doing this:
+  Otherwise one may incrase a number of available files/dirs watches by doing this::
 
     # echo 16384 >/proc/sys/fs/inotify/max_user_watches
 
