@@ -49,6 +49,11 @@ Notes
 
     # echo 16384 >/proc/sys/fs/inotify/max_user_watches
 
+  To make it permanent add the following to /etc/sysctl.conf or /etc/sysctl.d/inotify.conf
+  (depending on system)::
+
+    fs.inotify.max_user_watches = 16384
+
 
 TODO
 ====
