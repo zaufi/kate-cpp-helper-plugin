@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>272</width>
-    <height>130</height>
+    <width>412</width>
+    <height>236</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -37,6 +37,61 @@
         </property>
         <property name="text">
          <string>Implicitly use current dir &quot;.&quot;</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="monitorBox">
+     <property name="title">
+      <string>Monitor Configured Directories</string>
+     </property>
+     <property name="checkable">
+      <bool>false</bool>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout_2">
+      <item>
+       <widget class="QRadioButton" name="nothing">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;In this case to see updated status of &lt;span style=&quot; font-family:'Courier New,courier';&quot;&gt;#include'&lt;/span&gt;d files you ought to:&lt;/p&gt;&lt;ul style=&quot;margin-top: 0px; margin-bottom: 0px; margin-left: 0px; margin-right: 0px; -qt-list-indent: 1;&quot;&gt;&lt;li style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;reload current document&lt;/li&gt;&lt;li style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;switch to another document and back&lt;/li&gt;&lt;li style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;move cursor to &lt;span style=&quot; font-family:'Courier New,courier';&quot;&gt;#include&lt;/span&gt; filename and leave it&lt;/li&gt;&lt;/ul&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="text">
+         <string>&amp;Do not monitor anything</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QRadioButton" name="session">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Attention:&lt;/span&gt;&lt;/p&gt;&lt;p&gt;This may require a lot of kernel resources! (depending on how big your source tree).&lt;/p&gt;&lt;p&gt;Probably you need to incrase inotify watches count. To do so, use the following command:&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Courier New,courier';&quot;&gt;#&amp;nbsp;echo&amp;nbsp;16384&amp;nbsp;&amp;gt;/proc/sys/fs/inotify/max_user_watches&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="text">
+         <string>&amp;Session only</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QRadioButton" name="system">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Attention:&lt;/span&gt;&lt;/p&gt;&lt;p&gt;This may require a lot of kernel resources!&lt;/p&gt;&lt;p&gt;Probably you need to incrase inotify watches count. To do so, use the following command:&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Courier New,courier';&quot;&gt;#&amp;nbsp;echo&amp;nbsp;16384&amp;nbsp;&amp;gt;/proc/sys/fs/inotify/max_user_watches&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="text">
+         <string>S&amp;ystem only</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QRadioButton" name="all">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Attention:&lt;/span&gt;&lt;/p&gt;&lt;p&gt;This may require a lot of kernel resources!&lt;/p&gt;&lt;p&gt;Probably you need to incrase inotify watches count. To do so, use the following command:&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Courier New,courier';&quot;&gt;#&amp;nbsp;echo&amp;nbsp;16384&amp;nbsp;&amp;gt;/proc/sys/fs/inotify/max_user_watches&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="text">
+         <string>&amp;Everything</string>
         </property>
        </widget>
       </item>

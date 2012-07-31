@@ -59,6 +59,7 @@ IncludeHelperPlugin::IncludeHelperPlugin(
   , const QList<QVariant>&
   )
   : Kate::Plugin(static_cast<Kate::Application*>(application), "kate_includehelper_plugin")
+  , m_monitor_flags(0)
   , m_use_ltgt(true)
   , m_config_dirty(false)
 {
@@ -106,11 +107,13 @@ void IncludeHelperPlugin::readSessionConfig(KConfigBase* config, const QString& 
     QStringList session_dirs = scg.readPathEntry("ConfiguredDirs", QStringList());
     QVariant use_ltgt = scg.readEntry("UseLtGt", QVariant(false));
     QVariant use_cwd = scg.readEntry("UseCwd", QVariant(false));
+    QVariant mon_dirs = scg.readEntry("MonitorDirs", QVariant(0));
     kDebug() << "Got per session configured include path list: " << session_dirs;
     // Assign configuration
     m_session_dirs = session_dirs;
     m_use_ltgt = use_ltgt.toBool();
     m_use_cwd = use_cwd.toBool();
+    m_monitor_flags = mon_dirs.toInt();
     m_config_dirty = false;
 
     readConfig();
@@ -137,6 +140,7 @@ void IncludeHelperPlugin::writeSessionConfig(KConfigBase* config, const QString&
     scg.writePathEntry("ConfiguredDirs", m_session_dirs);
     scg.writeEntry("UseLtGt", QVariant(m_use_ltgt));
     scg.writeEntry("UseCwd", QVariant(m_use_cwd));
+    scg.writeEntry("MonitorDirs", QVariant(m_monitor_flags));
     scg.sync();
     // Write global config
     kDebug() << "Write global configured include path list: " << m_system_dirs;
@@ -188,6 +192,14 @@ void IncludeHelperPlugin::setUseCwd(const bool state)
     kDebug() << "** set config to `dirty' state!! **";
 }
 
+void IncludeHelperPlugin::set_what_to_monitor(const int tgt)
+{
+    assert("Sanity check" && 0 <= tgt && tgt < 4);
+    m_monitor_flags = tgt;
+    m_config_dirty = true;
+    updateDirWatcher();
+}
+
 void IncludeHelperPlugin::updateDirWatcher(const QString& path)
 {
     m_dir_watcher->addDir(path, KDirWatch::WatchSubDirs | KDirWatch::WatchFiles);
@@ -212,26 +224,41 @@ void IncludeHelperPlugin::updateDirWatcher()
     m_dir_watcher = QSharedPointer<KDirWatch>(new KDirWatch(0));
     m_dir_watcher->stopScan();
 
-    Q_FOREACH(const QString& path, m_system_dirs)
-        updateDirWatcher(path);
-    Q_FOREACH(const QString& path, m_session_dirs)
-        updateDirWatcher(path);
+    if (what_to_monitor() & 2)
+    {
+        kDebug() << "Going to monitor system dirs for changes...";
+        Q_FOREACH(const QString& path, m_system_dirs)
+            updateDirWatcher(path);
+    }
+    if (what_to_monitor() & 1)
+    {
+        kDebug() << "Going to monitor session dirs for changes...";
+        Q_FOREACH(const QString& path, m_session_dirs)
+            updateDirWatcher(path);
+    }
 
     m_dir_watcher->startScan(true);
 }
 
 void IncludeHelperPlugin::createdPath(const QString& path)
 {
-    kDebug() << "DirWatcher said created: " << path;
     // No reason to call update if it is just a dir was created...
-    if (QFileInfo(path).isFile())
+    if (QFileInfo(path).isFile() && m_last_updated != path)
+    {
+        kDebug() << "DirWatcher said created: " << path;
         updateCurrentView();
+        m_last_updated = path;
+    }
 }
 
 void IncludeHelperPlugin::deletedPath(const QString& path)
 {
-    kDebug() << "DirWatcher said deleted: " << path;
-    updateCurrentView();
+    if (m_last_updated != path)
+    {
+        kDebug() << "DirWatcher said deleted: " << path;
+        updateCurrentView();
+        m_last_updated = path;
+    }
 }
 
 void IncludeHelperPlugin::updateCurrentView()

@@ -83,6 +83,10 @@ public:
     {
         return m_doc_info;
     }
+    int what_to_monitor() const
+    {
+        return m_monitor_flags;
+    }
     //@}
 
     /// \name Modifiers
@@ -91,6 +95,7 @@ public:
     void setGlobalDirs(QStringList& dirs);
     void setUseLtGt(const bool state);
     void setUseCwd(const bool state);
+    void set_what_to_monitor(const int tgt);
     //@}
 
     /// \name PluginConfigPageInterface interface implementation
@@ -155,6 +160,10 @@ private:
     /// \todo Fuck! I want \c std::unique_ptr. Where is it in Qt?
     /// Only \c QSharedPtr here?
     QSharedPointer<KDirWatch> m_dir_watcher;
+    /// \note Directory watcher reports about 4 times just for one event,
+    /// so to avoid doing stupid job, lets remember what we've done the last time.
+    QString m_last_updated;
+    int m_monitor_flags;
     /// If \c true <em>Copy #include</em> action would put filename into \c '<' and \c '>'
     /// instead of \c '"'
     bool m_use_ltgt;

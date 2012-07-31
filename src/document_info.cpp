@@ -46,10 +46,9 @@ DocumentInfo::DocumentInfo(IncludeHelperPlugin* p)
  */
 DocumentInfo::~DocumentInfo()
 {
-    kDebug() << "Removing " << m_ranges.size() << " ranges:";
+    kDebug() << "Removing " << m_ranges.size() << " ranges...";
     Q_FOREACH(const State& s, m_ranges)
     {
-        kDebug() << " deleting " << s.m_range;
         s.m_range->setFeedback(0);
         delete s.m_range;
     }
@@ -57,7 +56,8 @@ DocumentInfo::~DocumentInfo()
 
 void DocumentInfo::addRange(KTextEditor::MovingRange* r)
 {
-    assert("Sanity check" && r->onSingleLine());
+    assert("Sanity check" && !r->isEmpty() && r->onSingleLine());
+    assert("Sanity check" && findRange(r) == m_ranges.end());
     //
     State s;
     s.m_range = r;

@@ -37,6 +37,18 @@ Note: One may use ``kde4-config`` utility with option ``--localprefix`` or ``--p
 user or system-wide prefix correspondingly.
 
 
+Notes
+=====
+
+* monitoring too much (nested) directories, for example in ``/usr/include`` configured as
+  system directory, may lead to too much resources consumed, so ``inotify_add_watch`` would
+  return a ``ENOSPC`` error (use ``strace`` to find out and/or check kate's console log for
+  _strange_ messages from ``DirWatch``).
+  So if your system short on resources just try to avoid live ``#include`` files status updates.
+  Otherwise one may incrase a number of available files/dirs watches by doing this:
+    $ echo 16384 >/proc/sys/fs/inotify/max_user_watches
+
+
 TODO
 ====
 
@@ -58,10 +70,16 @@ TODO
 Changes
 =======
 
+Version 0.4.3
+-------------
+
+* make directory monitoring optional and configured via plugin's *Other Settings* configuration page
+
 Version 0.4.2
 -------------
 
 * watch configured directories for changes and update ``#include`` files status
+* add support to create source tarball
 
 Version 0.4.1
 -------------

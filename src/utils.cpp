@@ -183,9 +183,9 @@ inline void findFiles(const QString& file, const QStringList& paths, QStringList
         if (isPresentAndReadable(uri))
         {
             result.push_back(uri);
-            kDebug() << " ... Ok";
+            kDebug() << " ... " << uri << " Ok";
         }
-        else kDebug() << " ... not exists/readable";
+        else kDebug() << " ... " << uri << " not exists/readable";
     }
 }
 }                                                           // anonymous namespace
