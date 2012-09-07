@@ -76,7 +76,7 @@ TODO
 Changes
 =======
 
-Version 0.4.3
+Version 0.4.4
 -------------
 
 * if file going to open is inaccessible for writing, open it in RO mode, so implicit modifications
