@@ -27,6 +27,8 @@
 #include <src/utils.h>
 
 // Standard includes
+#include <kate/application.h>
+#include <kate/documentmanager.h>
 #include <kate/mainwindow.h>
 #include <KTextEditor/CodeCompletionInterface>
 #include <KTextEditor/Document>
@@ -113,7 +115,7 @@ void IncludeHelperPluginView::openHeader()
     // If there is no ambiguity, then just emit a signal to open the file
     if (candidates.size() == 1)
     {
-        mainWindow()->openUrl(candidates.first());
+        openFile(candidates.first());
         return;
     }
     else if (candidates.isEmpty())
@@ -168,10 +170,31 @@ QStringList IncludeHelperPluginView::findFileLocations(const QString& filename)
     return candidates;
 }
 
+inline void IncludeHelperPluginView::openFile(const QString& file)
+{
+    kDebug() << "Going to open " << file;
+    KTextEditor::Document* new_doc = m_plugin->application()->documentManager()->openUrl(file);
+    QFileInfo fi(file);
+    if (fi.isReadable())
+    {
+        kDebug() << "Is file " << file << " writeable? -- " << fi.isWritable();
+        new_doc->setReadWrite(fi.isWritable());
+        mainWindow()->activateView(new_doc);
+    }
+    else
+    {
+        KPassivePopup::message(
+            i18n("Open error")
+          , i18n("File %1 is not readable", file)
+          , qobject_cast<QWidget*>(this)
+          );
+    }
+}
+
 inline void IncludeHelperPluginView::openFiles(const QStringList& files)
 {
     Q_FOREACH(const QString& file, files)
-        mainWindow()->openUrl(file);
+        openFile(file);
 }
 
 void IncludeHelperPluginView::copyInclude()

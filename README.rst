@@ -79,6 +79,12 @@ Changes
 Version 0.4.3
 -------------
 
+* if file going to open is inaccessible for writing, open it in RO mode, so implicit modifications
+  (like TAB to space conversions or trailing spaces removal) wouldn't annoy on close
+
+Version 0.4.3
+-------------
+
 * make directory monitoring optional and configured via plugin's *Other Settings* configuration page
 
 Version 0.4.2
