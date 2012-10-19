@@ -76,6 +76,11 @@ TODO
 Changes
 =======
 
+Version 0.4.5
+-------------
+
+* fix nasty bug w/ path remove from config dialog
+
 Version 0.4.4
 -------------
 
