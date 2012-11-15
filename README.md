@@ -13,7 +13,7 @@ Actually, you are not even required to move a cursor to a file name if the curre
 Requirements
 ------------
 
-* (Kate)[http://kate-editor.org] editor version >= 2.9.
+* [Kate](http://kate-editor.org) editor version >= 2.9.
 
 
 Installation
