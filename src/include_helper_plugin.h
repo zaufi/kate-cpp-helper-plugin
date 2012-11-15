@@ -75,6 +75,10 @@ public:
     {
         return m_use_cwd;
     }
+    bool shouldOpenFirstInclude() const
+    {
+        return m_open_first;
+    }
     const doc_info_type& managed_docs() const
     {
         return m_doc_info;
@@ -95,7 +99,8 @@ public:
     void setGlobalDirs(QStringList& dirs);
     void setUseLtGt(const bool state);
     void setUseCwd(const bool state);
-    void set_what_to_monitor(const int tgt);
+    void setOpenFirst(const bool state);
+    void setWhatToMonitor(const int tgt);
     //@}
 
     /// \name PluginConfigPageInterface interface implementation
@@ -169,6 +174,7 @@ private:
     bool m_use_ltgt;
     bool m_use_cwd;
     bool m_config_dirty;
+    bool m_open_first;
 };
 }                                                           // namespace kate
 #endif                                                      // __SRC__INCLUDE_HELPER_PLUGIN_HH__

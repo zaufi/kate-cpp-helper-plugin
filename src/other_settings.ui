@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>412</width>
-    <height>236</height>
+    <width>496</width>
+    <height>349</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -15,7 +15,7 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <widget class="QGroupBox" name="groupBox">
+    <widget class="QGroupBox" name="genericOptionsBox">
      <property name="title">
       <string>Per Session Settings</string>
      </property>
@@ -26,7 +26,7 @@
          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Enclose &lt;code&gt;#include&lt;/code&gt; directive into &lt;code&gt;&amp;lt;...&amp;gt;&lt;/code&gt; instead of &lt;code&gt;&amp;quot;...&amp;quot;&lt;/code&gt; for session include dirs&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
         <property name="text">
-         <string>#include session headers w/ '&lt;'/'&gt;'</string>
+         <string>#include session headers w/ '&lt;'/'&gt;', when copy to clipboard</string>
         </property>
        </widget>
       </item>
@@ -36,7 +36,7 @@
          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Enclose &lt;code&gt;#include&lt;/code&gt; directive into &lt;code&gt;&amp;lt;...&amp;gt;&lt;/code&gt; instead of &lt;code&gt;&amp;quot;...&amp;quot;&lt;/code&gt; for session include dirs&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
         <property name="text">
-         <string>Implicitly use current dir &quot;.&quot;</string>
+         <string>Use current dir to search for headers in addition to configured paths</string>
         </property>
        </widget>
       </item>
@@ -99,17 +99,39 @@
     </widget>
    </item>
    <item>
-    <spacer name="verticalSpacer">
-     <property name="orientation">
-      <enum>Qt::Vertical</enum>
+    <widget class="QGroupBox" name="openHeaderBox">
+     <property name="title">
+      <string>Open Header/Implementation Options</string>
      </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>20</width>
-       <height>40</height>
-      </size>
-     </property>
-    </spacer>
+     <layout class="QVBoxLayout" name="verticalLayout_3">
+      <item>
+       <widget class="QCheckBox" name="openFirstHeader">
+        <property name="toolTip">
+         <string/>
+        </property>
+        <property name="whatsThis">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;When in a source file, first &lt;code&gt;#included&lt;/code&gt; file aways will be a candidate as appropriate header&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="text">
+         <string>Open first #included header from source files</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <spacer name="verticalSpacer">
+        <property name="orientation">
+         <enum>Qt::Vertical</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>20</width>
+          <height>40</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+     </layout>
+    </widget>
    </item>
   </layout>
  </widget>

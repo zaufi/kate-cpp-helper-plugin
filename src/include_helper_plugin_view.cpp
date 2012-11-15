@@ -38,9 +38,15 @@
 #include <QtGui/QApplication>
 #include <QtGui/QClipboard>
 #include <QtCore/QFileInfo>
+#include <QtCore/QDirIterator>
 #include <cassert>
 
-namespace kate {
+namespace kate { namespace {
+const QStringList HDR_EXTENSIONS = QStringList() << "h" << "hh" << "hpp" << "hxx" << "H";
+const QStringList SRC_EXTENSIONS = QStringList() << "c" << "cc" << "cpp" << "cxx" << "inl" << "C";
+}                                                           // anonymous namespace
+
+
 //BEGIN IncludeHelperPluginView
 IncludeHelperPluginView::IncludeHelperPluginView(
     Kate::MainWindow* mw
@@ -52,10 +58,15 @@ IncludeHelperPluginView::IncludeHelperPluginView(
   , m_plugin(plugin)
   , m_open_header(actionCollection()->addAction("file_open_included_header"))
   , m_copy_include(actionCollection()->addAction("edit_copy_include"))
+  , m_switch(actionCollection()->addAction("file_open_switch_iface_impl"))
 {
     m_open_header->setText(i18n("Open Header Under Cursor"));
     m_open_header->setShortcut(QKeySequence(Qt::Key_F10));
     connect(m_open_header, SIGNAL(triggered(bool)), this, SLOT(openHeader()));
+
+    m_switch->setText(i18n("Open Header/Implementation"));
+    m_switch->setShortcut(QKeySequence(Qt::Key_F12));
+    connect(m_switch, SIGNAL(triggered(bool)), this, SLOT(switchIfaceImpl()));
 
     m_copy_include->setText(i18n("Copy #include to Clipboard"));
     m_copy_include->setShortcut(QKeySequence(Qt::SHIFT + Qt::Key_F10));
@@ -88,6 +99,214 @@ void IncludeHelperPluginView::readSessionConfig(KConfigBase*, const QString& gro
 void IncludeHelperPluginView::writeSessionConfig(KConfigBase*, const QString& groupPrefix)
 {
     kDebug() << "** VIEW **: Writing session config: " << groupPrefix;
+}
+
+/**
+ * Do same things as <em>Open Header</em> plugin do... but little better ;-)
+ *
+ * In general, header and implementation differ only in a file extension. There is a few extensions
+ * possible for each: \c .h, \c .hh, \c .hpp, \c .hxx, \c .H and \c .c, \c .cc, \c .cpp, \c .cxx.
+ *
+ * Considering location, there is few cases possible:
+ * \li both are placed in the same directory
+ * \li header located somewhere else than implementation file. For example all translation units
+ * are placed into \c ${project}/src and headers into \c ${project}/include. Depending on \c #include
+ * style there are few cases possible also: whole project have only a source root as \c #include path,
+ * or every particular directory must include all depended dirs as \c -I compiler keys, so in translation
+ * units \c #include can use just a header name w/o any path preceding (this way lead to include-paths-hell).
+ * \li implementation may have slightly differ name than header, but both have smth in common.
+ * For example if some header \c blah.hh define some really big class, sometime implementation
+ * spreaded across few files named after the header. Like \c blah_1.cc, \c blah_2.cc & etc.
+ *
+ * So it would be not so easy to handle all those cases. But here is one more case exists:
+ * one of good practices told us to \c #include implementation as first header in all translation
+ * units, so it would be possible to find a particular header easy if we may assume this fact...
+ *
+ * And final algorithm will to the following:
+ * \li if we r in an implementation file and checkbox <em>open first #include file</em> checked,
+ * then just open it, or ...
+ * \li try to open counterpart file substituting different extensions at the same location
+ * as original document placed, or (in case of failure)
+ * \li if current file is a source, try to find a corresponding header file (with different extensions)
+ * in all configured session dirs, or
+ * \li if current file is a header, try to find a corresponding source in a directories with
+ * other sources already opened. Here is a big chance that in one of that dirs we will find a
+ * required implementation...
+ * \li anything else? TBD
+ *
+ * \todo Make extension lists configurable. Better to read them from kate's configuration somehow...
+ */
+void IncludeHelperPluginView::switchIfaceImpl()
+{
+    // Ok, trying case 1
+    KTextEditor::Document* doc = mainWindow()->activeView()->document();
+    KUrl url = doc->url();
+    if (!url.isValid() || url.isEmpty())
+        return;
+
+    QFileInfo info(url.toLocalFile());
+    QString extension = info.suffix();
+
+    kDebug() << "Current file ext: " <<  extension;
+
+    const QString& active_doc_path = info.absolutePath();
+    const QString& active_doc_name = info.completeBaseName();
+    QStringList candidates;
+    bool is_implementation_file;
+    if ( (is_implementation_file = SRC_EXTENSIONS.contains(extension)) )
+        candidates = findCandidatesAt(active_doc_name, active_doc_path, HDR_EXTENSIONS);
+    else if (HDR_EXTENSIONS.contains(extension))
+        candidates = findCandidatesAt(active_doc_name, active_doc_path, SRC_EXTENSIONS);
+    else                                                    // Dunno what is this...
+        /// \todo Show some SPAM?
+        return;                                             // ... just leave!
+
+    const QStringList& extensions_to_try =
+        is_implementation_file ? HDR_EXTENSIONS : SRC_EXTENSIONS;
+
+    kDebug() << "open src/hrd: stage1: found candidates: " << candidates;
+
+    if (is_implementation_file)
+    {
+        // Lets try to find smth in configured sessions dirs
+        // NOTE This way useful only if the current file is a source one!
+        Q_FOREACH(const QString& dir, m_plugin->sessionDirs())
+            Q_FOREACH(const QString& c, findCandidatesAt(active_doc_name, dir, extensions_to_try))
+                if (!candidates.contains(c))
+                    candidates.push_back(c);
+
+        // Should we consider first #include in a document?
+        kDebug() << "open src/hdr: shouldOpenFirstInclude=" << m_plugin->shouldOpenFirstInclude();
+        if (m_plugin->shouldOpenFirstInclude())
+        {
+            kDebug() << "open src/hdr: open first #include enabled";
+            // Try to find first #include in this (active) document
+            QString first_header_name;
+            for (int i = 0; i < doc->lines() && first_header_name.isEmpty(); i++)
+            {
+                const QString& line_str = doc->line(i);
+                kate::IncludeParseResult r = parseIncludeDirective(line_str, false);
+                if (r.m_range.isValid())
+                {
+                    r.m_range.setBothLines(i);
+                    first_header_name = doc->text(r.m_range);
+                }
+            }
+            kDebug() << "open src/hrd: first include file:" << first_header_name;
+            // Is active document has some #includes?
+            if (!first_header_name.isEmpty())
+            {
+                // Ok, try to find it among session dirs
+                QStringList files;
+                findFiles(first_header_name, m_plugin->sessionDirs(), files);
+                Q_FOREACH(const QString& c, files)
+                    if (!candidates.contains(c))
+                        candidates.push_back(c);
+            }
+        }
+    }
+    else
+    {
+        // Lets try to find smth in dirs w/ already opened source files
+        // NOTE This way useful only if the current file is a header one!
+        // 0) Collect paths of already opened surce files
+        QStringList src_paths;
+        Q_FOREACH(KTextEditor::Document* current_doc, m_plugin->application()->documentManager()->documents())
+        {
+            KUrl current_doc_uri = current_doc->url();
+            if (current_doc_uri.isValid() && !current_doc_uri.isEmpty())
+            {
+                QFileInfo doc_file_info(current_doc_uri.toLocalFile());
+                const QString& current_path = doc_file_info.absolutePath();
+                // Append current path only if the document is a source and no such path
+                // collected yet...
+                if (SRC_EXTENSIONS.contains(doc_file_info.suffix()) && !src_paths.contains(current_path))
+                    src_paths.push_back(current_path);
+            }
+        }
+        kDebug() << "open src/hrd: stage2: sources paths: " << src_paths;
+        // Ok,  try to find smth in collected dirs
+        Q_FOREACH(const QString& dir, src_paths)
+            Q_FOREACH(const QString& c, findCandidatesAt(active_doc_name, dir, extensions_to_try))
+                if (!candidates.contains(c))
+                    candidates.push_back(c);
+
+        kDebug() << "open src/hrd: stage1: found candidates: " << candidates;
+
+        // And finally: try to find alternative source file 
+        // names using basename*.cc, basename*.cpp & so on...
+
+        // Ok, now try to find more sources in collected paths using this regex
+        src_paths.push_front(active_doc_path);      // Do not forget about the current document's dir
+        // Form filters list
+        QStringList filters;
+        Q_FOREACH(const QString& ext, extensions_to_try)
+            filters << (active_doc_name + "*." + ext);
+        kDebug() << "open src/hrd: stage3: filters ready: " <<  filters;
+        Q_FOREACH(const QString& dir, src_paths)
+        {
+            for (
+                QDirIterator dir_it(
+                    dir
+                  , filters
+                  , QDir::Files|QDir::NoDotAndDotDot|QDir::Readable|QDir::CaseSensitive
+                  )
+              ; dir_it.hasNext()
+              ;
+              )
+            {
+                dir_it.next();
+                const QString& file = dir_it.fileInfo().absoluteFilePath();
+                kDebug() << "open src/hrd: stage3: found " << file;
+                if (!candidates.contains(file))
+                    candidates.push_back(file);
+            }
+        }
+    }
+    kDebug() << "open src/hrd: final candidates: " << candidates;
+
+    /// \todo More ways to find candidates...
+
+    if (candidates.isEmpty())
+    {
+        KPassivePopup::message(
+            i18n("Error")
+          , i18n(
+              "<qt>Unable to find a corresponding header/source for `<tt>%1</tt>'.</qt>"
+            , url.toLocalFile()
+            )
+          , qobject_cast<QWidget*>(this)
+          );
+    }
+    else if (candidates.size() == 1)
+    {
+        // No ambiguity! The only candidate! -- We r lucky! :-)
+        openFile(candidates.first());
+    }
+    else
+    {
+        // Let user to choose what to open...
+        openFiles(ChooseFromListDialog::selectHeaderToOpen(qobject_cast<QWidget*>(this), candidates));
+    }
+}
+
+QStringList IncludeHelperPluginView::findCandidatesAt(
+    const QString& name
+  , const QString& path
+  , const QStringList& extensions
+  )
+{
+    QStringList result;
+    Q_FOREACH(const QString& ext, extensions)
+    {
+        /// \todo Is there smth like \c boost::filesystem::path?
+        QString filename = path + "/" + name + "." + ext;
+        kDebug() << "open src/hrd: trying " << filename;
+        if (isPresentAndReadable(filename))
+            result.push_back(filename);
+    }
+
+    return result;
 }
 
 void IncludeHelperPluginView::openHeader()
@@ -125,7 +344,7 @@ void IncludeHelperPluginView::openHeader()
                 i18n("Error")
               , i18n(
                     "<qt>Unable to find a file: `<tt>%1</tt>'."
-                    "<p>Here is the list of #included headers...</p><qt>"
+                    "<p>Here is the list of #included headers...</p></qt>"
                   , filename
                   )
               , qobject_cast<QWidget*>(this)
@@ -170,6 +389,9 @@ QStringList IncludeHelperPluginView::findFileLocations(const QString& filename)
     return candidates;
 }
 
+/**
+ * \note This function assume that given file is really exists.
+ */
 inline void IncludeHelperPluginView::openFile(const QString& file)
 {
     kDebug() << "Going to open " << file;

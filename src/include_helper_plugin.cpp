@@ -62,6 +62,7 @@ IncludeHelperPlugin::IncludeHelperPlugin(
   , m_monitor_flags(0)
   , m_use_ltgt(true)
   , m_config_dirty(false)
+  , m_open_first(false)
 {
 }
 
@@ -90,7 +91,7 @@ Kate::PluginConfigPage* IncludeHelperPlugin::configPage(uint number, QWidget* pa
 void IncludeHelperPlugin::readConfig()
 {
     // Read global config
-    kDebug() << "** PLUGIN **: Reading global config: " << KGlobal::config()->name();
+    kDebug() << "** INC-HLP-PLUGIN **: Reading global config: " << KGlobal::config()->name();
     KConfigGroup gcg(KGlobal::config(), "IncludeHelper");
     QStringList dirs = gcg.readPathEntry("ConfiguredDirs", QStringList());
     kDebug() << "Got global configured include path list: " << dirs;
@@ -100,13 +101,14 @@ void IncludeHelperPlugin::readConfig()
 
 void IncludeHelperPlugin::readSessionConfig(KConfigBase* config, const QString& groupPrefix)
 {
-    kDebug() << "** PLUGIN **: Reading session config: " << groupPrefix;
+    kDebug() << "** INC-HLP-PLUGIN **: Reading session config: " << groupPrefix;
     // Read session config
     /// \todo Rename it!
     KConfigGroup scg(config, groupPrefix + ":include-helper");
     QStringList session_dirs = scg.readPathEntry("ConfiguredDirs", QStringList());
     QVariant use_ltgt = scg.readEntry("UseLtGt", QVariant(false));
     QVariant use_cwd = scg.readEntry("UseCwd", QVariant(false));
+    QVariant open_first = scg.readEntry("OpenFirstInclude", QVariant(false));
     QVariant mon_dirs = scg.readEntry("MonitorDirs", QVariant(0));
     kDebug() << "Got per session configured include path list: " << session_dirs;
     // Assign configuration
@@ -114,6 +116,7 @@ void IncludeHelperPlugin::readSessionConfig(KConfigBase* config, const QString& 
     m_use_ltgt = use_ltgt.toBool();
     m_use_cwd = use_cwd.toBool();
     m_monitor_flags = mon_dirs.toInt();
+    m_open_first = open_first.toBool();
     m_config_dirty = false;
 
     readConfig();
@@ -121,7 +124,7 @@ void IncludeHelperPlugin::readSessionConfig(KConfigBase* config, const QString& 
 
 void IncludeHelperPlugin::writeSessionConfig(KConfigBase* config, const QString& groupPrefix)
 {
-    kDebug() << "** PLUGIN **: Writing session config: " << groupPrefix;
+    kDebug() << "** INC-HLP-PLUGIN **: Writing session config: " << groupPrefix;
     if (!m_config_dirty)
     {
         /// \todo Maybe I don't understand smth, but rally strange things r going on here:
@@ -140,6 +143,7 @@ void IncludeHelperPlugin::writeSessionConfig(KConfigBase* config, const QString&
     scg.writePathEntry("ConfiguredDirs", m_session_dirs);
     scg.writeEntry("UseLtGt", QVariant(m_use_ltgt));
     scg.writeEntry("UseCwd", QVariant(m_use_cwd));
+    scg.writeEntry("OpenFirstInclude", QVariant(m_open_first));
     scg.writeEntry("MonitorDirs", QVariant(m_monitor_flags));
     scg.sync();
     // Write global config
@@ -177,7 +181,6 @@ void IncludeHelperPlugin::setGlobalDirs(QStringList& dirs)
         kDebug() << "** set config to `dirty' state!! **";
     }
 }
-
 void IncludeHelperPlugin::setUseLtGt(const bool state)
 {
     m_use_ltgt = state;
@@ -191,8 +194,13 @@ void IncludeHelperPlugin::setUseCwd(const bool state)
     m_config_dirty = true;
     kDebug() << "** set config to `dirty' state!! **";
 }
-
-void IncludeHelperPlugin::set_what_to_monitor(const int tgt)
+void IncludeHelperPlugin::setOpenFirst(const bool state)
+{
+    m_open_first = state;
+    m_config_dirty = true;
+    kDebug() << "** set config to `dirty' state!! **";
+}
+void IncludeHelperPlugin::setWhatToMonitor(const int tgt)
 {
     assert("Sanity check" && 0 <= tgt && tgt < 4);
     m_monitor_flags = tgt;

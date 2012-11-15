@@ -104,7 +104,8 @@ void IncludeHelperPluginConfigPage::apply()
     }
     m_plugin->setUseLtGt(m_pss_config->includeMarkersSwitch->checkState() == Qt::Checked);
     m_plugin->setUseCwd(m_pss_config->useCurrentDirSwitch->checkState() == Qt::Checked);
-    m_plugin->set_what_to_monitor(
+    m_plugin->setOpenFirst(m_pss_config->openFirstHeader->checkState() == Qt::Checked);
+    m_plugin->setWhatToMonitor(
         int(m_pss_config->nothing->isChecked()) * 0
       + int(m_pss_config->session->isChecked()) * 1
       + int(m_pss_config->system->isChecked()) * 2
@@ -124,6 +125,9 @@ void IncludeHelperPluginConfigPage::reset()
       );
     m_pss_config->useCurrentDirSwitch->setCheckState(
         m_plugin->useCwd() ? Qt::Checked : Qt::Unchecked
+      );
+    m_pss_config->openFirstHeader->setCheckState(
+        m_plugin->shouldOpenFirstInclude() ? Qt::Checked : Qt::Unchecked
       );
 }
 

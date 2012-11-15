@@ -40,6 +40,8 @@ class IncludeHelperPlugin;                                  // forward declarati
  *
  * [More detailed description here]
  *
+ * \todo Add some suffix to slots
+ *
  */
 class IncludeHelperPluginView
   : public Kate::PluginView
@@ -59,6 +61,7 @@ public:
 
 private Q_SLOTS:
     void openHeader();                                      ///< Open header file under cursor
+    void switchIfaceImpl();                                 ///< Open corresponding header/implementation file
     void copyInclude();                                     ///< From #include directive w/ current file in the clipboard
     void viewChanged();
     void viewCreated(KTextEditor::View*);
@@ -72,6 +75,9 @@ private Q_SLOTS:
 #endif
 
 private:
+    /// Try to find file(s) w/ a given name+path and a list of possible extensions
+    QStringList findCandidatesAt(const QString&, const QString&, const QStringList&);
+
     KTextEditor::Range currentWord() const;                 ///< Get word under cursor as range
     void openFile(const QString&);                          ///< Open a single document
     void openFiles(const QStringList&);                     ///< Open documents for all URIs in a given list
@@ -80,6 +86,7 @@ private:
     IncludeHelperPlugin* m_plugin;                          ///< Parent plugin
     KAction* m_open_header;                                 ///< <em>Open header</em> action
     KAction* m_copy_include;                                ///< <em>Copy #include to clipboard</em> action
+    KAction* m_switch;                                      ///< <em>Open implementation/header</em> action
 };
 
 class ChooseFromListDialog : public KDialog

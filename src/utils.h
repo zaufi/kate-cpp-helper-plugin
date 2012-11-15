@@ -108,6 +108,20 @@ inline bool isPresentAndReadable(const QString& uri)
     return fi.exists() && fi.isFile() && fi.isReadable();
 }
 
+inline void findFiles(const QString& file, const QStringList& paths, QStringList& result)
+{
+    Q_FOREACH(const QString& path, paths)
+    {
+        const QString uri = path + '/' + file;
+        if (isPresentAndReadable(uri))
+        {
+            result.push_back(uri);
+            kDebug() << " ... " << uri << " Ok";
+        }
+        else kDebug() << " ... " << uri << " not exists/readable";
+    }
+}
+
 /// Scan for files and dirs
 void updateListsFromFS(
     const QString&

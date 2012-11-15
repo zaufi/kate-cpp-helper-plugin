@@ -174,22 +174,6 @@ IncludeParseResult parseIncludeDirective(const QString& line, const bool strict)
     return result;
 }
 
-namespace {
-inline void findFiles(const QString& file, const QStringList& paths, QStringList& result)
-{
-    Q_FOREACH(const QString& path, paths)
-    {
-        const QString uri = path + '/' + file;
-        if (isPresentAndReadable(uri))
-        {
-            result.push_back(uri);
-            kDebug() << " ... " << uri << " Ok";
-        }
-        else kDebug() << " ... " << uri << " not exists/readable";
-    }
-}
-}                                                           // anonymous namespace
-
 /**
  * \todo Is there any way to make a joint view for both containers?
  *
