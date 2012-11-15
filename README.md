@@ -70,12 +70,12 @@ Some important notes
   So if your system short on resources just try to avoid live ``#include`` files status updates.
   Otherwise one may increase a number of available files/dirs watches by doing this::
 
-    # echo 16384 >/proc/sys/fs/inotify/max_user_watches
+        # echo 16384 >/proc/sys/fs/inotify/max_user_watches
 
   To make it permanent add the following to ``/etc/sysctl.conf`` or ``/etc/sysctl.d/inotify.conf``
   (depending on system)::
 
-    fs.inotify.max_user_watches = 16384
+        fs.inotify.max_user_watches = 16384
 
 TODO
 ====
