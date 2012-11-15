@@ -22,9 +22,9 @@ Installation
 * Clone sources into (some) working dir
 * To install into your home directory you have to specify a prefix like this::
 
-    $ cd <plugin-sources-dir>
-    $ mkdir build && cd build
-    $ cmake -DBUILD_TESTING=OFF -DCMAKE_INSTALL_PREFIX=~/.kde4 .. && make && make install
+        $ cd <plugin-sources-dir>
+        $ mkdir build && cd build
+        $ cmake -DBUILD_TESTING=OFF -DCMAKE_INSTALL_PREFIX=~/.kde4 .. && make && make install
 
 * To make a system-wide installation, set the prefix to /usr and become a superuser to ``make install``
 * After that u have to enable it from ``Settings->Configure Kate...->Plugins`` and configure the include paths
