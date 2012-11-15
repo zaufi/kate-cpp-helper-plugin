@@ -61,15 +61,15 @@ Open Header/Implementation: How it works
 Kate shpped with a plugin named "Open Header", but sooner after I started to use it I've found
 few cases when it can't helps me. Nowadays I have 2 "real life" examples when it fails:
 
-Ofter one may find a source tree splitted into `${project}/src/` and `${project}/include` dirs.
-So, when you are at some header from `include/` dir, that plugin never will find your source file.
+Often one may find a source tree splitted into ``${project}/src/`` and ``${project}/include`` dirs.
+So, when you are at some header from ``include/`` dir, that plugin never will find your source file.
 And vise versa.
 
 The second case: sometimes you have a really big class defined in a header file
-(let it be `my_huge_application.hh`). It may consist of few dickers of methods each of wich is
+(let it be ``my_huge_application.hh``). It may consist of few dickers of methods each of wich is
 hundred lines or so. In that case I prefer to split implementation into several files and name them
-aftr a base header like `my_huge_application_cmd_line.cc` (for everything related to command line parsing),
-`my_huge_application_networking.cc` (for everything related to network I/O), and so on. As you may guess
+aftr a base header like ``my_huge_application_cmd_line.cc`` (for everything related to command line parsing),
+``my_huge_application_networking.cc`` (for everything related to network I/O), and so on. As you may guess
 "Open Header" plugin will fail to find a corresponding heder for that source files.
 
 Starting from version 0.5 Include Helper Plugin can deal with both mentioned cases!
