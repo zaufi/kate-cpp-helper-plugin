@@ -233,33 +233,36 @@ void IncludeHelperPluginView::switchIfaceImpl()
 
         kDebug() << "open src/hrd: stage1: found candidates: " << candidates;
 
-        // And finally: try to find alternative source file 
-        // names using basename*.cc, basename*.cpp & so on...
-
-        // Ok, now try to find more sources in collected paths using this regex
-        src_paths.push_front(active_doc_path);      // Do not forget about the current document's dir
-        // Form filters list
-        QStringList filters;
-        Q_FOREACH(const QString& ext, extensions_to_try)
-            filters << (active_doc_name + "*." + ext);
-        kDebug() << "open src/hrd: stage3: filters ready: " <<  filters;
-        Q_FOREACH(const QString& dir, src_paths)
+        if (m_plugin->useWildcardSearch())
         {
-            for (
-                QDirIterator dir_it(
-                    dir
-                  , filters
-                  , QDir::Files|QDir::NoDotAndDotDot|QDir::Readable|QDir::CaseSensitive
-                  )
-              ; dir_it.hasNext()
-              ;
-              )
+            // And finally: try to find alternative source file
+            // names using basename*.cc, basename*.cpp & so on...
+
+            // Ok, now try to find more sources in collected paths using wildcards
+            src_paths.push_front(active_doc_path);      // Do not forget about the current document's dir
+            // Form filters list
+            QStringList filters;
+            Q_FOREACH(const QString& ext, extensions_to_try)
+                filters << (active_doc_name + "*." + ext);
+            kDebug() << "open src/hrd: stage3: filters ready: " <<  filters;
+            Q_FOREACH(const QString& dir, src_paths)
             {
-                dir_it.next();
-                const QString& file = dir_it.fileInfo().absoluteFilePath();
-                kDebug() << "open src/hrd: stage3: found " << file;
-                if (!candidates.contains(file))
-                    candidates.push_back(file);
+                for (
+                    QDirIterator dir_it(
+                        dir
+                    , filters
+                    , QDir::Files|QDir::NoDotAndDotDot|QDir::Readable|QDir::CaseSensitive
+                    )
+                ; dir_it.hasNext()
+                ;
+                )
+                {
+                    dir_it.next();
+                    const QString& file = dir_it.fileInfo().absoluteFilePath();
+                    kDebug() << "open src/hrd: stage3: found " << file;
+                    if (!candidates.contains(file))
+                        candidates.push_back(file);
+                }
             }
         }
     }

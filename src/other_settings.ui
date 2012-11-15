@@ -118,6 +118,16 @@
        </widget>
       </item>
       <item>
+       <widget class="QCheckBox" name="useWildcardSearch">
+        <property name="whatsThis">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Search for &lt;code&gt;filename*.(cc|cpp|cxx|...)&lt;/code&gt; (and add as candidates) when switch from header file to source&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="text">
+         <string>Use wildcard source files search</string>
+        </property>
+       </widget>
+      </item>
+      <item>
        <spacer name="verticalSpacer">
         <property name="orientation">
          <enum>Qt::Vertical</enum>

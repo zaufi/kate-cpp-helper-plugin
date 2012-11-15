@@ -79,6 +79,10 @@ public:
     {
         return m_open_first;
     }
+    bool useWildcardSearch() const
+    {
+        return m_use_wildcard_search;
+    }
     const doc_info_type& managed_docs() const
     {
         return m_doc_info;
@@ -100,6 +104,7 @@ public:
     void setUseLtGt(const bool state);
     void setUseCwd(const bool state);
     void setOpenFirst(const bool state);
+    void setUseWildcardSearch(const bool state);
     void setWhatToMonitor(const int tgt);
     //@}
 
@@ -175,6 +180,7 @@ private:
     bool m_use_cwd;
     bool m_config_dirty;
     bool m_open_first;
+    bool m_use_wildcard_search;
 };
 }                                                           // namespace kate
 #endif                                                      // __SRC__INCLUDE_HELPER_PLUGIN_HH__

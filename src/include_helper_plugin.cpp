@@ -63,6 +63,7 @@ IncludeHelperPlugin::IncludeHelperPlugin(
   , m_use_ltgt(true)
   , m_config_dirty(false)
   , m_open_first(false)
+  , m_use_wildcard_search(false)
 {
 }
 
@@ -109,6 +110,7 @@ void IncludeHelperPlugin::readSessionConfig(KConfigBase* config, const QString& 
     QVariant use_ltgt = scg.readEntry("UseLtGt", QVariant(false));
     QVariant use_cwd = scg.readEntry("UseCwd", QVariant(false));
     QVariant open_first = scg.readEntry("OpenFirstInclude", QVariant(false));
+    QVariant use_wildcard_search = scg.readEntry("UseWildcardSearch", QVariant(false));
     QVariant mon_dirs = scg.readEntry("MonitorDirs", QVariant(0));
     kDebug() << "Got per session configured include path list: " << session_dirs;
     // Assign configuration
@@ -117,6 +119,7 @@ void IncludeHelperPlugin::readSessionConfig(KConfigBase* config, const QString& 
     m_use_cwd = use_cwd.toBool();
     m_monitor_flags = mon_dirs.toInt();
     m_open_first = open_first.toBool();
+    m_use_wildcard_search = use_wildcard_search.toBool();
     m_config_dirty = false;
 
     readConfig();
@@ -144,6 +147,7 @@ void IncludeHelperPlugin::writeSessionConfig(KConfigBase* config, const QString&
     scg.writeEntry("UseLtGt", QVariant(m_use_ltgt));
     scg.writeEntry("UseCwd", QVariant(m_use_cwd));
     scg.writeEntry("OpenFirstInclude", QVariant(m_open_first));
+    scg.writeEntry("UseWildcardSearch", QVariant(m_use_wildcard_search));
     scg.writeEntry("MonitorDirs", QVariant(m_monitor_flags));
     scg.sync();
     // Write global config
@@ -197,6 +201,12 @@ void IncludeHelperPlugin::setUseCwd(const bool state)
 void IncludeHelperPlugin::setOpenFirst(const bool state)
 {
     m_open_first = state;
+    m_config_dirty = true;
+    kDebug() << "** set config to `dirty' state!! **";
+}
+void IncludeHelperPlugin::setUseWildcardSearch(const bool state)
+{
+    m_use_wildcard_search = state;
     m_config_dirty = true;
     kDebug() << "** set config to `dirty' state!! **";
 }
