@@ -1,11 +1,8 @@
-.. contents::
-
-==========================
 Kate Include Helper Plugin
 ==========================
 
 Information
-===========
+-----------
 
 This plugin intended to simplify the hard life of C/C++ programmers who use Kate to write code :-)
 First of all, I tired to use the file browser to open mine (or system) header files. With this version
@@ -14,13 +11,13 @@ Actually, you are not even required to move a cursor to a file name if the curre
 ``#include`` directive...
 
 Requirements
-============
+------------
 
-* `Kate <http://kate-editor.org  />`_ editor version >= 2.9.
+* (Kate)[http://kate-editor.org] editor version >= 2.9.
 
 
 Installation
-============
+------------
 
 * Clone sources into (some) working dir
 * To install into your home directory you have to specify a prefix like this::
@@ -30,35 +27,20 @@ Installation
     $ cmake -DBUILD_TESTING=OFF -DCMAKE_INSTALL_PREFIX=~/.kde4 .. && make && make install
 
 * To make a system-wide installation, set the prefix to /usr and become a superuser to ``make install``
-* After that u have to enable it from `Settings->Configure Kate...->Plugins` and configure the include paths
+* After that u have to enable it from ``Settings->Configure Kate...->Plugins`` and configure the include paths
   globally and/or per session...
 
 Note: One may use ``kde4-config`` utility with option ``--localprefix`` or ``--prefix`` to get
 user or system-wide prefix correspondingly.
 
 
-Notes
-=====
-
-* monitoring too much (nested) directories, for example in ``/usr/include`` configured as
-  system directory, may lead to too much resources consumed, so ``inotify_add_watch`` would
-  return a ``ENOSPC`` error (use ``strace`` to find out and/or check kate's console log for
-  _strange_ messages from ``DirWatch``).
-  So if your system short on resources just try to avoid live ``#include`` files status updates.
-  Otherwise one may increase a number of available files/dirs watches by doing this::
-
-    # echo 16384 >/proc/sys/fs/inotify/max_user_watches
-
-  To make it permanent add the following to ``/etc/sysctl.conf`` or ``/etc/sysctl.d/inotify.conf``
-  (depending on system)::
-
-    fs.inotify.max_user_watches = 16384
-
+Some Features in Details
+========================
 
 Open Header/Implementation: How it works
 ----------------------------------------
 
-Kate shipped with a plugin named "Open Header", but sooner after I started to use it I've found
+Kate shipped with a plugin named *Open Header*, but sooner after I started to use it I've found
 few cases when it can't helps me. Nowadays I have 2 "real life" examples when it fails:
 
 Often one may find a source tree splitted into ``${project}/src/`` and ``${project}/include`` dirs.
@@ -73,8 +55,27 @@ aftr a base header like ``my_huge_application_cmd_line.cc`` (for everything rela
 "Open Header" plugin will fail to find a corresponding header for that source files.
 
 Starting from version 0.5 Include Helper Plugin can deal with both mentioned cases!
+So, you don't need an Open Header anymore! It is capable to "simple" toggle between header and source files,
+like Open Header plugin do, but slightly smarter :-)
 
 TBD more details
+
+Some important notes
+--------------------
+
+* monitoring too much (nested) directories, for example in ``/usr/include`` configured as
+  system directory, may lead to high resources consumption, so ``inotify_add_watch`` would
+  return a ``ENOSPC`` error (use ``strace`` to find out and/or check kate's console log for
+  **strange** messages from ``DirWatch``).
+  So if your system short on resources just try to avoid live ``#include`` files status updates.
+  Otherwise one may increase a number of available files/dirs watches by doing this::
+
+    # echo 16384 >/proc/sys/fs/inotify/max_user_watches
+
+  To make it permanent add the following to ``/etc/sysctl.conf`` or ``/etc/sysctl.d/inotify.conf``
+  (depending on system)::
+
+    fs.inotify.max_user_watches = 16384
 
 TODO
 ====
@@ -94,13 +95,14 @@ TODO
 * Add option(s) to include/exclude files from completion list
 * Issue a warning if /proc/sys/fs/inotify/max_user_watches is not high enough
 
+
 Changes
 =======
 
 Version 0.5
 -----------
 
-* add an action to switch between header and implementation file, just like an official "Open Header"
+* add an action to switch between header and implementation file, just like an official *Open Header*
   plugin but smarter ;-) See details above.
 
 Version 0.4.5
