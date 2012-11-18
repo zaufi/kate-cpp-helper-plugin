@@ -18,7 +18,7 @@
 IF ( == (suffix) "h") +]
 [+(out-move (sprintf "%s.h" (get "filename"))) +]
 #ifndef [+ incguard +]
-#  define [+ incguard +]
+# define [+ incguard +]
 
 // Project specific includes
 

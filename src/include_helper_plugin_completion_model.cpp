@@ -297,3 +297,4 @@ KTextEditor::Range IncludeHelperPluginCompletionModel::completionRange(
 }
 //END IncludeHelperPluginCompletionModel
 }                                                           // namespace kate
+// kate: hl C++11/Qt4;

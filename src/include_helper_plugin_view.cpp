@@ -22,6 +22,7 @@
 
 // Project specific includes
 #include <src/include_helper_plugin_view.h>
+#include <src/clang_code_completion_model.h>
 #include <src/include_helper_plugin_completion_model.h>
 #include <src/include_helper_plugin.h>
 #include <src/utils.h>
@@ -501,14 +502,18 @@ void IncludeHelperPluginView::viewCreated(KTextEditor::View* view)
     kDebug() << "view created";
     if (isCOrPPSource(view->document()->mimeType()))
     {
-        kDebug() << "C/C++ source: register #include completer";
         KTextEditor::CodeCompletionInterface* cc_iface =
             qobject_cast<KTextEditor::CodeCompletionInterface*>(view);
         if (cc_iface)
         {
-            // Enable completions
+            kDebug() << "C/C++ source: register #include completer";
+            // Enable #include completions
             cc_iface->registerCompletionModel(new IncludeHelperPluginCompletionModel(view, m_plugin));
             cc_iface->setAutomaticInvocationEnabled(true);
+
+            kDebug() << "C/C++ source: register clang based code completer";
+            // Enable semantic C++ code completions
+            cc_iface->registerCompletionModel(new ClangCodeCompletionModel(view, m_plugin));
         }
     }
     // Scan document for #include...
@@ -641,3 +646,4 @@ QStringList ChooseFromListDialog::selectHeaderToOpen(QWidget* parent, const QStr
 }
 //END ChooseFromListDialog
 }                                                           // namespace kate
+// kate: hl C++11/Qt4;

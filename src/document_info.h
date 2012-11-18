@@ -87,3 +87,4 @@ private:
 
 }                                                           // namespace kate
 #endif                                                      // __SRC__DOCUMENTINFO_H__
+// kate: hl C++11/Qt4;

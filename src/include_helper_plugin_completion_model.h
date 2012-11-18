@@ -54,6 +54,9 @@ class IncludeHelperPluginCompletionModel
 
 public:
     IncludeHelperPluginCompletionModel(QObject*, IncludeHelperPlugin*);
+
+    //BEGIN KTextEditor::CodeCompletionModel overrides
+
     /// Generate completions for given range
     void completionInvoked(KTextEditor::View*, const KTextEditor::Range&, InvocationType);
     void executeCompletionItem2(KTextEditor::Document*, const KTextEditor::Range&, const QModelIndex&) const;
@@ -84,6 +87,7 @@ public:
         // otherwise return an invalid node.
         return index.internalId() ? createIndex(0, 0, 0) : QModelIndex();
     }
+    //END KTextEditor::CodeCompletionModel overrides
 
 private:
     /// Update \c m_completions for given string
@@ -98,3 +102,4 @@ private:
 
 }                                                           // namespace kate
 #endif                                                      // __SRC__INCLUDE_HELPER_PLUGIN_COMPLETION_MODEL_H__
+// kate: hl C++11/Qt4;

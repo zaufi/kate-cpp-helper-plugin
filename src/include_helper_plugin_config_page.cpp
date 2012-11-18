@@ -238,3 +238,4 @@ bool IncludeHelperPluginConfigPage::contains(const QString& dir, const KListWidg
 }
 //END IncludeHelperPluginConfigPage
 }                                                           // namespace kate
+// kate: hl C++11/Qt4;

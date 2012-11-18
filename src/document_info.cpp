@@ -249,3 +249,4 @@ bool DocumentInfo::isRangeWithSameExists(const KTextEditor::Range& range) const
 }
 
 }                                                           // namespace kate
+// kate: hl C++11/Qt4;

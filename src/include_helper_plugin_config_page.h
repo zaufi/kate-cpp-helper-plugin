@@ -82,3 +82,4 @@ private:
 
 }                                                           // namespace kate
 #endif                                                      // __SRC__INCLUDE_HELPER_PLUGIN_CONFIG_PAGE_H__
+// kate: hl C++11/Qt4;

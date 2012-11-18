@@ -135,3 +135,4 @@ void updateListsFromFS(
 QStringList findHeader(const QString&, const QStringList&, const QStringList&);
 }                                                           // namespace kate
 #endif                                                      // __SRC__UTILS_H__
+// kate: hl C++11/Qt4;
