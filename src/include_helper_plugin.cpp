@@ -1,7 +1,7 @@
 /**
  * \file
  *
- * \brief Class \c IncludeHelperPlugin (implementation)
+ * \brief Class \c kate::IncludeHelperPlugin (implementation)
  *
  * \date Sun Jan 29 09:15:53 MSK 2012 -- Initial design
  */
@@ -107,6 +107,7 @@ void IncludeHelperPlugin::readSessionConfig(KConfigBase* config, const QString& 
     /// \todo Rename it!
     KConfigGroup scg(config, groupPrefix + ":include-helper");
     QStringList session_dirs = scg.readPathEntry("ConfiguredDirs", QStringList());
+    QString clang_params= scg.readPathEntry("ClangCmdLineParams", QString());
     QVariant use_ltgt = scg.readEntry("UseLtGt", QVariant(false));
     QVariant use_cwd = scg.readEntry("UseCwd", QVariant(false));
     QVariant open_first = scg.readEntry("OpenFirstInclude", QVariant(false));
@@ -115,6 +116,7 @@ void IncludeHelperPlugin::readSessionConfig(KConfigBase* config, const QString& 
     kDebug() << "Got per session configured include path list: " << session_dirs;
     // Assign configuration
     m_session_dirs = session_dirs;
+    m_clang_params = clang_params;
     m_use_ltgt = use_ltgt.toBool();
     m_use_cwd = use_cwd.toBool();
     m_monitor_flags = mon_dirs.toInt();
@@ -144,6 +146,7 @@ void IncludeHelperPlugin::writeSessionConfig(KConfigBase* config, const QString&
     kDebug() << "Write per session configured include path list: " << m_session_dirs;
     KConfigGroup scg(config, groupPrefix + ":include-helper");
     scg.writePathEntry("ConfiguredDirs", m_session_dirs);
+    scg.writeEntry("ClangCmdLineParams", m_clang_params);
     scg.writeEntry("UseLtGt", QVariant(m_use_ltgt));
     scg.writeEntry("UseCwd", QVariant(m_use_cwd));
     scg.writeEntry("OpenFirstInclude", QVariant(m_open_first));
@@ -184,6 +187,12 @@ void IncludeHelperPlugin::setGlobalDirs(QStringList& dirs)
         updateDirWatcher();
         kDebug() << "** set config to `dirty' state!! **";
     }
+}
+void IncludeHelperPlugin::setClangParams(const QString& params)
+{
+    m_clang_params = params;
+    m_config_dirty = true;
+    kDebug() << "** set config to `dirty' state!! **";
 }
 void IncludeHelperPlugin::setUseLtGt(const bool state)
 {
@@ -369,3 +378,4 @@ void IncludeHelperPlugin::textInserted(KTextEditor::Document* doc, const KTextEd
 
 //END IncludeHelperPlugin
 }                                                           // namespace kate
+// kate: hl C++11/Qt4

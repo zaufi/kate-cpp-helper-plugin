@@ -24,8 +24,9 @@
 #  define __SRC__INCLUDE_HELPER_PLUGIN_CONFIG_PAGE_H__
 
 // Project specific includes
-#  include <src/ui_path_config.h>
+#  include <src/ui_clang_settings.h>
 #  include <src/ui_other_settings.h>
+#  include <src/ui_path_config.h>
 
 // Standard includes
 #  include <kate/plugin.h>
@@ -74,6 +75,7 @@ private:
 
     IncludeHelperPlugin* m_plugin;                          ///< Parent plugin
     Ui_PerSessionSettingsConfigWidget* const m_pss_config;
+    Ui_CLangOptionsWidget* const m_clang_config;
     Ui_PathListConfigWidget* const m_system_list;
     Ui_PathListConfigWidget* const m_session_list;
 };

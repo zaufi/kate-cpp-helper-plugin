@@ -28,6 +28,7 @@
 #include <KDebug>
 #include <KDirSelectDialog>
 #include <KTabWidget>
+#include <KShellCompletion>
 
 namespace kate {
 //BEGIN IncludeHelperPluginConfigPage
@@ -38,6 +39,7 @@ IncludeHelperPluginConfigPage::IncludeHelperPluginConfigPage(
   : Kate::PluginConfigPage(parent)
   , m_plugin(plugin)
   , m_pss_config(new Ui_PerSessionSettingsConfigWidget())
+  , m_clang_config(new Ui_CLangOptionsWidget())
   , m_system_list(new Ui_PathListConfigWidget())
   , m_session_list(new Ui_PathListConfigWidget())
 {
@@ -61,6 +63,13 @@ IncludeHelperPluginConfigPage::IncludeHelperPluginConfigPage(
     m_session_list->moveUpButton->setIcon(KIcon("arrow-up"));
     m_session_list->moveDownButton->setIcon(KIcon("arrow-down"));
     tab->addTab(session_tab, i18n("Session Paths List"));
+
+    QWidget* clang_tab = new QWidget(tab);
+    m_clang_config->setupUi(clang_tab);
+    m_clang_config->commandLineParams->setText(m_plugin->clangParams());
+    KShellCompletion* comp = new KShellCompletion();
+    m_clang_config->commandLineParams->setCompletionObject(comp);
+    tab->addTab(clang_tab, i18n("CLang Settings"));
 
     QWidget* pss_tab = new QWidget(tab);
     m_pss_config->setupUi(pss_tab);
@@ -102,6 +111,7 @@ void IncludeHelperPluginConfigPage::apply()
             dirs.append(m_system_list->pathsList->item(i)->text());
         m_plugin->setGlobalDirs(dirs);
     }
+    m_plugin->setClangParams(m_clang_config->commandLineParams->text());
     m_plugin->setUseLtGt(m_pss_config->includeMarkersSwitch->checkState() == Qt::Checked);
     m_plugin->setUseCwd(m_pss_config->useCurrentDirSwitch->checkState() == Qt::Checked);
     m_plugin->setOpenFirst(m_pss_config->openFirstHeader->checkState() == Qt::Checked);

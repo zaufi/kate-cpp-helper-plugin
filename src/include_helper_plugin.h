@@ -67,6 +67,10 @@ public:
     {
         return m_system_dirs;
     }
+    const QString& clangParams() const
+    {
+        return m_clang_params;
+    }
     bool useLtGt() const
     {
         return m_use_ltgt;
@@ -101,6 +105,7 @@ public:
     //@{
     void setSessionDirs(QStringList& dirs);
     void setGlobalDirs(QStringList& dirs);
+    void setClangParams(const QString& params);
     void setUseLtGt(const bool state);
     void setUseCwd(const bool state);
     void setOpenFirst(const bool state);
@@ -166,6 +171,7 @@ private:
 
     QStringList m_system_dirs;
     QStringList m_session_dirs;
+    QString m_clang_params;
     doc_info_type m_doc_info;
     /// \todo Fuck! I want \c std::unique_ptr. Where is it in Qt?
     /// Only \c QSharedPtr here?
@@ -184,3 +190,5 @@ private:
 };
 }                                                           // namespace kate
 #endif                                                      // __SRC__INCLUDE_HELPER_PLUGIN_HH__
+
+// kate: hl C++11/Qt4;

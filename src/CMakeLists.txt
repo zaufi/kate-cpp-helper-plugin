@@ -10,7 +10,7 @@ set(KATE_INCLUDE_HELPER_PLUGIN_SOURCES
     include_helper_plugin.cpp
   )
 
-kde4_add_ui_files(KATE_INCLUDE_HELPER_PLUGIN_SOURCES path_config.ui other_settings.ui)
+kde4_add_ui_files(KATE_INCLUDE_HELPER_PLUGIN_SOURCES path_config.ui clang_settings.ui other_settings.ui)
 
 kde4_add_plugin(kateincludehelperplugin ${KATE_INCLUDE_HELPER_PLUGIN_SOURCES})
 
@@ -19,6 +19,7 @@ target_link_libraries(kateincludehelperplugin
     ${KDE4_KFILE_LIBS}
     ${KDE4_KTEXTEDITOR_LIBS}
     kateinterfaces
+    ${CLANG_C_LIBS} ${LLVM_LDFLAGS}
   )
 
 install(TARGETS kateincludehelperplugin DESTINATION ${PLUGIN_INSTALL_DIR})

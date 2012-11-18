@@ -3,6 +3,10 @@
 #
 # kate: hl cmake;
 
+# NOTE `llvm-config --ldflags` return a string that CMake won't accept due this policy,
+# so inhibit it!
+cmake_policy(SET CMP0004 OLD)
+
 #---------------------------------------------------------
 # Section: Init cmake
 #---------------------------------------------------------
@@ -29,6 +33,26 @@ endif()
 # Find KDE
 find_package(KDE4 REQUIRED)
 include(KDE4Defaults)
+
+find_program(LLVM_CONFIG_EXECUTABLE llvm-config REQUIRED)
+# Get LLVM CXX flags
+execute_process(
+    COMMAND ${LLVM_CONFIG_EXECUTABLE} --cxxflags
+    OUTPUT_VARIABLE LLVM_CXXFLAGS_ORIG
+  )
+string(REPLACE "-fno-exceptions" "" LLVM_CXXFLAGS "${LLVM_CXXFLAGS_ORIG}")
+# Get LLVM linker flags
+execute_process(
+    COMMAND ${LLVM_CONFIG_EXECUTABLE} --ldflags
+    OUTPUT_VARIABLE LLVM_LDFLAGS
+  )
+# TODO Real detector required
+set(LLVM_LDFLAGS -L/usr/lib64/llvm -lpthread -lffi -ldl -lm)
+set(
+    CLANG_C_LIBS
+    -lclang
+    -lLLVM-3.1
+  )
 
 # find boost
 # NOTE I see no way to make unit tests optional for release mode
@@ -58,6 +82,8 @@ include_directories(${KDE4_INCLUDES} ${QT_INCLUDES} ${Boost_INCLUDE_DIRS})
 #add_definitions(-DBOOST_RESULT_OF_USE_DECLTYPE)
 # Add Qt/KDE defines
 add_definitions(${QT_DEFINITIONS} ${KDE4_DEFINITIONS})
+# Add LLVM definitions
+add_definitions(${LLVM_CXXFLAGS})
 # Use Kate plugins debug area as default
 # add_definitions(-DDEBUG_AREA=13040)
 
