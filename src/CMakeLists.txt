@@ -1,9 +1,13 @@
 configure_file(config.h.in config.h)
 configure_file(kateincludehelperplugin.desktop.in kateincludehelperplugin.desktop)
 
+add_definitions(-DQT_USE_QSTRINGBUILDER)
+
 set(KATE_INCLUDE_HELPER_PLUGIN_SOURCES
     utils.cpp
     document_info.cpp
+    clang_utils.cpp
+    clang_code_completion_item.cpp
     clang_code_completion_model.cpp
     include_helper_plugin_config_page.cpp
     include_helper_plugin_completion_model.cpp

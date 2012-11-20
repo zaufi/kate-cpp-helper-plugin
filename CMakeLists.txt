@@ -87,8 +87,8 @@ add_definitions(${LLVM_CXXFLAGS})
 # Use Kate plugins debug area as default
 # add_definitions(-DDEBUG_AREA=13040)
 
-# Set generic compiler flags
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${KDE4_ENABLE_EXCEPTIONS}")
+# Set generic compiler flags: turn ON C++11 (C++03 is suxx) and exceptions
+set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS} ${KDE4_ENABLE_EXCEPTIONS}")
 
 #---------------------------------------------------------
 # Section: Define some helpful targets (using included)

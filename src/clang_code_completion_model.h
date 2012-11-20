@@ -24,6 +24,7 @@
 # define __SRC__CLANG_CODE_COMPLETION_MODEL_H__
 
 // Project specific includes
+# include <src/clang_code_completion_item.h>
 
 // Standard includes
 # include <clang-c/Index.h>
@@ -36,6 +37,7 @@
 # if (__GNUC__ >=4 && __GNUC_MINOR__ >= 5)
 #   pragma GCC pop_options
 # endif                                                     // (__GNUC__ >=4 && __GNUC_MINOR__ >= 5)
+# include <map>
 
 namespace kate {
 class IncludeHelperPlugin;                                  // forward declaration
@@ -62,26 +64,15 @@ public:
     void completionInvoked(KTextEditor::View*, const KTextEditor::Range&, InvocationType);
     /// Respond w/ data for particular completion entry
     QVariant data(const QModelIndex&, int) const;
-    int columnCount(const QModelIndex&) const
-    {
-        return 1;
-    }
-    int rowCount(const QModelIndex& parent) const
-    {
-        if (parent.parent().isValid())
-            return 0;
-        return 0;                                           // TBD
-    }
-    QModelIndex parent(const QModelIndex& index) const
-    {
-        // make a ref to root node from level 1 nodes,
-        // otherwise return an invalid node.
-        return index.internalId() ? createIndex(0, 0, 0) : QModelIndex();
-    }
+    int columnCount(const QModelIndex&) const;
+    int rowCount(const QModelIndex& parent) const;
+    QModelIndex parent(const QModelIndex& index) const;
+    QModelIndex index(int row, int column, const QModelIndex& parent) const;
     //END KTextEditor::CodeCompletionModel overrides
 
 private:
     IncludeHelperPlugin* m_plugin;
+    std::multimap<unsigned, ClangCodeCompletionItem> m_completions;
 };
 
 }                                                           // namespace kate

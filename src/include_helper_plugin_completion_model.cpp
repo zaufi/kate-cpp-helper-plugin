@@ -24,9 +24,9 @@
 #include <src/include_helper_plugin_completion_model.h>
 #include <src/include_helper_plugin.h>
 #include <src/utils.h>
-#include <KLocalizedString>                                 /// \todo Where is \c i18n() defiend?
 
 // Standard includes
+#include <KLocalizedString>                                 /// \todo Where is \c i18n() defiend?
 #include <KTextEditor/Document>
 #include <KTextEditor/View>
 
@@ -181,8 +181,6 @@ QVariant IncludeHelperPluginCompletionModel::data(const QModelIndex& index, int 
       << "," << index.column() << ", role " << role;
 #endif
 
-    /// \todo Why there is no icon in comletion list??
-    static QIcon icon(KIcon("text-x-c++hdr").pixmap(QSize(16, 16)));
     switch (role)
     {
         case HighlightingMethod:
@@ -191,15 +189,16 @@ QVariant IncludeHelperPluginCompletionModel::data(const QModelIndex& index, int 
         case GroupRole:
             // kDebug() << "GroupRole";
             return Qt::DisplayRole;
+#if 0
+        case Qt::DecorationRole:
+            if (index.column() == KTextEditor::CodeCompletionModel::Icon && index.parent().isValid())
+                return QIcon(KIcon("text-x-c++hdr").pixmap(QSize(16, 16)));
+            break;
+#endif
         case Qt::DisplayRole:
             // kDebug() << "Qt::DisplayRole";
             switch (index.column())
             {
-                case KTextEditor::CodeCompletionModel::Icon:
-                    // kDebug() << "Icon";
-                    if (index.parent().isValid())
-                        return icon;
-                    break;
                 case KTextEditor::CodeCompletionModel::Name:
                     // kDebug() << "Name";
                     if (index.parent().isValid())
