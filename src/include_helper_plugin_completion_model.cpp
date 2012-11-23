@@ -159,11 +159,11 @@ void IncludeHelperPluginCompletionModel::updateCompletionList(const QString& sta
     mask.append(name);
     kDebug() << "mask=" << mask;
     // Complete session dirst first
-    updateListsFromFS(path, m_plugin->sessionDirs(), mask, m_dir_completions, m_file_completions);
+    updateListsFromFS(path, m_plugin->config().sessionDirs(), mask, m_dir_completions, m_file_completions);
     if (!only_local)
     {
         // Complete global dirs next
-        updateListsFromFS(path, m_plugin->systemDirs(), mask, m_dir_completions, m_file_completions);
+        updateListsFromFS(path, m_plugin->config().systemDirs(), mask, m_dir_completions, m_file_completions);
     }
     //
     kDebug() << "Got file completions: " << m_file_completions;
@@ -191,7 +191,7 @@ QVariant IncludeHelperPluginCompletionModel::data(const QModelIndex& index, int 
             return Qt::DisplayRole;
 #if 0
         case Qt::DecorationRole:
-            if (index.column() == KTextEditor::CodeCompletionModel::Icon && index.parent().isValid())
+            if (index.column() == KTextEditor::CodeCompletionModel::Icon && !index.parent().isValid())
                 return QIcon(KIcon("text-x-c++hdr").pixmap(QSize(16, 16)));
             break;
 #endif
@@ -210,7 +210,7 @@ QVariant IncludeHelperPluginCompletionModel::data(const QModelIndex& index, int 
                     // kDebug() << "Prefix";
                     if (!index.parent().isValid())
                         return i18n("Include Helper");
-                    else if (index.row() < m_dir_completions.size())
+                    if (index.row() < m_dir_completions.size())
                         return i18n("dir");
                 case KTextEditor::CodeCompletionModel::Scope:
                     // kDebug() << "Scope";

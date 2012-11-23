@@ -21,16 +21,19 @@
  */
 
 #ifndef __SRC__INCLUDE_HELPER_PLUGIN_HH__
-#  define __SRC__INCLUDE_HELPER_PLUGIN_HH__
+# define __SRC__INCLUDE_HELPER_PLUGIN_HH__
 
 // Project specific includes
+# include <src/clang_utils.h>
+# include <src/plugin_configuration.h>
 
 // Standard includes
-#  include <kate/plugin.h>
-#  include <kate/pluginconfigpageinterface.h>
-#  include <KTextEditor/Document>
-#  include <KDirWatch>
-#  include <cassert>
+# include <kate/plugin.h>
+# include <kate/pluginconfigpageinterface.h>
+# include <KTextEditor/Document>
+# include <KDirWatch>
+# include <cassert>
+# include <memory>
 
 namespace kate {
 class DocumentInfo;                                         // forward declaration
@@ -41,7 +44,9 @@ class DocumentInfo;                                         // forward declarati
  * [More detailed description here]
  *
  */
-class IncludeHelperPlugin : public Kate::Plugin, public Kate::PluginConfigPageInterface
+class IncludeHelperPlugin
+  : public Kate::Plugin
+  , public Kate::PluginConfigPageInterface
 {
     Q_OBJECT
     Q_INTERFACES(Kate::PluginConfigPageInterface)
@@ -59,88 +64,23 @@ public:
 
     /// \name Accessors
     //@{
-    const QStringList& sessionDirs() const
-    {
-        return m_session_dirs;
-    }
-    const QStringList& systemDirs() const
-    {
-        return m_system_dirs;
-    }
-    const QString& clangParams() const
-    {
-        return m_clang_params;
-    }
-    bool useLtGt() const
-    {
-        return m_use_ltgt;
-    }
-    bool useCwd() const
-    {
-        return m_use_cwd;
-    }
-    bool shouldOpenFirstInclude() const
-    {
-        return m_open_first;
-    }
-    bool useWildcardSearch() const
-    {
-        return m_use_wildcard_search;
-    }
-    const doc_info_type& managed_docs() const
-    {
-        return m_doc_info;
-    }
-    doc_info_type& managed_docs()
-    {
-        return m_doc_info;
-    }
-    int what_to_monitor() const
-    {
-        return m_monitor_flags;
-    }
-    //@}
-
-    /// \name Modifiers
-    //@{
-    void setSessionDirs(QStringList& dirs);
-    void setGlobalDirs(QStringList& dirs);
-    void setClangParams(const QString& params);
-    void setUseLtGt(const bool state);
-    void setUseCwd(const bool state);
-    void setOpenFirst(const bool state);
-    void setUseWildcardSearch(const bool state);
-    void setWhatToMonitor(const int tgt);
+    PluginConfiguration& config();
+    const PluginConfiguration& config() const;
+    const doc_info_type& managed_docs() const;
+    doc_info_type& managed_docs();
+    CXIndex index() const;
     //@}
 
     /// \name PluginConfigPageInterface interface implementation
     //@{
     /// Get number of configuration pages for this plugin
-    uint configPages() const
-    {
-        return 1;
-    }
+    uint configPages() const;
     /// Create a config page w/ given number and parent
     Kate::PluginConfigPage* configPage(uint = 0, QWidget* = 0, const char* = 0);
     /// Get short name of a config page by number
-    QString configPageName(uint number = 0) const
-    {
-        Q_UNUSED(number)
-        assert("This plugin have the only configuration page" && number == 0);
-        return "Include Helper";
-    }
-    QString configPageFullName(uint number = 0) const
-    {
-        Q_UNUSED(number)
-        assert("This plugin have the only configuration page" && number == 0);
-        return "Inlcude Helper Settings";
-    }
-    KIcon configPageIcon(uint number = 0) const
-    {
-        Q_UNUSED(number)
-        assert("This plugin have the only configuration page" && number == 0);
-        return KIcon("text-x-c++hdr");
-    }
+    QString configPageName(uint = 0) const;
+    QString configPageFullName(uint = 0) const;
+    KIcon configPageIcon(uint = 0) const;
     //@}
 
     /// \name Plugin interface implementation
@@ -148,46 +88,87 @@ public:
     void readSessionConfig(KConfigBase*, const QString&);
     void writeSessionConfig(KConfigBase*, const QString&);
     //@}
-    void readConfig();                                      ///< Read global config
-
-Q_SIGNALS:
-    void sessionDirsChanged();
-    void systemDirsChanged();
 
 public Q_SLOTS:
     void updateDocumentInfo(KTextEditor::Document* doc);
     void textInserted(KTextEditor::Document*, const KTextEditor::Range&);
+    void openDocument(const KUrl&);
 
 private Q_SLOTS:
     void createdPath(const QString&);
     void deletedPath(const QString&);
     void updateCurrentView();
-
-private:
+    void refreshPCH(bool = true);                           ///< Make sure a PCH is fresh
     /// Update warcher to monitor currently configured directories
     void updateDirWatcher();
-    /// Update warcher to monitor w/ particular entry
+
+private:
+    /// Update warcher to monitor a given entry
     void updateDirWatcher(const QString&);
 
-    QStringList m_system_dirs;
-    QStringList m_session_dirs;
-    QString m_clang_params;
+    PluginConfiguration m_config;
+    DCXIndex m_index;
     doc_info_type m_doc_info;
-    /// \todo Fuck! I want \c std::unique_ptr. Where is it in Qt?
-    /// Only \c QSharedPtr here?
-    QSharedPointer<KDirWatch> m_dir_watcher;
+    std::unique_ptr<KDirWatch> m_dir_watcher;
     /// \note Directory watcher reports about 4 times just for one event,
     /// so to avoid doing stupid job, lets remember what we've done the last time.
     QString m_last_updated;
-    int m_monitor_flags;
-    /// If \c true <em>Copy #include</em> action would put filename into \c '<' and \c '>'
-    /// instead of \c '"'
-    bool m_use_ltgt;
-    bool m_use_cwd;
-    bool m_config_dirty;
-    bool m_open_first;
-    bool m_use_wildcard_search;
 };
+
+inline PluginConfiguration& IncludeHelperPlugin::config()
+{
+    return m_config;
+}
+inline const PluginConfiguration& IncludeHelperPlugin::config() const
+{
+    return m_config;
+}
+inline auto IncludeHelperPlugin::managed_docs() const -> const doc_info_type&
+{
+    return m_doc_info;
+}
+inline auto IncludeHelperPlugin::managed_docs() -> doc_info_type&
+{
+    return m_doc_info;
+}
+inline CXIndex IncludeHelperPlugin::index() const
+{
+    return m_index;
+}
+
+inline uint IncludeHelperPlugin::configPages() const
+{
+    return 1;
+}
+inline QString IncludeHelperPlugin::configPageName(uint number) const
+{
+    Q_UNUSED(number)
+    assert("This plugin have the only configuration page" && number == 0);
+    return "Include Helper";
+}
+inline QString IncludeHelperPlugin::configPageFullName(uint number) const
+{
+    Q_UNUSED(number)
+    assert("This plugin have the only configuration page" && number == 0);
+    return "Inlcude Helper Settings";
+}
+inline KIcon IncludeHelperPlugin::configPageIcon(uint number) const
+{
+    Q_UNUSED(number)
+    assert("This plugin have the only configuration page" && number == 0);
+    return KIcon("text-x-c++hdr");
+}
+
+inline void IncludeHelperPlugin::readSessionConfig(KConfigBase* cfg, const QString& groupPrefix)
+{
+    config().readSessionConfig(cfg, groupPrefix);
+    refreshPCH(false);
+}
+inline void IncludeHelperPlugin::writeSessionConfig(KConfigBase* cfg, const QString& groupPrefix)
+{
+    config().writeSessionConfig(cfg, groupPrefix);
+}
+
 }                                                           // namespace kate
 #endif                                                      // __SRC__INCLUDE_HELPER_PLUGIN_HH__
 // kate: hl C++11/Qt4;

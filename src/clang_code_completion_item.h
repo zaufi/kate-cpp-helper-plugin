@@ -43,7 +43,8 @@ class ClangCodeCompletionItem
 public:
     /// Default constructor
     ClangCodeCompletionItem()
-      : m_completion_property(KTextEditor::CodeCompletionModel::NoProperty)
+      : m_priority(0)
+      , m_kind(CXCursor_UnexposedDecl)
     {}
     /// Initialize all fields
     ClangCodeCompletionItem(
@@ -51,25 +52,30 @@ public:
       , const QString& text
       , const QString& after
       , const QStringList& placeholders
-      , const KTextEditor::CodeCompletionModel::CompletionProperty cp =
-            KTextEditor::CodeCompletionModel::NoProperty
+      , const unsigned priority
+      , const CXCursorKind kind
       )
       : m_before(before)
       , m_text(text)
       , m_after(after)
       , m_placeholders(placeholders)
-      , m_completion_property(cp)
+      , m_priority(priority)
+      , m_kind(kind)
     {
     }
 
     QVariant data(const QModelIndex&, const int) const;
+    KTextEditor::CodeCompletionModel::CompletionProperty completionProperty() const;
 
 private:
+    QString renderPlaceholders(const QString&) const;
+
     QString m_before;                                       ///< Everything \e before typed text (return type)
     QString m_text;                                         ///< Text to paste
     QString m_after;                                        ///< Everything \e after typed text (arguments)
     QStringList m_placeholders;                             ///< Parameters to substitute
-    KTextEditor::CodeCompletionModel::CompletionProperty m_completion_property;
+    unsigned m_priority;
+    CXCursorKind m_kind;
 };
 
 }                                                           // namespace kate

@@ -79,7 +79,12 @@ typedef disposable<CXIndexAction, &clang_IndexAction_dispose> DCXIndexAction;
 typedef disposable<CXCodeCompleteResults*, &clang_disposeCodeCompleteResults> DCXCodeCompleteResults;
 
 /// Get a human readable string of \c CXCursorKind
-QString toString(const CXCursorKind);
+inline QString toString(const CXCursorKind v)
+{
+    DCXString str = clang_getCursorKindSpelling(v);
+    return QString(clang_getCString(str));
+}
+
 /// Get a human readable string of \c CXCompletionChunkKind
 QString toString(const CXCompletionChunkKind);
 

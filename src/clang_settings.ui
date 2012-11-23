@@ -21,6 +21,31 @@
      </property>
      <layout class="QVBoxLayout" name="verticalLayout_2">
       <item>
+       <widget class="QLabel" name="pchHeaderLabel">
+        <property name="text">
+         <string>Session PCH header to compile:</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="pchOpenEdit">
+        <item>
+         <widget class="KUrlRequester" name="pchHeader">
+          <property name="text">
+           <string/>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="openPchHeader">
+          <property name="text">
+           <string>Open</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
        <widget class="QLabel" name="cmdLineLabel">
         <property name="text">
          <string>Additional command line args:</string>
@@ -28,12 +53,9 @@
        </widget>
       </item>
       <item>
-       <widget class="KLineEdit" name="commandLineParams">
-        <property name="placeholderText">
-         <string>add your options for clang compiler here</string>
-        </property>
-        <property name="showClearButton" stdset="0">
-         <bool>true</bool>
+       <widget class="KTextEdit" name="commandLineParams">
+        <property name="checkSpellingEnabled">
+         <bool>false</bool>
         </property>
        </widget>
       </item>
@@ -57,9 +79,14 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>KLineEdit</class>
-   <extends>QLineEdit</extends>
-   <header>klineedit.h</header>
+   <class>KTextEdit</class>
+   <extends>QTextEdit</extends>
+   <header>ktextedit.h</header>
+  </customwidget>
+  <customwidget>
+   <class>KUrlRequester</class>
+   <extends>QFrame</extends>
+   <header>kurlrequester.h</header>
   </customwidget>
  </customwidgets>
  <resources/>

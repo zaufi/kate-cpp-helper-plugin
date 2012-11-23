@@ -171,14 +171,14 @@ void IncludeHelperPluginView::switchIfaceImpl()
     {
         // Lets try to find smth in configured sessions dirs
         // NOTE This way useful only if the current file is a source one!
-        Q_FOREACH(const QString& dir, m_plugin->sessionDirs())
+        Q_FOREACH(const QString& dir, m_plugin->config().sessionDirs())
             Q_FOREACH(const QString& c, findCandidatesAt(active_doc_name, dir, extensions_to_try))
                 if (!candidates.contains(c))
                     candidates.push_back(c);
 
         // Should we consider first #include in a document?
-        kDebug() << "open src/hdr: shouldOpenFirstInclude=" << m_plugin->shouldOpenFirstInclude();
-        if (m_plugin->shouldOpenFirstInclude())
+        kDebug() << "open src/hdr: shouldOpenFirstInclude=" << m_plugin->config().shouldOpenFirstInclude();
+        if (m_plugin->config().shouldOpenFirstInclude())
         {
             kDebug() << "open src/hdr: open first #include enabled";
             // Try to find first #include in this (active) document
@@ -199,7 +199,7 @@ void IncludeHelperPluginView::switchIfaceImpl()
             {
                 // Ok, try to find it among session dirs
                 QStringList files;
-                findFiles(first_header_name, m_plugin->sessionDirs(), files);
+                findFiles(first_header_name, m_plugin->config().sessionDirs(), files);
                 Q_FOREACH(const QString& c, files)
                     if (!candidates.contains(c))
                         candidates.push_back(c);
@@ -234,7 +234,7 @@ void IncludeHelperPluginView::switchIfaceImpl()
 
         kDebug() << "open src/hrd: stage1: found candidates: " << candidates;
 
-        if (m_plugin->useWildcardSearch())
+        if (m_plugin->config().useWildcardSearch())
         {
             // And finally: try to find alternative source file
             // names using basename*.cc, basename*.cpp & so on...
@@ -381,9 +381,9 @@ QStringList IncludeHelperPluginView::findFileLocations(const QString& filename)
 {
     KTextEditor::Document* doc = mainWindow()->activeView()->document();
     // Try to find full filename to open
-    QStringList candidates = findHeader(filename, m_plugin->sessionDirs(), m_plugin->systemDirs());
+    QStringList candidates = findHeader(filename, m_plugin->config().sessionDirs(), m_plugin->config().systemDirs());
     // Check CWD as well, if allowed
-    if (m_plugin->useCwd())
+    if (m_plugin->config().useCwd())
     {
         const QString uri = doc->url().prettyUrl() + '/' + filename;
         if (isPresentAndReadable(uri))
@@ -434,11 +434,11 @@ void IncludeHelperPluginView::copyInclude()
     const KUrl& uri = kv->document()->url().prettyUrl();
     QString current_dir = uri.directory();
     QString longest_matched;
-    QChar open = m_plugin->useLtGt() ? '<' : '"';
-    QChar close = m_plugin->useLtGt() ? '>' : '"';
+    QChar open = m_plugin->config().useLtGt() ? '<' : '"';
+    QChar close = m_plugin->config().useLtGt() ? '>' : '"';
     kDebug() << "Got document name: " << uri;
     // Try to match local (per session) dirs first
-    Q_FOREACH(const QString& dir, m_plugin->sessionDirs())
+    Q_FOREACH(const QString& dir, m_plugin->config().sessionDirs())
         if (current_dir.startsWith(dir) && longest_matched.length() < dir.length())
             longest_matched = dir;
     if (longest_matched.isEmpty())
@@ -446,7 +446,7 @@ void IncludeHelperPluginView::copyInclude()
         open = '<';
         close = '>';
         // Try to match global dirs next
-        Q_FOREACH(const QString& dir, m_plugin->systemDirs())
+        Q_FOREACH(const QString& dir, m_plugin->config().systemDirs())
             if (current_dir.startsWith(dir) && longest_matched.length() < dir.length())
                 longest_matched = dir;
     }
@@ -497,6 +497,12 @@ void IncludeHelperPluginView::viewChanged()
     else m_copy_include->setText(i18n("Copy File URI to Clipboard"));
 }
 
+/**
+ * \todo What if view/document will change mme type? (after save as... for example)?
+ * Maybe better to check highlighting style? For example wen new document just created,
+ * but highlighted as C++ the code below wouldn't work! Even more, after document gets
+ * saved to disk completion still wouldn't work! That is definitely SUXX
+ */
 void IncludeHelperPluginView::viewCreated(KTextEditor::View* view)
 {
     kDebug() << "view created";

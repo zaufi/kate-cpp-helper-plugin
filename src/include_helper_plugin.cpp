@@ -26,6 +26,7 @@
 #include <src/include_helper_plugin_config_page.h>
 #include <src/include_helper_plugin_view.h>
 #include <src/document_info.h>
+#include <src/translation_unit.h>
 #include <src/utils.h>
 
 // Standard includes
@@ -59,12 +60,23 @@ IncludeHelperPlugin::IncludeHelperPlugin(
   , const QList<QVariant>&
   )
   : Kate::Plugin(static_cast<Kate::Application*>(application), "kate_includehelper_plugin")
-  , m_monitor_flags(0)
-  , m_use_ltgt(true)
-  , m_config_dirty(false)
-  , m_open_first(false)
-  , m_use_wildcard_search(false)
+  /// \todo Make parameters to \c clang_createIndex() configurable?
+  , m_index(clang_createIndex(0, 0))
 {
+    assert("clang index expected to be valid" && m_index);
+    // Connect self to configuration updates
+    connect(
+        &m_config
+      , SIGNAL(dirWatchSettingsChanged())
+      , this
+      , SLOT(updateDirWatcher())
+      );
+    connect(
+        &m_config
+      , SIGNAL(precompiledHeaderFileChanged())
+      , this
+      , SLOT(refreshPCH())
+      );
 }
 
 IncludeHelperPlugin::~IncludeHelperPlugin()
@@ -89,155 +101,17 @@ Kate::PluginConfigPage* IncludeHelperPlugin::configPage(uint number, QWidget* pa
     return new IncludeHelperPluginConfigPage(parent, this);
 }
 
-void IncludeHelperPlugin::readConfig()
-{
-    // Read global config
-    kDebug() << "** INC-HLP-PLUGIN **: Reading global config: " << KGlobal::config()->name();
-    KConfigGroup gcg(KGlobal::config(), "IncludeHelper");
-    QStringList dirs = gcg.readPathEntry("ConfiguredDirs", QStringList());
-    kDebug() << "Got global configured include path list: " << dirs;
-    m_system_dirs = dirs;
-    updateDirWatcher();
-}
-
-void IncludeHelperPlugin::readSessionConfig(KConfigBase* config, const QString& groupPrefix)
-{
-    kDebug() << "** INC-HLP-PLUGIN **: Reading session config: " << groupPrefix;
-    // Read session config
-    /// \todo Rename it!
-    KConfigGroup scg(config, groupPrefix + ":include-helper");
-    QStringList session_dirs = scg.readPathEntry("ConfiguredDirs", QStringList());
-    QString clang_params= scg.readPathEntry("ClangCmdLineParams", QString());
-    QVariant use_ltgt = scg.readEntry("UseLtGt", QVariant(false));
-    QVariant use_cwd = scg.readEntry("UseCwd", QVariant(false));
-    QVariant open_first = scg.readEntry("OpenFirstInclude", QVariant(false));
-    QVariant use_wildcard_search = scg.readEntry("UseWildcardSearch", QVariant(false));
-    QVariant mon_dirs = scg.readEntry("MonitorDirs", QVariant(0));
-    kDebug() << "Got per session configured include path list: " << session_dirs;
-    // Assign configuration
-    m_session_dirs = session_dirs;
-    m_clang_params = clang_params;
-    m_use_ltgt = use_ltgt.toBool();
-    m_use_cwd = use_cwd.toBool();
-    m_monitor_flags = mon_dirs.toInt();
-    m_open_first = open_first.toBool();
-    m_use_wildcard_search = use_wildcard_search.toBool();
-    m_config_dirty = false;
-
-    readConfig();
-}
-
-void IncludeHelperPlugin::writeSessionConfig(KConfigBase* config, const QString& groupPrefix)
-{
-    kDebug() << "** INC-HLP-PLUGIN **: Writing session config: " << groupPrefix;
-    if (!m_config_dirty)
-    {
-        /// \todo Maybe I don't understand smth, but rally strange things r going on here:
-        /// after plugin gets enabled, \c writeSessionConfig() will be called \b BEFORE
-        /// any attempt to read configuration...
-        /// The only thing came into my mind that it is attempt to initialize config w/ default
-        /// values... but in that case everything stored before get lost!
-        kDebug() << "Config isn't dirty!!!";
-        readSessionConfig(config, groupPrefix);
-        return;
-    }
-
-    // Write session config
-    kDebug() << "Write per session configured include path list: " << m_session_dirs;
-    KConfigGroup scg(config, groupPrefix + ":include-helper");
-    scg.writePathEntry("ConfiguredDirs", m_session_dirs);
-    scg.writeEntry("ClangCmdLineParams", m_clang_params);
-    scg.writeEntry("UseLtGt", QVariant(m_use_ltgt));
-    scg.writeEntry("UseCwd", QVariant(m_use_cwd));
-    scg.writeEntry("OpenFirstInclude", QVariant(m_open_first));
-    scg.writeEntry("UseWildcardSearch", QVariant(m_use_wildcard_search));
-    scg.writeEntry("MonitorDirs", QVariant(m_monitor_flags));
-    scg.sync();
-    // Write global config
-    kDebug() << "Write global configured include path list: " << m_system_dirs;
-    KConfigGroup gcg(KGlobal::config(), "IncludeHelper");
-    gcg.writePathEntry("ConfiguredDirs", m_system_dirs);
-    gcg.sync();
-    m_config_dirty = false;
-}
-
-void IncludeHelperPlugin::setSessionDirs(QStringList& dirs)
-{
-    kDebug() << "Got session dirs: " << m_session_dirs;
-    kDebug() << "... session dirs: " << dirs;
-    if (m_session_dirs != dirs)
-    {
-        m_session_dirs.swap(dirs);
-        m_config_dirty = true;
-        Q_EMIT(sessionDirsChanged());
-        updateDirWatcher();
-        kDebug() << "** set config to `dirty' state!! **";
-    }
-}
-
-void IncludeHelperPlugin::setGlobalDirs(QStringList& dirs)
-{
-    kDebug() << "Got system dirs: " << m_system_dirs;
-    kDebug() << "... system dirs: " << dirs;
-    if (m_system_dirs != dirs)
-    {
-        m_system_dirs.swap(dirs);
-        m_config_dirty = true;
-        Q_EMIT(systemDirsChanged());
-        updateDirWatcher();
-        kDebug() << "** set config to `dirty' state!! **";
-    }
-}
-void IncludeHelperPlugin::setClangParams(const QString& params)
-{
-    m_clang_params = params;
-    m_config_dirty = true;
-    kDebug() << "** set config to `dirty' state!! **";
-}
-void IncludeHelperPlugin::setUseLtGt(const bool state)
-{
-    m_use_ltgt = state;
-    m_config_dirty = true;
-    kDebug() << "** set config to `dirty' state!! **";
-}
-
-void IncludeHelperPlugin::setUseCwd(const bool state)
-{
-    m_use_cwd = state;
-    m_config_dirty = true;
-    kDebug() << "** set config to `dirty' state!! **";
-}
-void IncludeHelperPlugin::setOpenFirst(const bool state)
-{
-    m_open_first = state;
-    m_config_dirty = true;
-    kDebug() << "** set config to `dirty' state!! **";
-}
-void IncludeHelperPlugin::setUseWildcardSearch(const bool state)
-{
-    m_use_wildcard_search = state;
-    m_config_dirty = true;
-    kDebug() << "** set config to `dirty' state!! **";
-}
-void IncludeHelperPlugin::setWhatToMonitor(const int tgt)
-{
-    assert("Sanity check" && 0 <= tgt && tgt < 4);
-    m_monitor_flags = tgt;
-    m_config_dirty = true;
-    updateDirWatcher();
-}
-
 void IncludeHelperPlugin::updateDirWatcher(const QString& path)
 {
     m_dir_watcher->addDir(path, KDirWatch::WatchSubDirs | KDirWatch::WatchFiles);
     connect(
-        m_dir_watcher.data()
+        m_dir_watcher.get()
       , SIGNAL(created(const QString&))
       , this
       , SLOT(createdPath(const QString&))
       );
     connect(
-        m_dir_watcher.data()
+        m_dir_watcher.get()
       , SIGNAL(deleted(const QString&))
       , this
       , SLOT(deletedPath(const QString&))
@@ -248,19 +122,19 @@ void IncludeHelperPlugin::updateDirWatcher()
 {
     if (m_dir_watcher)
         m_dir_watcher->stopScan();
-    m_dir_watcher = QSharedPointer<KDirWatch>(new KDirWatch(0));
+    m_dir_watcher.reset(new KDirWatch(0));
     m_dir_watcher->stopScan();
 
-    if (what_to_monitor() & 2)
+    if (config().what_to_monitor() & 2)
     {
         kDebug() << "Going to monitor system dirs for changes...";
-        Q_FOREACH(const QString& path, m_system_dirs)
+        for (const QString& path : config().systemDirs())
             updateDirWatcher(path);
     }
-    if (what_to_monitor() & 1)
+    if (config().what_to_monitor() & 1)
     {
         kDebug() << "Going to monitor session dirs for changes...";
-        Q_FOREACH(const QString& path, m_session_dirs)
+        for (const QString& path : config().sessionDirs())
             updateDirWatcher(path);
     }
 
@@ -339,6 +213,7 @@ void IncludeHelperPlugin::updateDocumentInfo(KTextEditor::Document* doc)
     managed_docs().insert(doc, di);
 }
 
+/// \todo Move this method to view class. View may access managed documents via accessor method.
 void IncludeHelperPlugin::textInserted(KTextEditor::Document* doc, const KTextEditor::Range& range)
 {
     kDebug() << doc << " new text: " << doc->text(range);
@@ -374,6 +249,85 @@ void IncludeHelperPlugin::textInserted(KTextEditor::Document* doc, const KTextEd
         }
         else kDebug() << "no valid #include found";
     }
+}
+
+/// Used by config page to open a PCH header
+void IncludeHelperPlugin::openDocument(const KUrl& pch_header)
+{
+    application()->activeMainWindow()->openUrl(pch_header);
+}
+
+/**
+ * \attention Clang has some problems (core dump) on loading a PCH file if latter
+ * doesn't exists before call to \c TranslationUnit ctor. As I so in \c gdb, it has
+ * (seem) uninitialized counter for tokens in a \c Preprocessor class (due some kind
+ * of delayed initialization or smth like that)... So it is why presence of a PCH
+ * must be checked before...
+ * \todo Investigate a bug in clang 3.1
+ */
+void IncludeHelperPlugin::refreshPCH(bool force_recompile)
+{
+    if (config().precompiledHeaderFile().isEmpty())
+    {
+        kDebug() << "No PCH file configured! Code completion will be slooow!";
+        return;
+    }
+
+    const QString pch_file_name = config().precompiledHeaderFile().toLocalFile() + ".kate.pch";
+    QFileInfo pi(pch_file_name);
+    if (!pi.exists())
+        force_recompile = true;
+    try
+    {
+        std::unique_ptr<TranslationUnit> pch_unit;
+        if (force_recompile)
+        {
+            kDebug() << "Going to produce a PCH file" << pch_file_name
+              << "from" << config().precompiledHeaderFile();
+
+            pch_unit.reset(
+                new TranslationUnit(
+                    index()
+                  , config().precompiledHeaderFile()
+                  , config().formCompilerOptions()
+                  , TranslationUnit::ParseOptions::PCHOptions
+                  )
+              );
+        }
+        else
+        {
+            kDebug() << "(Re)loading the PCH file" << pch_file_name;
+            pch_unit.reset(new TranslationUnit(index(), pch_file_name));
+        }
+        pch_unit->storeTo(pch_file_name);
+    }
+    catch (const TranslationUnit::Exception::LoadFailure&)
+    {
+        kDebug() << "Loading failure. Trying to recompile the PCH file...";
+        // Ok, try to recompile
+        refreshPCH(true);
+        return;
+    }
+    catch (const TranslationUnit::Exception::ParseFailure&)
+    {
+        kError() << "PCH file failure. Code completion will be damn slow!";
+        /// \todo Add an option to disable code completion w/o PCH file
+        return;
+    }
+#if 0
+    catch (const TranslationUnit::Exception::StoreFailure&)
+    {
+        kError() << "Unable to store a PCH file";
+        if (!force_recompile)
+            refreshPCH(true);
+    }
+#endif
+    catch (const TranslationUnit::Exception&)
+    {
+        kError() << "Smth wrong w/ the PCH file";
+    }
+    config().setPrecompiledFile(pch_file_name);
+    return;
 }
 
 //END IncludeHelperPlugin

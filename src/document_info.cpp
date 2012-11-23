@@ -37,8 +37,8 @@ DocumentInfo::DocumentInfo(IncludeHelperPlugin* p)
   : m_plugin(p)
 {
     // Subscribe self to configuration changes
-    connect(m_plugin, SIGNAL(sessionDirsChanged()), this, SLOT(updateStatus()));
-    connect(m_plugin, SIGNAL(systemDirsChanged()), this, SLOT(updateStatus()));
+    connect(&m_plugin->config(), SIGNAL(sessionDirsChanged()), this, SLOT(updateStatus()));
+    connect(&m_plugin->config(), SIGNAL(systemDirsChanged()), this, SLOT(updateStatus()));
 }
 
 /**
@@ -115,7 +115,7 @@ void DocumentInfo::updateStatus(State& s)
 
         // Check if given header available
         // 0) check CWD first if allowed
-        if (m_plugin->useCwd())
+        if (m_plugin->config().useCwd())
         {
             const KUrl& uri = doc->url().prettyUrl();
             const QString cur2check = uri.directory() + '/' + filename;
@@ -123,7 +123,11 @@ void DocumentInfo::updateStatus(State& s)
             s.m_status = (QFileInfo(cur2check).exists()) ? Ok : NotFound;
         }
         // 1) Try configured dirs then
-        QStringList paths = findHeader(filename, m_plugin->sessionDirs(), m_plugin->systemDirs());
+        QStringList paths = findHeader(
+            filename
+          , m_plugin->config().sessionDirs()
+          , m_plugin->config().systemDirs()
+          );
         if (paths.empty())
             s.m_status = (s.m_status == Ok) ? Ok : NotFound;
         else if (paths.size() == 1)

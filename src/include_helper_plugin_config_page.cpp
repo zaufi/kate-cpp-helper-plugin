@@ -48,48 +48,66 @@ IncludeHelperPluginConfigPage::IncludeHelperPluginConfigPage(
     layout->addWidget(tab);
     layout->setMargin(0);
 
-    QWidget* system_tab = new QWidget(tab);
-    m_system_list->setupUi(system_tab);
-    m_system_list->addButton->setIcon(KIcon("list-add"));
-    m_system_list->delButton->setIcon(KIcon("list-remove"));
-    m_system_list->moveUpButton->setIcon(KIcon("arrow-up"));
-    m_system_list->moveDownButton->setIcon(KIcon("arrow-down"));
-    tab->addTab(system_tab, i18n("System Paths List"));
+    // Global #include paths
+    {
+        QWidget* system_tab = new QWidget(tab);
+        m_system_list->setupUi(system_tab);
+        m_system_list->addButton->setIcon(KIcon("list-add"));
+        m_system_list->delButton->setIcon(KIcon("list-remove"));
+        m_system_list->moveUpButton->setIcon(KIcon("arrow-up"));
+        m_system_list->moveDownButton->setIcon(KIcon("arrow-down"));
+        tab->addTab(system_tab, i18n("System Paths List"));
+        // Connect add/del buttons to actions
+        connect(m_system_list->addButton, SIGNAL(clicked()), this, SLOT(addGlobalIncludeDir()));
+        connect(m_system_list->delButton, SIGNAL(clicked()), this, SLOT(delGlobalIncludeDir()));
+        connect(m_system_list->moveUpButton, SIGNAL(clicked()), this, SLOT(moveGlobalDirUp()));
+        connect(m_system_list->moveDownButton, SIGNAL(clicked()), this, SLOT(moveGlobalDirDown()));
+    }
 
-    QWidget* session_tab = new QWidget(tab);
-    m_session_list->setupUi(session_tab);
-    m_session_list->addButton->setIcon(KIcon("list-add"));
-    m_session_list->delButton->setIcon(KIcon("list-remove"));
-    m_session_list->moveUpButton->setIcon(KIcon("arrow-up"));
-    m_session_list->moveDownButton->setIcon(KIcon("arrow-down"));
-    tab->addTab(session_tab, i18n("Session Paths List"));
+    // Session #include paths
+    {
+        QWidget* session_tab = new QWidget(tab);
+        m_session_list->setupUi(session_tab);
+        m_session_list->addButton->setIcon(KIcon("list-add"));
+        m_session_list->delButton->setIcon(KIcon("list-remove"));
+        m_session_list->moveUpButton->setIcon(KIcon("arrow-up"));
+        m_session_list->moveDownButton->setIcon(KIcon("arrow-down"));
+        tab->addTab(session_tab, i18n("Session Paths List"));
+        // Connect add/del buttons to actions
+        connect(m_session_list->addButton, SIGNAL(clicked()), this, SLOT(addSessionIncludeDir()));
+        connect(m_session_list->delButton, SIGNAL(clicked()), this, SLOT(delSessionIncludeDir()));
+        connect(m_session_list->moveUpButton, SIGNAL(clicked()), this, SLOT(moveSessionDirUp()));
+        connect(m_session_list->moveDownButton, SIGNAL(clicked()), this, SLOT(moveSessionDirDown()));
+    }
 
-    QWidget* clang_tab = new QWidget(tab);
-    m_clang_config->setupUi(clang_tab);
-    m_clang_config->commandLineParams->setText(m_plugin->clangParams());
-    KShellCompletion* comp = new KShellCompletion();
-    m_clang_config->commandLineParams->setCompletionObject(comp);
-    tab->addTab(clang_tab, i18n("CLang Settings"));
+    // Clang settings
+    {
+        QWidget* clang_tab = new QWidget(tab);
+        m_clang_config->setupUi(clang_tab);
+        m_clang_config->pchHeader->setUrl(m_plugin->config().precompiledHeaderFile());
+        {
+            m_clang_config->commandLineParams->setPlainText(m_plugin->config().clangParams());
+#if 0
+            KShellCompletion* comp = new KShellCompletion();
+            m_clang_config->commandLineParams->setCompletionObject(comp);
+#endif
+        }
+        tab->addTab(clang_tab, i18n("Clang Settings"));
+        // Connect open PCH file button
+        connect(m_clang_config->openPchHeader, SIGNAL(clicked()), this, SLOT(openPCHHeaderFile()));
+    }
 
-    QWidget* pss_tab = new QWidget(tab);
-    m_pss_config->setupUi(pss_tab);
-    int flags = m_plugin->what_to_monitor();
-    m_pss_config->nothing->setChecked(flags == 0);
-    m_pss_config->session->setChecked(flags == 1);
-    m_pss_config->system->setChecked(flags == 2);
-    m_pss_config->all->setChecked(flags == 3);
-    tab->addTab(pss_tab, i18n("Other Settings"));
-
-    // Connect add/del buttons to actions
-    connect(m_system_list->addButton, SIGNAL(clicked()), this, SLOT(addGlobalIncludeDir()));
-    connect(m_system_list->delButton, SIGNAL(clicked()), this, SLOT(delGlobalIncludeDir()));
-    connect(m_system_list->moveUpButton, SIGNAL(clicked()), this, SLOT(moveGlobalDirUp()));
-    connect(m_system_list->moveDownButton, SIGNAL(clicked()), this, SLOT(moveGlobalDirDown()));
-
-    connect(m_session_list->addButton, SIGNAL(clicked()), this, SLOT(addSessionIncludeDir()));
-    connect(m_session_list->delButton, SIGNAL(clicked()), this, SLOT(delSessionIncludeDir()));
-    connect(m_session_list->moveUpButton, SIGNAL(clicked()), this, SLOT(moveSessionDirUp()));
-    connect(m_session_list->moveDownButton, SIGNAL(clicked()), this, SLOT(moveSessionDirDown()));
+    // Other settings
+    {
+        QWidget* pss_tab = new QWidget(tab);
+        m_pss_config->setupUi(pss_tab);
+        int flags = m_plugin->config().what_to_monitor();
+        m_pss_config->nothing->setChecked(flags == 0);
+        m_pss_config->session->setChecked(flags == 1);
+        m_pss_config->system->setChecked(flags == 2);
+        m_pss_config->all->setChecked(flags == 3);
+        tab->addTab(pss_tab, i18n("Other Settings"));
+    }
 
     // Populate configuration w/ dirs
     reset();
@@ -103,20 +121,21 @@ void IncludeHelperPluginConfigPage::apply()
         QStringList dirs;
         for (int i = 0; i < m_session_list->pathsList->count(); ++i)
             dirs.append(m_session_list->pathsList->item(i)->text());
-        m_plugin->setSessionDirs(dirs);
+        m_plugin->config().setSessionDirs(dirs);
     }
     {
         QStringList dirs;
         for (int i = 0; i < m_system_list->pathsList->count(); ++i)
             dirs.append(m_system_list->pathsList->item(i)->text());
-        m_plugin->setGlobalDirs(dirs);
+        m_plugin->config().setGlobalDirs(dirs);
     }
-    m_plugin->setClangParams(m_clang_config->commandLineParams->text());
-    m_plugin->setUseLtGt(m_pss_config->includeMarkersSwitch->checkState() == Qt::Checked);
-    m_plugin->setUseCwd(m_pss_config->useCurrentDirSwitch->checkState() == Qt::Checked);
-    m_plugin->setOpenFirst(m_pss_config->openFirstHeader->checkState() == Qt::Checked);
-    m_plugin->setUseWildcardSearch(m_pss_config->useWildcardSearch->checkState() == Qt::Checked);
-    m_plugin->setWhatToMonitor(
+    m_plugin->config().setPrecompiledHeaderFile(m_clang_config->pchHeader->text());
+    m_plugin->config().setClangParams(m_clang_config->commandLineParams->toPlainText());
+    m_plugin->config().setUseLtGt(m_pss_config->includeMarkersSwitch->checkState() == Qt::Checked);
+    m_plugin->config().setUseCwd(m_pss_config->useCurrentDirSwitch->checkState() == Qt::Checked);
+    m_plugin->config().setOpenFirst(m_pss_config->openFirstHeader->checkState() == Qt::Checked);
+    m_plugin->config().setUseWildcardSearch(m_pss_config->useWildcardSearch->checkState() == Qt::Checked);
+    m_plugin->config().setWhatToMonitor(
         int(m_pss_config->nothing->isChecked()) * 0
       + int(m_pss_config->session->isChecked()) * 1
       + int(m_pss_config->system->isChecked()) * 2
@@ -124,24 +143,25 @@ void IncludeHelperPluginConfigPage::apply()
       );
 }
 
+/// \todo This method should do a reset configuration to default!
 void IncludeHelperPluginConfigPage::reset()
 {
     kDebug() << "** CONFIG-PAGE **: Reseting configuration";
-    m_plugin->readConfig();
+    m_plugin->config().readConfig();
     // Put dirs to the list
-    m_system_list->pathsList->addItems(m_plugin->systemDirs());
-    m_session_list->pathsList->addItems(m_plugin->sessionDirs());
+    m_system_list->pathsList->addItems(m_plugin->config().systemDirs());
+    m_session_list->pathsList->addItems(m_plugin->config().sessionDirs());
     m_pss_config->includeMarkersSwitch->setCheckState(
-        m_plugin->useLtGt() ? Qt::Checked : Qt::Unchecked
+        m_plugin->config().useLtGt() ? Qt::Checked : Qt::Unchecked
       );
     m_pss_config->useCurrentDirSwitch->setCheckState(
-        m_plugin->useCwd() ? Qt::Checked : Qt::Unchecked
+        m_plugin->config().useCwd() ? Qt::Checked : Qt::Unchecked
       );
     m_pss_config->openFirstHeader->setCheckState(
-        m_plugin->shouldOpenFirstInclude() ? Qt::Checked : Qt::Unchecked
+        m_plugin->config().shouldOpenFirstInclude() ? Qt::Checked : Qt::Unchecked
       );
     m_pss_config->useWildcardSearch->setCheckState(
-        m_plugin->useWildcardSearch() ? Qt::Checked : Qt::Unchecked
+        m_plugin->config().useWildcardSearch() ? Qt::Checked : Qt::Unchecked
       );
 }
 
@@ -227,6 +247,17 @@ void IncludeHelperPluginConfigPage::moveGlobalDirDown()
           );
         m_system_list->pathsList->setCurrentRow(current + 1);
     }
+}
+
+/**
+ * \note Silly Qt can't deal w/ signals and slots w/ different signatures,
+ * and even nasty cheat like \c QSignalMapper can't help here to open a document
+ * by pressing a button and get a current value from an other line edit control...
+ * So it is why I have this one-liner... DAMN Qt!
+ */
+void IncludeHelperPluginConfigPage::openPCHHeaderFile()
+{
+    m_plugin->openDocument(m_clang_config->pchHeader->url());
 }
 
 bool IncludeHelperPluginConfigPage::contains(const QString& dir, const KListWidget* list)

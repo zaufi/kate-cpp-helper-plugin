@@ -69,6 +69,7 @@ private Q_SLOTS:
     void delSessionIncludeDir();                            ///< Remove directory from the list
     void moveSessionDirUp();
     void moveSessionDirDown();
+    void openPCHHeaderFile();
 
 private:
     bool contains(const QString&, const KListWidget*);      ///< Check if directories list contains given item

@@ -37,7 +37,6 @@
 # if (__GNUC__ >=4 && __GNUC_MINOR__ >= 5)
 #   pragma GCC pop_options
 # endif                                                     // (__GNUC__ >=4 && __GNUC_MINOR__ >= 5)
-# include <map>
 
 namespace kate {
 class IncludeHelperPlugin;                                  // forward declaration
@@ -72,7 +71,7 @@ public:
 
 private:
     IncludeHelperPlugin* m_plugin;
-    std::multimap<unsigned, ClangCodeCompletionItem> m_completions;
+    QList<ClangCodeCompletionItem> m_completions;
 };
 
 }                                                           // namespace kate
