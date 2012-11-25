@@ -85,16 +85,11 @@ IncludeHelperPluginConfigPage::IncludeHelperPluginConfigPage(
         QWidget* clang_tab = new QWidget(tab);
         m_clang_config->setupUi(clang_tab);
         m_clang_config->pchHeader->setUrl(m_plugin->config().precompiledHeaderFile());
-        {
-            m_clang_config->commandLineParams->setPlainText(m_plugin->config().clangParams());
-#if 0
-            KShellCompletion* comp = new KShellCompletion();
-            m_clang_config->commandLineParams->setCompletionObject(comp);
-#endif
-        }
+        m_clang_config->commandLineParams->setPlainText(m_plugin->config().clangParams());
         tab->addTab(clang_tab, i18n("Clang Settings"));
         // Connect open PCH file button
         connect(m_clang_config->openPchHeader, SIGNAL(clicked()), this, SLOT(openPCHHeaderFile()));
+        connect(m_clang_config->rebuildPch, SIGNAL(clicked()), m_plugin, SLOT(refreshPCH()));
     }
 
     // Other settings

@@ -42,6 +42,16 @@ ClangCodeCompletionModel::ClangCodeCompletionModel(
 {
 }
 
+bool ClangCodeCompletionModel::shouldStartCompletion(
+    KTextEditor::View* /*view*/
+  , const QString& /*inserted_text*/
+  , bool /*user_insertion*/
+  , const KTextEditor::Cursor& /*position*/
+  )
+{
+    return false;
+}
+
 void ClangCodeCompletionModel::completionInvoked(
     KTextEditor::View* view
   , const KTextEditor::Range& range

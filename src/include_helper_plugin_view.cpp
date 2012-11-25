@@ -44,7 +44,7 @@
 
 namespace kate { namespace {
 const QStringList HDR_EXTENSIONS = QStringList() << "h" << "hh" << "hpp" << "hxx" << "H";
-const QStringList SRC_EXTENSIONS = QStringList() << "c" << "cc" << "cpp" << "cxx" << "inl" << "C";
+const QStringList SRC_EXTENSIONS = QStringList() << "c" << "cc" << "cpp" << "cxx" << "C" << "inl";
 }                                                           // anonymous namespace
 
 
@@ -136,6 +136,8 @@ void IncludeHelperPluginView::writeSessionConfig(KConfigBase*, const QString& gr
  * \li anything else? TBD
  *
  * \todo Make extension lists configurable. Better to read them from kate's configuration somehow...
+ *
+ * \todo Validate for duplicates removal
  */
 void IncludeHelperPluginView::switchIfaceImpl()
 {
@@ -171,8 +173,8 @@ void IncludeHelperPluginView::switchIfaceImpl()
     {
         // Lets try to find smth in configured sessions dirs
         // NOTE This way useful only if the current file is a source one!
-        Q_FOREACH(const QString& dir, m_plugin->config().sessionDirs())
-            Q_FOREACH(const QString& c, findCandidatesAt(active_doc_name, dir, extensions_to_try))
+        for (const QString& dir : m_plugin->config().sessionDirs())
+            for (const QString& c : findCandidatesAt(active_doc_name, dir, extensions_to_try))
                 if (!candidates.contains(c))
                     candidates.push_back(c);
 
@@ -200,9 +202,13 @@ void IncludeHelperPluginView::switchIfaceImpl()
                 // Ok, try to find it among session dirs
                 QStringList files;
                 findFiles(first_header_name, m_plugin->config().sessionDirs(), files);
-                Q_FOREACH(const QString& c, files)
+                kDebug() << "* candidates: " << candidates;
+                for (const QString& c : files)
+                {
+                    kDebug() << "** consider: " << c;
                     if (!candidates.contains(c))
                         candidates.push_back(c);
+                }
             }
         }
     }
@@ -212,7 +218,7 @@ void IncludeHelperPluginView::switchIfaceImpl()
         // NOTE This way useful only if the current file is a header one!
         // 0) Collect paths of already opened surce files
         QStringList src_paths;
-        Q_FOREACH(KTextEditor::Document* current_doc, m_plugin->application()->documentManager()->documents())
+        for (KTextEditor::Document* current_doc : m_plugin->application()->documentManager()->documents())
         {
             KUrl current_doc_uri = current_doc->url();
             if (current_doc_uri.isValid() && !current_doc_uri.isEmpty())
@@ -227,8 +233,8 @@ void IncludeHelperPluginView::switchIfaceImpl()
         }
         kDebug() << "open src/hrd: stage2: sources paths: " << src_paths;
         // Ok,  try to find smth in collected dirs
-        Q_FOREACH(const QString& dir, src_paths)
-            Q_FOREACH(const QString& c, findCandidatesAt(active_doc_name, dir, extensions_to_try))
+        for (const QString& dir : src_paths)
+            for (const QString& c : findCandidatesAt(active_doc_name, dir, extensions_to_try))
                 if (!candidates.contains(c))
                     candidates.push_back(c);
 
@@ -243,10 +249,10 @@ void IncludeHelperPluginView::switchIfaceImpl()
             src_paths.push_front(active_doc_path);      // Do not forget about the current document's dir
             // Form filters list
             QStringList filters;
-            Q_FOREACH(const QString& ext, extensions_to_try)
+            for (const QString& ext : extensions_to_try)
                 filters << (active_doc_name + "*." + ext);
             kDebug() << "open src/hrd: stage3: filters ready: " <<  filters;
-            Q_FOREACH(const QString& dir, src_paths)
+            for (const QString& dir : src_paths)
             {
                 for (
                     QDirIterator dir_it(
@@ -301,10 +307,10 @@ QStringList IncludeHelperPluginView::findCandidatesAt(
   )
 {
     QStringList result;
-    Q_FOREACH(const QString& ext, extensions)
+    for (const QString& ext : extensions)
     {
         /// \todo Is there smth like \c boost::filesystem::path?
-        QString filename = path + "/" + name + "." + ext;
+        QString filename = QDir::cleanPath(path + "/" + name + "." + ext);
         kDebug() << "open src/hrd: trying " << filename;
         if (isPresentAndReadable(filename))
             result.push_back(filename);
@@ -366,7 +372,7 @@ void IncludeHelperPluginView::openHeader()
         }
         // Resolve relative filenames to absolute
         QStringList all;
-        Q_FOREACH(const QString& file, candidates)
+        for (const QString& file : candidates)
         {
             QStringList cfpl = findFileLocations(file);     // fill `Current File Paths List' ;-)
             /// \todo WTF! List doesn't have a \c merge() ???
@@ -419,7 +425,7 @@ inline void IncludeHelperPluginView::openFile(const QString& file)
 
 inline void IncludeHelperPluginView::openFiles(const QStringList& files)
 {
-    Q_FOREACH(const QString& file, files)
+    for (const QString& file : files)
         openFile(file);
 }
 
@@ -438,7 +444,7 @@ void IncludeHelperPluginView::copyInclude()
     QChar close = m_plugin->config().useLtGt() ? '>' : '"';
     kDebug() << "Got document name: " << uri;
     // Try to match local (per session) dirs first
-    Q_FOREACH(const QString& dir, m_plugin->config().sessionDirs())
+    for (const QString& dir : m_plugin->config().sessionDirs())
         if (current_dir.startsWith(dir) && longest_matched.length() < dir.length())
             longest_matched = dir;
     if (longest_matched.isEmpty())
@@ -446,7 +452,7 @@ void IncludeHelperPluginView::copyInclude()
         open = '<';
         close = '>';
         // Try to match global dirs next
-        Q_FOREACH(const QString& dir, m_plugin->config().systemDirs())
+        for (const QString& dir : m_plugin->config().systemDirs())
             if (current_dir.startsWith(dir) && longest_matched.length() < dir.length())
                 longest_matched = dir;
     }
@@ -643,7 +649,7 @@ QStringList ChooseFromListDialog::selectHeaderToOpen(QWidget* parent, const QStr
     if (dialog.exec() == QDialog::Accepted)                 // if user accept smth
     {
         // grab seleted items into a result list
-        Q_FOREACH(QListWidgetItem* item, dialog.m_list->selectedItems())
+        for (QListWidgetItem* item : dialog.m_list->selectedItems())
             result.append(item->text());
     }
     dialog.saveDialogSize(gcg);                             // write dialog geometry to config

@@ -33,6 +33,7 @@
 # include <KTextEditor/Document>
 # include <KDirWatch>
 # include <cassert>
+# include <map>
 # include <memory>
 
 namespace kate {
@@ -52,9 +53,7 @@ class IncludeHelperPlugin
     Q_INTERFACES(Kate::PluginConfigPageInterface)
 
 public:
-    /// \todo Where is smth similar \c std::unique_ptr in this damn Qt??
-    /// Only in C++11 mode?
-    typedef QMap<KTextEditor::Document*, DocumentInfo*> doc_info_type;
+    typedef std::map<KTextEditor::Document*, std::unique_ptr<DocumentInfo>> doc_info_type;
 
     explicit IncludeHelperPlugin(QObject* = 0, const QList<QVariant>& = QList<QVariant>());
     virtual ~IncludeHelperPlugin();

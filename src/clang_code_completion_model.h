@@ -67,6 +67,7 @@ public:
     int rowCount(const QModelIndex& parent) const;
     QModelIndex parent(const QModelIndex& index) const;
     QModelIndex index(int row, int column, const QModelIndex& parent) const;
+    bool shouldStartCompletion(KTextEditor::View*, const QString&, bool, const KTextEditor::Cursor&);
     //END KTextEditor::CodeCompletionModel overrides
 
 private:

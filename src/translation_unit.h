@@ -49,11 +49,14 @@ public:
     enum struct ParseOptions : unsigned
     {
         None = CXTranslationUnit_None
-      , PCHOptions = CXTranslationUnit_PrecompiledPreamble /*| CXTranslationUnit_SkipFunctionBodies*/
+      , PCHOptions = CXTranslationUnit_PrecompiledPreamble
+          | CXTranslationUnit_Incomplete
+          //| CXTranslationUnit_SkipFunctionBodies
       , CompletionOptions = CXTranslationUnit_Incomplete /*| CXTranslationUnit_CacheCompletionResults*/
     };
     struct Exception : public std::runtime_error
     {
+        struct CompletionFailure;
         struct LoadFailure;
         struct ParseFailure;
         struct ReparseFailure;
@@ -61,13 +64,9 @@ public:
 
         explicit Exception(const std::string&);
     };
-    /// Make a translation unit from a given file (PCH)
-    TranslationUnit(
-        CXIndex
-      , const KUrl&
-      , const QVector<QPair<QString, QString>>& = QVector<QPair<QString, QString>>()
-      );
-    /// Make a translation unit from a given file (PCH)
+    /// Make a translation unit from a previously serialized file (PCH)
+    TranslationUnit(CXIndex, const KUrl&);
+    /// Make a translation unit from a given source file
     TranslationUnit(
         CXIndex
       , const KUrl&
@@ -84,14 +83,21 @@ public:
     void updateUnsavedFiles(const QVector<QPair<QString, QString>>&);
     QList<ClangCodeCompletionItem> completeAt(const int, const int);
     void storeTo(const KUrl&);
+    void reparse();
 
 private:
+    void showDiagnostic();
+
     std::vector<std::pair<QByteArray, QByteArray>> m_unsaved_files_utf8;
     std::vector<CXUnsavedFile> m_unsaved_files;
     QByteArray m_filename;
     CXTranslationUnit m_unit;
 };
 
+struct TranslationUnit::Exception::CompletionFailure : public TranslationUnit::Exception
+{
+    explicit CompletionFailure(const std::string& str) : Exception(str) {}
+};
 struct TranslationUnit::Exception::LoadFailure : public TranslationUnit::Exception
 {
     explicit LoadFailure(const std::string& str) : Exception(str) {}

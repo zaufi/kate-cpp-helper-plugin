@@ -82,10 +82,6 @@ IncludeHelperPlugin::IncludeHelperPlugin(
 IncludeHelperPlugin::~IncludeHelperPlugin()
 {
     kDebug() << "Unloading...";
-    Q_FOREACH(doc_info_type::mapped_type info, m_doc_info)
-    {
-        delete info;
-    }
 }
 
 Kate::PluginView* IncludeHelperPlugin::createView(Kate::MainWindow* parent)
@@ -166,9 +162,7 @@ void IncludeHelperPlugin::updateCurrentView()
 {
     KTextEditor::View* view = application()->activeMainWindow()->activeView();
     if (view)
-    {
         updateDocumentInfo(view->document());
-    }
 }
 
 void IncludeHelperPlugin::updateDocumentInfo(KTextEditor::Document* doc)
@@ -186,13 +180,10 @@ void IncludeHelperPlugin::updateDocumentInfo(KTextEditor::Document* doc)
     {
         IncludeHelperPlugin::doc_info_type::iterator it = managed_docs().find(doc);
         if (it != managed_docs().end())
-        {
-            delete *it;
             managed_docs().erase(it);
-        }
     }
 
-    DocumentInfo* di = new DocumentInfo(this);
+    std::unique_ptr<DocumentInfo> di(new DocumentInfo(this));
 
     // Search lines and filenames #include'd in this document
     for (int i = 0, end_line = doc->lines(); i < end_line; i++)
@@ -210,7 +201,7 @@ void IncludeHelperPlugin::updateDocumentInfo(KTextEditor::Document* doc)
               );
         }
     }
-    managed_docs().insert(doc, di);
+    managed_docs().insert(std::make_pair(doc, std::move(di)));
 }
 
 /// \todo Move this method to view class. View may access managed documents via accessor method.
@@ -224,10 +215,12 @@ void IncludeHelperPlugin::textInserted(KTextEditor::Document* doc, const KTextEd
         return;
     }
     // Find corresponding document info, insert if needed
-    IncludeHelperPlugin::doc_info_type::iterator it = managed_docs().find(doc);
+    doc_info_type::iterator it = managed_docs().find(doc);
     if (it == managed_docs().end())
     {
-        it = managed_docs().insert(doc, new DocumentInfo(this));
+        it = managed_docs().insert(
+            std::make_pair(doc, std::unique_ptr<DocumentInfo>(new DocumentInfo(this)))
+          ).first;
     }
     // Search lines and filenames #include'd in this range
     for (int i = range.start().line(); i < range.end().line() + 1; i++)
@@ -237,9 +230,9 @@ void IncludeHelperPlugin::textInserted(KTextEditor::Document* doc, const KTextEd
         if (r.m_range.isValid())
         {
             r.m_range.setBothLines(i);
-            if (!(*it)->isRangeWithSameExists(r.m_range))
+            if (!it->second->isRangeWithSameExists(r.m_range))
             {
-                (*it)->addRange(
+                it->second->addRange(
                     mv_iface->newMovingRange(
                         r.m_range
                       , KTextEditor::MovingRange::ExpandLeft | KTextEditor::MovingRange::ExpandRight
@@ -277,6 +270,10 @@ void IncludeHelperPlugin::refreshPCH(bool force_recompile)
     QFileInfo pi(pch_file_name);
     if (!pi.exists())
         force_recompile = true;
+
+    // Show busy mouse pointer
+    QApplication::setOverrideCursor(QCursor(Qt::BusyCursor));
+
     try
     {
         std::unique_ptr<TranslationUnit> pch_unit;
@@ -322,11 +319,12 @@ void IncludeHelperPlugin::refreshPCH(bool force_recompile)
             refreshPCH(true);
     }
 #endif
-    catch (const TranslationUnit::Exception&)
+    catch (const TranslationUnit::Exception& e)
     {
-        kError() << "Smth wrong w/ the PCH file";
+        kError() << "Smth wrong w/ the PCH file:" << e.what();
     }
     config().setPrecompiledFile(pch_file_name);
+    QApplication::restoreOverrideCursor();                  // Restore mouse pointer to normal
     return;
 }
 

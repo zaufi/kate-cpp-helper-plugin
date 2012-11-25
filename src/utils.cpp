@@ -26,7 +26,6 @@
 // Standard includes
 #include <KDebug>
 #include <KTextEditor/Range>
-#include <QtCore/QDir>
 #include <cassert>
 
 namespace kate {
@@ -189,6 +188,7 @@ QStringList findHeader(const QString& file, const QStringList& locals, const QSt
     findFiles(file, locals, result);                        // Try locals first
     kDebug() << "Trying system paths...";
     findFiles(file, system, result);                        // Then try system paths
+    /// \todo I think it is redundant nowadays...
     removeDuplicates(result);                               // Remove possible duplicates
     return result;
 }
@@ -202,13 +202,13 @@ void updateListsFromFS(
   )
 {
     const QDir::Filters common_flags = QDir::NoDotAndDotDot | QDir::CaseSensitive | QDir::Readable;
-    Q_FOREACH(const QString& d, dirs2scan)
+    for (const QString& d : dirs2scan)
     {
         const QString dir = QDir::cleanPath(d + '/' + path);
         kDebug() << "Trying " << dir;
         {
             QStringList result = QDir(dir).entryList(masks, QDir::Dirs | common_flags);
-            Q_FOREACH(const QString& r, result)
+            for (const QString& r : result)
             {
                 const QString d = r + "/";
                 if (!dirs.contains(d)) dirs.append(d);
@@ -216,7 +216,7 @@ void updateListsFromFS(
         }
         {
             QStringList result = QDir(dir).entryList(masks, QDir::Files | common_flags);
-            Q_FOREACH(const QString& r, result)
+            for (const QString& r : result)
             {
                 if (!files.contains(r))
                     files.append(r);

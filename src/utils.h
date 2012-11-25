@@ -26,7 +26,9 @@
 // Project specific includes
 
 // Standard includes
+// # include <KDE/KUrl>
 # include <KTextEditor/Range>
+# include <QtCore/QDir>
 # include <QtCore/QFileInfo>
 # include <QtCore/QStringList>
 
@@ -81,7 +83,11 @@ inline bool isCOrPPSource(const QString& mime_str)
       ;
 }
 
-/// \todo Is there analog of \c std::unique?
+/**
+ * \brief Remove duplicates from strings list
+ * \return \b sorted and deduplicated list
+ * \todo Is there analog of \c std::unique?
+ */
 inline void removeDuplicates(QStringList& list)
 {
     list.sort();
@@ -110,15 +116,15 @@ inline bool isPresentAndReadable(const QString& uri)
 
 inline void findFiles(const QString& file, const QStringList& paths, QStringList& result)
 {
-    Q_FOREACH(const QString& path, paths)
+    for (const QString& path : paths)
     {
-        const QString uri = path + '/' + file;
-        if (isPresentAndReadable(uri))
+        const QString full_filename = QDir::cleanPath(path + '/' + file);
+        if (isPresentAndReadable(full_filename))
         {
-            result.push_back(uri);
-            kDebug() << " ... " << uri << " Ok";
+            result.push_back(full_filename);
+            kDebug() << " ... " << full_filename << " Ok";
         }
-        else kDebug() << " ... " << uri << " not exists/readable";
+        else kDebug() << " ... " << full_filename << " not exists/readable";
     }
 }
 

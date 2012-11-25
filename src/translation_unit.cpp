@@ -93,24 +93,12 @@ void debugShowCompletionResult(
 TranslationUnit::TranslationUnit(
     CXIndex index
   , const KUrl& filename_url
-  , const QVector<QPair<QString, QString>>& unsaved_files
   )
   : m_filename(filename_url.toLocalFile().toUtf8())
   , m_unit(clang_createTranslationUnit(index, m_filename.constData()))
 {
     if (!m_unit)
         throw Exception::LoadFailure("Fail to load a preparsed file");
-
-    updateUnsavedFiles(unsaved_files);
-
-    auto result = clang_reparseTranslationUnit(
-        m_unit
-      , m_unsaved_files.size()
-      , m_unsaved_files.data()
-      , 0
-      );
-    if (result)
-        throw Exception::ReparseFailure("It seems preparsed file is invalid");
 }
 
 TranslationUnit::TranslationUnit(
@@ -189,7 +177,10 @@ QList<ClangCodeCompletionItem> TranslationUnit::completeAt(const int line, const
       , 0
       );
     if (!res)
-        throw std::runtime_error("Can't complete");
+    {
+        showDiagnostic();
+        throw Exception::CompletionFailure("Can't complete");
+    }
 
     clang_sortCodeCompletionResults(res->Results, res->NumResults);
 
@@ -298,7 +289,35 @@ void TranslationUnit::storeTo(const KUrl& filename)
     auto result = clang_saveTranslationUnit(m_unit, pch_filename.constData(), CXSaveTranslationUnit_None);
     kDebug() << "sore result=" << result;
     if (result != CXSaveError_None)
+    {
+        showDiagnostic();
         throw Exception::SaveFailure("Failure on save a PCH file");
+    }
+}
+
+void TranslationUnit::reparse()
+{
+    auto result = clang_reparseTranslationUnit(
+        m_unit
+      , m_unsaved_files.size()
+      , m_unsaved_files.data()
+      , CXReparse_None
+      );
+    if (result)
+    {
+        showDiagnostic();
+        throw Exception::ReparseFailure("It seems preparsed file is invalid");
+    }
+}
+
+void TranslationUnit::showDiagnostic()
+{
+    for (unsigned i = 0, last = clang_getNumDiagnostics(m_unit); i < last; ++i)
+    {
+        DCXDiagnostic diag = clang_getDiagnostic(m_unit, i);
+        DCXString s = clang_getDiagnosticSpelling(diag);
+        kDebug() << "TU WARNING: " << clang_getCString(s);
+    }
 }
 
 }                                                           // namespace kate
