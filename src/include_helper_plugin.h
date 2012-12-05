@@ -92,12 +92,13 @@ public Q_SLOTS:
     void updateDocumentInfo(KTextEditor::Document* doc);
     void textInserted(KTextEditor::Document*, const KTextEditor::Range&);
     void openDocument(const KUrl&);
+    void makePCHFile(const KUrl&);
 
 private Q_SLOTS:
     void createdPath(const QString&);
     void deletedPath(const QString&);
     void updateCurrentView();
-    void refreshPCH(bool = true);                           ///< Make sure a PCH is fresh
+    void buildPCHIfAbsent();                                ///< Make sure a PCH is fresh
     /// Update warcher to monitor currently configured directories
     void updateDirWatcher();
 
@@ -161,7 +162,7 @@ inline KIcon IncludeHelperPlugin::configPageIcon(uint number) const
 inline void IncludeHelperPlugin::readSessionConfig(KConfigBase* cfg, const QString& groupPrefix)
 {
     config().readSessionConfig(cfg, groupPrefix);
-    refreshPCH(false);
+    buildPCHIfAbsent();
 }
 inline void IncludeHelperPlugin::writeSessionConfig(KConfigBase* cfg, const QString& groupPrefix)
 {

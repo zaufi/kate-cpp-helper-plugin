@@ -296,7 +296,7 @@ void IncludeHelperPluginView::switchIfaceImpl()
     else
     {
         // Let user to choose what to open...
-        openFiles(ChooseFromListDialog::selectHeaderToOpen(qobject_cast<QWidget*>(this), candidates));
+        openFile(ChooseFromListDialog::selectHeaderToOpen(qobject_cast<QWidget*>(this), candidates));
     }
 }
 
@@ -333,7 +333,7 @@ void IncludeHelperPluginView::openHeader()
         // and active view present as well!
         assert("Main window and active view expected to be valid!" && mainWindow()->activeView());
 
-        filename = doc->text(r);
+        filename = doc->text(r).trimmed();
         assert("Getting text on non-empty range should return smth!" && !filename.isEmpty());
 
         // Try to find an absolute path to given filename
@@ -349,16 +349,6 @@ void IncludeHelperPluginView::openHeader()
     }
     else if (candidates.isEmpty())
     {
-        if (!filename.isEmpty())
-            KPassivePopup::message(
-                i18n("Error")
-              , i18n(
-                    "<qt>Unable to find a file: `<tt>%1</tt>'."
-                    "<p>Here is the list of #included headers...</p></qt>"
-                  , filename
-                  )
-              , qobject_cast<QWidget*>(this)
-              );
         // Scan current document for #include files
         for (int i = 0; i < doc->lines(); i++)
         {
@@ -379,8 +369,23 @@ void IncludeHelperPluginView::openHeader()
             all.append(cfpl);
         }
         candidates.swap(all);
+        QString error_text = filename.isEmpty()
+          ? QString()
+          : i18n("Unable to find the file: `<tt>%1</tt>'.", filename)
+          + (candidates.isEmpty()
+              ? QString()
+              : i18n("<p>Here is a list of #included headers in the current file...</p>")
+              )
+          ;
+        if (!error_text.isEmpty())
+            KPassivePopup::message(
+                i18n("Error")
+              , "<qt>" + error_text + "</qt>"
+              , qobject_cast<QWidget*>(this)
+              );
     }
-    openFiles(ChooseFromListDialog::selectHeaderToOpen(qobject_cast<QWidget*>(this), candidates));
+    if (!candidates.isEmpty())
+        openFile(ChooseFromListDialog::selectHeaderToOpen(qobject_cast<QWidget*>(this), candidates));
 }
 
 QStringList IncludeHelperPluginView::findFileLocations(const QString& filename)
@@ -404,6 +409,7 @@ QStringList IncludeHelperPluginView::findFileLocations(const QString& filename)
  */
 inline void IncludeHelperPluginView::openFile(const QString& file)
 {
+    if (file.isEmpty()) return;                             // Nothing to do if no file specified
     kDebug() << "Going to open " << file;
     KTextEditor::Document* new_doc = m_plugin->application()->documentManager()->openUrl(file);
     QFileInfo fi(file);
@@ -633,7 +639,7 @@ ChooseFromListDialog::ChooseFromListDialog(QWidget* parent)
     connect(m_list, SIGNAL(executed(QListWidgetItem*)), this, SLOT(accept()));
 }
 
-QStringList ChooseFromListDialog::selectHeaderToOpen(QWidget* parent, const QStringList& strings)
+QString ChooseFromListDialog::selectHeaderToOpen(QWidget* parent, const QStringList& strings)
 {
     KConfigGroup gcg(KGlobal::config(), "IncludeHelperChooserDialog");
     ChooseFromListDialog dialog(parent);
@@ -654,7 +660,10 @@ QStringList ChooseFromListDialog::selectHeaderToOpen(QWidget* parent, const QStr
     }
     dialog.saveDialogSize(gcg);                             // write dialog geometry to config
     gcg.sync();
-    return result;
+    if (result.empty())
+        return QString();
+    assert("The only file expected" && result.size() == 1u);
+    return result[0];
 }
 //END ChooseFromListDialog
 }                                                           // namespace kate

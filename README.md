@@ -94,7 +94,7 @@ TODO
 * Add view to explore a tree of #included files
 * Add option(s) to include/exclude files from completion list
 * Issue a warning if /proc/sys/fs/inotify/max_user_watches is not high enough
-
+* Use KUrl for files and dirs instead of QStrings
 
 Changes
 =======

@@ -75,7 +75,7 @@ IncludeHelperPlugin::IncludeHelperPlugin(
         &m_config
       , SIGNAL(precompiledHeaderFileChanged())
       , this
-      , SLOT(refreshPCH())
+      , SLOT(buildPCHIfAbsent())
       );
 }
 
@@ -251,14 +251,56 @@ void IncludeHelperPlugin::openDocument(const KUrl& pch_header)
 }
 
 /**
- * \attention Clang has some problems (core dump) on loading a PCH file if latter
+ * \todo There is a big problem w/ reparse of PCH (i.e. making sure that PCH is fresh):
+ * if translation unit would be made from saved AST file, reparse will fail on that file,
+ * and store will reduce size (dropping smth important), so later completer will totally fail.
+ *
+ * \todo Need to accept a command line parameters (and include dirs), cuz clicking 'Rebuild'
+ * in configuration page should take all current (possible not saved options) to compile it.
+ */
+void IncludeHelperPlugin::makePCHFile(const KUrl& filename)
+{
+    // Show busy mouse pointer
+    QApplication::setOverrideCursor(QCursor(Qt::BusyCursor));
+
+    const QString pch_file_name = filename.toLocalFile() + ".kate.pch";
+    try
+    {
+        kDebug() << "Going to produce a PCH file" << pch_file_name
+            << "from" << config().precompiledHeaderFile();
+        TranslationUnit pch_unit(
+            index()
+          , filename
+          , config().formCompilerOptions()
+          , TranslationUnit::defaultPCHParseOptions()
+          );
+        pch_unit.storeTo(pch_file_name);
+    }
+    catch (const TranslationUnit::Exception::ParseFailure&)
+    {
+        kError() << "PCH file failure. Code completion will be damn slow!";
+        /// \todo Add an option to disable code completion w/o PCH file?
+    }
+    catch (const TranslationUnit::Exception::SaveFailure&)
+    {
+        kError() << "Unable to store a PCH file";
+    }
+    catch (const TranslationUnit::Exception& e)
+    {
+        kError() << "Smth wrong w/ the PCH file:" << e.what();
+    }
+    QApplication::restoreOverrideCursor();                  // Restore mouse pointer to normal
+}
+
+/**
+ * \attention Clang 3.1 has some problems (core dump) on loading a PCH file if latter
  * doesn't exists before call to \c TranslationUnit ctor. As I so in \c gdb, it has
  * (seem) uninitialized counter for tokens in a \c Preprocessor class (due some kind
  * of delayed initialization or smth like that)... So it is why presence of a PCH
  * must be checked before...
  * \todo Investigate a bug in clang 3.1
  */
-void IncludeHelperPlugin::refreshPCH(bool force_recompile)
+void IncludeHelperPlugin::buildPCHIfAbsent()
 {
     if (config().precompiledHeaderFile().isEmpty())
     {
@@ -269,63 +311,11 @@ void IncludeHelperPlugin::refreshPCH(bool force_recompile)
     const QString pch_file_name = config().precompiledHeaderFile().toLocalFile() + ".kate.pch";
     QFileInfo pi(pch_file_name);
     if (!pi.exists())
-        force_recompile = true;
+        makePCHFile(config().precompiledHeaderFile());
 
-    // Show busy mouse pointer
-    QApplication::setOverrideCursor(QCursor(Qt::BusyCursor));
-
-    try
-    {
-        std::unique_ptr<TranslationUnit> pch_unit;
-        if (force_recompile)
-        {
-            kDebug() << "Going to produce a PCH file" << pch_file_name
-              << "from" << config().precompiledHeaderFile();
-
-            pch_unit.reset(
-                new TranslationUnit(
-                    index()
-                  , config().precompiledHeaderFile()
-                  , config().formCompilerOptions()
-                  , TranslationUnit::ParseOptions::PCHOptions
-                  )
-              );
-        }
-        else
-        {
-            kDebug() << "(Re)loading the PCH file" << pch_file_name;
-            pch_unit.reset(new TranslationUnit(index(), pch_file_name));
-        }
-        pch_unit->storeTo(pch_file_name);
-    }
-    catch (const TranslationUnit::Exception::LoadFailure&)
-    {
-        kDebug() << "Loading failure. Trying to recompile the PCH file...";
-        // Ok, try to recompile
-        refreshPCH(true);
-        return;
-    }
-    catch (const TranslationUnit::Exception::ParseFailure&)
-    {
-        kError() << "PCH file failure. Code completion will be damn slow!";
-        /// \todo Add an option to disable code completion w/o PCH file
-        return;
-    }
-#if 0
-    catch (const TranslationUnit::Exception::StoreFailure&)
-    {
-        kError() << "Unable to store a PCH file";
-        if (!force_recompile)
-            refreshPCH(true);
-    }
-#endif
-    catch (const TranslationUnit::Exception& e)
-    {
-        kError() << "Smth wrong w/ the PCH file:" << e.what();
-    }
-    config().setPrecompiledFile(pch_file_name);
-    QApplication::restoreOverrideCursor();                  // Restore mouse pointer to normal
-    return;
+    //
+    kDebug() << "PCH header: " << config().precompiledHeaderFile();
+    kDebug() << "PCH file: " << config().pchFile();
 }
 
 //END IncludeHelperPlugin

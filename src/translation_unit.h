@@ -27,7 +27,7 @@
 # include <src/clang_code_completion_item.h>
 
 // Standard includes
-# include <KDE/KUrl>
+# include <KUrl>
 # include <QtCore/QPair>
 # include <QtCore/QStringList>
 # include <QtCore/QVector>
@@ -46,14 +46,6 @@ namespace kate {
 class TranslationUnit
 {
 public:
-    enum struct ParseOptions : unsigned
-    {
-        None = CXTranslationUnit_None
-      , PCHOptions = CXTranslationUnit_PrecompiledPreamble
-          | CXTranslationUnit_Incomplete
-          //| CXTranslationUnit_SkipFunctionBodies
-      , CompletionOptions = CXTranslationUnit_Incomplete /*| CXTranslationUnit_CacheCompletionResults*/
-    };
     struct Exception : public std::runtime_error
     {
         struct CompletionFailure;
@@ -64,6 +56,7 @@ public:
 
         explicit Exception(const std::string&);
     };
+    typedef QVector<QPair<QString, QString>> unsaved_files_list_type;
     /// Make a translation unit from a previously serialized file (PCH)
     TranslationUnit(CXIndex, const KUrl&);
     /// Make a translation unit from a given source file
@@ -71,19 +64,43 @@ public:
         CXIndex
       , const KUrl&
       , const QStringList&
-      , const ParseOptions
-      , const QVector<QPair<QString, QString>>& = QVector<QPair<QString, QString>>()
       );
+    /// Make a translation unit from a given source file
+    TranslationUnit(
+        CXIndex
+      , const KUrl&
+      , const QStringList&
+      , const unsigned
+      , const unsaved_files_list_type& = unsaved_files_list_type()
+      );
+    /// Move ctor
+    TranslationUnit(TranslationUnit&&);
+    /// Move-assign operator
+    TranslationUnit& operator=(TranslationUnit&&);
+    /// Delete copy ctor
+    TranslationUnit(const TranslationUnit&) = delete;
+    /// Delete copy-assign operator
+    TranslationUnit& operator=(const TranslationUnit&) = delete;
     /// Destructor
     virtual ~TranslationUnit()
     {
-        clang_disposeTranslationUnit(m_unit);
+        if (m_unit)
+            clang_disposeTranslationUnit(m_unit);
     }
 
-    void updateUnsavedFiles(const QVector<QPair<QString, QString>>&);
+    void updateUnsavedFiles(const unsaved_files_list_type&);
     QList<ClangCodeCompletionItem> completeAt(const int, const int);
     void storeTo(const KUrl&);
     void reparse();
+
+    static unsigned defaultPCHParseOptions()
+    {
+        return CXTranslationUnit_Incomplete | CXTranslationUnit_PrecompiledPreamble;
+    }
+    static unsigned defaultEditingParseOptions()
+    {
+        return clang_defaultEditingTranslationUnitOptions() | CXTranslationUnit_Incomplete;
+    }
 
 private:
     void showDiagnostic();

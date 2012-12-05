@@ -105,12 +105,48 @@ TranslationUnit::TranslationUnit(
     CXIndex index
   , const KUrl& filename_url
   , const QStringList& options
-  , const ParseOptions parse_options
-  , const QVector<QPair<QString, QString>>& unsaved_files
   )
   : m_filename(filename_url.toLocalFile().toUtf8())
 {
-    kDebug() << "Making a translation unit for" << filename_url.toLocalFile();
+    kDebug() << "Creating a translation unit: " << filename_url.toLocalFile();
+    kDebug() << "w/ the following compiler options:" << options;
+    // Transform options compatible to clang API
+    // NOTE Too fraking much actions for that simple task...
+    // Definitely Qt doesn't suitable for that sort of tasks...
+    std::vector<QByteArray> utf8_options(options.size());
+    std::vector<const char*> clang_options(options.size(), nullptr);
+    {
+        int opt_idx = 0;
+        for (const auto& o : options)
+        {
+            utf8_options[opt_idx] = o.toUtf8();
+            clang_options[opt_idx] = utf8_options[opt_idx].constData();
+            opt_idx++;
+        }
+    }
+    // Ok, ready to go
+    m_unit = clang_createTranslationUnitFromSourceFile(
+        index
+      , m_filename.constData()
+      , clang_options.size()
+      , clang_options.data()
+      , 0
+      , 0
+      );
+    if (!m_unit)
+        throw Exception::ParseFailure("Failure to parse C++ code");
+}
+
+TranslationUnit::TranslationUnit(
+    CXIndex index
+  , const KUrl& filename_url
+  , const QStringList& options
+  , const unsigned parse_options
+  , const unsaved_files_list_type& unsaved_files
+  )
+  : m_filename(filename_url.toLocalFile().toUtf8())
+{
+    kDebug() << "Parsing a translation unit: " << filename_url.toLocalFile();
     kDebug() << "w/ the following compiler options:" << options;
 
     // Transform options compatible to clang API
@@ -139,13 +175,32 @@ TranslationUnit::TranslationUnit(
       , clang_options.size()
       , m_unsaved_files.data()
       , m_unsaved_files.size()
-      , static_cast<unsigned>(parse_options)
+      , parse_options
       );
     if (!m_unit)
         throw Exception::ParseFailure("Failure to parse C++ code");
 }
 
-void TranslationUnit::updateUnsavedFiles(const QVector<QPair<QString, QString>>& unsaved_files)
+TranslationUnit::TranslationUnit(TranslationUnit&& other)
+  : m_unsaved_files_utf8(std::move(other.m_unsaved_files_utf8))
+  , m_unsaved_files(std::move(other.m_unsaved_files))
+  , m_unit(other.m_unit)
+{
+    m_filename.swap(other.m_filename);
+    other.m_unit = nullptr;
+}
+
+TranslationUnit& TranslationUnit::operator=(TranslationUnit&& other)
+{
+    m_unsaved_files_utf8 = std::move(other.m_unsaved_files_utf8);
+    m_unsaved_files = std::move(other.m_unsaved_files);
+    m_filename.swap(other.m_filename);
+    m_unit = other.m_unit;
+    other.m_unit = nullptr;
+    return *this;
+}
+
+void TranslationUnit::updateUnsavedFiles(const unsaved_files_list_type& unsaved_files)
 {
     // Resize internal vectors according expected items count
     m_unsaved_files_utf8.resize(unsaved_files.size());
@@ -174,21 +229,22 @@ QList<ClangCodeCompletionItem> TranslationUnit::completeAt(const int line, const
       , unsigned(column)
       , m_unsaved_files.data()
       , m_unsaved_files.size()
-      , 0
+      , 0 /*clang_defaultCodeCompleteOptions()*/
       );
     if (!res)
     {
-        showDiagnostic();
         throw Exception::CompletionFailure("Can't complete");
     }
 
+#if 0
     clang_sortCodeCompletionResults(res->Results, res->NumResults);
+#endif
 
     // Show some diagnostic SPAM
     for (unsigned i = 0; i < clang_codeCompleteGetNumDiagnostics(res); ++i)
     {
         DCXDiagnostic diag = clang_codeCompleteGetDiagnostic(res, i);
-        DCXString s = clang_getDiagnosticSpelling(diag);
+        DCXString s = clang_formatDiagnostic(diag, clang_defaultDiagnosticDisplayOptions());
         kWarning() << "Clang WARNING: " << clang_getCString(s);
     }
 
@@ -229,7 +285,7 @@ QList<ClangCodeCompletionItem> TranslationUnit::completeAt(const int line, const
             else
                 text_after += text;
         };
-        for (unsigned j = 0; j < clang_getNumCompletionChunks(str); ++j)
+        for (unsigned j = 0, chunks = clang_getNumCompletionChunks(str); j < chunks; ++j)
         {
             auto kind = clang_getCompletionChunkKind(str, j);
             DCXString text_str = clang_getCompletionChunkText(str, j);
@@ -286,8 +342,12 @@ QList<ClangCodeCompletionItem> TranslationUnit::completeAt(const int line, const
 void TranslationUnit::storeTo(const KUrl& filename)
 {
     QByteArray pch_filename = filename.toLocalFile().toUtf8();
-    auto result = clang_saveTranslationUnit(m_unit, pch_filename.constData(), CXSaveTranslationUnit_None);
-    kDebug() << "sore result=" << result;
+    auto result = clang_saveTranslationUnit(
+        m_unit
+      , pch_filename.constData()
+      , CXSaveTranslationUnit_None /*clang_defaultSaveOptions(m_unit)*/
+      );
+    kDebug() << "result=" << result;
     if (result != CXSaveError_None)
     {
         showDiagnostic();
@@ -301,7 +361,7 @@ void TranslationUnit::reparse()
         m_unit
       , m_unsaved_files.size()
       , m_unsaved_files.data()
-      , CXReparse_None
+      , CXReparse_None /*clang_defaultReparseOptions(m_unit)*/
       );
     if (result)
     {
@@ -315,7 +375,7 @@ void TranslationUnit::showDiagnostic()
     for (unsigned i = 0, last = clang_getNumDiagnostics(m_unit); i < last; ++i)
     {
         DCXDiagnostic diag = clang_getDiagnostic(m_unit, i);
-        DCXString s = clang_getDiagnosticSpelling(diag);
+        DCXString s = clang_formatDiagnostic(diag, clang_defaultDiagnosticDisplayOptions());
         kDebug() << "TU WARNING: " << clang_getCString(s);
     }
 }

@@ -25,6 +25,7 @@
 
 // Project specific includes
 # include <src/clang_code_completion_item.h>
+# include <src/translation_unit.h>
 
 // Standard includes
 # include <clang-c/Index.h>
@@ -37,6 +38,7 @@
 # if (__GNUC__ >=4 && __GNUC_MINOR__ >= 5)
 #   pragma GCC pop_options
 # endif                                                     // (__GNUC__ >=4 && __GNUC_MINOR__ >= 5)
+# include <memory>
 
 namespace kate {
 class IncludeHelperPlugin;                                  // forward declaration
@@ -71,8 +73,13 @@ public:
     //END KTextEditor::CodeCompletionModel overrides
 
 private:
+    typedef QList<ClangCodeCompletionItem> completions_type;
+
+    TranslationUnit::unsaved_files_list_type makeUnsavedFilesList(KTextEditor::Document*);
+
     IncludeHelperPlugin* m_plugin;
-    QList<ClangCodeCompletionItem> m_completions;
+    std::unique_ptr<TranslationUnit> m_unit;
+    completions_type m_completions;
 };
 
 }                                                           // namespace kate

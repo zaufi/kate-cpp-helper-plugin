@@ -23,10 +23,12 @@
 // Project specific includes
 #include <src/include_helper_plugin_config_page.h>
 #include <src/include_helper_plugin.h>
+#include <src/utils.h>
 
 // Standard includes
 #include <KDebug>
 #include <KDirSelectDialog>
+#include <KPassivePopup>
 #include <KTabWidget>
 #include <KShellCompletion>
 
@@ -89,7 +91,7 @@ IncludeHelperPluginConfigPage::IncludeHelperPluginConfigPage(
         tab->addTab(clang_tab, i18n("Clang Settings"));
         // Connect open PCH file button
         connect(m_clang_config->openPchHeader, SIGNAL(clicked()), this, SLOT(openPCHHeaderFile()));
-        connect(m_clang_config->rebuildPch, SIGNAL(clicked()), m_plugin, SLOT(refreshPCH()));
+        connect(m_clang_config->rebuildPch, SIGNAL(clicked()), this, SLOT(rebuildPCH()));
     }
 
     // Other settings
@@ -252,7 +254,30 @@ void IncludeHelperPluginConfigPage::moveGlobalDirDown()
  */
 void IncludeHelperPluginConfigPage::openPCHHeaderFile()
 {
-    m_plugin->openDocument(m_clang_config->pchHeader->url());
+    const auto& pch_url = m_clang_config->pchHeader->url();
+    const auto& pch_file = pch_url.toLocalFile();
+    if (!pch_file.isEmpty() && isPresentAndReadable(pch_file))
+        m_plugin->openDocument(pch_url);
+    else
+        KPassivePopup::message(
+            i18n("Error")
+          , i18n("<qt>PCH header file is not configured or readable.</qt>")
+          , qobject_cast<QWidget*>(this)
+          );
+}
+
+void IncludeHelperPluginConfigPage::rebuildPCH()
+{
+    const auto& pch_url = m_clang_config->pchHeader->url();
+    const auto& pch_file = pch_url.toLocalFile();
+    if (!pch_file.isEmpty() && isPresentAndReadable(pch_file))
+        m_plugin->makePCHFile(pch_url);
+    else
+        KPassivePopup::message(
+            i18n("Error")
+          , i18n("<qt>PCH header file is not configured or readable.</qt>")
+          , qobject_cast<QWidget*>(this)
+          );
 }
 
 bool IncludeHelperPluginConfigPage::contains(const QString& dir, const KListWidget* list)

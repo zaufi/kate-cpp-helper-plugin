@@ -22,7 +22,7 @@ set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/modules" ${CMAKE_MODULE_PATH})
 # Section: Include aux cmake functions
 #---------------------------------------------------------
 include(GuessBuildType)
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+if(CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "DebugFull")
     include(CTest)
 endif()
 
@@ -40,7 +40,13 @@ execute_process(
     COMMAND ${LLVM_CONFIG_EXECUTABLE} --cxxflags
     OUTPUT_VARIABLE LLVM_CXXFLAGS_ORIG
   )
-string(REPLACE "-fno-exceptions" "" LLVM_CXXFLAGS "${LLVM_CXXFLAGS_ORIG}")
+string(REPLACE "-DNDEBUG" "" _PRE_LLVM_CXXFLAGS "${LLVM_CXXFLAGS_ORIG}")
+string(
+    REPLACE "-fno-exceptions" ""
+    LLVM_CXXFLAGS
+    "${_PRE_LLVM_CXXFLAGS}"
+  )
+
 # Get LLVM linker flags
 execute_process(
     COMMAND ${LLVM_CONFIG_EXECUTABLE} --ldflags
@@ -77,6 +83,10 @@ endif()
 include_directories(${PROJECT_SOURCE_DIR} ${PROJECT_BINARY_DIR})
 include_directories(${KDE4_INCLUDES} ${QT_INCLUDES} ${Boost_INCLUDE_DIRS})
 
+# Set generic compiler flags: turn ON C++11 (C++03 is suxx) and exceptions
+# set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS} ${KDE4_ENABLE_EXCEPTIONS}")
+add_definitions(-std=c++11 ${KDE4_ENABLE_EXCEPTIONS})
+
 # Tell to boost::result_of to use decltype to decay return type of callable.
 # NOTE This would enable to use C++11 labmda expressions w/ boost::rage adaptors
 #add_definitions(-DBOOST_RESULT_OF_USE_DECLTYPE)
@@ -86,9 +96,6 @@ add_definitions(${QT_DEFINITIONS} ${KDE4_DEFINITIONS})
 add_definitions(${LLVM_CXXFLAGS})
 # Use Kate plugins debug area as default
 # add_definitions(-DDEBUG_AREA=13040)
-
-# Set generic compiler flags: turn ON C++11 (C++03 is suxx) and exceptions
-set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS} ${KDE4_ENABLE_EXCEPTIONS}")
 
 #---------------------------------------------------------
 # Section: Define some helpful targets (using included)
@@ -100,6 +107,10 @@ set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS} ${KDE4_ENABLE_EXCEPTIONS}")
 #include(DefineDoxyDocsTargetIfPossible)
 set(NAMING_STYLE Camel)
 include(DefineSkeletonGenerationTargetsIfPossible)
+include(UpdatePCHFile)
+update_pch_header(
+    PCH_FILE ${CMAKE_BINARY_DIR}/most_included_files.h
+  )
 
 #---------------------------------------------------------
 # Section: Dive into subdirs after main configuration

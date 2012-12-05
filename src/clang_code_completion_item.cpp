@@ -91,6 +91,32 @@ QString ClangCodeCompletionItem::renderPlaceholders(const QString& source) const
 }
 
 namespace {
+/**
+ *  NoProperty
+ *  Public
+ *  Protected
+ *  Private
+ *  Static
+ *  Const
+ *  Namespace
+ *  Class
+ *  Struct
+ *  Union
+ *  Function
+ *  Variable
+ *  Enum
+ *  Template
+ *  TypeAlias
+ *  Virtual
+ *  Override
+ *  Inline
+ *  Friend
+ *  Signal
+ *  Slot
+ *  LocalScope
+ *  NamespaceScope
+ *  GlobalScope
+ */
 const std::map<
     CXCursorKind
   , KTextEditor::CodeCompletionModel::CompletionProperty
@@ -127,35 +153,6 @@ const std::map<
 };
 }                                                           // anonymous namespace
 
-
-/**
- *  NoProperty
- *  FirstProperty
- *  Public
- *  Protected
- *  Private
- *  Static
- *  Const
- *  Namespace
- *  Class
- *  Struct
- *  Union
- *  Function
- *  Variable
- *  Enum
- *  Template
- *  TypeAlias
- *  Virtual
- *  Override
- *  Inline
- *  Friend
- *  Signal
- *  Slot
- *  LocalScope
- *  NamespaceScope
- *  GlobalScope
- *  LastProperty
- */
 KTextEditor::CodeCompletionModel::CompletionProperty ClangCodeCompletionItem::completionProperty() const
 {
     auto it = CURSOR_PREPERTY_MAP.find(m_kind);

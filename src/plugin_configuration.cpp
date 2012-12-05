@@ -24,11 +24,11 @@
 #include <src/plugin_configuration.h>
 
 // Standard includes
-#include <KDE/KConfigGroup>
-#include <KDE/KDebug>
-#include <KDE/KGlobal>
-#include <KDE/KSharedConfig>
-#include <KDE/KSharedConfigPtr>
+#include <KConfigGroup>
+#include <KDebug>
+#include <KGlobal>
+#include <KSharedConfig>
+#include <KSharedConfigPtr>
 #include <cassert>
 
 namespace kate {

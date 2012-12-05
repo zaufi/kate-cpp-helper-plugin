@@ -95,7 +95,7 @@ class ChooseFromListDialog : public KDialog
 
 public:
     ChooseFromListDialog(QWidget*);
-    static QStringList selectHeaderToOpen(QWidget*, const QStringList&);
+    static QString selectHeaderToOpen(QWidget*, const QStringList&);
 
 private:
     KListWidget* m_list;

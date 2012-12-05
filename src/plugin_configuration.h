@@ -26,8 +26,8 @@
 // Project specific includes
 
 // Standard includes
-# include <KDE/KConfigBase>
-# include <KDE/KUrl>
+# include <KConfigBase>
+# include <KUrl>
 # include <QtCore/QStringList>
 
 namespace kate {
