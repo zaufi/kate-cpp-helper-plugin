@@ -108,7 +108,7 @@ KIcon CppHelperPlugin::configPageIcon(uint number) const
 {
     Q_UNUSED(number)
     assert("This plugin have the only configuration page" && number == 0);
-    return KIcon("text-x-c++hdr");
+    return KIcon ("text-x-c++src");
 }
 
 Kate::PluginConfigPage* CppHelperPlugin::configPage(uint number, QWidget* parent, const char*)
