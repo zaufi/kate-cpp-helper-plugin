@@ -43,11 +43,11 @@ Installation
         $ mkdir build && cd build
         $ cmake -DBUILD_TESTING=OFF -DCMAKE_INSTALL_PREFIX=~/.kde4 .. && make && make install
 
-* To make a system-wide installation, set the prefix to /usr and become a superuser to ``make install``
-* After that u have to enable it from ``Settings->Configure Kate...->Plugins`` and configure the include paths
+* To make a system-wide installation, set the prefix to /usr and become a superuser to `make install`
+* After that u have to enable it from `Settings->Configure Kate...->Plugins` and configure the include paths
   globally and/or per session...
 
-Note: One may use ``kde4-config`` utility with option ``--localprefix`` or ``--prefix`` to get
+Note: One may use `kde4-config` utility with option `--localprefix` or `--prefix` to get
 user or system-wide prefix correspondingly.
 
 
@@ -112,19 +112,34 @@ file in plugins' configuration dialog. It will be _precompiled_ and used by code
 Some (other) important notes
 ----------------------------
 
-* monitoring too much (nested) directories, for example in ``/usr/include`` configured as
-  system directory, may lead to high resources consumption, so ``inotify_add_watch`` would
-  return a ``ENOSPC`` error (use ``strace`` to find out and/or check kate's console log for
-  **strange** messages from ``DirWatch``).
-  So if your system short on resources just try to avoid live ``#include`` files status updates.
+* monitoring too much (nested) directories, for example in `/usr/include` configured as
+  system directory, may lead to high resources consumption, so `inotify_add_watch` would
+  return a `ENOSPC` error (use `strace` to find out and/or check kate's console log for
+  **strange** messages from `DirWatch`).
+  So if your system short on resources just try to avoid live `#include` files status updates.
   Otherwise one may increase a number of available files/dirs watches by doing this::
 
         # echo 16384 >/proc/sys/fs/inotify/max_user_watches
 
-  To make it permanent add the following to ``/etc/sysctl.conf`` or ``/etc/sysctl.d/inotify.conf``
+  To make it permanent add the following to `/etc/sysctl.conf` or `/etc/sysctl.d/inotify.conf`
   (depending on system)::
 
         fs.inotify.max_user_watches = 16384
+
+
+Update Config files
+-------------------
+
+Unfortunately after renaming from _Kate Include Helper_ all configured data (global and session)
+will be lost (configuration groups were renamed as well). To avoid reconfigure everything one may use
+`sed` to do the following:
+
+    $ cd ~/.kde4/share/apps/kate/sessions
+    $ sed -i 's,kateincludehelperplugin,katecpphelperplugin,g' *
+    $ sed -i 's,:include-helper,:cpp-helper,g' *
+    $ cd ~/.kde4/share/config
+    $ sed -i 's,IncludeHelper,CppHelper,g' *
+
 
 TODO
 ====
@@ -134,7 +149,7 @@ TODO
 * Passive popups if nothing found (done)
 * Handle #include files w/ relative path
 * Use `Shift+F10` to go back in stack (?)
-* Form an ``#include`` directive w/ filename currently active in a clipboard (done)
+* Form an `#include` directive w/ filename currently active in a clipboard (done)
 * List of currently `#included` files in a dialog and/or menu (done)
 * _OpenFile_ dialog for current `#include` line
 * Is it possible to use annotations iface somehow to indicate 'not-found' `#include` file?
@@ -181,13 +196,13 @@ Version 0.4.3
 Version 0.4.2
 -------------
 
-* watch configured directories for changes and update ``#include`` files status
+* watch configured directories for changes and update `#include` files status
 * add support to create source tarball
 
 Version 0.4.1
 -------------
 
-* open dialog w/ currently ``#included`` files, if unable to open a file under cursor
+* open dialog w/ currently `#included` files, if unable to open a file under cursor
   or cursor not on a word at all
 * remove duplicates from completion list: for out of source builds and if both, source
   and binary dirs are in the search list, it led to duplicates
