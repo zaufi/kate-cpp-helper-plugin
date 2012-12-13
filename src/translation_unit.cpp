@@ -4,6 +4,8 @@
  * \brief Class \c kate::TranslationUnit (implementation)
  *
  * \date Thu Nov 22 18:07:27 MSK 2012 -- Initial design
+ *
+ * \todo Add \c i18n() to (some) strings?
  */
 /*
  * KateIncludeHelperPlugin is free software: you can redistribute it and/or modify it
@@ -241,11 +243,14 @@ QList<ClangCodeCompletionItem> TranslationUnit::completeAt(const int line, const
 #endif
 
     // Show some diagnostic SPAM
+    m_last_diagnostic_text.clear();
     for (unsigned i = 0; i < clang_codeCompleteGetNumDiagnostics(res); ++i)
     {
         DCXDiagnostic diag = clang_codeCompleteGetDiagnostic(res, i);
         DCXString s = clang_formatDiagnostic(diag, clang_defaultDiagnosticDisplayOptions());
+        m_last_diagnostic_text += clang_getCString(s);
         kWarning() << "Clang WARNING: " << clang_getCString(s);
+        m_last_diagnostic_text += '\n';
     }
 
     completions.reserve(res->NumResults);                   // Peallocate enough space for completion results
@@ -333,10 +338,57 @@ QList<ClangCodeCompletionItem> TranslationUnit::completeAt(const int line, const
             }
         }
         assert("Priority expected to be less than 100" && priority < 101u);
-        completions.push_back({text_before, typed_text, text_after, placeholders, priority, cursor_kind});
+        completions.push_back({
+            makeParentText(str)
+          , text_before
+          , typed_text
+          , text_after
+          , placeholders
+          , priority
+          , cursor_kind
+          });
     }
 
     return completions;
+}
+
+/**
+ * Get human readable text representation of a parent context of the given completion string
+ */
+QString TranslationUnit::makeParentText(CXCompletionString str)
+{
+    CXCursorKind parent_ck;
+    const DCXString parent_clstr = clang_getCompletionParent(str, &parent_ck);
+    const auto parent_cstr = clang_getCString(parent_clstr);
+    if (parent_cstr)
+    {
+        QString prefix;
+        switch (parent_ck)
+        {
+            case CXCursor_StructDecl:
+                prefix = "struct";
+                break;
+            case CXCursor_UnionDecl:
+                prefix = "union";
+                break;
+            case CXCursor_ClassDecl:
+                prefix = "class";
+                break;
+            case CXCursor_EnumDecl:
+                prefix = "enum";
+                break;
+            case CXCursor_Namespace:
+                prefix = "namespace";
+                break;
+            /// \todo More types
+            default:
+                break;
+        }
+        if (!prefix.isEmpty())
+            prefix += ' ';
+        return prefix + parent_cstr;
+    }
+    return "Global";
 }
 
 void TranslationUnit::storeTo(const KUrl& filename)
@@ -351,7 +403,7 @@ void TranslationUnit::storeTo(const KUrl& filename)
     if (result != CXSaveError_None)
     {
         showDiagnostic();
-        throw Exception::SaveFailure("Failure on save a PCH file");
+        throw Exception::SaveFailure("Failure on save a translation unit into a file");
     }
 }
 
@@ -372,11 +424,15 @@ void TranslationUnit::reparse()
 
 void TranslationUnit::showDiagnostic()
 {
+    m_last_diagnostic_text.clear();
+
     for (unsigned i = 0, last = clang_getNumDiagnostics(m_unit); i < last; ++i)
     {
         DCXDiagnostic diag = clang_getDiagnostic(m_unit, i);
         DCXString s = clang_formatDiagnostic(diag, clang_defaultDiagnosticDisplayOptions());
+        m_last_diagnostic_text += clang_getCString(s);
         kDebug() << "TU WARNING: " << clang_getCString(s);
+        m_last_diagnostic_text += '\n';
     }
 }
 

@@ -21,16 +21,18 @@
  */
 
 #ifndef __SRC__INCLUDE_HELPER_PLUGIN_VIEW_H__
-#  define __SRC__INCLUDE_HELPER_PLUGIN_VIEW_H__
+# define __SRC__INCLUDE_HELPER_PLUGIN_VIEW_H__
 
 // Project specific includes
 
 // Standard includes
-#  include <kate/plugin.h>
-#  include <KTextEditor/View>
-#  include <KAction>
-#  include <KDialog>
-#  include <KListWidget>
+# include <kate/plugin.h>
+# include <KTextEditor/View>
+# include <KAction>
+# include <KDialog>
+# include <KListWidget>
+# include <KTextEdit>
+# include <memory>
 
 namespace kate {
 class IncludeHelperPlugin;                                  // forward declaration
@@ -77,6 +79,7 @@ private Q_SLOTS:
 private:
     /// Try to find file(s) w/ a given name+path and a list of possible extensions
     QStringList findCandidatesAt(const QString&, const QString&, const QStringList&);
+    bool eventFilter(QObject*, QEvent*);
 
     KTextEditor::Range currentWord() const;                 ///< Get word under cursor as range
     void openFile(const QString&);                          ///< Open a single document
@@ -87,6 +90,8 @@ private:
     KAction* m_open_header;                                 ///< <em>Open header</em> action
     KAction* m_copy_include;                                ///< <em>Copy #include to clipboard</em> action
     KAction* m_switch;                                      ///< <em>Open implementation/header</em> action
+    std::unique_ptr<QWidget> m_tool_view;                   ///< Toolview to display clang diagnostic
+    KTextEdit* m_diagnostic_text;                           ///< A widget to display diagnostic text
 };
 
 class ChooseFromListDialog : public KDialog

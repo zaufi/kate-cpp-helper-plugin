@@ -33,10 +33,7 @@
 namespace kate {
 
 /**
- * \brief [Type brief class description here]
- *
- * [More detailed description here]
- *
+ * \brief A class to represent all required info to display a completion item
  */
 class ClangCodeCompletionItem
 {
@@ -48,14 +45,16 @@ public:
     {}
     /// Initialize all fields
     ClangCodeCompletionItem(
-        const QString& before
+        const QString& parent
+      , const QString& before
       , const QString& text
       , const QString& after
       , const QStringList& placeholders
       , const unsigned priority
       , const CXCursorKind kind
       )
-      : m_before(before)
+      : m_parent(parent)
+      , m_before(before)
       , m_text(text)
       , m_after(after)
       , m_placeholders(placeholders)
@@ -66,10 +65,17 @@ public:
 
     QVariant data(const QModelIndex&, const int) const;
     KTextEditor::CodeCompletionModel::CompletionProperty completionProperty() const;
+    const QString& parentText() const                       ///< Return a parent (scope) text to display
+    {
+        return m_parent;
+    }
+    /// Get a string to be inserted and column position withing the string
+    QPair<QString, int> executeCompletion() const;
 
 private:
     QString renderPlaceholders(const QString&) const;
 
+    QString m_parent;                                       ///< Parent context of the curremt completion item
     QString m_before;                                       ///< Everything \e before typed text (return type)
     QString m_text;                                         ///< Text to paste
     QString m_after;                                        ///< Everything \e after typed text (arguments)

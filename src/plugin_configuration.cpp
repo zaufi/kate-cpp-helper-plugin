@@ -136,6 +136,7 @@ void PluginConfiguration::setClangParams(const QString& params)
         m_clang_params = params;
         m_config_dirty = true;
         kDebug() << "** set config to `dirty' state!! **";
+        Q_EMIT(clangOptionsChanged());
         Q_EMIT(precompiledHeaderFileChanged());
     }
 }

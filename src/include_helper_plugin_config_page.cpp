@@ -88,8 +88,22 @@ IncludeHelperPluginConfigPage::IncludeHelperPluginConfigPage(
         m_clang_config->setupUi(clang_tab);
         m_clang_config->pchHeader->setUrl(m_plugin->config().precompiledHeaderFile());
         m_clang_config->commandLineParams->setPlainText(m_plugin->config().clangParams());
+        pchHeaderChanged(m_plugin->config().precompiledHeaderFile());
         tab->addTab(clang_tab, i18n("Clang Settings"));
-        // Connect open PCH file button
+        // Monitor changes to PCH file
+        connect(
+            m_clang_config->pchHeader
+          , SIGNAL(textChanged(const QString&))
+          , this
+          , SLOT(pchHeaderChanged(const QString&))
+          );
+        connect(
+            m_clang_config->pchHeader
+          , SIGNAL(urlSelected(const QUrl&))
+          , this
+          , SLOT(pchHeaderChanged(const QUrl&))
+          );
+        // Connect open and rebuild PCH file button
         connect(m_clang_config->openPchHeader, SIGNAL(clicked()), this, SLOT(openPCHHeaderFile()));
         connect(m_clang_config->rebuildPch, SIGNAL(clicked()), this, SLOT(rebuildPCH()));
     }
@@ -280,6 +294,18 @@ void IncludeHelperPluginConfigPage::rebuildPCH()
           );
 }
 
+void IncludeHelperPluginConfigPage::pchHeaderChanged(const QString& filename)
+{
+    const bool is_valid_pch_file = isValidPCHFile(filename);
+    m_clang_config->openPchHeader->setEnabled(is_valid_pch_file);
+    m_clang_config->rebuildPch->setEnabled(is_valid_pch_file);
+}
+
+void IncludeHelperPluginConfigPage::pchHeaderChanged(const QUrl& filename)
+{
+    pchHeaderChanged(filename.toLocalFile());
+}
+
 bool IncludeHelperPluginConfigPage::contains(const QString& dir, const KListWidget* list)
 {
     for (int i = 0; i < list->count(); ++i)
@@ -287,6 +313,12 @@ bool IncludeHelperPluginConfigPage::contains(const QString& dir, const KListWidg
             return true;
     return false;
 }
+
+bool IncludeHelperPluginConfigPage::isValidPCHFile(const QString& url)
+{
+    return isPresentAndReadable(url);
+}
+
 //END IncludeHelperPluginConfigPage
 }                                                           // namespace kate
 // kate: hl C++11/Qt4;

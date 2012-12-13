@@ -38,7 +38,9 @@
 # if (__GNUC__ >=4 && __GNUC_MINOR__ >= 5)
 #   pragma GCC pop_options
 # endif                                                     // (__GNUC__ >=4 && __GNUC_MINOR__ >= 5)
+# include <KTextEdit>
 # include <memory>
+# include <vector>
 
 namespace kate {
 class IncludeHelperPlugin;                                  // forward declaration
@@ -58,7 +60,7 @@ class ClangCodeCompletionModel
 
 public:
     /// Default constructor
-    ClangCodeCompletionModel(QObject*, IncludeHelperPlugin*);
+    ClangCodeCompletionModel(QObject*, IncludeHelperPlugin*, KTextEdit*);
 
     //BEGIN KTextEditor::CodeCompletionModel overrides
     /// Generate completions for given range
@@ -67,20 +69,46 @@ public:
     QVariant data(const QModelIndex&, int) const;
     int columnCount(const QModelIndex&) const;
     int rowCount(const QModelIndex& parent) const;
+    /// Make an index of a parent node
     QModelIndex parent(const QModelIndex& index) const;
     QModelIndex index(int row, int column, const QModelIndex& parent) const;
     bool shouldStartCompletion(KTextEditor::View*, const QString&, bool, const KTextEditor::Cursor&);
+    void executeCompletionItem2(KTextEditor::Document*, const KTextEditor::Range&, const QModelIndex&) const;
     //END KTextEditor::CodeCompletionModel overrides
 
-private:
-    typedef QList<ClangCodeCompletionItem> completions_type;
+private Q_SLOTS:
+    void invalidateTranslationUnit();
 
+private:
+    struct GroupInfo
+    {
+        unsigned m_priority;
+        std::vector<ClangCodeCompletionItem> m_completions;
+
+        GroupInfo() : m_priority(0) {}                      ///< Default ctor
+        GroupInfo(GroupInfo&&) = default;                   ///< Default move ctor
+        GroupInfo& operator=(GroupInfo&&) = default;        ///< Default move-assign operator
+    };
+    typedef std::vector<std::pair<QString, GroupInfo>> groups_list_type;
+
+    /// Possible levels in a completion hierarchy
+    /// \note Leaf nodes will contain an index to a group
+    /// (and yes, it is supposed that gorups count is less than \c 0xcafe)
+    enum Level
+    {
+        GROUP = 0xcafe                                      ///< Group node (level 1)
+    };
+
+    /// Helper function to collect unsaved files from current editor
     TranslationUnit::unsaved_files_list_type makeUnsavedFilesList(KTextEditor::Document*);
 
     IncludeHelperPlugin* m_plugin;
+    KTextEdit* m_diagnostic_text;
+    KTextEditor::View* m_current_view;
     std::unique_ptr<TranslationUnit> m_unit;
-    completions_type m_completions;
+    groups_list_type m_groups;                              ///< Level one nodes
 };
+
 
 }                                                           // namespace kate
 #endif                                                      // __SRC__CLANG_CODE_COMPLETION_MODEL_H__

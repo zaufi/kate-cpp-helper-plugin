@@ -57,8 +57,40 @@ QVariant ClangCodeCompletionItem::data(const QModelIndex& index, const int role)
                     result = m_text;
                     break;
                 case KTextEditor::CodeCompletionModel::Prefix:
-                    result = renderPlaceholders(m_before);
+                {
+                    auto prefix = renderPlaceholders(m_before);
+                    if (prefix.isEmpty())
+                    {
+                        switch (m_kind)
+                        {
+                            case CXCursor_TypedefDecl:
+                                prefix = "typedef";
+                                break;
+                            case CXCursor_ClassDecl:
+                                prefix = "class";
+                                break;
+                            case CXCursor_ClassTemplate:
+                                prefix = "template class";
+                                break;
+                            case CXCursor_StructDecl:
+                                prefix = "struct";
+                                break;
+                            case CXCursor_EnumDecl:
+                                prefix = "enum";
+                                break;
+                            case CXCursor_Namespace:
+                                prefix = "namespace";
+                                break;
+                            case CXCursor_UnionDecl:
+                                prefix = "union";
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+                    result = prefix;
                     break;
+                }
                 case KTextEditor::CodeCompletionModel::Postfix:
                     break;
                 case KTextEditor::CodeCompletionModel::Arguments:
@@ -134,10 +166,10 @@ const std::map<
     // Enum
   , {CXCursor_EnumDecl, KTextEditor::CodeCompletionModel::Enum}
     // Function
-  , {CXCursor_FunctionDecl, KTextEditor::CodeCompletionModel::Function}
   , {CXCursor_CXXMethod, KTextEditor::CodeCompletionModel::Function}
-  , {CXCursor_Destructor, KTextEditor::CodeCompletionModel::Function}
   , {CXCursor_ConversionFunction, KTextEditor::CodeCompletionModel::Function}
+  , {CXCursor_Destructor, KTextEditor::CodeCompletionModel::Function}
+  , {CXCursor_FunctionDecl, KTextEditor::CodeCompletionModel::Function}
   , {CXCursor_FunctionTemplate, KTextEditor::CodeCompletionModel::Function}
   , {CXCursor_MemberRef, KTextEditor::CodeCompletionModel::Function}
   , {CXCursor_OverloadedDeclRef, KTextEditor::CodeCompletionModel::Function}
@@ -159,6 +191,31 @@ KTextEditor::CodeCompletionModel::CompletionProperty ClangCodeCompletionItem::co
     if (it != std::end(CURSOR_PREPERTY_MAP))
         return it->second;
     return KTextEditor::CodeCompletionModel::NoProperty;
+}
+
+QPair<QString, int> ClangCodeCompletionItem::executeCompletion() const
+{
+    auto result = m_text;
+    int pos = -1;
+    switch (m_kind)
+    {
+        case CXCursor_ClassTemplate:
+            result += "<>";
+            pos = -2;
+            break;
+        case CXCursor_CXXMethod:
+        case CXCursor_ConversionFunction:
+        case CXCursor_Destructor:
+        case CXCursor_FunctionDecl:
+        case CXCursor_FunctionTemplate:
+        case CXCursor_MemberRef:
+        case CXCursor_OverloadedDeclRef:
+            result += "()";
+            pos = -2;
+        default:
+            break;
+    }
+    return qMakePair(result, result.length() + pos + 1);
 }
 
 }                                                           // namespace kate

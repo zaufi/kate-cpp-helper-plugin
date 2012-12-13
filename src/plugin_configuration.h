@@ -91,6 +91,7 @@ Q_SIGNALS:
     void sessionDirsChanged();
     void systemDirsChanged();
     void precompiledHeaderFileChanged();
+    void clangOptionsChanged();
 
 private:
     QStringList m_system_dirs;

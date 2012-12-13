@@ -93,6 +93,11 @@ public:
     void storeTo(const KUrl&);
     void reparse();
 
+    const QString& getLastDiagnostic() const
+    {
+        return m_last_diagnostic_text;
+    }
+
     static unsigned defaultPCHParseOptions()
     {
         return CXTranslationUnit_Incomplete | CXTranslationUnit_PrecompiledPreamble;
@@ -104,11 +109,13 @@ public:
 
 private:
     void showDiagnostic();
+    static QString makeParentText(CXCompletionString);
 
     std::vector<std::pair<QByteArray, QByteArray>> m_unsaved_files_utf8;
     std::vector<CXUnsavedFile> m_unsaved_files;
     QByteArray m_filename;
     CXTranslationUnit m_unit;
+    QString m_last_diagnostic_text;
 };
 
 struct TranslationUnit::Exception::CompletionFailure : public TranslationUnit::Exception

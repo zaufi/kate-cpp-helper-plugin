@@ -38,6 +38,7 @@
 #include <KPassivePopup>
 #include <QtGui/QApplication>
 #include <QtGui/QClipboard>
+#include <QtGui/QKeyEvent>
 #include <QtCore/QFileInfo>
 #include <QtCore/QDirIterator>
 #include <cassert>
@@ -47,8 +48,10 @@ const QStringList HDR_EXTENSIONS = QStringList() << "h" << "hh" << "hpp" << "hxx
 const QStringList SRC_EXTENSIONS = QStringList() << "c" << "cc" << "cpp" << "cxx" << "C" << "inl";
 }                                                           // anonymous namespace
 
-
 //BEGIN IncludeHelperPluginView
+/**
+ * \note Instances of this class created once per main window
+ */
 IncludeHelperPluginView::IncludeHelperPluginView(
     Kate::MainWindow* mw
   , const KComponentData& data
@@ -60,6 +63,15 @@ IncludeHelperPluginView::IncludeHelperPluginView(
   , m_open_header(actionCollection()->addAction("file_open_included_header"))
   , m_copy_include(actionCollection()->addAction("edit_copy_include"))
   , m_switch(actionCollection()->addAction("file_open_switch_iface_impl"))
+  , m_tool_view(
+        mw->createToolView(
+            "kate_private_plugin_katecppplugin"
+          , Kate::MainWindow::Bottom
+          , SmallIcon("source-cpp11")
+          , i18n("Completion Diagnostic")
+          )
+      )
+  , m_diagnostic_text(new KTextEdit(m_tool_view.get()))
 {
     m_open_header->setText(i18n("Open Header Under Cursor"));
     m_open_header->setShortcut(QKeySequence(Qt::Key_F10));
@@ -85,10 +97,18 @@ IncludeHelperPluginView::IncludeHelperPluginView(
     // mime-type of the current document, so we have to subscribe
     // to view changes...
     connect(mainWindow(), SIGNAL(viewChanged()), this, SLOT(viewChanged()));
+
+    // Setup toolview
+    m_diagnostic_text->setCheckSpellingEnabled(false);
+    m_diagnostic_text->setReadOnly(true);
+    m_diagnostic_text->setFontFamily("monospace");
+    m_tool_view->installEventFilter(this);
+
     mainWindow()->guiFactory()->addClient(this);
 }
 
-IncludeHelperPluginView::~IncludeHelperPluginView() {
+IncludeHelperPluginView::~IncludeHelperPluginView()
+{
     mainWindow()->guiFactory()->removeClient(this);
 }
 
@@ -258,7 +278,7 @@ void IncludeHelperPluginView::switchIfaceImpl()
                     QDirIterator dir_it(
                         dir
                     , filters
-                    , QDir::Files|QDir::NoDotAndDotDot|QDir::Readable|QDir::CaseSensitive
+                    , QDir::Files | QDir::NoDotAndDotDot | QDir::Readable | QDir::CaseSensitive
                     )
                 ; dir_it.hasNext()
                 ;
@@ -531,7 +551,7 @@ void IncludeHelperPluginView::viewCreated(KTextEditor::View* view)
 
             kDebug() << "C/C++ source: register clang based code completer";
             // Enable semantic C++ code completions
-            cc_iface->registerCompletionModel(new ClangCodeCompletionModel(view, m_plugin));
+            cc_iface->registerCompletionModel(new ClangCodeCompletionModel(view, m_plugin, m_diagnostic_text));
         }
     }
     // Scan document for #include...
@@ -552,18 +572,20 @@ void IncludeHelperPluginView::viewCreated(KTextEditor::View* view)
       );
 }
 
-#if 0
-/// \todo Do we really need this?
-void IncludeHelperPluginView::textChanged(
-    KTextEditor::Document* doc
-    , const KTextEditor::Range& /*old_range*/
-    , const QString& old_text
-    , const KTextEditor::Range& new_range
-    )
+bool IncludeHelperPluginView::eventFilter(QObject* obj, QEvent* event)
 {
-    kDebug() << doc << " change text: new=" << doc->text(new_range) << ", " << old_text;
+    if (event->type() == QEvent::KeyPress)
+    {
+        QKeyEvent* ke = static_cast<QKeyEvent*>(event);
+        if ((obj == m_tool_view.get()) && (ke->key() == Qt::Key_Escape))
+        {
+            mainWindow()->hideToolView(m_tool_view.get());
+            event->accept();
+            return true;
+        }
+    }
+    return QObject::eventFilter(obj, event);
 }
-#endif
 
 KTextEditor::Range IncludeHelperPluginView::currentWord() const
 {

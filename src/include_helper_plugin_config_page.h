@@ -71,9 +71,12 @@ private Q_SLOTS:
     void moveSessionDirDown();
     void openPCHHeaderFile();                               ///< Open configured PCH header
     void rebuildPCH();                                      ///< Rebuild a PCH file from configured header
+    void pchHeaderChanged(const QString&);
+    void pchHeaderChanged(const QUrl&);
 
 private:
     bool contains(const QString&, const KListWidget*);      ///< Check if directories list contains given item
+    bool isValidPCHFile(const QString&);
 
     IncludeHelperPlugin* m_plugin;                          ///< Parent plugin
     Ui_PerSessionSettingsConfigWidget* const m_pss_config;
