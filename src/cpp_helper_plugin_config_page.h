@@ -49,7 +49,7 @@ public:
     explicit CppHelperPluginConfigPage(QWidget* = 0, CppHelperPlugin* = 0);
     virtual ~CppHelperPluginConfigPage() {}
 
-    /// \name PluginConfigPage interface implementation
+    /// \name \c Kate::PluginConfigPage interface implementation
     //@{
     void apply();
     void reset();
@@ -76,9 +76,8 @@ private Q_SLOTS:
 
 private:
     bool contains(const QString&, const KListWidget*);      ///< Check if directories list contains given item
-    bool isValidPCHFile(const QString&);
 
-    CppHelperPlugin* m_plugin;                          ///< Parent plugin
+    CppHelperPlugin* m_plugin;                              ///< Parent plugin
     Ui_PerSessionSettingsConfigWidget* const m_pss_config;
     Ui_CLangOptionsWidget* const m_clang_config;
     Ui_PathListConfigWidget* const m_system_list;

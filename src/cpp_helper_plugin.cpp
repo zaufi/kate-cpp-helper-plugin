@@ -84,9 +84,31 @@ CppHelperPlugin::~CppHelperPlugin()
     kDebug() << "Unloading...";
 }
 
-Kate::PluginView* CppHelperPlugin::createView(Kate::MainWindow* parent)
+//BEGIN PluginConfigPageInterface interface implementation
+uint CppHelperPlugin::configPages() const
 {
-    return new CppHelperPluginView(parent, CppHelperPluginFactory::componentData(), this);
+    return 1;
+}
+
+QString CppHelperPlugin::configPageName(uint number) const
+{
+    Q_UNUSED(number)
+    assert("This plugin have the only configuration page" && number == 0);
+    return i18n("C++ Helper");
+}
+
+QString CppHelperPlugin::configPageFullName(uint number) const
+{
+    Q_UNUSED(number)
+    assert("This plugin have the only configuration page" && number == 0);
+    return i18n("C++ Helper Settings");
+}
+
+KIcon CppHelperPlugin::configPageIcon(uint number) const
+{
+    Q_UNUSED(number)
+    assert("This plugin have the only configuration page" && number == 0);
+    return KIcon("text-x-c++hdr");
 }
 
 Kate::PluginConfigPage* CppHelperPlugin::configPage(uint number, QWidget* parent, const char*)
@@ -96,6 +118,23 @@ Kate::PluginConfigPage* CppHelperPlugin::configPage(uint number, QWidget* parent
         return 0;
     return new CppHelperPluginConfigPage(parent, this);
 }
+//END PluginConfigPageInterface interface implementation
+
+//BEGIN Kate::Plugin interface implementation
+void CppHelperPlugin::readSessionConfig(KConfigBase* cfg, const QString& groupPrefix)
+{
+    config().readSessionConfig(cfg, groupPrefix);
+    buildPCHIfAbsent();
+}
+void CppHelperPlugin::writeSessionConfig(KConfigBase* cfg, const QString& groupPrefix)
+{
+    config().writeSessionConfig(cfg, groupPrefix);
+}
+Kate::PluginView* CppHelperPlugin::createView(Kate::MainWindow* parent)
+{
+    return new CppHelperPluginView(parent, CppHelperPluginFactory::componentData(), this);
+}
+//END Kate::Plugin interface implementation
 
 void CppHelperPlugin::updateDirWatcher(const QString& path)
 {

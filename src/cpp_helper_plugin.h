@@ -58,9 +58,6 @@ public:
     explicit CppHelperPlugin(QObject* = 0, const QList<QVariant>& = QList<QVariant>());
     virtual ~CppHelperPlugin();
 
-    /// Create a new view of this plugin for the given main window
-    Kate::PluginView* createView(Kate::MainWindow*);
-
     /// \name Accessors
     //@{
     PluginConfiguration& config();
@@ -70,7 +67,7 @@ public:
     CXIndex index() const;
     //@}
 
-    /// \name PluginConfigPageInterface interface implementation
+    /// \name \c Kate::PluginConfigPageInterface interface implementation
     //@{
     /// Get number of configuration pages for this plugin
     uint configPages() const;
@@ -82,10 +79,12 @@ public:
     KIcon configPageIcon(uint = 0) const;
     //@}
 
-    /// \name Plugin interface implementation
+    /// \name \c Kate::Plugin interface implementation
     //@{
     void readSessionConfig(KConfigBase*, const QString&);
     void writeSessionConfig(KConfigBase*, const QString&);
+    /// Create a new view of this plugin for the given main window
+    Kate::PluginView* createView(Kate::MainWindow*);
     //@}
 
 public Q_SLOTS:
@@ -134,39 +133,6 @@ inline auto CppHelperPlugin::managed_docs() -> doc_info_type&
 inline CXIndex CppHelperPlugin::index() const
 {
     return m_index;
-}
-
-inline uint CppHelperPlugin::configPages() const
-{
-    return 1;
-}
-inline QString CppHelperPlugin::configPageName(uint number) const
-{
-    Q_UNUSED(number)
-    assert("This plugin have the only configuration page" && number == 0);
-    return "Include Helper";
-}
-inline QString CppHelperPlugin::configPageFullName(uint number) const
-{
-    Q_UNUSED(number)
-    assert("This plugin have the only configuration page" && number == 0);
-    return "Inlcude Helper Settings";
-}
-inline KIcon CppHelperPlugin::configPageIcon(uint number) const
-{
-    Q_UNUSED(number)
-    assert("This plugin have the only configuration page" && number == 0);
-    return KIcon("text-x-c++hdr");
-}
-
-inline void CppHelperPlugin::readSessionConfig(KConfigBase* cfg, const QString& groupPrefix)
-{
-    config().readSessionConfig(cfg, groupPrefix);
-    buildPCHIfAbsent();
-}
-inline void CppHelperPlugin::writeSessionConfig(KConfigBase* cfg, const QString& groupPrefix)
-{
-    config().writeSessionConfig(cfg, groupPrefix);
 }
 
 }                                                           // namespace kate

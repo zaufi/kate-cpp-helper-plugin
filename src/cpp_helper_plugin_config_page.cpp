@@ -296,7 +296,9 @@ void CppHelperPluginConfigPage::rebuildPCH()
 
 void CppHelperPluginConfigPage::pchHeaderChanged(const QString& filename)
 {
-    const bool is_valid_pch_file = isValidPCHFile(filename);
+    const bool is_valid_pch_file = isPresentAndReadable(filename);
+    kDebug() << "Check if PCH header file present and readable: "
+      << filename << ", result=" << is_valid_pch_file;
     m_clang_config->openPchHeader->setEnabled(is_valid_pch_file);
     m_clang_config->rebuildPch->setEnabled(is_valid_pch_file);
 }
@@ -312,11 +314,6 @@ bool CppHelperPluginConfigPage::contains(const QString& dir, const KListWidget* 
         if (list->item(i)->text() == dir)
             return true;
     return false;
-}
-
-bool CppHelperPluginConfigPage::isValidPCHFile(const QString& url)
-{
-    return isPresentAndReadable(url);
 }
 
 //END CppHelperPluginConfigPage
