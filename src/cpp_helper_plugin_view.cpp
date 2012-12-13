@@ -662,7 +662,7 @@ ChooseFromListDialog::ChooseFromListDialog(QWidget* parent)
 
 QString ChooseFromListDialog::selectHeaderToOpen(QWidget* parent, const QStringList& strings)
 {
-    KConfigGroup gcg(KGlobal::config(), "IncludeHelperChooserDialog");
+    KConfigGroup gcg(KGlobal::config(), "CppHelperChooserDialog");
     ChooseFromListDialog dialog(parent);
     dialog.m_list->addItems(strings);                       // append gien items to the list
     if (!strings.isEmpty())                                 // if strings list isn't empty
