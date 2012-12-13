@@ -7,12 +7,12 @@ Information
 This plugin intended to simplify the hard life of C/C++ programmers who use Kate to write code :-)
 
 First of all, I tired to use the file browser to open mine (or system) header files. With version
-0.1 of the plugin one may press F10 to open a header file that has its name under cursor.
+0.1 of the plugin one may press `F10` to open a header file that has its name under cursor.
 Actually, you are not even required to move a cursor to a file name if the current line starts with
 `#include` directive...
 
 Later `#include` autocompletion was implemented to help you to type (long) paths to header files used
-in your sources. Here is also few little things:
+in your sources. Here is also few little cute things:
 
 * `Edit->Copy #include to Clipboard` to add `#include <current-file.h>` to a clipboard
 * `File->Open Header/Implementation` a replacement for official _Open Header_ plugin with few enhancments
@@ -104,9 +104,9 @@ For cmake based projects I've got a one helper macro to produce a PCH.h file:
         PCH_FILE ${CMAKE_BINARY_DIR}/most_included_files.h
       )
 
-this will produce the `most_included_files.h` header file with `#include` directives of all used headers
-in a project. This file can be configured as PCH header file in plugins' configuration dialog. It will be
-_precompiled_ and used by code completer.
+this will add a target (`update-pch-header`) to produce the `most_included_files.h` header file
+with `#include` directives of all used headers in a project. This file can be configured as PCH header
+file in plugins' configuration dialog. It will be _precompiled_ and used by code completer.
 
 
 Some (other) important notes
