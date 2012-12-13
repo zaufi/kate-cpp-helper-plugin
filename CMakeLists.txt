@@ -10,10 +10,10 @@ cmake_policy(SET CMP0004 OLD)
 #---------------------------------------------------------
 # Section: Init cmake
 #---------------------------------------------------------
-project(KateIncludeHelperPlugin C CXX)
+project(KateCppHelperPlugin C CXX)
 
 set(VERSION_MAJOR 0)
-set(VERSION_MINOR 5)
+set(VERSION_MINOR 7)
 set(VERSION_PATCH 0)
 set(VERSION_STRING ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/modules" ${CMAKE_MODULE_PATH})

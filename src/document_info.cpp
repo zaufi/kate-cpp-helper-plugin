@@ -6,12 +6,12 @@
  * \date Sun Feb 12 06:05:45 MSK 2012 -- Initial design
  */
 /*
- *  * KateIncludeHelperPlugin is free software: you can redistribute it and/or modify it
+ *  * KateCppHelperPlugin is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
  * Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * KateIncludeHelperPlugin is distributed in the hope that it will be useful, but
+ * KateCppHelperPlugin is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU General Public License for more details.
@@ -22,7 +22,7 @@
 
 // Project specific includes
 #include <src/document_info.h>
-#include <src/include_helper_plugin.h>
+#include <src/cpp_helper_plugin.h>
 #include <src/utils.h>
 
 // Standard includes
@@ -33,7 +33,7 @@
 
 namespace kate {
 
-DocumentInfo::DocumentInfo(IncludeHelperPlugin* p)
+DocumentInfo::DocumentInfo(CppHelperPlugin* p)
   : m_plugin(p)
 {
     // Subscribe self to configuration changes

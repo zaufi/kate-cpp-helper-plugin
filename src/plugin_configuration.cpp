@@ -6,12 +6,12 @@
  * \date Fri Nov 23 11:25:46 MSK 2012 -- Initial design
  */
 /*
- * KateIncludeHelperPlugin is free software: you can redistribute it and/or modify it
+ * KateCppHelperPlugin is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
  * Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  * 
- * KateIncludeHelperPlugin is distributed in the hope that it will be useful, but
+ * KateCppHelperPlugin is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU General Public License for more details.
@@ -31,13 +31,25 @@
 #include <KSharedConfigPtr>
 #include <cassert>
 
-namespace kate {
+namespace kate { namespace {
+const QString GLOBAL_CONFIG_GROUP_NAME = "CppHelper";
+const QString SESSION_GROUP_SUFFIX = ":cpp-helper";
+const QString CONFIGURED_DIRS_ITEM = "ConfiguredDirs";
+const QString PCH_FILE_ITEM = "PCHFile";
+const QString CLANG_CMDLINE_PARAMS_ITEM = "ClangCmdLineParams";
+const QString USE_LT_GT_ITEM = "UseLtGt";
+const QString USE_CWD_ITEM = "UseCwd";
+const QString OPEN_FIRST_INCLUDE_ITEM = "OpenFirstInclude";
+const QString USE_WILDCARD_SEARCH_ITEM = "UseWildcardSearch";
+const QString MONITOR_DIRS_ITEM = "MonitorDirs";
+}                                                           // anonymous namespace
+
 void PluginConfiguration::readConfig()
 {
     // Read global config
     kDebug() << "Reading global config: " << KGlobal::config()->name();
-    KConfigGroup gcg(KGlobal::config(), "IncludeHelper");
-    QStringList dirs = gcg.readPathEntry("ConfiguredDirs", QStringList());
+    KConfigGroup gcg(KGlobal::config(), GLOBAL_CONFIG_GROUP_NAME);
+    QStringList dirs = gcg.readPathEntry(CONFIGURED_DIRS_ITEM, QStringList());
     kDebug() << "Got global configured include path list: " << dirs;
     m_system_dirs = dirs;
     //
@@ -51,15 +63,15 @@ void PluginConfiguration::readSessionConfig(KConfigBase* config, const QString& 
     kDebug() << "Reading session config: " << groupPrefix;
     // Read session config
     /// \todo Rename it!
-    KConfigGroup scg(config, groupPrefix + ":include-helper");
-    m_session_dirs = scg.readPathEntry("ConfiguredDirs", QStringList());
-    m_pch_header= scg.readPathEntry("PCHFile", QString());
-    m_clang_params = scg.readPathEntry("ClangCmdLineParams", QString());
-    m_use_ltgt = scg.readEntry("UseLtGt", QVariant(false)).toBool();
-    m_use_cwd = scg.readEntry("UseCwd", QVariant(false)).toBool();
-    m_open_first = scg.readEntry("OpenFirstInclude", QVariant(false)).toBool();
-    m_use_wildcard_search = scg.readEntry("UseWildcardSearch", QVariant(false)).toBool();
-    m_monitor_flags = scg.readEntry("MonitorDirs", QVariant(0)).toInt();
+    KConfigGroup scg(config, groupPrefix + SESSION_GROUP_SUFFIX);
+    m_session_dirs = scg.readPathEntry(CONFIGURED_DIRS_ITEM, QStringList());
+    m_pch_header= scg.readPathEntry(PCH_FILE_ITEM, QString());
+    m_clang_params = scg.readPathEntry(CLANG_CMDLINE_PARAMS_ITEM, QString());
+    m_use_ltgt = scg.readEntry(USE_LT_GT_ITEM, QVariant(false)).toBool();
+    m_use_cwd = scg.readEntry(USE_CWD_ITEM, QVariant(false)).toBool();
+    m_open_first = scg.readEntry(OPEN_FIRST_INCLUDE_ITEM, QVariant(false)).toBool();
+    m_use_wildcard_search = scg.readEntry(USE_WILDCARD_SEARCH_ITEM, QVariant(false)).toBool();
+    m_monitor_flags = scg.readEntry(MONITOR_DIRS_ITEM, QVariant(0)).toInt();
     m_config_dirty = false;
 
     kDebug() << "Got per session configured include path list: " << m_session_dirs;
@@ -84,20 +96,20 @@ void PluginConfiguration::writeSessionConfig(KConfigBase* config, const QString&
 
     // Write session config
     kDebug() << "Write per session configured include path list: " << m_session_dirs;
-    KConfigGroup scg(config, groupPrefix + ":include-helper");
-    scg.writePathEntry("ConfiguredDirs", m_session_dirs);
-    scg.writeEntry("PCHFile", m_pch_header);
-    scg.writeEntry("ClangCmdLineParams", m_clang_params);
-    scg.writeEntry("UseLtGt", QVariant(m_use_ltgt));
-    scg.writeEntry("UseCwd", QVariant(m_use_cwd));
-    scg.writeEntry("OpenFirstInclude", QVariant(m_open_first));
-    scg.writeEntry("UseWildcardSearch", QVariant(m_use_wildcard_search));
-    scg.writeEntry("MonitorDirs", QVariant(m_monitor_flags));
+    KConfigGroup scg(config, groupPrefix + SESSION_GROUP_SUFFIX);
+    scg.writePathEntry(CONFIGURED_DIRS_ITEM, m_session_dirs);
+    scg.writeEntry(PCH_FILE_ITEM, m_pch_header);
+    scg.writeEntry(CLANG_CMDLINE_PARAMS_ITEM, m_clang_params);
+    scg.writeEntry(USE_LT_GT_ITEM, QVariant(m_use_ltgt));
+    scg.writeEntry(USE_CWD_ITEM, QVariant(m_use_cwd));
+    scg.writeEntry(OPEN_FIRST_INCLUDE_ITEM, QVariant(m_open_first));
+    scg.writeEntry(USE_WILDCARD_SEARCH_ITEM, QVariant(m_use_wildcard_search));
+    scg.writeEntry(MONITOR_DIRS_ITEM, QVariant(m_monitor_flags));
     scg.sync();
     // Write global config
     kDebug() << "Write global configured include path list: " << m_system_dirs;
-    KConfigGroup gcg(KGlobal::config(), "IncludeHelper");
-    gcg.writePathEntry("ConfiguredDirs", m_system_dirs);
+    KConfigGroup gcg(KGlobal::config(), GLOBAL_CONFIG_GROUP_NAME);
+    gcg.writePathEntry(CONFIGURED_DIRS_ITEM, m_system_dirs);
     gcg.sync();
     m_config_dirty = false;
 }

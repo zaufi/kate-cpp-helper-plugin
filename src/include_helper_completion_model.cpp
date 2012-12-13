@@ -1,17 +1,17 @@
 /**
  * \file
  *
- * \brief Class \c kate::IncludeHelperPluginCompletionModel (implementation)
+ * \brief Class \c kate::IncludeHelperCompletionModel (implementation)
  *
  * \date Mon Feb  6 06:12:41 MSK 2012 -- Initial design
  */
 /*
- * KateIncludeHelperPlugin is free software: you can redistribute it and/or modify it
+ * KateCppHelperPlugin is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
  * Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * KateIncludeHelperPlugin is distributed in the hope that it will be useful, but
+ * KateCppHelperPlugin is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU General Public License for more details.
@@ -21,8 +21,8 @@
  */
 
 // Project specific includes
-#include <src/include_helper_plugin_completion_model.h>
-#include <src/include_helper_plugin.h>
+#include <src/include_helper_completion_model.h>
+#include <src/cpp_helper_plugin.h>
 #include <src/utils.h>
 
 // Standard includes
@@ -31,10 +31,10 @@
 #include <KTextEditor/View>
 
 namespace kate {
-//BEGIN IncludeHelperPluginCompletionModel
-IncludeHelperPluginCompletionModel::IncludeHelperPluginCompletionModel(
+//BEGIN IncludeHelperCompletionModel
+IncludeHelperCompletionModel::IncludeHelperCompletionModel(
     QObject* parent
-  , IncludeHelperPlugin* plugin
+  , CppHelperPlugin* plugin
   )
   : KTextEditor::CodeCompletionModel2(parent)
   , m_plugin(plugin)
@@ -44,7 +44,7 @@ IncludeHelperPluginCompletionModel::IncludeHelperPluginCompletionModel(
 }
 
 /// \todo More effective implementation could be here!
-QModelIndex IncludeHelperPluginCompletionModel::index(int row, int column, const QModelIndex& parent) const
+QModelIndex IncludeHelperCompletionModel::index(int row, int column, const QModelIndex& parent) const
 {
     // kDebug() << "row=" << row << ", col=" << column << ", p=" << parent.isValid();
     if (!parent.isValid())
@@ -69,7 +69,7 @@ QModelIndex IncludeHelperPluginCompletionModel::index(int row, int column, const
  * in a result of \c parseIncludeDirective() not empty -- i.e. there is some file present)
  * and cursor placed withing that range... despite of completeness of the whole line.
  */
-bool IncludeHelperPluginCompletionModel::shouldStartCompletion(
+bool IncludeHelperCompletionModel::shouldStartCompletion(
     KTextEditor::View* view
   , const QString& inserted_text
   , bool user_insertion
@@ -99,7 +99,7 @@ bool IncludeHelperPluginCompletionModel::shouldStartCompletion(
  * We have to stop \c #include completion when current line would parsed well
  * (i.e. contains complete \c #include expression) or have no \c #include at all.
  */
-bool IncludeHelperPluginCompletionModel::shouldAbortCompletion(
+bool IncludeHelperCompletionModel::shouldAbortCompletion(
     KTextEditor::View* view
   , const KTextEditor::Range& range
   , const QString& current_completion
@@ -121,7 +121,7 @@ bool IncludeHelperPluginCompletionModel::shouldAbortCompletion(
     return need_abort;
 }
 
-void IncludeHelperPluginCompletionModel::completionInvoked(
+void IncludeHelperCompletionModel::completionInvoked(
     KTextEditor::View* view
   , const KTextEditor::Range& range
   , InvocationType
@@ -146,7 +146,7 @@ void IncludeHelperPluginCompletionModel::completionInvoked(
     }
 }
 
-void IncludeHelperPluginCompletionModel::updateCompletionList(const QString& start, const bool only_local)
+void IncludeHelperCompletionModel::updateCompletionList(const QString& start, const bool only_local)
 {
     kDebug() << "IncludeHelper: Form completion list for " << start;
     beginResetModel();
@@ -171,7 +171,7 @@ void IncludeHelperPluginCompletionModel::updateCompletionList(const QString& sta
     endResetModel();
 }
 
-QVariant IncludeHelperPluginCompletionModel::data(const QModelIndex& index, int role) const
+QVariant IncludeHelperCompletionModel::data(const QModelIndex& index, int role) const
 {
     if (!index.isValid() || !m_should_complete)
         return QVariant();
@@ -241,7 +241,7 @@ QVariant IncludeHelperPluginCompletionModel::data(const QModelIndex& index, int 
     return QVariant();
 }
 
-void IncludeHelperPluginCompletionModel::executeCompletionItem2(
+void IncludeHelperCompletionModel::executeCompletionItem2(
     KTextEditor::Document* document
   , const KTextEditor::Range& word
   , const QModelIndex& index
@@ -264,7 +264,7 @@ void IncludeHelperPluginCompletionModel::executeCompletionItem2(
     document->replaceText(word, p);
 }
 
-KTextEditor::Range IncludeHelperPluginCompletionModel::completionRange(
+KTextEditor::Range IncludeHelperCompletionModel::completionRange(
     KTextEditor::View* view
   , const KTextEditor::Cursor& position
   )
@@ -294,6 +294,6 @@ KTextEditor::Range IncludeHelperPluginCompletionModel::completionRange(
     return KTextEditor::CodeCompletionModelControllerInterface3::completionRange(view, position);
 #endif
 }
-//END IncludeHelperPluginCompletionModel
+//END IncludeHelperCompletionModel
 }                                                           // namespace kate
 // kate: hl C++11/Qt4;

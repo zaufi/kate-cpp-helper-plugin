@@ -1,17 +1,17 @@
 /**
  * \file
  *
- * \brief Class \c kate::IncludeHelperPluginView (implementation)
+ * \brief Class \c kate::CppHelperPluginView (implementation)
  *
  * \date Mon Feb  6 06:17:32 MSK 2012 -- Initial design
  */
 /*
- * KateIncludeHelperPlugin is free software: you can redistribute it and/or modify it
+ * KateCppHelperPlugin is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
  * Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * KateIncludeHelperPlugin is distributed in the hope that it will be useful, but
+ * KateCppHelperPlugin is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU General Public License for more details.
@@ -21,10 +21,10 @@
  */
 
 // Project specific includes
-#include <src/include_helper_plugin_view.h>
+#include <src/cpp_helper_plugin_view.h>
 #include <src/clang_code_completion_model.h>
-#include <src/include_helper_plugin_completion_model.h>
-#include <src/include_helper_plugin.h>
+#include <src/include_helper_completion_model.h>
+#include <src/cpp_helper_plugin.h>
 #include <src/utils.h>
 
 // Standard includes
@@ -48,14 +48,14 @@ const QStringList HDR_EXTENSIONS = QStringList() << "h" << "hh" << "hpp" << "hxx
 const QStringList SRC_EXTENSIONS = QStringList() << "c" << "cc" << "cpp" << "cxx" << "C" << "inl";
 }                                                           // anonymous namespace
 
-//BEGIN IncludeHelperPluginView
+//BEGIN CppHelperPluginView
 /**
  * \note Instances of this class created once per main window
  */
-IncludeHelperPluginView::IncludeHelperPluginView(
+CppHelperPluginView::CppHelperPluginView(
     Kate::MainWindow* mw
   , const KComponentData& data
-  , IncludeHelperPlugin* plugin
+  , CppHelperPlugin* plugin
   )
   : Kate::PluginView(mw)
   , Kate::XMLGUIClient(data)
@@ -107,17 +107,17 @@ IncludeHelperPluginView::IncludeHelperPluginView(
     mainWindow()->guiFactory()->addClient(this);
 }
 
-IncludeHelperPluginView::~IncludeHelperPluginView()
+CppHelperPluginView::~CppHelperPluginView()
 {
     mainWindow()->guiFactory()->removeClient(this);
 }
 
-void IncludeHelperPluginView::readSessionConfig(KConfigBase*, const QString& groupPrefix)
+void CppHelperPluginView::readSessionConfig(KConfigBase*, const QString& groupPrefix)
 {
     kDebug() << "** VIEW **: Reading session config: " << groupPrefix;
 }
 
-void IncludeHelperPluginView::writeSessionConfig(KConfigBase*, const QString& groupPrefix)
+void CppHelperPluginView::writeSessionConfig(KConfigBase*, const QString& groupPrefix)
 {
     kDebug() << "** VIEW **: Writing session config: " << groupPrefix;
 }
@@ -159,7 +159,7 @@ void IncludeHelperPluginView::writeSessionConfig(KConfigBase*, const QString& gr
  *
  * \todo Validate for duplicates removal
  */
-void IncludeHelperPluginView::switchIfaceImpl()
+void CppHelperPluginView::switchIfaceImpl()
 {
     // Ok, trying case 1
     KTextEditor::Document* doc = mainWindow()->activeView()->document();
@@ -280,9 +280,8 @@ void IncludeHelperPluginView::switchIfaceImpl()
                     , filters
                     , QDir::Files | QDir::NoDotAndDotDot | QDir::Readable | QDir::CaseSensitive
                     )
-                ; dir_it.hasNext()
-                ;
-                )
+                  ; dir_it.hasNext()
+                  ;)
                 {
                     dir_it.next();
                     const QString& file = dir_it.fileInfo().absoluteFilePath();
@@ -320,7 +319,7 @@ void IncludeHelperPluginView::switchIfaceImpl()
     }
 }
 
-QStringList IncludeHelperPluginView::findCandidatesAt(
+QStringList CppHelperPluginView::findCandidatesAt(
     const QString& name
   , const QString& path
   , const QStringList& extensions
@@ -339,7 +338,7 @@ QStringList IncludeHelperPluginView::findCandidatesAt(
     return result;
 }
 
-void IncludeHelperPluginView::openHeader()
+void CppHelperPluginView::openHeader()
 {
     QStringList candidates;
     QString filename;
@@ -408,7 +407,7 @@ void IncludeHelperPluginView::openHeader()
         openFile(ChooseFromListDialog::selectHeaderToOpen(qobject_cast<QWidget*>(this), candidates));
 }
 
-QStringList IncludeHelperPluginView::findFileLocations(const QString& filename)
+QStringList CppHelperPluginView::findFileLocations(const QString& filename)
 {
     KTextEditor::Document* doc = mainWindow()->activeView()->document();
     // Try to find full filename to open
@@ -427,7 +426,7 @@ QStringList IncludeHelperPluginView::findFileLocations(const QString& filename)
 /**
  * \note This function assume that given file is really exists.
  */
-inline void IncludeHelperPluginView::openFile(const QString& file)
+inline void CppHelperPluginView::openFile(const QString& file)
 {
     if (file.isEmpty()) return;                             // Nothing to do if no file specified
     kDebug() << "Going to open " << file;
@@ -449,13 +448,13 @@ inline void IncludeHelperPluginView::openFile(const QString& file)
     }
 }
 
-inline void IncludeHelperPluginView::openFiles(const QStringList& files)
+inline void CppHelperPluginView::openFiles(const QStringList& files)
 {
     for (const QString& file : files)
         openFile(file);
 }
 
-void IncludeHelperPluginView::copyInclude()
+void CppHelperPluginView::copyInclude()
 {
     KTextEditor::View* kv = mainWindow()->activeView();
     if (!kv)
@@ -507,7 +506,7 @@ void IncludeHelperPluginView::copyInclude()
     }
 }
 
-void IncludeHelperPluginView::viewChanged()
+void CppHelperPluginView::viewChanged()
 {
     kDebug() << "update view?";
     KTextEditor::View* view = mainWindow()->activeView();
@@ -535,7 +534,7 @@ void IncludeHelperPluginView::viewChanged()
  * but highlighted as C++ the code below wouldn't work! Even more, after document gets
  * saved to disk completion still wouldn't work! That is definitely SUXX
  */
-void IncludeHelperPluginView::viewCreated(KTextEditor::View* view)
+void CppHelperPluginView::viewCreated(KTextEditor::View* view)
 {
     kDebug() << "view created";
     if (isCOrPPSource(view->document()->mimeType()))
@@ -546,7 +545,7 @@ void IncludeHelperPluginView::viewCreated(KTextEditor::View* view)
         {
             kDebug() << "C/C++ source: register #include completer";
             // Enable #include completions
-            cc_iface->registerCompletionModel(new IncludeHelperPluginCompletionModel(view, m_plugin));
+            cc_iface->registerCompletionModel(new IncludeHelperCompletionModel(view, m_plugin));
             cc_iface->setAutomaticInvocationEnabled(true);
 
             kDebug() << "C/C++ source: register clang based code completer";
@@ -572,7 +571,7 @@ void IncludeHelperPluginView::viewCreated(KTextEditor::View* view)
       );
 }
 
-bool IncludeHelperPluginView::eventFilter(QObject* obj, QEvent* event)
+bool CppHelperPluginView::eventFilter(QObject* obj, QEvent* event)
 {
     if (event->type() == QEvent::KeyPress)
     {
@@ -587,7 +586,7 @@ bool IncludeHelperPluginView::eventFilter(QObject* obj, QEvent* event)
     return QObject::eventFilter(obj, event);
 }
 
-KTextEditor::Range IncludeHelperPluginView::currentWord() const
+KTextEditor::Range CppHelperPluginView::currentWord() const
 {
     KTextEditor::Range result;                              // default range is empty
     KTextEditor::View* kv = mainWindow()->activeView();
@@ -644,7 +643,7 @@ KTextEditor::Range IncludeHelperPluginView::currentWord() const
 
     return KTextEditor::Range(line, start, line, end);
 }
-//END IncludeHelperPluginView
+//END CppHelperPluginView
 
 //BEGIN ChooseFromListDialog
 ChooseFromListDialog::ChooseFromListDialog(QWidget* parent)

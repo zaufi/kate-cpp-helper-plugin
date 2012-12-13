@@ -1,17 +1,17 @@
 /**
  * \file
  *
- * \brief Class \c kate::IncludeHelperPluginView (interface)
+ * \brief Class \c kate::CppHelperPluginView (interface)
  *
  * \date Mon Feb  6 06:17:32 MSK 2012 -- Initial design
  */
 /*
- * KateIncludeHelperPlugin is free software: you can redistribute it and/or modify it
+ * KateCppHelperPlugin is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
  * Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * KateIncludeHelperPlugin is distributed in the hope that it will be useful, but
+ * KateCppHelperPlugin is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU General Public License for more details.
@@ -35,7 +35,7 @@
 # include <memory>
 
 namespace kate {
-class IncludeHelperPlugin;                                  // forward declaration
+class CppHelperPlugin;                                  // forward declaration
 
 /**
  * \brief [Type brief class description here]
@@ -45,15 +45,15 @@ class IncludeHelperPlugin;                                  // forward declarati
  * \todo Add some suffix to slots
  *
  */
-class IncludeHelperPluginView
+class CppHelperPluginView
   : public Kate::PluginView
   , public Kate::XMLGUIClient
 {
     Q_OBJECT
 
 public:
-    IncludeHelperPluginView(Kate::MainWindow*, const KComponentData&, IncludeHelperPlugin*);
-    virtual ~IncludeHelperPluginView();
+    CppHelperPluginView(Kate::MainWindow*, const KComponentData&, CppHelperPlugin*);
+    virtual ~CppHelperPluginView();
 
     /// \name PluginView interface implementation
     //@{
@@ -67,14 +67,6 @@ private Q_SLOTS:
     void copyInclude();                                     ///< From #include directive w/ current file in the clipboard
     void viewChanged();
     void viewCreated(KTextEditor::View*);
-#if 0
-    void textChanged(
-        KTextEditor::Document*
-      , const KTextEditor::Range&
-      , const QString&
-      , const KTextEditor::Range&
-      );
-#endif
 
 private:
     /// Try to find file(s) w/ a given name+path and a list of possible extensions
@@ -86,7 +78,7 @@ private:
     void openFiles(const QStringList&);                     ///< Open documents for all URIs in a given list
     QStringList findFileLocations(const QString&);          ///< Get list of absolute paths to filename
 
-    IncludeHelperPlugin* m_plugin;                          ///< Parent plugin
+    CppHelperPlugin* m_plugin;                          ///< Parent plugin
     KAction* m_open_header;                                 ///< <em>Open header</em> action
     KAction* m_copy_include;                                ///< <em>Copy #include to clipboard</em> action
     KAction* m_switch;                                      ///< <em>Open implementation/header</em> action

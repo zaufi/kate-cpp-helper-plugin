@@ -1,17 +1,17 @@
 /**
  * \file
  *
- * \brief Class \c kate::IncludeHelperPluginCompletionModel (interface)
+ * \brief Class \c kate::IncludeHelperCompletionModel (interface)
  *
  * \date Mon Feb  6 06:12:41 MSK 2012 -- Initial design
  */
 /*
- * KateIncludeHelperPlugin is free software: you can redistribute it and/or modify it
+ * KateCppHelperPlugin is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
  * Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * KateIncludeHelperPlugin is distributed in the hope that it will be useful, but
+ * KateCppHelperPlugin is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU General Public License for more details.
@@ -37,7 +37,7 @@
 #  endif                                                    // (__GNUC__ >=4 && __GNUC_MINOR__ >= 5)
 
 namespace kate {
-class IncludeHelperPlugin;                                  // forward declaration
+class CppHelperPlugin;                                  // forward declaration
 
 /**
  * \brief [Type brief class description here]
@@ -45,7 +45,7 @@ class IncludeHelperPlugin;                                  // forward declarati
  * [More detailed description here]
  *
  */
-class IncludeHelperPluginCompletionModel
+class IncludeHelperCompletionModel
   : public KTextEditor::CodeCompletionModel2
   , public KTextEditor::CodeCompletionModelControllerInterface3
 {
@@ -53,7 +53,7 @@ class IncludeHelperPluginCompletionModel
     Q_INTERFACES(KTextEditor::CodeCompletionModelControllerInterface3)
 
 public:
-    IncludeHelperPluginCompletionModel(QObject*, IncludeHelperPlugin*);
+    IncludeHelperCompletionModel(QObject*, CppHelperPlugin*);
 
     //BEGIN KTextEditor::CodeCompletionModel overrides
 
@@ -93,7 +93,7 @@ private:
     /// Update \c m_completions for given string
     void updateCompletionList(const QString&, const bool);
 
-    IncludeHelperPlugin* m_plugin;
+    CppHelperPlugin* m_plugin;
     QStringList m_dir_completions;                          ///< List of dirs suggested
     QStringList m_file_completions;                         ///< List of files suggested
     QChar m_closer;

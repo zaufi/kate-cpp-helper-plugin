@@ -1,17 +1,17 @@
 /**
  * \file
  *
- * \brief Class \c kate::IncludeHelperPlugin (interface)
+ * \brief Class \c kate::CppHelperPlugin (interface)
  *
  * \date Sun Jan 29 09:15:53 MSK 2012 -- Initial design
  */
 /*
- * KateIncludeHelperPlugin is free software: you can redistribute it and/or modify it
+ * KateCppHelperPlugin is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
  * Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * KateIncludeHelperPlugin is distributed in the hope that it will be useful, but
+ * KateCppHelperPlugin is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU General Public License for more details.
@@ -45,7 +45,7 @@ class DocumentInfo;                                         // forward declarati
  * [More detailed description here]
  *
  */
-class IncludeHelperPlugin
+class CppHelperPlugin
   : public Kate::Plugin
   , public Kate::PluginConfigPageInterface
 {
@@ -55,8 +55,8 @@ class IncludeHelperPlugin
 public:
     typedef std::map<KTextEditor::Document*, std::unique_ptr<DocumentInfo>> doc_info_type;
 
-    explicit IncludeHelperPlugin(QObject* = 0, const QList<QVariant>& = QList<QVariant>());
-    virtual ~IncludeHelperPlugin();
+    explicit CppHelperPlugin(QObject* = 0, const QList<QVariant>& = QList<QVariant>());
+    virtual ~CppHelperPlugin();
 
     /// Create a new view of this plugin for the given main window
     Kate::PluginView* createView(Kate::MainWindow*);
@@ -115,56 +115,56 @@ private:
     QString m_last_updated;
 };
 
-inline PluginConfiguration& IncludeHelperPlugin::config()
+inline PluginConfiguration& CppHelperPlugin::config()
 {
     return m_config;
 }
-inline const PluginConfiguration& IncludeHelperPlugin::config() const
+inline const PluginConfiguration& CppHelperPlugin::config() const
 {
     return m_config;
 }
-inline auto IncludeHelperPlugin::managed_docs() const -> const doc_info_type&
+inline auto CppHelperPlugin::managed_docs() const -> const doc_info_type&
 {
     return m_doc_info;
 }
-inline auto IncludeHelperPlugin::managed_docs() -> doc_info_type&
+inline auto CppHelperPlugin::managed_docs() -> doc_info_type&
 {
     return m_doc_info;
 }
-inline CXIndex IncludeHelperPlugin::index() const
+inline CXIndex CppHelperPlugin::index() const
 {
     return m_index;
 }
 
-inline uint IncludeHelperPlugin::configPages() const
+inline uint CppHelperPlugin::configPages() const
 {
     return 1;
 }
-inline QString IncludeHelperPlugin::configPageName(uint number) const
+inline QString CppHelperPlugin::configPageName(uint number) const
 {
     Q_UNUSED(number)
     assert("This plugin have the only configuration page" && number == 0);
     return "Include Helper";
 }
-inline QString IncludeHelperPlugin::configPageFullName(uint number) const
+inline QString CppHelperPlugin::configPageFullName(uint number) const
 {
     Q_UNUSED(number)
     assert("This plugin have the only configuration page" && number == 0);
     return "Inlcude Helper Settings";
 }
-inline KIcon IncludeHelperPlugin::configPageIcon(uint number) const
+inline KIcon CppHelperPlugin::configPageIcon(uint number) const
 {
     Q_UNUSED(number)
     assert("This plugin have the only configuration page" && number == 0);
     return KIcon("text-x-c++hdr");
 }
 
-inline void IncludeHelperPlugin::readSessionConfig(KConfigBase* cfg, const QString& groupPrefix)
+inline void CppHelperPlugin::readSessionConfig(KConfigBase* cfg, const QString& groupPrefix)
 {
     config().readSessionConfig(cfg, groupPrefix);
     buildPCHIfAbsent();
 }
-inline void IncludeHelperPlugin::writeSessionConfig(KConfigBase* cfg, const QString& groupPrefix)
+inline void CppHelperPlugin::writeSessionConfig(KConfigBase* cfg, const QString& groupPrefix)
 {
     config().writeSessionConfig(cfg, groupPrefix);
 }

@@ -1,17 +1,17 @@
 /**
  * \file
  *
- * \brief Class \c kate::IncludeHelperPluginConfigPage (interface)
+ * \brief Class \c kate::CppHelperPluginConfigPage (interface)
  *
  * \date Mon Feb  6 06:04:17 MSK 2012 -- Initial design
  */
 /*
- * KateIncludeHelperPlugin is free software: you can redistribute it and/or modify it
+ * KateCppHelperPlugin is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
  * Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * KateIncludeHelperPlugin is distributed in the hope that it will be useful, but
+ * KateCppHelperPlugin is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU General Public License for more details.
@@ -33,7 +33,7 @@
 #  include <kate/pluginconfigpageinterface.h>
 
 namespace kate {
-class IncludeHelperPlugin;                                  // forward declaration
+class CppHelperPlugin;                                  // forward declaration
 
 /**
  * \brief Configuration page for the plugin
@@ -41,13 +41,13 @@ class IncludeHelperPlugin;                                  // forward declarati
  * [More detailed description here]
  *
  */
-class IncludeHelperPluginConfigPage : public Kate::PluginConfigPage
+class CppHelperPluginConfigPage : public Kate::PluginConfigPage
 {
     Q_OBJECT
 
 public:
-    explicit IncludeHelperPluginConfigPage(QWidget* = 0, IncludeHelperPlugin* = 0);
-    virtual ~IncludeHelperPluginConfigPage() {}
+    explicit CppHelperPluginConfigPage(QWidget* = 0, CppHelperPlugin* = 0);
+    virtual ~CppHelperPluginConfigPage() {}
 
     /// \name PluginConfigPage interface implementation
     //@{
@@ -78,7 +78,7 @@ private:
     bool contains(const QString&, const KListWidget*);      ///< Check if directories list contains given item
     bool isValidPCHFile(const QString&);
 
-    IncludeHelperPlugin* m_plugin;                          ///< Parent plugin
+    CppHelperPlugin* m_plugin;                          ///< Parent plugin
     Ui_PerSessionSettingsConfigWidget* const m_pss_config;
     Ui_CLangOptionsWidget* const m_clang_config;
     Ui_PathListConfigWidget* const m_system_list;

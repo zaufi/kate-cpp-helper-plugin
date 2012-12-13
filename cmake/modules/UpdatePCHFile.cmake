@@ -1,8 +1,13 @@
+# Copyright (c) 2012 by Alex Turbov
 #
 # Function to collect most used imported (i.e. not from this project) headers
 # and generate a file w/ #include directives for all of them
 #
-
+# parameter:
+#  PCH_FILE        -- name of target PCH header file to produce
+#  EXCLUDE_DIRS    -- list of directories to exclude from scan
+#  EXCLUDE_HEADERS -- list of header files to exclude from count
+#
 function(update_pch_header)
   set(oneValueArgs PCH_FILE)
   set(multiValueArgs EXCLUDE_DIRS EXCLUDE_HEADERS)

@@ -6,12 +6,12 @@
  * \date Sun Nov 18 13:31:27 MSK 2012 -- Initial design
  */
 /*
- * KateIncludeHelperPlugin is free software: you can redistribute it and/or modify it
+ * KateCppHelperPlugin is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
  * Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  * 
- * KateIncludeHelperPlugin is distributed in the hope that it will be useful, but
+ * KateCppHelperPlugin is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU General Public License for more details.
@@ -43,7 +43,7 @@
 # include <vector>
 
 namespace kate {
-class IncludeHelperPlugin;                                  // forward declaration
+class CppHelperPlugin;                                  // forward declaration
 
 /**
  * \brief [Type brief class description here]
@@ -60,7 +60,7 @@ class ClangCodeCompletionModel
 
 public:
     /// Default constructor
-    ClangCodeCompletionModel(QObject*, IncludeHelperPlugin*, KTextEdit*);
+    ClangCodeCompletionModel(QObject*, CppHelperPlugin*, KTextEdit*);
 
     //BEGIN KTextEditor::CodeCompletionModel overrides
     /// Generate completions for given range
@@ -102,7 +102,7 @@ private:
     /// Helper function to collect unsaved files from current editor
     TranslationUnit::unsaved_files_list_type makeUnsavedFilesList(KTextEditor::Document*);
 
-    IncludeHelperPlugin* m_plugin;
+    CppHelperPlugin* m_plugin;
     KTextEdit* m_diagnostic_text;
     KTextEditor::View* m_current_view;
     std::unique_ptr<TranslationUnit> m_unit;

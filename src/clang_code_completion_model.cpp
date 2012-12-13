@@ -6,12 +6,12 @@
  * \date Sun Nov 18 13:31:27 MSK 2012 -- Initial design
  */
 /*
- * KateIncludeHelperPlugin is free software: you can redistribute it and/or modify it
+ * KateCppHelperPlugin is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
  * Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  * 
- * KateIncludeHelperPlugin is distributed in the hope that it will be useful, but
+ * KateCppHelperPlugin is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU General Public License for more details.
@@ -24,7 +24,7 @@
 #include <src/clang_code_completion_model.h>
 #include <src/clang_utils.h>
 #include <src/translation_unit.h>
-#include <src/include_helper_plugin.h>
+#include <src/cpp_helper_plugin.h>
 
 // Standard includes
 #include <KLocalizedString>                                 /// \todo Where is \c i18n() defiend?
@@ -36,7 +36,7 @@ namespace kate {
 
 ClangCodeCompletionModel::ClangCodeCompletionModel(
     QObject* parent
-  , IncludeHelperPlugin* plugin
+  , CppHelperPlugin* plugin
   , KTextEdit* dt
   )
   : KTextEditor::CodeCompletionModel2(parent)
@@ -44,7 +44,12 @@ ClangCodeCompletionModel::ClangCodeCompletionModel(
   , m_diagnostic_text(dt)
   , m_current_view(nullptr)
 {
-    connect(&m_plugin->config(), SIGNAL(clangOptionsChanged()), this, SLOT(invalidateTranslationUnit()));
+    connect(
+        &m_plugin->config()
+      , SIGNAL(clangOptionsChanged())
+      , this
+      , SLOT(invalidateTranslationUnit())
+      );
 }
 
 void ClangCodeCompletionModel::invalidateTranslationUnit()

@@ -1,17 +1,17 @@
 /**
  * \file
  *
- * \brief Class \c kate::IncludeHelperPlugin (implementation)
+ * \brief Class \c kate::CppHelperPlugin (implementation)
  *
  * \date Sun Jan 29 09:15:53 MSK 2012 -- Initial design
  */
 /*
- * KateIncludeHelperPlugin is free software: you can redistribute it and/or modify it
+ * KateCppHelperPlugin is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
  * Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * KateIncludeHelperPlugin is distributed in the hope that it will be useful, but
+ * KateCppHelperPlugin is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU General Public License for more details.
@@ -22,9 +22,9 @@
 
 // Project specific includes
 #include <src/config.h>
-#include <src/include_helper_plugin.h>
-#include <src/include_helper_plugin_config_page.h>
-#include <src/include_helper_plugin_view.h>
+#include <src/cpp_helper_plugin.h>
+#include <src/cpp_helper_plugin_config_page.h>
+#include <src/cpp_helper_plugin_view.h>
 #include <src/document_info.h>
 #include <src/translation_unit.h>
 #include <src/utils.h>
@@ -39,27 +39,27 @@
 #include <KTextEditor/MovingInterface>
 #include <QtCore/QFileInfo>
 
-K_PLUGIN_FACTORY(IncludeHelperPluginFactory, registerPlugin<kate::IncludeHelperPlugin>();)
+K_PLUGIN_FACTORY(CppHelperPluginFactory, registerPlugin<kate::CppHelperPlugin>();)
 K_EXPORT_PLUGIN(
-    IncludeHelperPluginFactory(
+    CppHelperPluginFactory(
         KAboutData(
-            "kateincludehelperplugin"
-          , "kate_includehelper_plugin"
-          , ki18n("Include Helper Plugin")
+            "katecpphelperplugin"
+          , "kate_cpphelper_plugin"
+          , ki18n("C++ Helper Plugin")
           , PLUGIN_VERSION
-          , ki18n("Helps to work w/ C/C++ headers little more easy")
+          , ki18n("Helps to work w/ C/C++ code little more easy")
           , KAboutData::License_LGPL_V3
           )
       )
   )
 
 namespace kate {
-//BEGIN IncludeHelperPlugin
-IncludeHelperPlugin::IncludeHelperPlugin(
+//BEGIN CppHelperPlugin
+CppHelperPlugin::CppHelperPlugin(
     QObject* application
   , const QList<QVariant>&
   )
-  : Kate::Plugin(static_cast<Kate::Application*>(application), "kate_includehelper_plugin")
+  : Kate::Plugin(static_cast<Kate::Application*>(application), "kate_cpphelper_plugin")
   /// \todo Make parameters to \c clang_createIndex() configurable?
   , m_index(clang_createIndex(0, 0))
 {
@@ -79,25 +79,25 @@ IncludeHelperPlugin::IncludeHelperPlugin(
       );
 }
 
-IncludeHelperPlugin::~IncludeHelperPlugin()
+CppHelperPlugin::~CppHelperPlugin()
 {
     kDebug() << "Unloading...";
 }
 
-Kate::PluginView* IncludeHelperPlugin::createView(Kate::MainWindow* parent)
+Kate::PluginView* CppHelperPlugin::createView(Kate::MainWindow* parent)
 {
-    return new IncludeHelperPluginView(parent, IncludeHelperPluginFactory::componentData(), this);
+    return new CppHelperPluginView(parent, CppHelperPluginFactory::componentData(), this);
 }
 
-Kate::PluginConfigPage* IncludeHelperPlugin::configPage(uint number, QWidget* parent, const char*)
+Kate::PluginConfigPage* CppHelperPlugin::configPage(uint number, QWidget* parent, const char*)
 {
     assert("This plugin have the only configuration page" && number == 0);
     if (number != 0)
         return 0;
-    return new IncludeHelperPluginConfigPage(parent, this);
+    return new CppHelperPluginConfigPage(parent, this);
 }
 
-void IncludeHelperPlugin::updateDirWatcher(const QString& path)
+void CppHelperPlugin::updateDirWatcher(const QString& path)
 {
     m_dir_watcher->addDir(path, KDirWatch::WatchSubDirs | KDirWatch::WatchFiles);
     connect(
@@ -114,7 +114,7 @@ void IncludeHelperPlugin::updateDirWatcher(const QString& path)
       );
 }
 
-void IncludeHelperPlugin::updateDirWatcher()
+void CppHelperPlugin::updateDirWatcher()
 {
     if (m_dir_watcher)
         m_dir_watcher->stopScan();
@@ -137,7 +137,7 @@ void IncludeHelperPlugin::updateDirWatcher()
     m_dir_watcher->startScan(true);
 }
 
-void IncludeHelperPlugin::createdPath(const QString& path)
+void CppHelperPlugin::createdPath(const QString& path)
 {
     // No reason to call update if it is just a dir was created...
     if (QFileInfo(path).isFile() && m_last_updated != path)
@@ -148,7 +148,7 @@ void IncludeHelperPlugin::createdPath(const QString& path)
     }
 }
 
-void IncludeHelperPlugin::deletedPath(const QString& path)
+void CppHelperPlugin::deletedPath(const QString& path)
 {
     if (m_last_updated != path)
     {
@@ -158,14 +158,14 @@ void IncludeHelperPlugin::deletedPath(const QString& path)
     }
 }
 
-void IncludeHelperPlugin::updateCurrentView()
+void CppHelperPlugin::updateCurrentView()
 {
     KTextEditor::View* view = application()->activeMainWindow()->activeView();
     if (view)
         updateDocumentInfo(view->document());
 }
 
-void IncludeHelperPlugin::updateDocumentInfo(KTextEditor::Document* doc)
+void CppHelperPlugin::updateDocumentInfo(KTextEditor::Document* doc)
 {
     assert("Valid document expected" && doc);
     kDebug() << "(re)scan document " << doc << " for #includes...";
@@ -178,7 +178,7 @@ void IncludeHelperPlugin::updateDocumentInfo(KTextEditor::Document* doc)
 
     // Try to remove prev collected info
     {
-        IncludeHelperPlugin::doc_info_type::iterator it = managed_docs().find(doc);
+        CppHelperPlugin::doc_info_type::iterator it = managed_docs().find(doc);
         if (it != managed_docs().end())
             managed_docs().erase(it);
     }
@@ -205,7 +205,7 @@ void IncludeHelperPlugin::updateDocumentInfo(KTextEditor::Document* doc)
 }
 
 /// \todo Move this method to view class. View may access managed documents via accessor method.
-void IncludeHelperPlugin::textInserted(KTextEditor::Document* doc, const KTextEditor::Range& range)
+void CppHelperPlugin::textInserted(KTextEditor::Document* doc, const KTextEditor::Range& range)
 {
     kDebug() << doc << " new text: " << doc->text(range);
     KTextEditor::MovingInterface* mv_iface = qobject_cast<KTextEditor::MovingInterface*>(doc);
@@ -245,7 +245,7 @@ void IncludeHelperPlugin::textInserted(KTextEditor::Document* doc, const KTextEd
 }
 
 /// Used by config page to open a PCH header
-void IncludeHelperPlugin::openDocument(const KUrl& pch_header)
+void CppHelperPlugin::openDocument(const KUrl& pch_header)
 {
     application()->activeMainWindow()->openUrl(pch_header);
 }
@@ -258,7 +258,7 @@ void IncludeHelperPlugin::openDocument(const KUrl& pch_header)
  * \todo Need to accept a command line parameters (and include dirs), cuz clicking 'Rebuild'
  * in configuration page should take all current (possible not saved options) to compile it.
  */
-void IncludeHelperPlugin::makePCHFile(const KUrl& filename)
+void CppHelperPlugin::makePCHFile(const KUrl& filename)
 {
     // Show busy mouse pointer
     QApplication::setOverrideCursor(QCursor(Qt::BusyCursor));
@@ -300,7 +300,7 @@ void IncludeHelperPlugin::makePCHFile(const KUrl& filename)
  * must be checked before...
  * \todo Investigate a bug in clang 3.1
  */
-void IncludeHelperPlugin::buildPCHIfAbsent()
+void CppHelperPlugin::buildPCHIfAbsent()
 {
     if (config().precompiledHeaderFile().isEmpty())
     {
@@ -318,6 +318,6 @@ void IncludeHelperPlugin::buildPCHIfAbsent()
     kDebug() << "PCH file: " << config().pchFile();
 }
 
-//END IncludeHelperPlugin
+//END CppHelperPlugin
 }                                                           // namespace kate
 // kate: hl C++11/Qt4

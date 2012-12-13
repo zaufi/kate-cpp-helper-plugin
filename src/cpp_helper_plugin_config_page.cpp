@@ -1,17 +1,17 @@
 /**
  * \file
  *
- * \brief Class \c kate::IncludeHelperPluginConfigPage (implementation)
+ * \brief Class \c kate::CppHelperPluginConfigPage (implementation)
  *
  * \date Mon Feb  6 06:04:17 MSK 2012 -- Initial design
  */
 /*
- * KateIncludeHelperPlugin is free software: you can redistribute it and/or modify it
+ * KateCppHelperPlugin is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
  * Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * KateIncludeHelperPlugin is distributed in the hope that it will be useful, but
+ * KateCppHelperPlugin is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU General Public License for more details.
@@ -21,8 +21,8 @@
  */
 
 // Project specific includes
-#include <src/include_helper_plugin_config_page.h>
-#include <src/include_helper_plugin.h>
+#include <src/cpp_helper_plugin_config_page.h>
+#include <src/cpp_helper_plugin.h>
 #include <src/utils.h>
 
 // Standard includes
@@ -33,10 +33,10 @@
 #include <KShellCompletion>
 
 namespace kate {
-//BEGIN IncludeHelperPluginConfigPage
-IncludeHelperPluginConfigPage::IncludeHelperPluginConfigPage(
+//BEGIN CppHelperPluginConfigPage
+CppHelperPluginConfigPage::CppHelperPluginConfigPage(
     QWidget* parent
-  , IncludeHelperPlugin* plugin
+  , CppHelperPlugin* plugin
   )
   : Kate::PluginConfigPage(parent)
   , m_plugin(plugin)
@@ -124,7 +124,7 @@ IncludeHelperPluginConfigPage::IncludeHelperPluginConfigPage(
     reset();
 }
 
-void IncludeHelperPluginConfigPage::apply()
+void CppHelperPluginConfigPage::apply()
 {
     kDebug() << "** CONFIG-PAGE **: Applying configuration";
     // Notify about configuration changes
@@ -155,7 +155,7 @@ void IncludeHelperPluginConfigPage::apply()
 }
 
 /// \todo This method should do a reset configuration to default!
-void IncludeHelperPluginConfigPage::reset()
+void CppHelperPluginConfigPage::reset()
 {
     kDebug() << "** CONFIG-PAGE **: Reseting configuration";
     m_plugin->config().readConfig();
@@ -176,7 +176,7 @@ void IncludeHelperPluginConfigPage::reset()
       );
 }
 
-void IncludeHelperPluginConfigPage::addSessionIncludeDir()
+void CppHelperPluginConfigPage::addSessionIncludeDir()
 {
     KUrl dir_uri = KDirSelectDialog::selectDirectory(KUrl(), true, this);
     if (dir_uri != KUrl())
@@ -187,12 +187,12 @@ void IncludeHelperPluginConfigPage::addSessionIncludeDir()
     }
 }
 
-void IncludeHelperPluginConfigPage::delSessionIncludeDir()
+void CppHelperPluginConfigPage::delSessionIncludeDir()
 {
     delete m_session_list->pathsList->currentItem();
 }
 
-void IncludeHelperPluginConfigPage::moveSessionDirUp()
+void CppHelperPluginConfigPage::moveSessionDirUp()
 {
     const int current = m_session_list->pathsList->currentRow();
     if (current)
@@ -205,7 +205,7 @@ void IncludeHelperPluginConfigPage::moveSessionDirUp()
     }
 }
 
-void IncludeHelperPluginConfigPage::moveSessionDirDown()
+void CppHelperPluginConfigPage::moveSessionDirDown()
 {
     const int current = m_session_list->pathsList->currentRow();
     if (current < m_session_list->pathsList->count() - 1)
@@ -218,7 +218,7 @@ void IncludeHelperPluginConfigPage::moveSessionDirDown()
     }
 }
 
-void IncludeHelperPluginConfigPage::addGlobalIncludeDir()
+void CppHelperPluginConfigPage::addGlobalIncludeDir()
 {
     KUrl dir_uri = KDirSelectDialog::selectDirectory(KUrl(), true, this);
     if (dir_uri != KUrl())
@@ -229,12 +229,12 @@ void IncludeHelperPluginConfigPage::addGlobalIncludeDir()
     }
 }
 
-void IncludeHelperPluginConfigPage::delGlobalIncludeDir()
+void CppHelperPluginConfigPage::delGlobalIncludeDir()
 {
     delete m_system_list->pathsList->currentItem();
 }
 
-void IncludeHelperPluginConfigPage::moveGlobalDirUp()
+void CppHelperPluginConfigPage::moveGlobalDirUp()
 {
     const int current = m_system_list->pathsList->currentRow();
     if (current)
@@ -247,7 +247,7 @@ void IncludeHelperPluginConfigPage::moveGlobalDirUp()
     }
 }
 
-void IncludeHelperPluginConfigPage::moveGlobalDirDown()
+void CppHelperPluginConfigPage::moveGlobalDirDown()
 {
     const int current = m_system_list->pathsList->currentRow();
     if (current < m_system_list->pathsList->count() - 1)
@@ -266,7 +266,7 @@ void IncludeHelperPluginConfigPage::moveGlobalDirDown()
  * by pressing a button and get a current value from an other line edit control...
  * So it is why I have this one-liner... DAMN Qt!
  */
-void IncludeHelperPluginConfigPage::openPCHHeaderFile()
+void CppHelperPluginConfigPage::openPCHHeaderFile()
 {
     const auto& pch_url = m_clang_config->pchHeader->url();
     const auto& pch_file = pch_url.toLocalFile();
@@ -280,7 +280,7 @@ void IncludeHelperPluginConfigPage::openPCHHeaderFile()
           );
 }
 
-void IncludeHelperPluginConfigPage::rebuildPCH()
+void CppHelperPluginConfigPage::rebuildPCH()
 {
     const auto& pch_url = m_clang_config->pchHeader->url();
     const auto& pch_file = pch_url.toLocalFile();
@@ -294,19 +294,19 @@ void IncludeHelperPluginConfigPage::rebuildPCH()
           );
 }
 
-void IncludeHelperPluginConfigPage::pchHeaderChanged(const QString& filename)
+void CppHelperPluginConfigPage::pchHeaderChanged(const QString& filename)
 {
     const bool is_valid_pch_file = isValidPCHFile(filename);
     m_clang_config->openPchHeader->setEnabled(is_valid_pch_file);
     m_clang_config->rebuildPch->setEnabled(is_valid_pch_file);
 }
 
-void IncludeHelperPluginConfigPage::pchHeaderChanged(const QUrl& filename)
+void CppHelperPluginConfigPage::pchHeaderChanged(const QUrl& filename)
 {
     pchHeaderChanged(filename.toLocalFile());
 }
 
-bool IncludeHelperPluginConfigPage::contains(const QString& dir, const KListWidget* list)
+bool CppHelperPluginConfigPage::contains(const QString& dir, const KListWidget* list)
 {
     for (int i = 0; i < list->count(); ++i)
         if (list->item(i)->text() == dir)
@@ -314,11 +314,11 @@ bool IncludeHelperPluginConfigPage::contains(const QString& dir, const KListWidg
     return false;
 }
 
-bool IncludeHelperPluginConfigPage::isValidPCHFile(const QString& url)
+bool CppHelperPluginConfigPage::isValidPCHFile(const QString& url)
 {
     return isPresentAndReadable(url);
 }
 
-//END IncludeHelperPluginConfigPage
+//END CppHelperPluginConfigPage
 }                                                           // namespace kate
 // kate: hl C++11/Qt4;

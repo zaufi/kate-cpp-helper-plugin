@@ -6,12 +6,12 @@
  * \date Sun Feb 12 06:05:45 MSK 2012 -- Initial design
  */
 /*
- * KateIncludeHelperPlugin is free software: you can redistribute it and/or modify it
+ * KateCppHelperPlugin is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
  * Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * KateIncludeHelperPlugin is distributed in the hope that it will be useful, but
+ * KateCppHelperPlugin is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU General Public License for more details.
@@ -31,7 +31,7 @@
 #  include <cassert>
 
 namespace kate {
-class IncludeHelperPlugin;                                  // forward declaration
+class CppHelperPlugin;                                  // forward declaration
 
 /**
  * \brief [Type brief class description here]
@@ -54,7 +54,7 @@ public:
       , MultipleMatches
     };
 
-    explicit DocumentInfo(IncludeHelperPlugin*);
+    explicit DocumentInfo(CppHelperPlugin*);
     ~DocumentInfo();
 
     bool isRangeWithSameExists(const KTextEditor::Range&) const;
@@ -80,7 +80,7 @@ private:
     void rangeInvalid(KTextEditor::MovingRange*);
     //END MovingRangeFeedback interface
 
-    IncludeHelperPlugin* m_plugin;                          ///< Parent plugin
+    CppHelperPlugin* m_plugin;                          ///< Parent plugin
     ///< List of ranges w/ \c #incldue directives whithing a document
     registered_ranges_type m_ranges;
 };
