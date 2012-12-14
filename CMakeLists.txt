@@ -12,7 +12,7 @@ project(KateCppHelperPlugin C CXX)
 
 set(VERSION_MAJOR 0)
 set(VERSION_MINOR 7)
-set(VERSION_PATCH 0)
+set(VERSION_PATCH 1)
 set(VERSION_STRING ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/modules" ${CMAKE_MODULE_PATH})
 
@@ -20,7 +20,13 @@ set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/modules" ${CMAKE_MODULE_PATH})
 # Section: Include aux cmake functions
 #---------------------------------------------------------
 include(GuessBuildType)
-if(CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "DebugFull")
+# TODO Invalid kate highlighting!
+if(
+    (DEFINED BUILD_TESTING AND BUILD_TESTING) OR
+    (NOT DEFINED BUILD_TESTING AND
+        (CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "DebugFull")
+      )
+  )
     include(CTest)
 endif()
 
