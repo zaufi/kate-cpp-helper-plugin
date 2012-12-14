@@ -3,9 +3,7 @@
 #
 # kate: hl cmake;
 
-# NOTE `llvm-config --ldflags` return a string that CMake won't accept due this policy,
-# so inhibit it!
-cmake_policy(SET CMP0004 OLD)
+cmake_minimum_required(VERSION 2.6)
 
 #---------------------------------------------------------
 # Section: Init cmake
@@ -34,31 +32,7 @@ endif()
 find_package(KDE4 REQUIRED)
 include(KDE4Defaults)
 
-find_program(LLVM_CONFIG_EXECUTABLE llvm-config REQUIRED)
-# Get LLVM CXX flags
-execute_process(
-    COMMAND ${LLVM_CONFIG_EXECUTABLE} --cxxflags
-    OUTPUT_VARIABLE LLVM_CXXFLAGS_ORIG
-  )
-string(REPLACE "-DNDEBUG" "" _PRE_LLVM_CXXFLAGS "${LLVM_CXXFLAGS_ORIG}")
-string(
-    REPLACE "-fno-exceptions" ""
-    LLVM_CXXFLAGS
-    "${_PRE_LLVM_CXXFLAGS}"
-  )
-
-# Get LLVM linker flags
-execute_process(
-    COMMAND ${LLVM_CONFIG_EXECUTABLE} --ldflags
-    OUTPUT_VARIABLE LLVM_LDFLAGS
-  )
-# TODO Real detector required
-set(LLVM_LDFLAGS -L/usr/lib64/llvm -lpthread -lffi -ldl -lm)
-set(
-    CLANG_C_LIBS
-    -lclang
-    -lLLVM-3.1
-  )
+find_package(ClangCLibs QUIET REQUIRED)
 
 # find boost
 # NOTE I see no way to make unit tests optional for release mode

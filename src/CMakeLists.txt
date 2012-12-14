@@ -1,3 +1,5 @@
+# kate: hl cmake;
+
 configure_file(config.h.in config.h)
 configure_file(katecpphelperplugin.desktop.in katecpphelperplugin.desktop)
 
@@ -26,7 +28,7 @@ target_link_libraries(katecpphelperplugin
     ${KDE4_KFILE_LIBS}
     ${KDE4_KTEXTEDITOR_LIBS}
     kateinterfaces
-    ${CLANG_C_LIBS} ${LLVM_LDFLAGS}
+    ${CLANG_C_LIBRARIES}
   )
 
 install(TARGETS katecpphelperplugin DESTINATION ${PLUGIN_INSTALL_DIR})
