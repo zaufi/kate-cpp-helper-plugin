@@ -607,14 +607,15 @@ KTextEditor::Range CppHelperPluginView::currentWord() const
     }
 
     // Obtain a line under cursor
-    int line = kv->cursorPosition().line();
-    QString line_str = kv->document()->line(line);
+    const int line = kv->cursorPosition().line();
+    const QString line_str = kv->document()->line(line);
 
     // Check if current line starts w/ #include
     kate::IncludeParseResult r = parseIncludeDirective(line_str, false);
     if (r.m_range.isValid())
     {
         r.m_range.setBothLines(line);
+        kDebug() << "Ok,  found #include directive:" << r.m_range;
         return r.m_range;
     }
 

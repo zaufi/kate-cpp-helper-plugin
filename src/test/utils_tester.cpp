@@ -1,7 +1,7 @@
 /**
  * \file
  *
- * \brief Class tester for \c utils
+ * \brief Tests for utility functions
  *
  * \date Mon Feb  6 04:00:24 MSK 2012 -- Initial design
  */
@@ -109,12 +109,10 @@ void ok_parser_test(const bool f)
         }
         BOOST_CHECK_EQUAL(r.m_is_complete, false);
     }
-
 }
 
 void fail_parser_test(const bool f)
 {
-#if 0
     {
         kate::IncludeParseResult r = parseIncludeDirective("", f);
         BOOST_CHECK_EQUAL(r.m_range.start().column(), -1);
@@ -199,7 +197,6 @@ void fail_parser_test(const bool f)
         BOOST_CHECK_EQUAL(r.m_range.end().column(), -1);
         BOOST_CHECK_EQUAL(r.m_is_complete, false);
     }
-#endif
     {
         kate::IncludeParseResult r = parseIncludeDirective("#include<", f);
         BOOST_CHECK_EQUAL(r.m_range.start().column(), -1);
@@ -209,14 +206,14 @@ void fail_parser_test(const bool f)
 }
 }                                                           // anonymous namespace
 
-// Your first test function :)
-BOOST_AUTO_TEST_CASE(parse_non_strict_test)
+BOOST_AUTO_TEST_CASE(parse_ok_test)
 {
-#if 0
     ok_parser_test(false);
     ok_parser_test(true);
-#endif
+}
 
+BOOST_AUTO_TEST_CASE(parse_failures_test)
+{
     fail_parser_test(false);
     fail_parser_test(true);
 }

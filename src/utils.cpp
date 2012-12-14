@@ -105,7 +105,7 @@ IncludeParseResult parseIncludeDirective(const QString& line, const bool strict)
                     state = skipSpace;
                 break;
             case skipSpace:
-                if (line[pos] != ' ' && line[pos] != '\t')
+                if (line[pos] == ' ' || line[pos] == '\t')
                 {
                     state = skipOptionalSpaces;
                     continue;

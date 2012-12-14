@@ -164,6 +164,13 @@ TODO
 Changes
 =======
 
+Version 0.7.1
+-------------
+
+* added cmake script to detect clang C API
+* fix cmake configuration for unit tests building: check if `-DBUILD_TESTING` present
+* fix a bug when parse incorrect `#include` directive
+
 Version 0.6-0.7
 ---------------
 
