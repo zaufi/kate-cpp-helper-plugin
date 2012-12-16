@@ -6,20 +6,20 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>523</width>
-    <height>108</height>
+    <width>402</width>
+    <height>237</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Form</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="0" column="0">
-    <widget class="KButtonGroup" name="group">
+   <item row="1" column="0">
+    <widget class="KButtonGroup" name="favGroup">
      <property name="title">
       <string>Favorite and Stored Sets</string>
      </property>
-     <layout class="QVBoxLayout" name="verticalLayout">
+     <layout class="QVBoxLayout" name="verticalLayout_2">
       <item>
        <layout class="QHBoxLayout" name="lh2">
         <item>
@@ -53,14 +53,7 @@
       <item>
        <layout class="QHBoxLayout" name="hl1">
         <item>
-         <widget class="KPushButton" name="guessButton">
-          <property name="text">
-           <string>Suggest a set</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <spacer name="hs">
+         <spacer name="hs1">
           <property name="orientation">
            <enum>Qt::Horizontal</enum>
           </property>
@@ -88,18 +81,63 @@
         </item>
        </layout>
       </item>
+     </layout>
+     <zorder>addButton</zorder>
+    </widget>
+   </item>
+   <item row="2" column="0">
+    <widget class="KButtonGroup" name="suggestionGroup">
+     <property name="title">
+      <string>Suggestion Options</string>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout">
       <item>
-       <spacer name="vs">
-        <property name="orientation">
-         <enum>Qt::Vertical</enum>
+       <widget class="QRadioButton" name="onlyVCS">
+        <property name="text">
+         <string>Add only directories with VCS serivice directory</string>
         </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>20</width>
-          <height>40</height>
-         </size>
+        <property name="checked">
+         <bool>true</bool>
         </property>
-       </spacer>
+       </widget>
+      </item>
+      <item>
+       <widget class="QRadioButton" name="onlyCommonRoot">
+        <property name="text">
+         <string>Add only directories with common root</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QRadioButton" name="allPaths">
+        <property name="text">
+         <string>Add all directories</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="hl3">
+        <item>
+         <spacer name="hs2">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item>
+         <widget class="KPushButton" name="guessButton">
+          <property name="text">
+           <string>Suggest a set</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
       </item>
      </layout>
     </widget>

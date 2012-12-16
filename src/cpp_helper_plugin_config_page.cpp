@@ -26,12 +26,13 @@
 #include <src/utils.h>
 
 // Standard includes
-#include <QtGui/QVBoxLayout>
 #include <KDebug>
 #include <KDirSelectDialog>
 #include <KPassivePopup>
-#include <KTabWidget>
 #include <KShellCompletion>
+#include <KStandardDirs>
+#include <KTabWidget>
+#include <QtGui/QVBoxLayout>
 #include <cstdlib>
 
 namespace kate {
@@ -113,9 +114,10 @@ CppHelperPluginConfigPage::CppHelperPluginConfigPage(
         QWidget* favorites = new QWidget(session_tab);
         favorites->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
         m_favorite_sets->setupUi(favorites);
+        updateSets();
         connect(m_favorite_sets->addButton, SIGNAL(clicked()), this, SLOT(addSet()));
-        connect(m_favorite_sets->guessButton, SIGNAL(clicked()), this, SLOT(guessSet()));
         connect(m_favorite_sets->storeButton, SIGNAL(clicked()), this, SLOT(storeSet()));
+        connect(m_favorite_sets->guessButton, SIGNAL(clicked()), this, SLOT(guessSet()));
         // Setup layout
         QVBoxLayout* layout = new QVBoxLayout(session_tab);
         layout->addWidget(paths, 1);
@@ -280,19 +282,59 @@ void CppHelperPluginConfigPage::clearSessionDirs()
     m_session_list->pathsList->clear();
 }
 
+/**
+ * Append configured paths from selected \c #include \c set
+ */
 void CppHelperPluginConfigPage::addSet()
 {
-    
-}
-
-void CppHelperPluginConfigPage::guessSet()
-{
-    
+    auto it = m_include_sets.find(m_favorite_sets->setsList->currentText());
+    if (it != end(m_include_sets))
+    {
+        KConfigGroup general(it->second, "General");
+        auto dirs = general.readPathEntry("Dirs", QStringList());
+        for (const auto& dir : dirs)
+            addDirTo(dir, m_session_list->pathsList);
+    }
 }
 
 void CppHelperPluginConfigPage::storeSet()
 {
-    
+    auto set_name = m_favorite_sets->setsList->currentText();
+    kDebug() << "Current set name:" << set_name;
+
+    KSharedConfigPtr cfg;
+    {
+        auto it = m_include_sets.find(set_name);
+        if (it == end(m_include_sets))
+        {
+            auto filename = QString(QUrl::toPercentEncoding(set_name));
+            auto incset_file = KStandardDirs::locateLocal(
+                "appdata"
+            , QString("plugins/katecpphelperplugin/%1.incset").arg(filename)
+            , true
+            );
+            kDebug() << "Going to make a new incset file for it:" << incset_file;
+            cfg = KSharedConfig::openConfig(incset_file, KConfig::SimpleConfig);
+        }
+        else cfg = it->second;
+    }
+
+    QStringList dirs;
+    for (int i = 0, last = m_session_list->pathsList->count(); i < last; ++i)
+        dirs << m_session_list->pathsList->item(i)->text();
+    kDebug() << "Collected current paths:" << dirs;
+
+    // Write Name and Dirs entries to the config
+    KConfigGroup general(cfg, "General");
+    general.writeEntry("Name", set_name);
+    general.writePathEntry("Dirs", dirs);
+    cfg->sync();
+    updateSets();
+}
+
+void CppHelperPluginConfigPage::guessSet()
+{
+
 }
 
 void CppHelperPluginConfigPage::addGlobalIncludeDir()
@@ -387,6 +429,9 @@ void CppHelperPluginConfigPage::pchHeaderChanged(const KUrl& filename)
     pchHeaderChanged(filename.toLocalFile());
 }
 
+/**
+ * \todo Need to raise a timer to detect a hunged process and kill it after timeout.
+ */
 void CppHelperPluginConfigPage::detectPredefinedCompilerPaths()
 {
     const auto binary = getCurrentCompiler();
@@ -537,9 +582,41 @@ QString CppHelperPluginConfigPage::getCurrentCompiler() const
     return binary;
 }
 
+/**
+ * Find all \c *.inset files in \c ${APPDATA}/plugins/katecpphelperplugin.
+ * Open found file (as ordinal KDE config), read a set \c Name and fill the
+ * \c m_include_sets map w/ \e Name to \c KSharedConfigPtr entry.
+ * After all found files forcessed, fill the combobox w/ found entries.
+ */
 void CppHelperPluginConfigPage::updateSets()
 {
-    
+    // Remove everything collected before
+    m_favorite_sets->setsList->clear();
+    m_include_sets.clear();
+
+    // Find *.incset files
+    auto sets = KGlobal::dirs()->findAllResources(
+        "appdata"
+      , "plugins/katecpphelperplugin/*.incset"
+      , KStandardDirs::NoSearchOptions
+      );
+    kDebug() << "sets:" << sets;
+
+    // Form a map of set names to shared configs
+    for (const auto& filename : sets)
+    {
+        KSharedConfigPtr incset = KSharedConfig::openConfig(filename, KConfig::SimpleConfig);
+        KConfigGroup general(incset, "General");
+        auto set_name = general.readEntry("Name", QString());
+        auto dirs = general.readPathEntry("Dirs", QStringList());
+        kDebug() << "set name: " << set_name;
+        kDebug() << "dirs: " << dirs;
+        m_include_sets[set_name] = incset;
+    }
+
+    // Fill the `sets` combobox w/ names
+    for (const auto& p : m_include_sets)
+        m_favorite_sets->setsList->addItem(p.first);
 }
 
 //END CppHelperPluginConfigPage

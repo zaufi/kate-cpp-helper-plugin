@@ -34,6 +34,8 @@
 # include <kate/plugin.h>
 # include <kate/pluginconfigpageinterface.h>
 # include <KProcess>
+# include <KSharedConfig>
+# include <map>
 
 namespace kate {
 class CppHelperPlugin;                                  // forward declaration
@@ -104,6 +106,7 @@ private:
     KProcess m_compiler_proc;
     QString m_output;
     QString m_error;
+    std::map<QString, KSharedConfigPtr> m_include_sets;
 };
 
 }                                                           // namespace kate
