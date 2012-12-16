@@ -25,6 +25,7 @@ kde4_add_ui_files(
     clang_settings.ui
     other_settings.ui
     detect_compiler_paths.ui
+    session_paths_sets.ui
   )
 
 kde4_add_plugin(katecpphelperplugin ${KATE_CPP_HELPER_PLUGIN_SOURCES})

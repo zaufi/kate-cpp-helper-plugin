@@ -47,6 +47,7 @@ CppHelperPluginConfigPage::CppHelperPluginConfigPage(
   , m_system_list(new Ui_PathListConfigWidget())
   , m_session_list(new Ui_PathListConfigWidget())
   , m_compiler_paths(new Ui_DetectCompilerPathsWidget())
+  , m_favorite_sets(new Ui_SessionPathsSetsWidget())
   , m_compiler_proc(this)
 {
     QLayout* layout = new QVBoxLayout(this);
@@ -61,11 +62,6 @@ CppHelperPluginConfigPage::CppHelperPluginConfigPage(
         QWidget* paths = new QWidget(system_tab);
         paths->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
         m_system_list->setupUi(paths);
-        m_system_list->addButton->setIcon(KIcon("list-add"));
-        m_system_list->delButton->setIcon(KIcon("list-remove"));
-        m_system_list->moveUpButton->setIcon(KIcon("arrow-up"));
-        m_system_list->moveDownButton->setIcon(KIcon("arrow-down"));
-        m_system_list->clearButton->setIcon(KIcon ("edit-clear-list"));
         // Connect add/del buttons to actions
         connect(m_system_list->addButton, SIGNAL(clicked()), this, SLOT(addGlobalIncludeDir()));
         connect(m_system_list->delButton, SIGNAL(clicked()), this, SLOT(delGlobalIncludeDir()));
@@ -90,10 +86,10 @@ CppHelperPluginConfigPage::CppHelperPluginConfigPage(
             else
                 m_compiler_paths->clang->setText(clang_binary);
         }
+        // Connect add button to action
         connect(m_compiler_paths->addButton, SIGNAL(clicked()), this, SLOT(detectPredefinedCompilerPaths()));
         // Setup layout
         QVBoxLayout* layout = new QVBoxLayout(system_tab);
-        layout->setSpacing(1);
         layout->addWidget(paths, 1);
         layout->addWidget(compilers, 0);
         system_tab->setLayout(layout);
@@ -103,19 +99,29 @@ CppHelperPluginConfigPage::CppHelperPluginConfigPage(
     // Session #include paths
     {
         QWidget* session_tab = new QWidget(tab);
-        m_session_list->setupUi(session_tab);
-        m_session_list->addButton->setIcon(KIcon("list-add"));
-        m_session_list->delButton->setIcon(KIcon("list-remove"));
-        m_session_list->moveUpButton->setIcon(KIcon("arrow-up"));
-        m_session_list->moveDownButton->setIcon(KIcon("arrow-down"));
-        m_session_list->clearButton->setIcon(KIcon ("edit-clear-list"));
-        tab->addTab(session_tab, i18n("Session Paths List"));
+        // Setup paths list widget
+        QWidget* paths = new QWidget(session_tab);
+        paths->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+        m_session_list->setupUi(paths);
         // Connect add/del buttons to actions
         connect(m_session_list->addButton, SIGNAL(clicked()), this, SLOT(addSessionIncludeDir()));
         connect(m_session_list->delButton, SIGNAL(clicked()), this, SLOT(delSessionIncludeDir()));
         connect(m_session_list->moveUpButton, SIGNAL(clicked()), this, SLOT(moveSessionDirUp()));
         connect(m_session_list->moveDownButton, SIGNAL(clicked()), this, SLOT(moveSessionDirDown()));
         connect(m_session_list->clearButton, SIGNAL(clicked()), this, SLOT(clearSessionDirs()));
+        // Setup predefined compiler's paths widget
+        QWidget* favorites = new QWidget(session_tab);
+        favorites->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+        m_favorite_sets->setupUi(favorites);
+        connect(m_favorite_sets->addButton, SIGNAL(clicked()), this, SLOT(addSet()));
+        connect(m_favorite_sets->guessButton, SIGNAL(clicked()), this, SLOT(guessSet()));
+        connect(m_favorite_sets->storeButton, SIGNAL(clicked()), this, SLOT(storeSet()));
+        // Setup layout
+        QVBoxLayout* layout = new QVBoxLayout(session_tab);
+        layout->addWidget(paths, 1);
+        layout->addWidget(favorites, 0);
+        session_tab->setLayout(layout);
+        tab->addTab(session_tab, i18n("Session Paths List"));
     }
 
     // Clang settings
@@ -135,9 +141,11 @@ CppHelperPluginConfigPage::CppHelperPluginConfigPage(
           );
         connect(
             m_clang_config->pchHeader
-          , SIGNAL(urlSelected(const QUrl&))
+            // ATTENTION Documentation is wrong about signal parameter type!
+            // http://api.kde.org/4.x-api/kdelibs-apidocs/kio/html/classKUrlRequester.html
+          , SIGNAL(urlSelected(const KUrl&))
           , this
-          , SLOT(pchHeaderChanged(const QUrl&))
+          , SLOT(pchHeaderChanged(const KUrl&))
           );
         // Connect open and rebuild PCH file button
         connect(m_clang_config->openPchHeader, SIGNAL(clicked()), this, SLOT(openPCHHeaderFile()));
@@ -272,6 +280,21 @@ void CppHelperPluginConfigPage::clearSessionDirs()
     m_session_list->pathsList->clear();
 }
 
+void CppHelperPluginConfigPage::addSet()
+{
+    
+}
+
+void CppHelperPluginConfigPage::guessSet()
+{
+    
+}
+
+void CppHelperPluginConfigPage::storeSet()
+{
+    
+}
+
 void CppHelperPluginConfigPage::addGlobalIncludeDir()
 {
     addDirTo(
@@ -359,7 +382,7 @@ void CppHelperPluginConfigPage::pchHeaderChanged(const QString& filename)
     m_clang_config->rebuildPch->setEnabled(is_valid_pch_file);
 }
 
-void CppHelperPluginConfigPage::pchHeaderChanged(const QUrl& filename)
+void CppHelperPluginConfigPage::pchHeaderChanged(const KUrl& filename)
 {
     pchHeaderChanged(filename.toLocalFile());
 }
@@ -512,6 +535,11 @@ QString CppHelperPluginConfigPage::getCurrentCompiler() const
         binary = findBinary("clang++");
 
     return binary;
+}
+
+void CppHelperPluginConfigPage::updateSets()
+{
+    
 }
 
 //END CppHelperPluginConfigPage

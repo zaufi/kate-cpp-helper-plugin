@@ -25,9 +25,10 @@
 
 // Project specific includes
 # include <src/ui_clang_settings.h>
+# include <src/ui_detect_compiler_paths.h>
 # include <src/ui_other_settings.h>
 # include <src/ui_path_config.h>
-# include <src/ui_detect_compiler_paths.h>
+# include <src/ui_session_paths_sets.h>
 
 // Standard includes
 # include <kate/plugin.h>
@@ -73,10 +74,13 @@ private Q_SLOTS:
     void moveSessionDirUp();
     void moveSessionDirDown();
     void clearSessionDirs();
+    void addSet();
+    void guessSet();
+    void storeSet();
     void openPCHHeaderFile();                               ///< Open configured PCH header
     void rebuildPCH();                                      ///< Rebuild a PCH file from configured header
     void pchHeaderChanged(const QString&);
-    void pchHeaderChanged(const QUrl&);
+    void pchHeaderChanged(const KUrl&);
     void detectPredefinedCompilerPaths();                   ///< Detect predefined compiler paths pressed
     void error(QProcess::ProcessError);                     ///< Compiler process failed to start
     void finished(int, QProcess::ExitStatus);               ///< Compiler process finished
@@ -88,6 +92,7 @@ private:
     QString findBinary(const QString&) const;
     QString getCurrentCompiler() const;
     void addDirTo(const KUrl&, KListWidget*);
+    void updateSets();                                      ///< Update predefined \c #include sets
 
     CppHelperPlugin* m_plugin;                              ///< Parent plugin
     Ui_PerSessionSettingsConfigWidget* const m_pss_config;
@@ -95,6 +100,7 @@ private:
     Ui_PathListConfigWidget* const m_system_list;
     Ui_PathListConfigWidget* const m_session_list;
     Ui_DetectCompilerPathsWidget* const m_compiler_paths;
+    Ui_SessionPathsSetsWidget* const m_favorite_sets;
     KProcess m_compiler_proc;
     QString m_output;
     QString m_error;

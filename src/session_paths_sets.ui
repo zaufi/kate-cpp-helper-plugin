@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>DetectCompilerPathsWidget</class>
- <widget class="QWidget" name="DetectCompilerPathsWidget">
+ <class>SessionPathsSetsWidget</class>
+ <widget class="QWidget" name="SessionPathsSetsWidget">
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>402</width>
-    <height>165</height>
+    <width>523</width>
+    <height>108</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -16,56 +16,49 @@
   <layout class="QGridLayout" name="gridLayout">
    <item row="0" column="0">
     <widget class="KButtonGroup" name="group">
-     <property name="sizePolicy">
-      <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-       <horstretch>0</horstretch>
-       <verstretch>0</verstretch>
-      </sizepolicy>
-     </property>
      <property name="title">
-      <string>Detect Builtin Compiler Paths</string>
+      <string>Favorite and Stored Sets</string>
      </property>
      <layout class="QVBoxLayout" name="verticalLayout">
       <item>
-       <widget class="QRadioButton" name="gcc">
-        <property name="text">
-         <string>g++</string>
-        </property>
-        <property name="checked">
-         <bool>true</bool>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QRadioButton" name="clang">
-        <property name="text">
-         <string>clang++</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <layout class="QHBoxLayout" name="otherHL">
+       <layout class="QHBoxLayout" name="lh2">
         <item>
-         <widget class="QRadioButton" name="other">
-          <property name="enabled">
-           <bool>false</bool>
+         <widget class="QLabel" name="label">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
           </property>
           <property name="text">
-           <string>Other</string>
+           <string>Session Paths Set:</string>
           </property>
          </widget>
         </item>
         <item>
-         <widget class="KUrlRequester" name="otherExecutable">
-          <property name="enabled">
-           <bool>false</bool>
+         <widget class="KComboBox" name="setsList">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="editable">
+           <bool>true</bool>
           </property>
          </widget>
         </item>
        </layout>
       </item>
       <item>
-       <layout class="QHBoxLayout" name="buttonsHL">
+       <layout class="QHBoxLayout" name="hl1">
+        <item>
+         <widget class="KPushButton" name="guessButton">
+          <property name="text">
+           <string>Suggest a set</string>
+          </property>
+         </widget>
+        </item>
         <item>
          <spacer name="hs">
           <property name="orientation">
@@ -80,21 +73,16 @@
          </spacer>
         </item>
         <item>
-         <widget class="KPushButton" name="addButton">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="minimumSize">
-           <size>
-            <width>100</width>
-            <height>0</height>
-           </size>
-          </property>
+         <widget class="KPushButton" name="storeButton">
           <property name="text">
-           <string>Add to list</string>
+           <string>Save current set</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="KPushButton" name="addButton">
+          <property name="text">
+           <string>Add a set to the list</string>
           </property>
          </widget>
         </item>
@@ -126,14 +114,14 @@
    <container>1</container>
   </customwidget>
   <customwidget>
+   <class>KComboBox</class>
+   <extends>QComboBox</extends>
+   <header>kcombobox.h</header>
+  </customwidget>
+  <customwidget>
    <class>KPushButton</class>
    <extends>QPushButton</extends>
    <header>kpushbutton.h</header>
-  </customwidget>
-  <customwidget>
-   <class>KUrlRequester</class>
-   <extends>QFrame</extends>
-   <header>kurlrequester.h</header>
   </customwidget>
  </customwidgets>
  <resources/>
