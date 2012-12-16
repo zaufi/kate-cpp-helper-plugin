@@ -28,49 +28,59 @@
        </widget>
       </item>
       <item row="0" column="1">
-       <layout class="QVBoxLayout" name="verticalLayout">
+       <layout class="QVBoxLayout" name="vl">
         <item>
-         <widget class="QPushButton" name="addButton">
+         <widget class="KPushButton" name="addButton">
           <property name="toolTip">
-           <string>Add directory to the list</string>
+           <string>Select directory to be added to the list</string>
           </property>
           <property name="text">
-           <string>Add</string>
+           <string/>
           </property>
          </widget>
         </item>
         <item>
-         <widget class="QPushButton" name="delButton">
+         <widget class="KPushButton" name="delButton">
           <property name="toolTip">
-           <string>Remove directory from the list</string>
+           <string>Remove selected directory from the list</string>
           </property>
           <property name="text">
-           <string>Remove</string>
+           <string/>
           </property>
          </widget>
         </item>
         <item>
-         <widget class="QPushButton" name="moveUpButton">
+         <widget class="KPushButton" name="moveUpButton">
           <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Move current directory up&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           <string>Move selected directory up</string>
           </property>
           <property name="text">
-           <string>Move Up</string>
+           <string/>
           </property>
          </widget>
         </item>
         <item>
-         <widget class="QPushButton" name="moveDownButton">
+         <widget class="KPushButton" name="moveDownButton">
           <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Move current directory down&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           <string>Move selected directory down</string>
           </property>
           <property name="text">
-           <string>Move Down</string>
+           <string/>
           </property>
          </widget>
         </item>
         <item>
-         <spacer name="verticalSpacer">
+         <widget class="KPushButton" name="clearButton">
+          <property name="toolTip">
+           <string>Clear directories list</string>
+          </property>
+          <property name="text">
+           <string/>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <spacer name="vs">
           <property name="orientation">
            <enum>Qt::Vertical</enum>
           </property>
@@ -90,6 +100,11 @@
   </layout>
  </widget>
  <customwidgets>
+  <customwidget>
+   <class>KPushButton</class>
+   <extends>QPushButton</extends>
+   <header>kpushbutton.h</header>
+  </customwidget>
   <customwidget>
    <class>KListWidget</class>
    <extends>QListWidget</extends>

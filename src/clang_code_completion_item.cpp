@@ -211,7 +211,8 @@ QPair<QString, int> ClangCodeCompletionItem::executeCompletion() const
         case CXCursor_MemberRef:
         case CXCursor_OverloadedDeclRef:
             result += "()";
-            pos = -2;
+            if (!m_placeholders.isEmpty())
+                pos = -2;                                   // Will move cursor only if function requires params
         default:
             break;
     }

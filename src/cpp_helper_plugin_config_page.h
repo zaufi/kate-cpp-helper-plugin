@@ -21,16 +21,18 @@
  */
 
 #ifndef __SRC__INCLUDE_HELPER_PLUGIN_CONFIG_PAGE_H__
-#  define __SRC__INCLUDE_HELPER_PLUGIN_CONFIG_PAGE_H__
+# define __SRC__INCLUDE_HELPER_PLUGIN_CONFIG_PAGE_H__
 
 // Project specific includes
-#  include <src/ui_clang_settings.h>
-#  include <src/ui_other_settings.h>
-#  include <src/ui_path_config.h>
+# include <src/ui_clang_settings.h>
+# include <src/ui_other_settings.h>
+# include <src/ui_path_config.h>
+# include <src/ui_detect_compiler_paths.h>
 
 // Standard includes
-#  include <kate/plugin.h>
-#  include <kate/pluginconfigpageinterface.h>
+# include <kate/plugin.h>
+# include <kate/pluginconfigpageinterface.h>
+# include <KProcess>
 
 namespace kate {
 class CppHelperPlugin;                                  // forward declaration
@@ -65,23 +67,37 @@ private Q_SLOTS:
     void delGlobalIncludeDir();                             ///< Remove directory from the list
     void moveGlobalDirUp();
     void moveGlobalDirDown();
+    void clearGlobalDirs();
     void addSessionIncludeDir();                            ///< Add directory to the list
     void delSessionIncludeDir();                            ///< Remove directory from the list
     void moveSessionDirUp();
     void moveSessionDirDown();
+    void clearSessionDirs();
     void openPCHHeaderFile();                               ///< Open configured PCH header
     void rebuildPCH();                                      ///< Rebuild a PCH file from configured header
     void pchHeaderChanged(const QString&);
     void pchHeaderChanged(const QUrl&);
+    void detectPredefinedCompilerPaths();                   ///< Detect predefined compiler paths pressed
+    void error(QProcess::ProcessError);                     ///< Compiler process failed to start
+    void finished(int, QProcess::ExitStatus);               ///< Compiler process finished
+    void readyReadStandardOutput();                         ///< Ready to read standard input
+    void readyReadStandardError();                          ///< Ready to read standard error
 
 private:
     bool contains(const QString&, const KListWidget*);      ///< Check if directories list contains given item
+    QString findBinary(const QString&) const;
+    QString getCurrentCompiler() const;
+    void addDirTo(const KUrl&, KListWidget*);
 
     CppHelperPlugin* m_plugin;                              ///< Parent plugin
     Ui_PerSessionSettingsConfigWidget* const m_pss_config;
     Ui_CLangOptionsWidget* const m_clang_config;
     Ui_PathListConfigWidget* const m_system_list;
     Ui_PathListConfigWidget* const m_session_list;
+    Ui_DetectCompilerPathsWidget* const m_compiler_paths;
+    KProcess m_compiler_proc;
+    QString m_output;
+    QString m_error;
 };
 
 }                                                           // namespace kate

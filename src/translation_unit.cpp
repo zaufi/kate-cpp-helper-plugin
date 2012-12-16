@@ -53,9 +53,26 @@ void debugShowCompletionResult(
     for (unsigned ci = 0, cn = clang_getNumCompletionChunks(str); ci < cn; ++ci)
     {
         auto kind = clang_getCompletionChunkKind(str, ci);
-        DCXString text_str = clang_getCompletionChunkText(str, ci);
-        kDebug() << "  chunk [" << i << ':' << ci << "]: " << toString(kind).toUtf8().constData()
-          << ", text=" << QString(clang_getCString(text_str));
+        if (kind == CXCompletionChunk_Optional)
+        {
+            kDebug() << "  chunk [" << i << ':' << ci << "]: " << toString(kind).toUtf8().constData();
+            auto ostr = clang_getCompletionChunkCompletionString(str, ci);
+            for (unsigned oci = 0, ocn = clang_getNumCompletionChunks(ostr); oci < ocn; ++oci)
+            {
+                auto okind = clang_getCompletionChunkKind(ostr, oci);
+                DCXString otext_str = clang_getCompletionChunkText(ostr, oci);
+                kDebug() << "  chunk [" << i << ':' << ci << ':' << oci << "]: "
+                  << toString(okind).toUtf8().constData()
+                  << ", text=" << QString(clang_getCString(otext_str));
+                  ;
+            }
+        }
+        else
+        {
+            DCXString text_str = clang_getCompletionChunkText(str, ci);
+            kDebug() << "  chunk [" << i << ':' << ci << "]: " << toString(kind).toUtf8().constData()
+              << ", text=" << QString(clang_getCString(text_str));
+        }
     }
 
     // Show annotations

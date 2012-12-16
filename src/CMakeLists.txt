@@ -19,7 +19,13 @@ set(KATE_CPP_HELPER_PLUGIN_SOURCES
     cpp_helper_plugin.cpp
   )
 
-kde4_add_ui_files(KATE_CPP_HELPER_PLUGIN_SOURCES path_config.ui clang_settings.ui other_settings.ui)
+kde4_add_ui_files(
+    KATE_CPP_HELPER_PLUGIN_SOURCES
+    path_config.ui
+    clang_settings.ui
+    other_settings.ui
+    detect_compiler_paths.ui
+  )
 
 kde4_add_plugin(katecpphelperplugin ${KATE_CPP_HELPER_PLUGIN_SOURCES})
 
