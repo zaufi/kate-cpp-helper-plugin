@@ -359,12 +359,18 @@ QList<ClangCodeCompletionItem> TranslationUnit::completeAt(const int line, const
                 case CXCompletionChunk_Equal:
                 case CXCompletionChunk_HorizontalSpace:
                 case CXCompletionChunk_VerticalSpace:
-                case CXCompletionChunk_Informative:
-                // Informative text that should be displayed but never inserted
-                // as part of the template
                 case CXCompletionChunk_CurrentParameter:
                     appender(text);
                     break;
+                // Informative text that should be displayed but never inserted
+                // as part of the template
+                case CXCompletionChunk_Informative:
+                    // Informative text before CXCompletionChunk_TypedText usually
+                    // just a method scope (i.e. long name of an owner class)
+                    // and it's useless for completer cuz it can group items 
+                    // by parent already...
+                    if (!typed_text.isEmpty())
+                        appender(text);
                 default:
                     break;
             }
