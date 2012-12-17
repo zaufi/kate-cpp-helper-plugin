@@ -325,6 +325,25 @@ QList<ClangCodeCompletionItem> TranslationUnit::completeAt(const int line, const
                     appender("%" + QString::number(placeholders.size() + 1) + "%");
                     placeholders.push_back(text);
                     break;
+                // A code-completion string that describes "optional" text that
+                // could be a part of the template (but is not required)
+                case CXCompletionChunk_Optional:
+                {
+                    // Put optional parameters into square brackets
+                    text = QLatin1String("[");
+                    auto ostr = clang_getCompletionChunkCompletionString(str, j);
+                    for (
+                        unsigned oci = 0
+                      , ocn = clang_getNumCompletionChunks(ostr)
+                      ; oci < ocn
+                      ; ++oci
+                      )
+                    {
+                        DCXString otext_str = clang_getCompletionChunkText(ostr, oci);
+                        text += QString(clang_getCString(otext_str));
+                    }
+                    text += QLatin1String("]");
+                }
                 case CXCompletionChunk_ResultType:
                 case CXCompletionChunk_LeftParen:
                 case CXCompletionChunk_RightParen:
@@ -346,10 +365,6 @@ QList<ClangCodeCompletionItem> TranslationUnit::completeAt(const int line, const
                 // as part of the template
                 case CXCompletionChunk_Informative:
                 case CXCompletionChunk_CurrentParameter:
-                // A code-completion string that describes "optional" text that
-                // could be a part of the template (but is not required)
-                case CXCompletionChunk_Optional:
-                    /// \todo Extract and append an options text (default parameters)
                 default:
                     break;
             }
