@@ -15,7 +15,7 @@ set(VERSION_MINOR 7)
 set(VERSION_PATCH 1)
 set(VERSION_STRING ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/modules" ${CMAKE_MODULE_PATH})
-
+    
 #---------------------------------------------------------
 # Section: Include aux cmake functions
 #---------------------------------------------------------

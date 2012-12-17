@@ -22,12 +22,18 @@
        <verstretch>0</verstretch>
       </sizepolicy>
      </property>
+     <property name="whatsThis">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Select your compiler to ask for builtin &lt;tt&gt;#include&lt;/tt&gt; paths&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
      <property name="title">
       <string>Detect Builtin Compiler Paths</string>
      </property>
      <layout class="QVBoxLayout" name="verticalLayout">
       <item>
        <widget class="QRadioButton" name="gcc">
+        <property name="whatsThis">
+         <string/>
+        </property>
         <property name="text">
          <string>g++</string>
         </property>
@@ -38,6 +44,9 @@
       </item>
       <item>
        <widget class="QRadioButton" name="clang">
+        <property name="whatsThis">
+         <string/>
+        </property>
         <property name="text">
          <string>clang++</string>
         </property>
@@ -59,6 +68,9 @@
          <widget class="KUrlRequester" name="otherExecutable">
           <property name="enabled">
            <bool>false</bool>
+          </property>
+          <property name="whatsThis">
+           <string>Sorry, not implemented yet :-(</string>
           </property>
          </widget>
         </item>

@@ -1,0 +1,3 @@
+[SessionIncludeSet]
+Name=Qt4
+Dirs[$e]=@QT4_INCSET_DIRS@

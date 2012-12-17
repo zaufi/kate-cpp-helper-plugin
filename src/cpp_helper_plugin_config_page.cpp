@@ -26,6 +26,8 @@
 #include <src/utils.h>
 
 // Standard includes
+#include <kate/application.h>
+#include <kate/documentmanager.h>
 #include <KDebug>
 #include <KDirSelectDialog>
 #include <KPassivePopup>
@@ -34,8 +36,59 @@
 #include <KTabWidget>
 #include <QtGui/QVBoxLayout>
 #include <cstdlib>
+#include <vector>
 
-namespace kate {
+namespace kate { namespace {
+const char* const INCSET_GROUP_NAME = "SessionIncludeSet";
+const char* const INCSET_NAME_KEY = "Name";
+const char* const INCSET_DIRS_KEY = "Dirs";
+const char* const INCSET_FILE_TPL = "plugins/katecpphelperplugin/%1.incset";
+const QString DEFAULT_GCC_BINARY = "g++";
+const QString DEFAULT_CLANG_BINARY = "clang++";
+
+std::vector<const char*> VSC_DIRS = {
+    ".git", ".hg", ".svn"
+};
+std::vector<const char*> WELL_KNOWN_NOT_SUITABLE_DIRS = {
+    "/bin"
+  , "/boot"
+  , "/etc"
+  , "/home"
+  , "/sbin"
+  , "/usr"
+  , "/usr/bin"
+  , "/usr/sbin"
+  , "/usr/local"
+  , "/var"
+};
+
+bool hasVCSDir(const QString& url)
+{
+    for (const auto vcs_dir : VSC_DIRS)
+    {
+        const QFileInfo di(QString(url + QLatin1String("/") + vcs_dir));
+        if (di.exists())
+            return true;
+    }
+    return false;
+}
+
+bool isFirstLevelPath(const QString& dir)
+{
+    auto url = KUrl(dir).directory();
+    return KUrl(url).path() == QLatin1String("/");
+}
+
+bool isOneOfWellKnownPaths(const QString& url)
+{
+    for (const auto dir : WELL_KNOWN_NOT_SUITABLE_DIRS)
+        if (url == QLatin1String(dir))
+            return true;
+    return false;
+}
+
+}                                                           // anonymous namespace
+
 //BEGIN CppHelperPluginConfigPage
 CppHelperPluginConfigPage::CppHelperPluginConfigPage(
     QWidget* parent
@@ -74,14 +127,14 @@ CppHelperPluginConfigPage::CppHelperPluginConfigPage(
         compilers->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
         m_compiler_paths->setupUi(compilers);
         {
-            auto gcc_binary = findBinary("g++");
+            auto gcc_binary = findBinary(DEFAULT_GCC_BINARY);
             if (gcc_binary.isEmpty())
                 m_compiler_paths->gcc->setEnabled(false);
             else
                 m_compiler_paths->gcc->setText(gcc_binary);
         }
         {
-            auto clang_binary = findBinary("clang++");
+            auto clang_binary = findBinary(DEFAULT_CLANG_BINARY);
             if (clang_binary.isEmpty())
                 m_compiler_paths->clang->setEnabled(false);
             else
@@ -114,10 +167,11 @@ CppHelperPluginConfigPage::CppHelperPluginConfigPage(
         QWidget* favorites = new QWidget(session_tab);
         favorites->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
         m_favorite_sets->setupUi(favorites);
-        updateSets();
         connect(m_favorite_sets->addButton, SIGNAL(clicked()), this, SLOT(addSet()));
+        connect(m_favorite_sets->removeButton, SIGNAL(clicked()), this, SLOT(removeSet()));
         connect(m_favorite_sets->storeButton, SIGNAL(clicked()), this, SLOT(storeSet()));
-        connect(m_favorite_sets->guessButton, SIGNAL(clicked()), this, SLOT(guessSet()));
+        connect(m_favorite_sets->addSuggestedDirButton, SIGNAL(clicked()), this, SLOT(addSuggestedDir()));
+        connect(m_favorite_sets->vcsOnly, SIGNAL(clicked()), this, SLOT(updateSuggestions()));
         // Setup layout
         QVBoxLayout* layout = new QVBoxLayout(session_tab);
         layout->addWidget(paths, 1);
@@ -236,6 +290,9 @@ void CppHelperPluginConfigPage::reset()
     m_pss_config->useWildcardSearch->setCheckState(
         m_plugin->config().useWildcardSearch() ? Qt::Checked : Qt::Unchecked
       );
+
+    updateSuggestions();
+    updateSets();
 }
 
 void CppHelperPluginConfigPage::addSessionIncludeDir()
@@ -290,10 +347,35 @@ void CppHelperPluginConfigPage::addSet()
     auto it = m_include_sets.find(m_favorite_sets->setsList->currentText());
     if (it != end(m_include_sets))
     {
-        KConfigGroup general(it->second, "General");
-        auto dirs = general.readPathEntry("Dirs", QStringList());
+        KConfigGroup general(it->second.m_config, INCSET_GROUP_NAME);
+        auto dirs = general.readPathEntry(INCSET_DIRS_KEY, QStringList());
         for (const auto& dir : dirs)
             addDirTo(dir, m_session_list->pathsList);
+    }
+}
+
+void CppHelperPluginConfigPage::removeSet()
+{
+    auto it = m_include_sets.find(m_favorite_sets->setsList->currentText());
+    if (it != end(m_include_sets))
+    {
+        QFile file(it->second.m_file);
+        kDebug() << "Going to remove file" << file.fileName();
+        if (!file.remove())
+        {
+            KPassivePopup::message(
+                i18n("Error")
+              , i18n("<qt>Unable to remove file:<br /><tt>%1</tt></qt>", file.fileName())
+              , qobject_cast<QWidget*>(this)
+              );
+            return;
+        }
+        KPassivePopup::message(
+            i18n("Done")
+          , i18n("<qt>Remove successed<br /><tt>%1</tt></qt>", file.fileName())
+          , qobject_cast<QWidget*>(this)
+          );
+        updateSets();
     }
 }
 
@@ -310,13 +392,13 @@ void CppHelperPluginConfigPage::storeSet()
             auto filename = QString(QUrl::toPercentEncoding(set_name));
             auto incset_file = KStandardDirs::locateLocal(
                 "appdata"
-            , QString("plugins/katecpphelperplugin/%1.incset").arg(filename)
+            , QString(INCSET_FILE_TPL).arg(filename)
             , true
             );
             kDebug() << "Going to make a new incset file for it:" << incset_file;
             cfg = KSharedConfig::openConfig(incset_file, KConfig::SimpleConfig);
         }
-        else cfg = it->second;
+        else cfg = it->second.m_config;
     }
 
     QStringList dirs;
@@ -325,16 +407,17 @@ void CppHelperPluginConfigPage::storeSet()
     kDebug() << "Collected current paths:" << dirs;
 
     // Write Name and Dirs entries to the config
-    KConfigGroup general(cfg, "General");
-    general.writeEntry("Name", set_name);
-    general.writePathEntry("Dirs", dirs);
+    KConfigGroup general(cfg, INCSET_GROUP_NAME);
+    general.writeEntry(INCSET_NAME_KEY, set_name);
+    general.writePathEntry(INCSET_DIRS_KEY, dirs);
+    /// \todo I wonder is it always successed? ORLY?!
     cfg->sync();
     updateSets();
 }
 
-void CppHelperPluginConfigPage::guessSet()
+void CppHelperPluginConfigPage::addSuggestedDir()
 {
-
+    addDirTo(m_favorite_sets->suggestionsList->currentText(), m_session_list->pathsList);
 }
 
 void CppHelperPluginConfigPage::addGlobalIncludeDir()
@@ -451,17 +534,17 @@ void CppHelperPluginConfigPage::detectPredefinedCompilerPaths()
 void CppHelperPluginConfigPage::error(QProcess::ProcessError error)
 {
     const auto binary = getCurrentCompiler();
-    const char* status_str;
+    QString status_str;
     switch (error)
     {
-        case QProcess::FailedToStart: status_str = "Process failed to start"; break;
-        case QProcess::Crashed:       status_str = "Process crashed"; break;
-        case QProcess::Timedout:      status_str = "Timedout";        break;
-        case QProcess::WriteError:    status_str = "Write error";     break;
-        case QProcess::ReadError:     status_str = "Read error";      break;
+        case QProcess::FailedToStart: status_str = i18n("Process failed to start"); break;
+        case QProcess::Crashed:       status_str = i18n("Process crashed"); break;
+        case QProcess::Timedout:      status_str = i18n("Timedout");        break;
+        case QProcess::WriteError:    status_str = i18n("Write error");     break;
+        case QProcess::ReadError:     status_str = i18n("Read error");      break;
         case QProcess::UnknownError:
         default:
-            status_str = "Unknown error";
+            status_str = i18n("Unknown error");
             break;
     }
     KPassivePopup::message(
@@ -575,9 +658,9 @@ QString CppHelperPluginConfigPage::getCurrentCompiler() const
 {
     QString binary;
     if (m_compiler_paths->gcc->isChecked())
-        binary = findBinary("g++");
+        binary = findBinary(DEFAULT_GCC_BINARY);
     else if (m_compiler_paths->clang->isChecked())
-        binary = findBinary("clang++");
+        binary = findBinary(DEFAULT_CLANG_BINARY);
 
     return binary;
 }
@@ -597,7 +680,7 @@ void CppHelperPluginConfigPage::updateSets()
     // Find *.incset files
     auto sets = KGlobal::dirs()->findAllResources(
         "appdata"
-      , "plugins/katecpphelperplugin/*.incset"
+      , QString(INCSET_FILE_TPL).arg("*")
       , KStandardDirs::NoSearchOptions
       );
     kDebug() << "sets:" << sets;
@@ -606,17 +689,67 @@ void CppHelperPluginConfigPage::updateSets()
     for (const auto& filename : sets)
     {
         KSharedConfigPtr incset = KSharedConfig::openConfig(filename, KConfig::SimpleConfig);
-        KConfigGroup general(incset, "General");
-        auto set_name = general.readEntry("Name", QString());
-        auto dirs = general.readPathEntry("Dirs", QStringList());
+        KConfigGroup general(incset, INCSET_GROUP_NAME);
+        auto set_name = general.readEntry(INCSET_NAME_KEY, QString());
+        auto dirs = general.readPathEntry(INCSET_DIRS_KEY, QStringList());
         kDebug() << "set name: " << set_name;
         kDebug() << "dirs: " << dirs;
-        m_include_sets[set_name] = incset;
+        m_include_sets[set_name] = IncludeSetInfo{incset, filename};
     }
 
     // Fill the `sets` combobox w/ names
     for (const auto& p : m_include_sets)
         m_favorite_sets->setsList->addItem(p.first);
+}
+
+void CppHelperPluginConfigPage::updateSuggestions()
+{
+    // Obtain a list of currecntly opened documents
+    auto documents = m_plugin->application()->documentManager()->documents();
+    // Collect paths
+    QStringList dirs;
+    const bool should_check_vcs = m_favorite_sets->vcsOnly->isChecked();
+    for (auto* current_doc : documents)
+    {
+        // Get current document's URI
+        const auto current_doc_uri = current_doc->url();
+        // Check if valid
+        if (current_doc_uri.isValid() && !current_doc_uri.isEmpty())
+        {
+            // Traverse over all parent dirs
+            for (
+                KUrl url = current_doc_uri.directory()
+              ; url.hasPath() && url.path() != QLatin1String("/")
+              ; url = url.upUrl()
+              )
+            {
+                auto dir = url.path();                      // Obtain path as string
+                while (dir.endsWith('/'))                   // Strip trailing '/'
+                    dir = dir.remove(dir.length() - 1, 1);
+                // Check uniqueness and other constraints
+                const bool should_add = dirs.indexOf(dir) == -1
+                  && !contains(dir, m_system_list->pathsList)
+                  && !contains(dir, m_session_list->pathsList)
+                  && (
+                      (should_check_vcs && hasVCSDir(dir))
+                    || (!should_check_vcs && !isOneOfWellKnownPaths(dir) && !isFirstLevelPath(dir))
+                    )
+                  ;
+                if (should_add)                             // Add current path only if not added yet
+                    dirs << dir;
+            }
+        }
+    }
+    qSort(dirs);
+    kDebug() << "Suggestions list:" << dirs;
+    // Update combobox w/ collected list
+    m_favorite_sets->suggestionsList->clear();
+    m_favorite_sets->suggestionsList->addItems(dirs);
+
+    // Enable/disable controls according documents list emptyness
+    const auto is_enabled = !dirs.isEmpty();
+    m_favorite_sets->addSuggestedDirButton->setEnabled(is_enabled);
+    m_favorite_sets->suggestionsList->setEnabled(is_enabled);
 }
 
 //END CppHelperPluginConfigPage

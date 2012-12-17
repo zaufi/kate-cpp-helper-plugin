@@ -2,4 +2,3 @@ kate: space-indent on;
 kate: tab-width 4;
 kate: indent-width 4;
 kate: replace-tabs on;
-kate: hl C++11/Qt4;

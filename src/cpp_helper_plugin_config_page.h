@@ -77,8 +77,9 @@ private Q_SLOTS:
     void moveSessionDirDown();
     void clearSessionDirs();
     void addSet();
-    void guessSet();
+    void removeSet();
     void storeSet();
+    void addSuggestedDir();
     void openPCHHeaderFile();                               ///< Open configured PCH header
     void rebuildPCH();                                      ///< Rebuild a PCH file from configured header
     void pchHeaderChanged(const QString&);
@@ -88,6 +89,7 @@ private Q_SLOTS:
     void finished(int, QProcess::ExitStatus);               ///< Compiler process finished
     void readyReadStandardOutput();                         ///< Ready to read standard input
     void readyReadStandardError();                          ///< Ready to read standard error
+    void updateSuggestions();
 
 private:
     bool contains(const QString&, const KListWidget*);      ///< Check if directories list contains given item
@@ -106,7 +108,13 @@ private:
     KProcess m_compiler_proc;
     QString m_output;
     QString m_error;
-    std::map<QString, KSharedConfigPtr> m_include_sets;
+
+    struct IncludeSetInfo
+    {
+        KSharedConfigPtr m_config;
+        QString m_file;
+    };
+    std::map<QString, IncludeSetInfo> m_include_sets;
 };
 
 }                                                           // namespace kate

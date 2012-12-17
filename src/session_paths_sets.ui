@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>402</width>
-    <height>237</height>
+    <width>512</width>
+    <height>187</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -43,6 +43,9 @@
             <verstretch>0</verstretch>
            </sizepolicy>
           </property>
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Stored &lt;tt&gt;#include&lt;/tt&gt; sets&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
           <property name="editable">
            <bool>true</bool>
           </property>
@@ -66,7 +69,20 @@
          </spacer>
         </item>
         <item>
+         <widget class="KPushButton" name="removeButton">
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Remove selected session's &lt;tt&gt;#include&lt;/tt&gt; set&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
+          <property name="text">
+           <string>Remove set</string>
+          </property>
+         </widget>
+        </item>
+        <item>
          <widget class="KPushButton" name="storeButton">
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Save current session's &lt;tt&gt;#include&lt;/tt&gt; set with given name&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
           <property name="text">
            <string>Save current set</string>
           </property>
@@ -74,6 +90,9 @@
         </item>
         <item>
          <widget class="KPushButton" name="addButton">
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Add selected &lt;tt&gt;#include&lt;/tt&gt; set to the list of session's &lt;tt&gt;#include&lt;/tt&gt; paths&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
           <property name="text">
            <string>Add a set to the list</string>
           </property>
@@ -88,52 +107,53 @@
    <item row="2" column="0">
     <widget class="KButtonGroup" name="suggestionGroup">
      <property name="title">
-      <string>Suggestion Options</string>
+      <string>Suggested Directories</string>
      </property>
      <layout class="QVBoxLayout" name="verticalLayout">
       <item>
-       <widget class="QRadioButton" name="onlyVCS">
-        <property name="text">
-         <string>Add only directories with VCS serivice directory</string>
+       <widget class="QCheckBox" name="vcsOnly">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Filter out paths without one of well known VCS service directory inside.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
-        <property name="checked">
-         <bool>true</bool>
+        <property name="whatsThis">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If checked, directories without &lt;tt&gt;.hg&lt;/tt&gt;/&lt;tt&gt;.git&lt;/tt&gt;/&lt;tt&gt;.svn&lt;/tt&gt; inside will not be suggested&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QRadioButton" name="onlyCommonRoot">
         <property name="text">
-         <string>Add only directories with common root</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QRadioButton" name="allPaths">
-        <property name="text">
-         <string>Add all directories</string>
+         <string>Show only paths with VCS service dirs</string>
         </property>
        </widget>
       </item>
       <item>
        <layout class="QHBoxLayout" name="hl3">
         <item>
-         <spacer name="hs2">
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
+         <widget class="KComboBox" name="suggestionsList">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
           </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>40</width>
-            <height>20</height>
-           </size>
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;A list of directories based on currently opened documents suggested as candidate for session's &lt;tt&gt;#include&lt;/tt&gt; paths&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
-         </spacer>
+          <property name="editable">
+           <bool>true</bool>
+          </property>
+         </widget>
         </item>
         <item>
-         <widget class="KPushButton" name="guessButton">
+         <widget class="KPushButton" name="addSuggestedDirButton">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Add selected suggestion to the list of session's &lt;tt&gt;#include&lt;/tt&gt; paths&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
           <property name="text">
-           <string>Suggest a set</string>
+           <string>Add to the list</string>
           </property>
          </widget>
         </item>
