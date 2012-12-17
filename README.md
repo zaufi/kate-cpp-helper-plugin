@@ -20,7 +20,7 @@ in your sources. Here is also few little cute things:
 * highlight `#include` lines if header not found in configured locations or found in multiple times
 * monitor configured directories for header files
 
-Since version 0.5 I've added a code completion based on clang API and decide to rename _Kate Include Helper_
+Since version 0.6 I've added a code completion based on clang API and decide to rename _Kate Include Helper_
 into _Kate C++ Helper Plugin_.
 
 
