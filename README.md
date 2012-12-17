@@ -173,6 +173,7 @@ Version 0.8
 * added UI to ask `g++` or `clang++` compiler (if found in `PATH`) about predefined `#include` paths,
   and append them to _System Paths_ tab.
 * other UI cleaned up a little as well
+* display optional parameters in completions list
 
 Version 0.7.1
 -------------
