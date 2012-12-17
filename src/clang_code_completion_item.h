@@ -52,6 +52,7 @@ public:
       , const QStringList& placeholders
       , const unsigned priority
       , const CXCursorKind kind
+      , const bool is_deprecated = false
       )
       : m_parent(parent)
       , m_before(before)
@@ -60,6 +61,7 @@ public:
       , m_placeholders(placeholders)
       , m_priority(priority)
       , m_kind(kind)
+      , m_deprecated(is_deprecated)
     {
     }
 
@@ -82,6 +84,7 @@ private:
     QStringList m_placeholders;                             ///< Parameters to substitute
     unsigned m_priority;
     CXCursorKind m_kind;
+    bool m_deprecated;                                      ///< Is current item deprecated?
 };
 
 }                                                           // namespace kate

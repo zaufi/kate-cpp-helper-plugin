@@ -82,10 +82,9 @@ append_if_set(QT_QTDECLARATIVE_INCLUDE_DIR QT4_INCSET_DIRS)
 configure_file(data/qt4.incset.in data/qt4.incset)
 
 install(TARGETS katecpphelperplugin DESTINATION ${PLUGIN_INSTALL_DIR})
-install(FILES ui.rc DESTINATION ${DATA_INSTALL_DIR}/katecpphelperplugin)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/katecpphelperplugin.desktop DESTINATION ${SERVICES_INSTALL_DIR})
 install(
-    FILES ${CMAKE_CURRENT_BINARY_DIR}/data/qt4.incset
+    FILES ui.rc ${CMAKE_CURRENT_BINARY_DIR}/data/qt4.incset
     DESTINATION ${DATA_INSTALL_DIR}/kate/plugins/katecpphelperplugin
   )
 

@@ -282,8 +282,8 @@ QList<ClangCodeCompletionItem> TranslationUnit::completeAt(const int line, const
 
         // Skip unusable completions
         // 0) check availability
-        const auto av = clang_getCompletionAvailability(str);
-        if (av != CXAvailability_Available && av != CXAvailability_Deprecated)
+        const auto availability = clang_getCompletionAvailability(str);
+        if (availability != CXAvailability_Available && availability != CXAvailability_Deprecated)
         {
             kDebug() << "!! Skip result" << i << "as not available";
             continue;
@@ -359,12 +359,12 @@ QList<ClangCodeCompletionItem> TranslationUnit::completeAt(const int line, const
                 case CXCompletionChunk_Equal:
                 case CXCompletionChunk_HorizontalSpace:
                 case CXCompletionChunk_VerticalSpace:
-                    appender(text);
-                    break;
+                case CXCompletionChunk_Informative:
                 // Informative text that should be displayed but never inserted
                 // as part of the template
-                case CXCompletionChunk_Informative:
                 case CXCompletionChunk_CurrentParameter:
+                    appender(text);
+                    break;
                 default:
                     break;
             }
@@ -378,6 +378,7 @@ QList<ClangCodeCompletionItem> TranslationUnit::completeAt(const int line, const
           , placeholders
           , priority
           , cursor_kind
+          , availability == CXAvailability_Deprecated
           });
     }
 

@@ -28,7 +28,10 @@
 #include <cassert>
 #include <map>
 
-namespace kate {
+namespace kate { namespace {
+const QString DEPRECATED_STR = "DEPRECATED";
+}                                                           // anonymous namespace
+
 /**
  * Produce a data siutable for view
  */
@@ -53,7 +56,6 @@ QVariant ClangCodeCompletionItem::data(const QModelIndex& index, const int role)
             switch (index.column())
             {
                 case KTextEditor::CodeCompletionModel::Name:
-                    // Ok put placeholders into 
                     result = m_text;
                     break;
                 case KTextEditor::CodeCompletionModel::Prefix:
@@ -63,44 +65,40 @@ QVariant ClangCodeCompletionItem::data(const QModelIndex& index, const int role)
                     {
                         switch (m_kind)
                         {
-                            case CXCursor_TypedefDecl:
-                                prefix = "typedef";
-                                break;
-                            case CXCursor_ClassDecl:
-                                prefix = "class";
-                                break;
-                            case CXCursor_ClassTemplate:
-                                prefix = "template class";
-                                break;
-                            case CXCursor_StructDecl:
-                                prefix = "struct";
-                                break;
-                            case CXCursor_EnumDecl:
-                                prefix = "enum";
-                                break;
-                            case CXCursor_Namespace:
-                                prefix = "namespace";
-                                break;
-                            case CXCursor_UnionDecl:
-                                prefix = "union";
-                                break;
-                            default:
-                                break;
+                            case CXCursor_TypedefDecl:   prefix = QLatin1String("typedef");         break;
+                            case CXCursor_ClassDecl:     prefix = QLatin1String("class");           break;
+                            case CXCursor_ClassTemplate: prefix = QLatin1String("template class");  break;
+                            case CXCursor_StructDecl:    prefix = QLatin1String("struct");          break;
+                            case CXCursor_EnumDecl:      prefix = QLatin1String("enum");            break;
+                            case CXCursor_Namespace:     prefix = QLatin1String("namespace");       break;
+                            case CXCursor_UnionDecl:     prefix = QLatin1String("union");           break;
+                            default: break;
                         }
                     }
                     result = prefix;
                     break;
                 }
                 case KTextEditor::CodeCompletionModel::Postfix:
+                    if (m_deprecated)
+                        result = DEPRECATED_STR;
                     break;
                 case KTextEditor::CodeCompletionModel::Arguments:
                     result = renderPlaceholders(m_after);
                     break;
+#if 0
+                // NOTE This would just merge `scope` text w/ name and finally
+                // everything would look ugly... Anyway we have a groups to join
+                // completion items by parent/scope and it looks better than this...
+                case KTextEditor::CodeCompletionModel::Scope:
+                    result = m_parent;
+                    break;
+#endif
                 default:
                     break;
             }
             break;
         default:
+            kDebug() << "Role" << role << "requested for" << index;
             break;
     }
     return result;
