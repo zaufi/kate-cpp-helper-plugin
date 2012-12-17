@@ -167,7 +167,7 @@ Changes
 Version 0.8
 -----------
 
-* added session #include sets. Now it is possible to save session's `#inclue` paths and reuse in other
+* added session `#include` sets. Now it is possible to save session's `#inclue` paths and reuse in other
   sessions, so configuring sessions will takes less time. Also one perdefined set shipped: Qt4 --
   based on `#include` paths detected when this plugin get compiled.
 * added UI to ask `g++` or `clang++` compiler (if found in `PATH`) about predefined `#include` path,
