@@ -36,6 +36,7 @@
 #include <KDebug>
 #include <KPluginFactory>
 #include <KPluginLoader>
+#include <KTextEditor/Editor>
 #include <KTextEditor/MovingInterface>
 #include <QtCore/QFileInfo>
 
@@ -62,8 +63,11 @@ CppHelperPlugin::CppHelperPlugin(
   : Kate::Plugin(static_cast<Kate::Application*>(application), "kate_cpphelper_plugin")
   /// \todo Make parameters to \c clang_createIndex() configurable?
   , m_index(clang_createIndex(0, 0))
+  , m_hidden_doc(this->application()->editor()->createDocument(this))
 {
     assert("clang index expected to be valid" && m_index);
+    // Document require a view to be able to highlight text
+    m_hidden_doc->createView(nullptr);
     // Connect self to configuration updates
     connect(
         &m_config
@@ -355,6 +359,31 @@ void CppHelperPlugin::buildPCHIfAbsent()
     //
     kDebug() << "PCH header: " << config().precompiledHeaderFile();
     kDebug() << "PCH file: " << config().pchFile();
+}
+
+QList<KTextEditor::HighlightInterface::AttributeBlock> CppHelperPlugin::highlightSnippet(
+    const QString& text
+  , const QString& mode
+  )
+{
+#if 0
+    kDebug() << "Highligting text " << text << "using" << mode << "mode";
+#endif
+    QList<KTextEditor::HighlightInterface::AttributeBlock> result;
+
+    /// \todo Is there any reason to cache this pointer?
+    /// (to avoid casting all the time to the same (?) value)
+    /// Is it constant by the way?
+    KTextEditor::HighlightInterface* iface = qobject_cast<KTextEditor::HighlightInterface*>(m_hidden_doc);
+    if (iface)
+    {
+        m_hidden_doc->setHighlightingMode(mode);
+        m_hidden_doc->setText(text);
+        assert("Document expected to have at least 1 line" && m_hidden_doc->lines());
+        result = iface->lineAttributes(0);
+        m_hidden_doc->clear();
+    }
+    return result;
 }
 
 //END CppHelperPlugin

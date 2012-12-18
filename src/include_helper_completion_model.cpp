@@ -26,9 +26,9 @@
 #include <src/utils.h>
 
 // Standard includes
-#include <KLocalizedString>                                 /// \todo Where is \c i18n() defiend?
 #include <KTextEditor/Document>
 #include <KTextEditor/View>
+#include <KLocalizedString>                                 /// \todo Where is \c i18n() defiend?
 
 namespace kate {
 //BEGIN IncludeHelperCompletionModel

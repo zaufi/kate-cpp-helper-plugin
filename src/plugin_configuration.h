@@ -50,6 +50,8 @@ public:
       , m_config_dirty(false)
       , m_open_first(false)
       , m_use_wildcard_search(false)
+      , m_highlight_completions(true)
+      , m_sanitize_completions(true)
     {}
 
     /// \name Accessors
@@ -64,6 +66,9 @@ public:
     bool shouldOpenFirstInclude() const;
     bool useWildcardSearch() const;
     int what_to_monitor() const;
+    bool sanitizeCompletions() const;
+    bool highlightCompletions() const;
+
     //@}
 
     /// \name Modifiers
@@ -78,6 +83,8 @@ public:
     void setOpenFirst(const bool);
     void setUseWildcardSearch(const bool);
     void setWhatToMonitor(const int);
+    void setSanitizeCompletions(const bool);
+    void setHighlightCompletions(const bool);
     //@}
 
     void readSessionConfig(KConfigBase*, const QString&);
@@ -107,6 +114,8 @@ private:
     bool m_config_dirty;
     bool m_open_first;
     bool m_use_wildcard_search;
+    bool m_highlight_completions;
+    bool m_sanitize_completions;
 };
 
 inline const QStringList& PluginConfiguration::sessionDirs() const
@@ -148,6 +157,14 @@ inline bool PluginConfiguration::useWildcardSearch() const
 inline int PluginConfiguration::what_to_monitor() const
 {
     return m_monitor_flags;
+}
+inline bool PluginConfiguration::highlightCompletions() const
+{
+    return m_highlight_completions;
+}
+inline bool PluginConfiguration::sanitizeCompletions() const
+{
+    return m_sanitize_completions;
 }
 
 inline void PluginConfiguration::setPrecompiledFile(const KUrl& file)

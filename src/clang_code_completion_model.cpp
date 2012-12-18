@@ -27,9 +27,10 @@
 #include <src/cpp_helper_plugin.h>
 
 // Standard includes
-#include <KLocalizedString>                                 /// \todo Where is \c i18n() defiend?
+#include <ktexteditor/highlightinterface.h>
 #include <KTextEditor/Document>
 #include <KTextEditor/View>
+#include <KLocalizedString>                                 /// \todo Where is \c i18n() defiend?
 #include <algorithm>
 
 namespace kate {
@@ -251,6 +252,12 @@ QVariant ClangCodeCompletionModel::data(const QModelIndex& index, int role) cons
     {
         switch (role)
         {
+            case KTextEditor::CodeCompletionModel::SetMatchContext:
+            case KTextEditor::CodeCompletionModel::MatchQuality:
+            case KTextEditor::CodeCompletionModel::HighlightingMethod:
+                return QVariant(QVariant::Invalid);
+            case KTextEditor::CodeCompletionModel::ScopeIndex:
+                return -1;
             case KTextEditor::CodeCompletionModel::InheritanceDepth:
                 return QVariant(0);
             case KTextEditor::CodeCompletionModel::GroupRole:
@@ -275,6 +282,80 @@ QVariant ClangCodeCompletionModel::data(const QModelIndex& index, int role) cons
         "row must be less then completion items in a selected group"
       && unsigned(index.row()) < m_groups[index.internalId()].second.m_completions.size()
       );
+
+    switch (role)
+    {
+        case KTextEditor::CodeCompletionModel::SetMatchContext:
+        case KTextEditor::CodeCompletionModel::MatchQuality:
+            return QVariant(QVariant::Invalid);
+        case KTextEditor::CodeCompletionModel::ScopeIndex:
+            return -1;
+        case KTextEditor::CodeCompletionModel::HighlightingMethod:
+            // We want custom highlighting for return value, name and params
+            switch (index.column())
+            {
+                case KTextEditor::CodeCompletionModel::Name:
+                case KTextEditor::CodeCompletionModel::Prefix:
+                case KTextEditor::CodeCompletionModel::Arguments:
+#if 0
+                    kDebug() << "OK: HighlightingMethod(" << role << ") called for" << index;
+#endif
+                    return KTextEditor::CodeCompletionModel::CustomHighlighting;
+                default:
+#if 0
+                    kDebug() << "HighlightingMethod(" << role << ") DEFAULT called for " << index;
+#endif
+                    return QVariant(QVariant::Invalid);
+            }
+            break;
+        case KTextEditor::CodeCompletionModel::CustomHighlight:
+            // Highlight completion snippet using hidden document of the plugin instance
+            switch (index.column())
+            {
+                case KTextEditor::CodeCompletionModel::Name:
+                case KTextEditor::CodeCompletionModel::Prefix:
+                case KTextEditor::CodeCompletionModel::Arguments:
+                {
+#if 0
+                    kDebug() << "OK: CustomHighlight(" << role << ") called for" << index;
+#endif
+                    // Request item for text to highlight
+                    auto text = m_groups[index.internalId()]
+                      .second.m_completions[index.row()]
+                      .data(index, Qt::DisplayRole)
+                      .toString()
+                      ;
+                    // Do not waste time if nothing to highlight
+                    if (text.isEmpty())
+                        return QVariant();
+                    // Ask the last visited document about current highlighting mode
+                    KTextEditor::Document* doc = m_current_view->document();
+                    auto mode = doc->highlightingMode();
+                    // Colorise a snippet
+                    auto attrs = m_plugin->highlightSnippet(text, mode);
+                    if (!attrs.isEmpty())
+                    {
+                        // Transform obtainer attribute blocks into a sequence
+                        // of variant triplets.
+                        QList<QVariant> attributes;
+                        for (const auto& a : attrs)
+                            attributes
+                            << a.start
+                            << (a.start + a.length)
+                            << KTextEditor::Attribute(*a.attribute)
+                            ;
+                        return attributes;
+                    }
+                    // NOTE Fallback to default case...
+                }
+                default:
+#if 0
+                    kDebug() << "CustomHighlight(" << role << ") DEFAULT called for" << index;
+#endif
+                    return QVariant();
+            }
+            break;
+    }
     return m_groups[index.internalId()].second.m_completions[index.row()].data(index, role);
 }
 

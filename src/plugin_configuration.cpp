@@ -42,6 +42,8 @@ const QString USE_CWD_ITEM = "UseCwd";
 const QString OPEN_FIRST_INCLUDE_ITEM = "OpenFirstInclude";
 const QString USE_WILDCARD_SEARCH_ITEM = "UseWildcardSearch";
 const QString MONITOR_DIRS_ITEM = "MonitorDirs";
+const QString HIGHLIGHT_COMPLETIONS_ITEM = "HighlightCompletionItems";
+const QString SANITIZE_COMPLETIONS_ITEM = "SanitizeCompletionItems";
 }                                                           // anonymous namespace
 
 void PluginConfiguration::readConfig()
@@ -71,6 +73,8 @@ void PluginConfiguration::readSessionConfig(KConfigBase* config, const QString& 
     m_use_cwd = scg.readEntry(USE_CWD_ITEM, QVariant(false)).toBool();
     m_open_first = scg.readEntry(OPEN_FIRST_INCLUDE_ITEM, QVariant(false)).toBool();
     m_use_wildcard_search = scg.readEntry(USE_WILDCARD_SEARCH_ITEM, QVariant(false)).toBool();
+    m_highlight_completions = scg.readEntry(HIGHLIGHT_COMPLETIONS_ITEM, QVariant(true)).toBool();
+    m_sanitize_completions = scg.readEntry(SANITIZE_COMPLETIONS_ITEM, QVariant(true)).toBool();
     m_monitor_flags = scg.readEntry(MONITOR_DIRS_ITEM, QVariant(0)).toInt();
     m_config_dirty = false;
 
@@ -104,6 +108,8 @@ void PluginConfiguration::writeSessionConfig(KConfigBase* config, const QString&
     scg.writeEntry(USE_CWD_ITEM, QVariant(m_use_cwd));
     scg.writeEntry(OPEN_FIRST_INCLUDE_ITEM, QVariant(m_open_first));
     scg.writeEntry(USE_WILDCARD_SEARCH_ITEM, QVariant(m_use_wildcard_search));
+    scg.writeEntry(HIGHLIGHT_COMPLETIONS_ITEM, QVariant(m_highlight_completions));
+    scg.writeEntry(SANITIZE_COMPLETIONS_ITEM, QVariant(m_sanitize_completions));
     scg.writeEntry(MONITOR_DIRS_ITEM, QVariant(m_monitor_flags));
     scg.sync();
     // Write global config
@@ -187,6 +193,18 @@ void PluginConfiguration::setUseWildcardSearch(const bool state)
     m_config_dirty = true;
     kDebug() << "** set config to `dirty' state!! **";
 }
+void PluginConfiguration::setHighlightCompletions(const bool state)
+{
+    m_highlight_completions = state;
+    m_config_dirty = true;
+    kDebug() << "** set config to `dirty' state!! **";
+}
+void PluginConfiguration::setSanitizeCompletions(const bool state)
+{
+    m_sanitize_completions = state;
+    m_config_dirty = true;
+    kDebug() << "** set config to `dirty' state!! **";
+}
 void PluginConfiguration::setWhatToMonitor(const int tgt)
 {
     if (m_monitor_flags != tgt)
@@ -196,6 +214,7 @@ void PluginConfiguration::setWhatToMonitor(const int tgt)
         m_config_dirty = true;
         Q_EMIT(dirWatchSettingsChanged());
     }
+    kDebug() << "** set config to `dirty' state!! **";
 }
 
 QStringList PluginConfiguration::formCompilerOptions() const

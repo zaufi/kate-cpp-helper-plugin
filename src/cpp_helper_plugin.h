@@ -31,6 +31,7 @@
 # include <kate/plugin.h>
 # include <kate/pluginconfigpageinterface.h>
 # include <KTextEditor/Document>
+# include <KTextEditor/HighlightInterface>
 # include <KDirWatch>
 # include <cassert>
 # include <map>
@@ -87,6 +88,11 @@ public:
     Kate::PluginView* createView(Kate::MainWindow*);
     //@}
 
+    QList<KTextEditor::HighlightInterface::AttributeBlock> highlightSnippet(
+        const QString&
+      , const QString&
+      );
+
 public Q_SLOTS:
     void updateDocumentInfo(KTextEditor::Document* doc);
     void textInserted(KTextEditor::Document*, const KTextEditor::Range&);
@@ -112,6 +118,8 @@ private:
     /// \note Directory watcher reports about 4 times just for one event,
     /// so to avoid doing stupid job, lets remember what we've done the last time.
     QString m_last_updated;
+    /// A never shown document used to highlight code completion items
+    KTextEditor::Document* m_hidden_doc;
 };
 
 inline PluginConfiguration& CppHelperPlugin::config()

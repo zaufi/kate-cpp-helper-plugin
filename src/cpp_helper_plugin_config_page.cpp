@@ -184,9 +184,6 @@ CppHelperPluginConfigPage::CppHelperPluginConfigPage(
     {
         QWidget* clang_tab = new QWidget(tab);
         m_clang_config->setupUi(clang_tab);
-        m_clang_config->pchHeader->setUrl(m_plugin->config().precompiledHeaderFile());
-        m_clang_config->commandLineParams->setPlainText(m_plugin->config().clangParams());
-        pchHeaderChanged(m_plugin->config().precompiledHeaderFile());
         tab->addTab(clang_tab, i18n("Clang Settings"));
         // Monitor changes to PCH file
         connect(
@@ -212,11 +209,6 @@ CppHelperPluginConfigPage::CppHelperPluginConfigPage(
     {
         QWidget* pss_tab = new QWidget(tab);
         m_pss_config->setupUi(pss_tab);
-        int flags = m_plugin->config().what_to_monitor();
-        m_pss_config->nothing->setChecked(flags == 0);
-        m_pss_config->session->setChecked(flags == 1);
-        m_pss_config->system->setChecked(flags == 2);
-        m_pss_config->all->setChecked(flags == 3);
         tab->addTab(pss_tab, i18n("Other Settings"));
     }
 
@@ -258,10 +250,12 @@ void CppHelperPluginConfigPage::apply()
     }
     m_plugin->config().setPrecompiledHeaderFile(m_clang_config->pchHeader->text());
     m_plugin->config().setClangParams(m_clang_config->commandLineParams->toPlainText());
-    m_plugin->config().setUseLtGt(m_pss_config->includeMarkersSwitch->checkState() == Qt::Checked);
-    m_plugin->config().setUseCwd(m_pss_config->useCurrentDirSwitch->checkState() == Qt::Checked);
-    m_plugin->config().setOpenFirst(m_pss_config->openFirstHeader->checkState() == Qt::Checked);
-    m_plugin->config().setUseWildcardSearch(m_pss_config->useWildcardSearch->checkState() == Qt::Checked);
+    m_plugin->config().setUseLtGt(m_pss_config->includeMarkersSwitch->isChecked());
+    m_plugin->config().setUseCwd(m_pss_config->useCurrentDirSwitch->isChecked());
+    m_plugin->config().setOpenFirst(m_pss_config->openFirstHeader->isChecked());
+    m_plugin->config().setUseWildcardSearch(m_pss_config->useWildcardSearch->isChecked());
+    m_plugin->config().setHighlightCompletions(m_pss_config->highlightResults->isChecked());
+    m_plugin->config().setSanitizeCompletions(m_pss_config->sanitizeResults->isChecked());
     m_plugin->config().setWhatToMonitor(
         int(m_pss_config->nothing->isChecked()) * 0
       + int(m_pss_config->session->isChecked()) * 1
@@ -278,19 +272,25 @@ void CppHelperPluginConfigPage::reset()
     // Put dirs to the list
     m_system_list->pathsList->addItems(m_plugin->config().systemDirs());
     m_session_list->pathsList->addItems(m_plugin->config().sessionDirs());
-    m_pss_config->includeMarkersSwitch->setCheckState(
-        m_plugin->config().useLtGt() ? Qt::Checked : Qt::Unchecked
-      );
-    m_pss_config->useCurrentDirSwitch->setCheckState(
-        m_plugin->config().useCwd() ? Qt::Checked : Qt::Unchecked
-      );
-    m_pss_config->openFirstHeader->setCheckState(
-        m_plugin->config().shouldOpenFirstInclude() ? Qt::Checked : Qt::Unchecked
-      );
-    m_pss_config->useWildcardSearch->setCheckState(
-        m_plugin->config().useWildcardSearch() ? Qt::Checked : Qt::Unchecked
-      );
 
+    m_clang_config->pchHeader->setUrl(m_plugin->config().precompiledHeaderFile());
+    m_clang_config->commandLineParams->setPlainText(m_plugin->config().clangParams());
+
+    m_pss_config->includeMarkersSwitch->setChecked(m_plugin->config().useLtGt());
+    m_pss_config->useCurrentDirSwitch->setChecked(m_plugin->config().useCwd());
+    m_pss_config->openFirstHeader->setChecked(m_plugin->config().shouldOpenFirstInclude());
+    m_pss_config->useWildcardSearch->setChecked(m_plugin->config().useWildcardSearch());
+    m_pss_config->highlightResults->setChecked(m_plugin->config().highlightCompletions());
+    m_pss_config->sanitizeResults->setChecked(m_plugin->config().sanitizeCompletions());
+
+    // Setup dirs watcher
+    int flags = m_plugin->config().what_to_monitor();
+    m_pss_config->nothing->setChecked(flags == 0);
+    m_pss_config->session->setChecked(flags == 1);
+    m_pss_config->system->setChecked(flags == 2);
+    m_pss_config->all->setChecked(flags == 3);
+
+    pchHeaderChanged(m_plugin->config().precompiledHeaderFile());
     updateSuggestions();
     updateSets();
 }

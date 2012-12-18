@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>496</width>
-    <height>349</height>
+    <height>408</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -15,9 +15,15 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <widget class="QGroupBox" name="genericOptionsBox">
+    <widget class="KButtonGroup" name="genericOptionsBox">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
      <property name="title">
-      <string>Per Session Settings</string>
+      <string>#include Helper Options</string>
      </property>
      <layout class="QVBoxLayout">
       <item>
@@ -44,7 +50,13 @@
     </widget>
    </item>
    <item>
-    <widget class="QGroupBox" name="monitorBox">
+    <widget class="KButtonGroup" name="monitorBox">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
      <property name="title">
       <string>Monitor Configured Directories</string>
      </property>
@@ -99,7 +111,13 @@
     </widget>
    </item>
    <item>
-    <widget class="QGroupBox" name="openHeaderBox">
+    <widget class="KButtonGroup" name="openHeaderBox">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
      <property name="title">
       <string>Open Header/Implementation Options</string>
      </property>
@@ -127,24 +145,70 @@
         </property>
        </widget>
       </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="KButtonGroup" name="completionOptions">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="title">
+      <string>Code Completion Options</string>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout_4">
       <item>
-       <spacer name="verticalSpacer">
-        <property name="orientation">
-         <enum>Qt::Vertical</enum>
+       <widget class="QCheckBox" name="highlightResults">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Colorize completion items using current document's mode&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>20</width>
-          <height>40</height>
-         </size>
+        <property name="text">
+         <string>Highlight results</string>
         </property>
-       </spacer>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="sanitizeResults">
+        <property name="toolTip">
+         <string>Transfrom some long templated types into shorter equivalent</string>
+        </property>
+        <property name="whatsThis">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If checked, code completer will do some types replacements before display completion items. For example &lt;span style=&quot; font-family:'Courier New,courier';&quot;&gt;std::basic_string&amp;lt;char&amp;gt;&lt;/span&gt; will be replaced with &lt;span style=&quot; font-family:'Courier New,courier';&quot;&gt;std::string&lt;/span&gt;. There is a bunch of hardcoded rules for some STL and boost types. If you see some strange completion items, try to turn this option OFF and report a bug.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="text">
+         <string>Sanitize results</string>
+        </property>
+       </widget>
       </item>
      </layout>
     </widget>
    </item>
+   <item>
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>40</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>KButtonGroup</class>
+   <extends>QGroupBox</extends>
+   <header>kbuttongroup.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>
