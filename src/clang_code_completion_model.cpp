@@ -25,6 +25,7 @@
 #include <src/clang_utils.h>
 #include <src/translation_unit.h>
 #include <src/cpp_helper_plugin.h>
+#include <src/sanitize_snippet.h>
 
 // Standard includes
 #include <ktexteditor/highlightinterface.h>
@@ -249,31 +250,40 @@ QVariant ClangCodeCompletionModel::data(const QModelIndex& index, int role) cons
         return QVariant();                                  // Return nothing for invalid index
 
     if (index.internalId() == Level::GROUP)
-    {
-        switch (role)
-        {
-            case KTextEditor::CodeCompletionModel::SetMatchContext:
-            case KTextEditor::CodeCompletionModel::MatchQuality:
-            case KTextEditor::CodeCompletionModel::HighlightingMethod:
-                return QVariant(QVariant::Invalid);
-            case KTextEditor::CodeCompletionModel::ScopeIndex:
-                return -1;
-            case KTextEditor::CodeCompletionModel::InheritanceDepth:
-                return QVariant(0);
-            case KTextEditor::CodeCompletionModel::GroupRole:
-                return QVariant(Qt::DisplayRole);
-            case Qt::DisplayRole:
-                assert(
-                    "row must be less than groups size"
-                  && unsigned(index.row()) < m_groups.size()
-                  );
-                return QVariant(m_groups[index.row()].first);
-            default:
-                break;
-        }
-        return QVariant();
-    }
+        return getGroupData(index, role);
+
     // Ok, only leaf nodes here...
+    return getItemData(index, role);
+}
+
+QVariant ClangCodeCompletionModel::getGroupData(const QModelIndex& index, int role) const
+{
+    switch (role)
+    {
+        case KTextEditor::CodeCompletionModel::SetMatchContext:
+        case KTextEditor::CodeCompletionModel::MatchQuality:
+        case KTextEditor::CodeCompletionModel::HighlightingMethod:
+            return QVariant(QVariant::Invalid);
+        case KTextEditor::CodeCompletionModel::ScopeIndex:
+            return -1;
+        case KTextEditor::CodeCompletionModel::InheritanceDepth:
+            return QVariant(0);
+        case KTextEditor::CodeCompletionModel::GroupRole:
+            return QVariant(Qt::DisplayRole);
+        case Qt::DisplayRole:
+            assert(
+                "row must be less than groups size"
+              && unsigned(index.row()) < m_groups.size()
+              );
+            return QVariant(m_groups[index.row()].first);
+        default:
+            break;
+    }
+    return QVariant();
+}
+
+QVariant ClangCodeCompletionModel::getItemData(const QModelIndex& index, int role) const
+{
     assert(
         "ref to parent group is invalid!"
       && unsigned(index.internalId()) < m_groups.size()
@@ -283,6 +293,33 @@ QVariant ClangCodeCompletionModel::data(const QModelIndex& index, int role) cons
       && unsigned(index.row()) < m_groups[index.internalId()].second.m_completions.size()
       );
 
+    QVariant result;
+    if (m_plugin->config().highlightCompletions())
+        result = getItemHighlightData(index, role);         // Try to get highlighting info if requested
+    if (!result.isNull())                                   // Return any non empty value
+        return result;
+
+    // ... try to ask an item otherwise
+    result = m_groups[index.internalId()].second.m_completions[index.row()].data(index, role);
+    // Check if completion items sanitize requested
+    if (m_plugin->config().sanitizeCompletions())
+    {
+        switch (role)
+        {
+            case Qt::DisplayRole:
+                if (index.column() == CodeCompletionModel2::Prefix)
+                    result = sanitizePrefix(result.toString());
+                else if (index.column() == CodeCompletionModel2::Arguments)
+                    result = sanitizeParams(result.toString());
+            default:
+                break;
+        }
+    }
+    return result;
+}
+
+QVariant ClangCodeCompletionModel::getItemHighlightData(const QModelIndex& index, int role) const
+{
     switch (role)
     {
         case KTextEditor::CodeCompletionModel::SetMatchContext:
@@ -335,7 +372,7 @@ QVariant ClangCodeCompletionModel::data(const QModelIndex& index, int role) cons
                     auto attrs = m_plugin->highlightSnippet(text, mode);
                     if (!attrs.isEmpty())
                     {
-                        // Transform obtainer attribute blocks into a sequence
+                        // Transform obtained attribute blocks into a sequence
                         // of variant triplets.
                         QList<QVariant> attributes;
                         for (const auto& a : attrs)
@@ -352,11 +389,11 @@ QVariant ClangCodeCompletionModel::data(const QModelIndex& index, int role) cons
 #if 0
                     kDebug() << "CustomHighlight(" << role << ") DEFAULT called for" << index;
 #endif
-                    return QVariant();
+                    break;                                  // Return nothing
             }
-            break;
+            break;                                          // Return nothing
     }
-    return m_groups[index.internalId()].second.m_completions[index.row()].data(index, role);
+    return QVariant();
 }
 
 void ClangCodeCompletionModel::executeCompletionItem2(

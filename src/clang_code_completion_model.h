@@ -102,6 +102,10 @@ private:
     /// Helper function to collect unsaved files from current editor
     TranslationUnit::unsaved_files_list_type makeUnsavedFilesList(KTextEditor::Document*);
 
+    QVariant getGroupData(const QModelIndex&, int) const;
+    QVariant getItemData(const QModelIndex&, int) const;
+    QVariant getItemHighlightData(const QModelIndex&, int) const;
+
     CppHelperPlugin* m_plugin;
     KTextEdit* m_diagnostic_text;
     KTextEditor::View* m_current_view;

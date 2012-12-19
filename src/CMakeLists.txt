@@ -7,6 +7,7 @@ add_definitions(-DQT_USE_QSTRINGBUILDER)
 
 set(KATE_CPP_HELPER_PLUGIN_SOURCES
     utils.cpp
+    sanitize_snippet.cpp
     plugin_configuration.cpp
     document_info.cpp
     translation_unit.cpp

@@ -76,8 +76,6 @@ public:
 
 private:
     QString renderPlaceholders(const QString&) const;
-    QString sanitizePrefix(QString&&) const;
-    QString sanitizeParams(QString&&) const;
 
     QString m_parent;                                       ///< Parent context of the curremt completion item
     QString m_before;                                       ///< Everything \e before typed text (return type)
