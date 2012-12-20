@@ -639,10 +639,10 @@ bool CppHelperPluginView::handleView(KTextEditor::View* view)
             assert("Completers expected to be new" && r.second);
             // Enable #include completions
             cc_iface->registerCompletionModel(r.first->second.first.get());
-            cc_iface->setAutomaticInvocationEnabled(true);
             // Enable semantic C++ code completions
             cc_iface->registerCompletionModel(r.first->second.second.get());
-            cc_iface->setAutomaticInvocationEnabled(false);
+            // Turn auto completions ON
+            cc_iface->setAutomaticInvocationEnabled(true);
             result = true;
         }
     }
