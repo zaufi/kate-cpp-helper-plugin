@@ -31,6 +31,7 @@
 
 // Standard includes
 #include <kate/application.h>
+#include <kate/documentmanager.h>
 #include <kate/mainwindow.h>
 #include <KAboutData>
 #include <KDebug>
@@ -57,17 +58,19 @@ K_EXPORT_PLUGIN(
 namespace kate {
 //BEGIN CppHelperPlugin
 CppHelperPlugin::CppHelperPlugin(
-    QObject* application
+    QObject* app
   , const QList<QVariant>&
   )
-  : Kate::Plugin(static_cast<Kate::Application*>(application), "kate_cpphelper_plugin")
+  : Kate::Plugin(static_cast<Kate::Application*>(app), "kate_cpphelper_plugin")
   /// \todo Make parameters to \c clang_createIndex() configurable?
   , m_index(clang_createIndex(0, 0))
-  , m_hidden_doc(this->application()->editor()->createDocument(this))
+  , m_hidden_doc(application()->editor()->createDocument(this))
 {
     assert("clang index expected to be valid" && m_index);
+
     // Document require a view to be able to highlight text
     m_hidden_doc->createView(nullptr);
+
     // Connect self to configuration updates
     connect(
         &m_config
@@ -80,6 +83,13 @@ CppHelperPlugin::CppHelperPlugin(
       , SIGNAL(precompiledHeaderFileChanged())
       , this
       , SLOT(buildPCHIfAbsent())
+      );
+    // Connect self to document deletion to do some cleanup
+    connect(
+        application()->documentManager()
+      , SIGNAL(documentWillBeDeleted(KTextEditor::Document*))
+      , this
+      , SLOT(removeDocumentInfo(KTextEditor::Document*))
       );
 }
 
@@ -210,8 +220,9 @@ void CppHelperPlugin::updateCurrentView()
 
 void CppHelperPlugin::updateDocumentInfo(KTextEditor::Document* doc)
 {
+    kDebug() << "(re)scan document " << doc->url() << " for #includes...";
+
     assert("Valid document expected" && doc);
-    kDebug() << "(re)scan document " << doc << " for #includes...";
     KTextEditor::MovingInterface* mv_iface = qobject_cast<KTextEditor::MovingInterface*>(doc);
     if (!mv_iface)
     {
@@ -221,9 +232,17 @@ void CppHelperPlugin::updateDocumentInfo(KTextEditor::Document* doc)
 
     // Try to remove prev collected info
     {
-        CppHelperPlugin::doc_info_type::iterator it = managed_docs().find(doc);
-        if (it != managed_docs().end())
-            managed_docs().erase(it);
+        CppHelperPlugin::doc_info_type::iterator it = managedDocs().find(doc);
+        if (it != managedDocs().end())
+            managedDocs().erase(it);
+    }
+
+    // Do we really need to scan this file?
+    if (!isCOrPPSource(doc->mimeType(), doc->highlightingMode()))
+    {
+        kDebug() << "Document doesn't looks like C or C++: type ="
+          << doc->mimeType() << ", hl =" << doc->highlightingMode();
+        return;
     }
 
     std::unique_ptr<DocumentInfo> di(new DocumentInfo(this));
@@ -244,7 +263,18 @@ void CppHelperPlugin::updateDocumentInfo(KTextEditor::Document* doc)
               );
         }
     }
-    managed_docs().insert(std::make_pair(doc, std::move(di)));
+    managedDocs().insert(std::make_pair(doc, std::move(di)));
+}
+
+void CppHelperPlugin::removeDocumentInfo(KTextEditor::Document* doc)
+{
+    kDebug() << "going to remove document" << doc;
+
+    assert("Valid document expected" && doc);
+    // Try to remove previously collected info
+    CppHelperPlugin::doc_info_type::iterator it = managedDocs().find(doc);
+    if (it != managedDocs().end())
+        managedDocs().erase(it);
 }
 
 /// \todo Move this method to view class. View may access managed documents via accessor method.
@@ -257,11 +287,18 @@ void CppHelperPlugin::textInserted(KTextEditor::Document* doc, const KTextEditor
         kDebug() << "No moving iface!!!!!!!!!!!";
         return;
     }
-    // Find corresponding document info, insert if needed
-    doc_info_type::iterator it = managed_docs().find(doc);
-    if (it == managed_docs().end())
+    // Do we really need to scan this file?
+    if (!isCOrPPSource(doc->mimeType(), doc->highlightingMode()))
     {
-        it = managed_docs().insert(
+        kDebug() << "Document doesn't looks like C or C++: type ="
+          << doc->mimeType() << ", hl =" << doc->highlightingMode();
+        return;
+    }
+    // Find corresponding document info, insert if needed
+    doc_info_type::iterator it = managedDocs().find(doc);
+    if (it == managedDocs().end())
+    {
+        it = managedDocs().insert(
             std::make_pair(doc, std::unique_ptr<DocumentInfo>(new DocumentInfo(this)))
           ).first;
     }
@@ -281,7 +318,8 @@ void CppHelperPlugin::textInserted(KTextEditor::Document* doc, const KTextEditor
                       , KTextEditor::MovingRange::ExpandLeft | KTextEditor::MovingRange::ExpandRight
                       )
                   );
-            } else kDebug() << "range already registered";
+            }
+            else kDebug() << "range already registered";
         }
         else kDebug() << "no valid #include found";
     }

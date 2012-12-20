@@ -22,8 +22,6 @@
 
 // Project specific includes
 #include <src/cpp_helper_plugin_view.h>
-#include <src/clang_code_completion_model.h>
-#include <src/include_helper_completion_model.h>
 #include <src/cpp_helper_plugin.h>
 #include <src/utils.h>
 
@@ -85,7 +83,9 @@ CppHelperPluginView::CppHelperPluginView(
     m_copy_include->setShortcut(QKeySequence(Qt::SHIFT + Qt::Key_F10));
     connect(m_copy_include, SIGNAL(triggered(bool)), this, SLOT(copyInclude()));
 
-    // On viewCreated we have to registerCompletionModel...
+    // On viewCreated we have to subscribe self to monitor 
+    // some document properties and act correspondignly:
+    // 0) on name/URL changes try to register/deregister
     connect(
         mainWindow()
       , SIGNAL(viewCreated(KTextEditor::View*))
@@ -484,7 +484,7 @@ void CppHelperPluginView::copyInclude()
     if (!longest_matched.isEmpty())
     {
         QString text;
-        if (isCOrPPSource(kv->document()->mimeType()))
+        if (isCOrPPSource(kv->document()->mimeType(), kv->document()->highlightingMode()))
         {
             kDebug() << "current_dir=" << current_dir << ", lm=" << longest_matched;
             int count = longest_matched.size();
@@ -515,17 +515,15 @@ void CppHelperPluginView::viewChanged()
         kDebug() << "no KTextEditor::View -- leave `open header' action as is...";
         return;
     }
-    const QString& mime_str = view->document()->mimeType();
-    kDebug() << "Current document type: " << mime_str;
-    const bool enable_open_header_action = isCOrPPSource(mime_str);
+    const bool enable_open_header_action = isCOrPPSource(
+        view->document()->mimeType()
+      , view->document()->highlightingMode()
+      );
     m_open_header->setEnabled(enable_open_header_action);
     if (enable_open_header_action)
-    {
         m_copy_include->setText(i18n("Copy #include to Clipboard"));
-        // Update current view (possible some dirs/files has changed)
-        m_plugin->updateDocumentInfo(view->document());
-    }
-    else m_copy_include->setText(i18n("Copy File URI to Clipboard"));
+    else
+        m_copy_include->setText(i18n("Copy File URI to Clipboard"));
 }
 
 /**
@@ -537,38 +535,131 @@ void CppHelperPluginView::viewChanged()
 void CppHelperPluginView::viewCreated(KTextEditor::View* view)
 {
     kDebug() << "view created";
-    if (isCOrPPSource(view->document()->mimeType()))
-    {
-        KTextEditor::CodeCompletionInterface* cc_iface =
-            qobject_cast<KTextEditor::CodeCompletionInterface*>(view);
-        if (cc_iface)
-        {
-            kDebug() << "C/C++ source: register #include completer";
-            // Enable #include completions
-            cc_iface->registerCompletionModel(new IncludeHelperCompletionModel(view, m_plugin));
-            cc_iface->setAutomaticInvocationEnabled(true);
 
-            kDebug() << "C/C++ source: register clang based code completer";
-            // Enable semantic C++ code completions
-            cc_iface->registerCompletionModel(new ClangCodeCompletionModel(view, m_plugin, m_diagnostic_text));
-        }
-    }
-    // Scan document for #include...
-    m_plugin->updateDocumentInfo(view->document());
-    // Schedule updates after document gets reloaded
+    // Try to execute initial completers registration and #includes scanning
+    if (handleView(view))
+        m_plugin->updateDocumentInfo(view->document());
+
+    // Rescan document for #includes on reload
     connect(
         view->document()
       , SIGNAL(reloaded(KTextEditor::Document*))
       , m_plugin
       , SLOT(updateDocumentInfo(KTextEditor::Document*))
       );
-    // Schedule updates after new text gets inserted
+    // Scan inserted text for #includes if something were added to the document
     connect(
         view->document()
       , SIGNAL(textInserted(KTextEditor::Document*, const KTextEditor::Range&))
       , m_plugin
       , SLOT(textInserted(KTextEditor::Document*, const KTextEditor::Range&))
       );
+    // Unnamed documents can change highlighting mode, so we have to register
+    // completers and scan for #includes. For example if new document was created
+    // from template.
+    connect(
+        view->document()
+      , SIGNAL(highlightingModeChanged(KTextEditor::Document*))
+      , this
+      , SLOT(modeChanged(KTextEditor::Document*))
+      );
+    // If URL or name gets changed check if this is sill suitable document
+    connect(
+        view->document()
+      , SIGNAL(documentNameChanged(KTextEditor::Document*))
+      , this
+      , SLOT(urlChanged(KTextEditor::Document*))
+      );
+    connect(
+        view->document()
+      , SIGNAL(documentUrlChanged(KTextEditor::Document*))
+      , this
+      , SLOT(urlChanged(KTextEditor::Document*))
+      );
+}
+
+void CppHelperPluginView::modeChanged(KTextEditor::Document* doc)
+{
+    kDebug() << "hl mode has been changed: " << doc->highlightingMode() << ", " << doc->mimeType();
+    if (handleView(doc->activeView()))
+        m_plugin->updateDocumentInfo(doc);
+}
+
+void CppHelperPluginView::urlChanged(KTextEditor::Document* doc)
+{
+    kDebug() << "name or URL has been changed: " << doc->url() << ", " << doc->mimeType();
+    if (handleView(doc->activeView()))
+        m_plugin->updateDocumentInfo(doc);
+}
+
+/**
+ * Check if view has \c KTextEditor::CodeCompletionInterface and do nothing if it doesn't.
+ * Otherwise, check if current document has suitable type (C/C++ source/header):
+ * \li if yes, check if completers already registered, and register them if they don't
+ * \li if not suitable document, check if any completers was registered for a given view
+ * and unregister if it was.
+ *
+ * \param view view to register completers for. Do nothing if \c nullptr.
+ * \return \c true if suitable document and registration successed, \c false otherwise.
+ */
+bool CppHelperPluginView::handleView(KTextEditor::View* view)
+{
+    if (!view)                                              // Null view is quite possible...
+        return false;                                       // do nothing in this case.
+
+    KTextEditor::CodeCompletionInterface* cc_iface =
+        qobject_cast<KTextEditor::CodeCompletionInterface*>(view);
+    if (!cc_iface)
+    {
+        kDebug() << "Nothing to do if no completion iface present for a view";
+        return false;
+    }
+    bool result = false;
+    auto it = m_completers.find(view);
+    // Is current document has suitable type (or highlighting)
+    if (isCOrPPSource(view->document()->mimeType(), view->document()->highlightingMode()))
+    {
+        // Yeah! Check if still registration required
+        if (it == end(m_completers))
+        {
+            kDebug() << "C/C++ source: register #include and code completers";
+            auto r = m_completers.insert(
+                std::make_pair(
+                    view
+                  , std::make_pair(
+                        std::unique_ptr<IncludeHelperCompletionModel>(
+                            new IncludeHelperCompletionModel(view, m_plugin)
+                          )
+                      , std::unique_ptr<ClangCodeCompletionModel>(
+                            new ClangCodeCompletionModel(view, m_plugin, m_diagnostic_text)
+                          )
+                      )
+                  )
+              );
+            assert("Completers expected to be new" && r.second);
+            // Enable #include completions
+            cc_iface->registerCompletionModel(r.first->second.first.get());
+            cc_iface->setAutomaticInvocationEnabled(true);
+            // Enable semantic C++ code completions
+            cc_iface->registerCompletionModel(r.first->second.second.get());
+            cc_iface->setAutomaticInvocationEnabled(false);
+            result = true;
+        }
+    }
+    else
+    {
+        // Oops! Do not any completers required for this document.
+        // Check if some was registered before, and erase if it is
+        if (it != end(m_completers))
+        {
+            kDebug() << "Not a C/C++ source (anymore): unregister #include and code completers";
+            cc_iface->unregisterCompletionModel(it->second.first.get());
+            cc_iface->unregisterCompletionModel(it->second.second.get());
+            m_completers.erase(it);
+        }
+    }
+    kDebug() << "RESULT:" << result;
+    return result;
 }
 
 bool CppHelperPluginView::eventFilter(QObject* obj, QEvent* event)
@@ -622,7 +713,7 @@ KTextEditor::Range CppHelperPluginView::currentWord() const
     // No #include parsed... fallback to the default way:
     // just search a word under cursor...
 
-    // Get cirsor line/column
+    // Get cursor line/column
     int col = kv->cursorPosition().column();
 
     int start = qMax(qMin(col, line_str.length() - 1), 0);
@@ -644,6 +735,7 @@ KTextEditor::Range CppHelperPluginView::currentWord() const
 
     return KTextEditor::Range(line, start, line, end);
 }
+
 //END CppHelperPluginView
 
 //BEGIN ChooseFromListDialog

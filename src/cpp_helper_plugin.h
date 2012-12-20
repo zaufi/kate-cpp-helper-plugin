@@ -41,10 +41,15 @@ namespace kate {
 class DocumentInfo;                                         // forward declaration
 
 /**
- * \brief [Type brief class description here]
+ * \brief The plugin class
  *
- * [More detailed description here]
+ * This class do the following tasks:
  *
+ * \li Implementation of required (inherited) functions
+ * \li Delegate configuration read/write to \c m_config
+ * \li Create a hidden document and use it to highlight C++ code snippets from code completer
+ * \li Maintain a mapping of documents (as pointers) to document info (a list of ranges
+ *     with \c #include directives)
  */
 class CppHelperPlugin
   : public Kate::Plugin
@@ -63,8 +68,8 @@ public:
     //@{
     PluginConfiguration& config();
     const PluginConfiguration& config() const;
-    const doc_info_type& managed_docs() const;
-    doc_info_type& managed_docs();
+    const doc_info_type& managedDocs() const;
+    doc_info_type& managedDocs();
     CXIndex index() const;
     //@}
 
@@ -88,13 +93,15 @@ public:
     Kate::PluginView* createView(Kate::MainWindow*);
     //@}
 
+    /// Highlight given snippet using internal (hidden) \c KTextEditor::Document
     QList<KTextEditor::HighlightInterface::AttributeBlock> highlightSnippet(
         const QString&
       , const QString&
       );
 
 public Q_SLOTS:
-    void updateDocumentInfo(KTextEditor::Document* doc);
+    void updateDocumentInfo(KTextEditor::Document*);
+    void removeDocumentInfo(KTextEditor::Document*);
     void textInserted(KTextEditor::Document*, const KTextEditor::Range&);
     void openDocument(const KUrl&);
     void makePCHFile(const KUrl&);
@@ -104,16 +111,21 @@ private Q_SLOTS:
     void deletedPath(const QString&);
     void updateCurrentView();
     void buildPCHIfAbsent();                                ///< Make sure a PCH is fresh
-    /// Update warcher to monitor currently configured directories
+    /// Update watcher to monitor currently configured directories
     void updateDirWatcher();
 
 private:
-    /// Update warcher to monitor a given entry
+    /// Update watcher to monitor a given entry
     void updateDirWatcher(const QString&);
 
+    /// An instance of \c PluginConfiguration filled with configuration data
+    /// read from application's config
     PluginConfiguration m_config;
+    /// Clang-C index instance used by code completer
     DCXIndex m_index;
+    /// A map of \c KTextEditor::Document pointer to \c DocumentInfo
     doc_info_type m_doc_info;
+    /// Directory watcher to monitor configured directories
     std::unique_ptr<KDirWatch> m_dir_watcher;
     /// \note Directory watcher reports about 4 times just for one event,
     /// so to avoid doing stupid job, lets remember what we've done the last time.
@@ -130,11 +142,11 @@ inline const PluginConfiguration& CppHelperPlugin::config() const
 {
     return m_config;
 }
-inline auto CppHelperPlugin::managed_docs() const -> const doc_info_type&
+inline auto CppHelperPlugin::managedDocs() const -> const doc_info_type&
 {
     return m_doc_info;
 }
-inline auto CppHelperPlugin::managed_docs() -> doc_info_type&
+inline auto CppHelperPlugin::managedDocs() -> doc_info_type&
 {
     return m_doc_info;
 }
