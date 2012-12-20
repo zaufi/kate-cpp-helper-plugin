@@ -1,5 +1,8 @@
+add_definitions(-UQT_NO_STL)
 set(UNIT_TESTS unit_tests)
 set(UNIT_TESTS_SOURCES
+    sanitize_snippet_tester.cpp
+    ${CMAKE_SOURCE_DIR}/src/sanitize_snippet.cpp
     utils_tester.cpp
     ${CMAKE_SOURCE_DIR}/src/utils.cpp
   )

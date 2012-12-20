@@ -164,6 +164,16 @@ TODO
 Changes
 =======
 
+Version 0.8.5
+-------------
+
+* add completion items highlighting
+* add completion items sanitizer: some complex template types can be replaced with shorter equivalent.
+  For example `std::basic_string<char>` to `std::string`. This feature help to reduce width of completion
+  popup for STL types. Also some boost types (`boost::variant` and MPL sequences) are supported.
+* completers registration refactored and bug with absent completers for C++ code from file templates
+  is gone finally
+
 Version 0.8
 -----------
 

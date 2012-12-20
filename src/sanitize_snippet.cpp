@@ -59,15 +59,15 @@ std::vector<std::pair<QLatin1String, QLatin1String>> SIMPLE_REPLACEMENTS = {
  */
 std::vector<std::pair<QRegExp, QString>> REGEX_REPLACEMENTS = {
     {
-        QRegExp(R"--(std::(deque|list|vector)<(.*), std::allocator<\2> >)--")
+        QRegExp(R"--(std::(deque|list|vector)<(.*), std::allocator<\2\s?> >)--")
       , QString(R"--(std::\1<\2>)--")
     }
   , {
-        QRegExp(R"--(std::(multimap|map)<(.*), (.*), std::less<\2>, std::allocator<std::pair<const \2, \3> > >)--")
+        QRegExp(R"--(std::(multimap|map)<(.*), (.*), std::less<\2\s?>, std::allocator<std::pair<const \2, \3\s?> > >)--")
       , QString(R"--(std::\1<\2, \3>)--")
     }
   , {
-        QRegExp(R"--(std::(multiset|set)<(.*), std::less<\2>, std::allocator<\2> >)--")
+        QRegExp(R"--(std::(multiset|set)<(.*), std::less<\2\s?>, std::allocator<\2\s?> >)--")
       , QString(R"--(std::\1<\2>)--")
     }
   , {
