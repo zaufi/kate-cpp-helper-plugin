@@ -21,14 +21,16 @@
  */
 
 #ifndef __SRC__DOCUMENTINFO_H__
-#  define __SRC__DOCUMENTINFO_H__
+# define __SRC__DOCUMENTINFO_H__
 
 // Project specific includes
 
 // Standard includes
-#  include <KTextEditor/MovingRange>
-#  include <ktexteditor/movingrangefeedback.h>
-#  include <cassert>
+# include <KTextEditor/MovingRange>
+# include <ktexteditor/movingrangefeedback.h>
+# include <cassert>
+# include <memory>
+# include <vector>
 
 namespace kate {
 class CppHelperPlugin;                                  // forward declaration
@@ -46,7 +48,7 @@ class DocumentInfo
     Q_OBJECT
 
 public:
-    enum Status
+    enum struct Status
     {
         Dunno
       , NotFound
@@ -66,11 +68,23 @@ public Q_SLOTS:
 private:
     struct State
     {
-        KTextEditor::MovingRange* m_range;
+        std::unique_ptr<KTextEditor::MovingRange> m_range;
         Status m_status;
+
+        State(
+            std::unique_ptr<KTextEditor::MovingRange>&& range
+          , KTextEditor::MovingRangeFeedback* fbimpl
+          )
+          : m_range(std::move(range))
+          , m_status(Status::Dunno)
+        {
+            m_range->setFeedback(fbimpl);
+        }
+        State(State&&) = default;                           ///< Default move ctor
+        State& operator=(State&&) = default;                ///< Default move-assign operator
     };
 
-    typedef QList<State> registered_ranges_type;
+    typedef std::vector<State> registered_ranges_type;
 
     void updateStatus(State&);                              ///< Update single range
     registered_ranges_type::iterator findRange(KTextEditor::MovingRange*);

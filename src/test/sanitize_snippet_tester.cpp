@@ -80,4 +80,16 @@ BOOST_AUTO_TEST_CASE(sanitize_snippet_test)
     }
 }
 
+BOOST_AUTO_TEST_CASE(sanitize_placeholder_snippet_test)
+{
+    {
+        QString r = kate::sanitizePlaceholder("int __x");
+        BOOST_CHECK_EQUAL(r.toStdString(), "int x");
+    }
+    {
+        QString r = kate::sanitizePlaceholder("std::pair<int, long> &__x");
+        BOOST_CHECK_EQUAL(r.toStdString(), "std::pair<int, long>& x");
+    }
+}
+
 // kate: hl C++11/Qt4;

@@ -65,7 +65,7 @@ public:
     {
     }
 
-    QVariant data(const QModelIndex&, const int) const;
+    QVariant data(const QModelIndex&, const int, const bool) const;
     KTextEditor::CodeCompletionModel::CompletionProperty completionProperty() const;
     const QString& parentText() const                       ///< Return a parent (scope) text to display
     {
@@ -75,7 +75,7 @@ public:
     QPair<QString, int> executeCompletion() const;
 
 private:
-    QString renderPlaceholders(const QString&) const;
+    QString renderPlaceholders(const QString&, const bool) const;
 
     QString m_parent;                                       ///< Parent context of the curremt completion item
     QString m_before;                                       ///< Everything \e before typed text (return type)

@@ -31,6 +31,7 @@
 #include <kate/mainwindow.h>
 #include <KTextEditor/CodeCompletionInterface>
 #include <KTextEditor/Document>
+#include <KTextEditor/TemplateInterface2>
 #include <KActionCollection>
 #include <KLocalizedString>                                 /// \todo Where is \c i18n() defiend?
 #include <KPassivePopup>
@@ -467,7 +468,7 @@ void CppHelperPluginView::copyInclude()
     QString longest_matched;
     QChar open = m_plugin->config().useLtGt() ? '<' : '"';
     QChar close = m_plugin->config().useLtGt() ? '>' : '"';
-    kDebug() << "Got document name: " << uri;
+    kDebug() << "Got document name: " << uri << ", type: " << kv->document()->mimeType();
     // Try to match local (per session) dirs first
     for (const QString& dir : m_plugin->config().sessionDirs())
         if (current_dir.startsWith(dir) && longest_matched.length() < dir.length())
@@ -535,6 +536,14 @@ void CppHelperPluginView::viewChanged()
 void CppHelperPluginView::viewCreated(KTextEditor::View* view)
 {
     kDebug() << "view created";
+
+    KTextEditor::TemplateInterface2* template_iface =
+        qobject_cast<KTextEditor::TemplateInterface2*>(view);
+    if (!template_iface)
+    {
+        kDebug() << "No TemplateInterface2 for a view" << view;
+    }
+
 
     // Try to execute initial completers registration and #includes scanning
     if (handleView(view))

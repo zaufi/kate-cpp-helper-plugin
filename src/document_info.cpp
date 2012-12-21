@@ -47,27 +47,23 @@ DocumentInfo::DocumentInfo(CppHelperPlugin* p)
 DocumentInfo::~DocumentInfo()
 {
     kDebug() << "Removing " << m_ranges.size() << " ranges...";
-    Q_FOREACH(const State& s, m_ranges)
-    {
+    for (const State& s : m_ranges)
         s.m_range->setFeedback(0);
-        delete s.m_range;
-    }
 }
 
-void DocumentInfo::addRange(KTextEditor::MovingRange* r)
+void DocumentInfo::addRange(KTextEditor::MovingRange* range)
 {
-    assert("Sanity check" && !r->isEmpty() && r->onSingleLine());
-    assert("Sanity check" && findRange(r) == m_ranges.end());
+    assert("Sanity check" && !range->isEmpty() && range->onSingleLine());
+    assert("Sanity check" && findRange(range) == m_ranges.end());
     //
-    State s;
-    s.m_range = r;
-    s.m_range->setFeedback(this);
-    s.m_status = Dunno;
-    m_ranges.push_back(s);
+    m_ranges.emplace_back(
+        std::unique_ptr<KTextEditor::MovingRange>(range)
+      , static_cast<KTextEditor::MovingRangeFeedback* const>(this)
+      );
     // Subscribe self to range invalidate
     //
     updateStatus(m_ranges.back());
-    kDebug() << "MovingRange registered: " << r;
+    kDebug() << "MovingRange registered: " << range;
 }
 
 void DocumentInfo::updateStatus()
@@ -87,7 +83,7 @@ void DocumentInfo::updateStatus()
  */
 void DocumentInfo::updateStatus(State& s)
 {
-    kDebug() << "Update status for range: " << s.m_range;
+    kDebug() << "Update status for range: " << s.m_range.get();
     if (!s.m_range->isEmpty())
     {
         KTextEditor::Document* doc = s.m_range->document();
@@ -111,7 +107,7 @@ void DocumentInfo::updateStatus(State& s)
             s.m_range->setRange(shrinked);
         }
         // Reset status
-        s.m_status = Dunno;
+        s.m_status = Status::Dunno;
 
         // Check if given header available
         // 0) check CWD first if allowed
@@ -120,7 +116,7 @@ void DocumentInfo::updateStatus(State& s)
             const KUrl& uri = doc->url().prettyUrl();
             const QString cur2check = uri.directory() + '/' + filename;
             kDebug() << "check current dir 4: " << cur2check;
-            s.m_status = (QFileInfo(cur2check).exists()) ? Ok : NotFound;
+            s.m_status = (QFileInfo(cur2check).exists()) ? Status::Ok : Status::NotFound;
         }
         // 1) Try configured dirs then
         QStringList paths = findHeader(
@@ -129,24 +125,24 @@ void DocumentInfo::updateStatus(State& s)
           , m_plugin->config().systemDirs()
           );
         if (paths.empty())
-            s.m_status = (s.m_status == Ok) ? Ok : NotFound;
+            s.m_status = (s.m_status == Status::Ok) ? Status::Ok : Status::NotFound;
         else if (paths.size() == 1)
-            s.m_status = (s.m_status == Ok) ? MultipleMatches : Ok;
+            s.m_status = (s.m_status == Status::Ok) ? Status::MultipleMatches : Status::Ok;
         else
-            s.m_status = MultipleMatches;
-        kDebug() << "#include filename=" << filename << ", status=" << s.m_status << ", r=" << s.m_range;
+            s.m_status = Status::MultipleMatches;
+        kDebug() << "#include filename=" << filename << ", status=" << int(s.m_status) << ", r=" << s.m_range.get();
 
         KTextEditor::MarkInterface* iface = qobject_cast<KTextEditor::MarkInterface*>(doc);
         const int line = s.m_range->start().line();
         switch (s.m_status)
         {
-            case Ok:
+            case Status::Ok:
                 iface->removeMark(
                     line
                   , KTextEditor::MarkInterface::Error | KTextEditor::MarkInterface::Warning
                   );
                 break;
-            case NotFound:
+            case Status::NotFound:
                 iface->removeMark(
                     line
                   , KTextEditor::MarkInterface::Error | KTextEditor::MarkInterface::Warning
@@ -158,7 +154,7 @@ void DocumentInfo::updateStatus(State& s)
                 iface->setMarkDescription(KTextEditor::MarkInterface::Error, i18n("File not found"));
                 iface->addMark(line, KTextEditor::MarkInterface::Error);
                 break;
-            case MultipleMatches:
+            case Status::MultipleMatches:
                 iface->removeMark(
                     line
                   , KTextEditor::MarkInterface::Error | KTextEditor::MarkInterface::Warning
@@ -187,7 +183,7 @@ DocumentInfo::registered_ranges_type::iterator DocumentInfo::findRange(KTextEdit
         registered_ranges_type::iterator it = m_ranges.begin()
       ; it != last
       ; ++it
-      ) if (range == it->m_range) return it;
+      ) if (range == it->m_range.get()) return it;
     return last;
 }
 
@@ -195,9 +191,7 @@ void DocumentInfo::caretExitedRange(KTextEditor::MovingRange* range, KTextEditor
 {
     registered_ranges_type::iterator it = findRange(range);
     if (it != m_ranges.end())
-    {
         updateStatus(*it);
-    }
 }
 
 void DocumentInfo::rangeEmpty(KTextEditor::MovingRange* range)
@@ -216,7 +210,6 @@ void DocumentInfo::rangeEmpty(KTextEditor::MovingRange* range)
     {
         kDebug() << "MovingRange: empty range deleted: " << range;
         it->m_range->setFeedback(0);
-        delete it->m_range;
         m_ranges.erase(it);
     }
 }
@@ -234,7 +227,6 @@ void DocumentInfo::rangeInvalid(KTextEditor::MovingRange* range)
     {
         kDebug() << "MovingRange: invalid range deleted: " << range;
         it->m_range->setFeedback(0);
-        delete it->m_range;
         m_ranges.erase(it);
     }
 }

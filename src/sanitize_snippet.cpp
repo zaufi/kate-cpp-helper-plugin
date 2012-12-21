@@ -71,12 +71,12 @@ std::vector<std::pair<QRegExp, QString>> REGEX_REPLACEMENTS = {
       , QString(R"--(std::\1<\2>)--")
     }
   , {
-        // Stip tail of boost::variant default template types
+        // Strip tail of boost::variant default template types
         QRegExp(R"--((, boost::detail::variant::void_)*>)--")
       , QString(">")
     }
   , {
-        // Stip tail of boost::mpl containers default template types
+        // Strip tail of boost::mpl containers default template types
         QRegExp(R"--((, mpl_::na)*>)--")
       , QString(">")
     }
@@ -121,6 +121,37 @@ QString sanitizePrefix(QString&& prefix)
     prefix.replace(QLatin1String(" &"), QLatin1String("&"));
     prefix.replace(QLatin1String(" *"), QLatin1String("*"));
     return sanitizeTemplateCloseBrakets(std::move(prefix));
+}
+
+QString sanitizePlaceholder(QString&& str)
+{
+    /// \attention Qt 4.8 has only move assign but no move ctor for \c QString
+    /// (as well as for other 'movable' types)... fucking idiots...
+    QString result;
+    result = std::move(str);
+    auto last_space_pos = result.lastIndexOf(' ');
+    if (last_space_pos != -1)
+    {
+        int count = 0;
+        for (auto pos = ++last_space_pos, last = result.length(); pos < last; ++pos)
+        {
+            if (result[pos] == '*' || result[pos] == '&')
+            {
+                // ATTENTION Do not use `auto` for type of `ch`! Guess WHY...
+                QChar ch = result[pos];
+                result[pos] = result[pos - 1];
+                result[pos - 1] = ch;
+                ++last_space_pos;
+                continue;
+            }
+            if (result[pos] != '_')
+                break;
+            ++count;
+        }
+        if (count)
+            result.remove(last_space_pos, count);
+    }
+    return result;
 }
 
 }                                                           // namespace kate

@@ -25,7 +25,6 @@
 #include <src/clang_utils.h>
 #include <src/translation_unit.h>
 #include <src/cpp_helper_plugin.h>
-#include <src/sanitize_snippet.h>
 
 // Standard includes
 #include <ktexteditor/highlightinterface.h>
@@ -300,21 +299,11 @@ QVariant ClangCodeCompletionModel::getItemData(const QModelIndex& index, int rol
         return result;
 
     // ... try to ask an item otherwise
-    result = m_groups[index.internalId()].second.m_completions[index.row()].data(index, role);
-    // Check if completion items sanitize requested
-    if (m_plugin->config().sanitizeCompletions())
-    {
-        switch (role)
-        {
-            case Qt::DisplayRole:
-                if (index.column() == CodeCompletionModel2::Prefix)
-                    result = sanitizePrefix(result.toString());
-                else if (index.column() == CodeCompletionModel2::Arguments)
-                    result = sanitizeParams(result.toString());
-            default:
-                break;
-        }
-    }
+    result = m_groups[index.internalId()].second.m_completions[index.row()].data(
+        index
+      , role
+      , m_plugin->config().sanitizeCompletions()
+      );
     return result;
 }
 
@@ -359,7 +348,7 @@ QVariant ClangCodeCompletionModel::getItemHighlightData(const QModelIndex& index
                     // Request item for text to highlight
                     auto text = m_groups[index.internalId()]
                       .second.m_completions[index.row()]
-                      .data(index, Qt::DisplayRole)
+                      .data(index, Qt::DisplayRole, m_plugin->config().sanitizeCompletions())
                       .toString()
                       ;
                     // Do not waste time if nothing to highlight

@@ -33,6 +33,8 @@ namespace kate {
 QString sanitizePrefix(QString&&);
 /// Cleanup completion items parameters
 QString sanitizeParams(QString&&);
+/// Cleanup placeholder from completion item arguments list
+QString sanitizePlaceholder(QString&&);
 }                                                           // kate
 #endif                                                      // __SRC__SANITIZE_SNIPPET_H__
 // kate: hl C++11/Qt4;

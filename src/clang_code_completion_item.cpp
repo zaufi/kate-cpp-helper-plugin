@@ -22,6 +22,7 @@
 
 // Project specific includes
 #include <src/clang_code_completion_item.h>
+#include <src/sanitize_snippet.h>
 
 // Standard includes
 #include <cassert>
@@ -34,7 +35,7 @@ const QString DEPRECATED_STR = "DEPRECATED";
 /**
  * Produce a data siutable for view
  */
-QVariant ClangCodeCompletionItem::data(const QModelIndex& index, const int role) const
+QVariant ClangCodeCompletionItem::data(const QModelIndex& index, const int role, const bool sanitize_required) const
 {
     assert("Sanity check" && index.isValid());
     //
@@ -59,7 +60,7 @@ QVariant ClangCodeCompletionItem::data(const QModelIndex& index, const int role)
                     break;
                 case KTextEditor::CodeCompletionModel::Prefix:
                 {
-                    auto prefix = renderPlaceholders(m_before);
+                    auto prefix = renderPlaceholders(m_before, false);
                     if (prefix.isEmpty())
                     {
                         switch (m_kind)
@@ -75,7 +76,7 @@ QVariant ClangCodeCompletionItem::data(const QModelIndex& index, const int role)
                         }
                         result = prefix;
                     }
-                    else result = prefix;
+                    else result = sanitizePrefix(std::move(prefix));
                     break;
                 }
                 case KTextEditor::CodeCompletionModel::Postfix:
@@ -83,7 +84,7 @@ QVariant ClangCodeCompletionItem::data(const QModelIndex& index, const int role)
                         result = DEPRECATED_STR;
                     break;
                 case KTextEditor::CodeCompletionModel::Arguments:
-                    result = renderPlaceholders(m_after);
+                    result = sanitizeParams(renderPlaceholders(m_after, sanitize_required));
                     break;
                 // NOTE This would just merge `scope` text w/ name and finally
                 // everything would look ugly... Anyway we have groups to join
@@ -104,7 +105,10 @@ QVariant ClangCodeCompletionItem::data(const QModelIndex& index, const int role)
 }
 
 /// \todo This look ugly... need to invent smth clever
-QString ClangCodeCompletionItem::renderPlaceholders(const QString& source) const
+QString ClangCodeCompletionItem::renderPlaceholders(
+    const QString& source
+  , const bool sanitize_required
+  ) const
 {
     QString result = source;
     unsigned i = 0;
@@ -113,7 +117,11 @@ QString ClangCodeCompletionItem::renderPlaceholders(const QString& source) const
         const QString fmt = '%' + QString::number(++i) + '%';
         auto pos = result.indexOf(fmt);
         if (pos != -1)
-            result = result.replace(pos, fmt.length(), p);
+            result = result.replace(
+                pos
+              , fmt.length()
+              , sanitize_required ? sanitizePlaceholder(QString(p)) : p
+              );
     }
     return result;
 }
