@@ -28,6 +28,8 @@
 // Standard includes
 # include <clang-c/Index.h>
 # include <KTextEditor/CodeCompletionModel>
+# include <QtCore/QMap>
+# include <QtCore/QPair>
 # include <QtCore/QStringList>
 
 namespace kate {
@@ -73,6 +75,7 @@ public:
     }
     /// Get a string to be inserted and column position withing the string
     QPair<QString, int> executeCompletion() const;
+    QPair<QString, QMap<QString, QString>> getCompletionTemplate() const;
 
 private:
     QString renderPlaceholders(const QString&, const bool) const;

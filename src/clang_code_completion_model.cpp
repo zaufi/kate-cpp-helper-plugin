@@ -29,6 +29,7 @@
 // Standard includes
 #include <ktexteditor/highlightinterface.h>
 #include <KTextEditor/Document>
+#include <KTextEditor/TemplateInterface>
 #include <KTextEditor/View>
 #include <KLocalizedString>                                 /// \todo Where is \c i18n() defiend?
 #include <algorithm>
@@ -391,6 +392,7 @@ void ClangCodeCompletionModel::executeCompletionItem2(
   , const QModelIndex& index
   ) const
 {
+    assert("Active view expected to be equal to the stored one" && document->activeView() == m_current_view);
     assert("Invalid index is not expected here!" && index.isValid());
     assert("Parent index is not valid" && index.parent().isValid());
     assert("Parent index must be GROUP" && index.parent().internalId() == Level::GROUP);
@@ -404,20 +406,27 @@ void ClangCodeCompletionModel::executeCompletionItem2(
       && 0 <= index.row()
       && unsigned(index.row()) < m_groups[index.internalId()].second.m_completions.size()
       );
-    auto p = m_groups[index.internalId()].second.m_completions[index.row()].executeCompletion();
-    document->replaceText(word, p.first);
-    // Try to reposition a cursor inside a current (hope it still is) view
-    for (auto* view : document->views())
+
+    KTextEditor::TemplateInterface* template_iface =
+        qobject_cast<KTextEditor::TemplateInterface*>(m_current_view);
+    if (template_iface)
     {
-        if (view == m_current_view)
-        {
-            kDebug() << "Found current view: " << view;
-            kDebug() << "p = " << p;
-            auto pos = word.start();
-            kDebug() << "pos = " << pos;
-            pos.setColumn(pos.column() + p.second);
-            view->setCursorPosition(pos);
-        }
+        kDebug() << "TemplateInterface available for a view" << m_current_view;
+        auto result = m_groups[index.internalId()].second.m_completions[index.row()].getCompletionTemplate();
+        kDebug() << "Template:" << result.first;
+        kDebug() << "Values:" << result.second;
+        document->removeText(word);
+        template_iface->insertTemplateText(word.start(), result.first, result.second);
+    }
+    else
+    {
+        kDebug() << "No TemplateInterface for a view" << m_current_view;
+        auto p = m_groups[index.internalId()].second.m_completions[index.row()].executeCompletion();
+        document->replaceText(word, p.first);
+        // Try to reposition a cursor inside a current (hope it still is) view
+        auto pos = word.start();
+        pos.setColumn(pos.column() + p.second);
+        m_current_view->setCursorPosition(pos);
     }
 }
 

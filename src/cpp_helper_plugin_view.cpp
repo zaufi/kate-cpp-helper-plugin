@@ -31,7 +31,6 @@
 #include <kate/mainwindow.h>
 #include <KTextEditor/CodeCompletionInterface>
 #include <KTextEditor/Document>
-#include <KTextEditor/TemplateInterface2>
 #include <KActionCollection>
 #include <KLocalizedString>                                 /// \todo Where is \c i18n() defiend?
 #include <KPassivePopup>
@@ -536,14 +535,6 @@ void CppHelperPluginView::viewChanged()
 void CppHelperPluginView::viewCreated(KTextEditor::View* view)
 {
     kDebug() << "view created";
-
-    KTextEditor::TemplateInterface2* template_iface =
-        qobject_cast<KTextEditor::TemplateInterface2*>(view);
-    if (!template_iface)
-    {
-        kDebug() << "No TemplateInterface2 for a view" << view;
-    }
-
 
     // Try to execute initial completers registration and #includes scanning
     if (handleView(view))

@@ -159,10 +159,17 @@ TODO
 * Add option(s) to include/exclude files from completion list
 * Issue a warning if /proc/sys/fs/inotify/max_user_watches is not high enough
 * Use `KUrl` for files and dirs instead of `QStrings`
+* Clean `std::enable_if` and `boost::enable_if` from return value and parameters
 
 
 Changes
 =======
+
+Version 0.8.6
+-------------
+
+* insert kate templates when execute completion item so user may see the parameters required for
+  function call.
 
 Version 0.8.5
 -------------

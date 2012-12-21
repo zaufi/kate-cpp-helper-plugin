@@ -223,5 +223,45 @@ QPair<QString, int> ClangCodeCompletionItem::executeCompletion() const
     return qMakePair(result, result.length() + pos + 1);
 }
 
+QPair<QString, QMap<QString, QString>> ClangCodeCompletionItem::getCompletionTemplate() const
+{
+    QString tpl = m_text + m_after + QLatin1String("${cursor}");
+    switch (m_kind)
+    {
+        case CXCursor_CXXMethod:
+        case CXCursor_FunctionDecl:
+        case CXCursor_FunctionTemplate:
+        case CXCursor_MemberRef:
+        case CXCursor_OverloadedDeclRef:
+        {
+            auto pos = tpl.lastIndexOf(')');
+            if (pos != -1)
+                tpl.remove(pos + 1, tpl.length());
+            break;
+        }
+        default:
+            break;
+    }
+    QMap<QString, QString> values;
+    unsigned i = 0;
+    for (const auto& p : m_placeholders)
+    {
+        const QString fmt = '%' + QString::number(++i) + '%';
+        auto pos = tpl.indexOf(fmt);
+        if (pos != -1)
+        {
+            QString arg = QLatin1String("arg") + QString::number(i);
+            QString placeholder = QLatin1String("${") + arg + '}';
+            tpl = tpl.replace(
+                pos
+              , fmt.length()
+              , placeholder
+              );
+            values[arg] = p;
+        }
+    }
+    return qMakePair(tpl, values);
+}
+
 }                                                           // namespace kate
 // kate: hl C++11/Qt4;
