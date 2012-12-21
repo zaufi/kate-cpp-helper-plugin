@@ -94,7 +94,7 @@ private:
     void rangeInvalid(KTextEditor::MovingRange*);
     //END MovingRangeFeedback interface
 
-    CppHelperPlugin* m_plugin;                          ///< Parent plugin
+    CppHelperPlugin* m_plugin;                              ///< Parent plugin
     ///< List of ranges w/ \c #incldue directives whithing a document
     registered_ranges_type m_ranges;
 };

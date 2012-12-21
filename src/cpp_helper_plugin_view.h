@@ -72,6 +72,7 @@ private Q_SLOTS:
     void viewCreated(KTextEditor::View*);
     void modeChanged(KTextEditor::Document*);
     void urlChanged(KTextEditor::Document*);
+    void removeCompleters(KTextEditor::Document*);
 
 private:
     typedef std::map<

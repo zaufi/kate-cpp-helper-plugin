@@ -576,6 +576,12 @@ void CppHelperPluginView::viewCreated(KTextEditor::View* view)
       , this
       , SLOT(urlChanged(KTextEditor::Document*))
       );
+    connect(
+        view->document()
+      , SIGNAL(aboutToClose(KTextEditor::Document*))
+      , m_plugin
+      , SLOT(removeCompleters(KTextEditor::Document*))
+      );
 }
 
 void CppHelperPluginView::modeChanged(KTextEditor::Document* doc)
@@ -590,6 +596,14 @@ void CppHelperPluginView::urlChanged(KTextEditor::Document* doc)
     kDebug() << "name or URL has been changed: " << doc->url() << ", " << doc->mimeType();
     if (handleView(doc->activeView()))
         m_plugin->updateDocumentInfo(doc);
+}
+
+void CppHelperPluginView::removeCompleters(KTextEditor::Document* doc)
+{
+    kDebug() << "document is ging to close: " << doc->url() << ", " << doc->mimeType();
+    auto it = m_completers.find(doc->activeView());
+    if (it != end(m_completers))
+        m_completers.erase(it);
 }
 
 /**
