@@ -63,7 +63,7 @@ CppHelperPlugin::CppHelperPlugin(
   )
   : Kate::Plugin(static_cast<Kate::Application*>(app), "kate_cpphelper_plugin")
   /// \todo Make parameters to \c clang_createIndex() configurable?
-  , m_index(clang_createIndex(0, 0))
+  , m_index(clang_createIndex(1, 1))
   , m_hidden_doc(application()->editor()->createDocument(this))
 {
     assert("clang index expected to be valid" && m_index);

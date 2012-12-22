@@ -277,9 +277,9 @@ void CppHelperPluginView::switchIfaceImpl()
                 for (
                     QDirIterator dir_it(
                         dir
-                    , filters
-                    , QDir::Files | QDir::NoDotAndDotDot | QDir::Readable | QDir::CaseSensitive
-                    )
+                      , filters
+                      , QDir::Files | QDir::NoDotAndDotDot | QDir::Readable | QDir::CaseSensitive
+                      )
                   ; dir_it.hasNext()
                   ;)
                 {
@@ -456,18 +456,18 @@ inline void CppHelperPluginView::openFiles(const QStringList& files)
 
 void CppHelperPluginView::copyInclude()
 {
-    KTextEditor::View* kv = mainWindow()->activeView();
-    if (!kv)
+    KTextEditor::View* view = mainWindow()->activeView();
+    if (!view)
     {
         kDebug() << "no KTextEditor::View";
         return;
     }
-    const KUrl& uri = kv->document()->url().prettyUrl();
+    const KUrl& uri = view->document()->url().prettyUrl();
     QString current_dir = uri.directory();
     QString longest_matched;
     QChar open = m_plugin->config().useLtGt() ? '<' : '"';
     QChar close = m_plugin->config().useLtGt() ? '>' : '"';
-    kDebug() << "Got document name: " << uri << ", type: " << kv->document()->mimeType();
+    kDebug() << "Got document name: " << uri << ", type: " << view->document()->mimeType();
     // Try to match local (per session) dirs first
     for (const QString& dir : m_plugin->config().sessionDirs())
         if (current_dir.startsWith(dir) && longest_matched.length() < dir.length())
@@ -484,7 +484,7 @@ void CppHelperPluginView::copyInclude()
     if (!longest_matched.isEmpty())
     {
         QString text;
-        if (isCOrPPSource(kv->document()->mimeType(), kv->document()->highlightingMode()))
+        if (isCOrPPSource(view->document()->mimeType(), view->document()->highlightingMode()))
         {
             kDebug() << "current_dir=" << current_dir << ", lm=" << longest_matched;
             int count = longest_matched.size();
@@ -576,12 +576,13 @@ void CppHelperPluginView::viewCreated(KTextEditor::View* view)
       , this
       , SLOT(urlChanged(KTextEditor::Document*))
       );
-    connect(
-        view->document()
-      , SIGNAL(aboutToClose(KTextEditor::Document*))
-      , m_plugin
-      , SLOT(removeCompleters(KTextEditor::Document*))
-      );
+    /// \note We don't need to subscribe to document close (connecting to
+    /// \c Document::aboutToClose signal) to unregister completers cuz at this
+    /// moment no views exists! I.e. iterating over \c view() gives no matches
+    /// with stored in the \c m_completers map... :(
+    /// Adding view as parent of completer we'll guarantied that on view destroy
+    /// our completers will die as well. But we have to \c delete compilers
+    /// on unregister...
 }
 
 void CppHelperPluginView::modeChanged(KTextEditor::Document* doc)
@@ -596,14 +597,6 @@ void CppHelperPluginView::urlChanged(KTextEditor::Document* doc)
     kDebug() << "name or URL has been changed: " << doc->url() << ", " << doc->mimeType();
     if (handleView(doc->activeView()))
         m_plugin->updateDocumentInfo(doc);
-}
-
-void CppHelperPluginView::removeCompleters(KTextEditor::Document* doc)
-{
-    kDebug() << "document is ging to close: " << doc->url() << ", " << doc->mimeType();
-    auto it = m_completers.find(doc->activeView());
-    if (it != end(m_completers))
-        m_completers.erase(it);
 }
 
 /**
@@ -637,24 +630,23 @@ bool CppHelperPluginView::handleView(KTextEditor::View* view)
         if (it == end(m_completers))
         {
             kDebug() << "C/C++ source: register #include and code completers";
+            std::unique_ptr<IncludeHelperCompletionModel> include_completer(
+                new IncludeHelperCompletionModel(view, m_plugin)
+              );
+            std::unique_ptr<ClangCodeCompletionModel> code_completer(
+                new ClangCodeCompletionModel(view, m_plugin, m_diagnostic_text)
+              );
             auto r = m_completers.insert(
                 std::make_pair(
                     view
-                  , std::make_pair(
-                        std::unique_ptr<IncludeHelperCompletionModel>(
-                            new IncludeHelperCompletionModel(view, m_plugin)
-                          )
-                      , std::unique_ptr<ClangCodeCompletionModel>(
-                            new ClangCodeCompletionModel(view, m_plugin, m_diagnostic_text)
-                          )
-                      )
+                  , std::make_pair(include_completer.release(), code_completer.release())
                   )
               );
             assert("Completers expected to be new" && r.second);
             // Enable #include completions
-            cc_iface->registerCompletionModel(r.first->second.first.get());
+            cc_iface->registerCompletionModel(r.first->second.first);
             // Enable semantic C++ code completions
-            cc_iface->registerCompletionModel(r.first->second.second.get());
+            cc_iface->registerCompletionModel(r.first->second.second);
             // Turn auto completions ON
             cc_iface->setAutomaticInvocationEnabled(true);
             result = true;
@@ -667,8 +659,15 @@ bool CppHelperPluginView::handleView(KTextEditor::View* view)
         if (it != end(m_completers))
         {
             kDebug() << "Not a C/C++ source (anymore): unregister #include and code completers";
-            cc_iface->unregisterCompletionModel(it->second.first.get());
-            cc_iface->unregisterCompletionModel(it->second.second.get());
+            cc_iface->unregisterCompletionModel(it->second.first);
+            cc_iface->unregisterCompletionModel(it->second.second);
+            /// \todo Is there any damn way to avoid explicit delete???
+            /// Fraking Qt (as far as I know) was developed w/ automatic
+            /// memory management (to help users not to think about it),
+            /// so WHY I still have to call \c new and/or \c delete !!!
+            /// FRAKING WHY!?
+            delete it->second.first;
+            delete it->second.second;
             m_completers.erase(it);
         }
     }
@@ -694,26 +693,26 @@ bool CppHelperPluginView::eventFilter(QObject* obj, QEvent* event)
 KTextEditor::Range CppHelperPluginView::currentWord() const
 {
     KTextEditor::Range result;                              // default range is empty
-    KTextEditor::View* kv = mainWindow()->activeView();
-    if (!kv)
+    KTextEditor::View* view = mainWindow()->activeView();
+    if (!view)
     {
         kDebug() << "no KTextEditor::View";
         return result;
     }
 
     // Return selected text if any
-    if (kv->selection())
-        return kv->selectionRange();
+    if (view->selection())
+        return view->selectionRange();
 
-    if (!kv->cursorPosition().isValid())
+    if (!view->cursorPosition().isValid())
     {
         kDebug() << "cursor not valid!";
         return result;
     }
 
     // Obtain a line under cursor
-    const int line = kv->cursorPosition().line();
-    const QString line_str = kv->document()->line(line);
+    const int line = view->cursorPosition().line();
+    const QString line_str = view->document()->line(line);
 
     // Check if current line starts w/ #include
     kate::IncludeParseResult r = parseIncludeDirective(line_str, false);
@@ -728,7 +727,7 @@ KTextEditor::Range CppHelperPluginView::currentWord() const
     // just search a word under cursor...
 
     // Get cursor line/column
-    int col = kv->cursorPosition().column();
+    int col = view->cursorPosition().column();
 
     int start = qMax(qMin(col, line_str.length() - 1), 0);
     int end = start;

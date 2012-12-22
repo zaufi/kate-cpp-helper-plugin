@@ -39,11 +39,17 @@
 
 namespace kate {
 class CppHelperPlugin;                                  // forward declaration
-
 /**
  * \brief [Type brief class description here]
  *
- * [More detailed description here]
+ * \note When some view going to be deleted, it will try to delete all
+ * child \c QObject (and completers are children of the view, btw)
+ * so when we want to deregister completers we have to use \b explicit \c delete
+ * and there is no way to use RAII heres (like \c std::unique_ptr) cuz when
+ * document gets close there is no views already and completers actually deleted
+ * at this moment... so if we want to avoid explicit delete (at one place)
+ * we'll have to use explicit \c std::unique_ptr::release twice!
+ * FRAK IT!
  *
  * \todo Add some suffix to slots
  *
@@ -72,15 +78,12 @@ private Q_SLOTS:
     void viewCreated(KTextEditor::View*);
     void modeChanged(KTextEditor::Document*);
     void urlChanged(KTextEditor::Document*);
-    void removeCompleters(KTextEditor::Document*);
 
 private:
+    /// Type to hold a completers associated with a view
     typedef std::map<
         KTextEditor::View*
-      , std::pair<
-            std::unique_ptr<IncludeHelperCompletionModel>
-          , std::unique_ptr<ClangCodeCompletionModel>
-          >
+      , std::pair<IncludeHelperCompletionModel*, ClangCodeCompletionModel*>
       > completions_models_map_type;
 
     /// Register or deregister completion models for a given view
