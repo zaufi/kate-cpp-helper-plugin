@@ -23,6 +23,9 @@
 // Project specific includes
 #include <src/cpp_helper_plugin_view.h>
 #include <src/cpp_helper_plugin.h>
+#include <src/clang_code_completion_model.h>
+#include <src/document_info.h>
+#include <src/include_helper_completion_model.h>
 #include <src/utils.h>
 
 // Standard includes
@@ -30,6 +33,7 @@
 #include <kate/documentmanager.h>
 #include <kate/mainwindow.h>
 #include <KTextEditor/CodeCompletionInterface>
+#include <KTextEditor/MovingInterface>
 #include <KTextEditor/Document>
 #include <KActionCollection>
 #include <KLocalizedString>                                 /// \todo Where is \c i18n() defiend?
@@ -540,16 +544,17 @@ void CppHelperPluginView::viewCreated(KTextEditor::View* view)
     if (handleView(view))
         m_plugin->updateDocumentInfo(view->document());
 
+    auto* doc = view->document();
     // Rescan document for #includes on reload
     connect(
-        view->document()
+        doc
       , SIGNAL(reloaded(KTextEditor::Document*))
       , m_plugin
       , SLOT(updateDocumentInfo(KTextEditor::Document*))
       );
     // Scan inserted text for #includes if something were added to the document
     connect(
-        view->document()
+        doc
       , SIGNAL(textInserted(KTextEditor::Document*, const KTextEditor::Range&))
       , m_plugin
       , SLOT(textInserted(KTextEditor::Document*, const KTextEditor::Range&))
@@ -558,20 +563,20 @@ void CppHelperPluginView::viewCreated(KTextEditor::View* view)
     // completers and scan for #includes. For example if new document was created
     // from template.
     connect(
-        view->document()
+        doc
       , SIGNAL(highlightingModeChanged(KTextEditor::Document*))
       , this
       , SLOT(modeChanged(KTextEditor::Document*))
       );
     // If URL or name gets changed check if this is sill suitable document
     connect(
-        view->document()
+        doc
       , SIGNAL(documentNameChanged(KTextEditor::Document*))
       , this
       , SLOT(urlChanged(KTextEditor::Document*))
       );
     connect(
-        view->document()
+        doc
       , SIGNAL(documentUrlChanged(KTextEditor::Document*))
       , this
       , SLOT(urlChanged(KTextEditor::Document*))
@@ -597,6 +602,47 @@ void CppHelperPluginView::urlChanged(KTextEditor::Document* doc)
     kDebug() << "name or URL has been changed: " << doc->url() << ", " << doc->mimeType();
     if (handleView(doc->activeView()))
         m_plugin->updateDocumentInfo(doc);
+}
+
+void CppHelperPluginView::textInserted(KTextEditor::Document* doc, const KTextEditor::Range& range)
+{
+    kDebug() << doc << " new text: " << doc->text(range);
+    KTextEditor::MovingInterface* mv_iface = qobject_cast<KTextEditor::MovingInterface*>(doc);
+    if (!mv_iface)
+    {
+        kDebug() << "No moving iface!!!!!!!!!!!";
+        return;
+    }
+    // Do we really need to scan this file?
+    if (!isCOrPPSource(doc->mimeType(), doc->highlightingMode()))
+    {
+        kDebug() << "Document doesn't looks like C or C++: type ="
+          << doc->mimeType() << ", hl =" << doc->highlightingMode();
+        return;
+    }
+    // Find corresponding document info, insert if needed
+    auto& di = m_plugin->getDocumentInfo(doc);
+    // Search lines and filenames #include'd in this range
+    for (int i = range.start().line(); i < range.end().line() + 1; i++)
+    {
+        const QString& line_str = doc->line(i);
+        kate::IncludeParseResult r = parseIncludeDirective(line_str, true);
+        if (r.m_range.isValid())
+        {
+            r.m_range.setBothLines(i);
+            if (!di.isRangeWithSameExists(r.m_range))
+            {
+                di.addRange(
+                    mv_iface->newMovingRange(
+                        r.m_range
+                      , KTextEditor::MovingRange::ExpandLeft | KTextEditor::MovingRange::ExpandRight
+                      )
+                  );
+            }
+            else kDebug() << "range already registered";
+        }
+        else kDebug() << "no valid #include found";
+    }
 }
 
 /**

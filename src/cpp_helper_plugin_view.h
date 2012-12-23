@@ -24,8 +24,6 @@
 # define __SRC__INCLUDE_HELPER_PLUGIN_VIEW_H__
 
 // Project specific includes
-# include <src/clang_code_completion_model.h>
-# include <src/include_helper_completion_model.h>
 
 // Standard includes
 # include <kate/plugin.h>
@@ -39,6 +37,9 @@
 
 namespace kate {
 class CppHelperPlugin;                                  // forward declaration
+class IncludeHelperCompletionModel;
+class ClangCodeCompletionModel;
+
 /**
  * \brief [Type brief class description here]
  *
@@ -78,6 +79,7 @@ private Q_SLOTS:
     void viewCreated(KTextEditor::View*);
     void modeChanged(KTextEditor::Document*);
     void urlChanged(KTextEditor::Document*);
+    void textInserted(KTextEditor::Document*, const KTextEditor::Range&);
 
 private:
     /// Type to hold a completers associated with a view

@@ -60,8 +60,6 @@ class CppHelperPlugin
     Q_INTERFACES(Kate::PluginConfigPageInterface)
 
 public:
-    typedef std::map<KTextEditor::Document*, std::unique_ptr<DocumentInfo>> doc_info_type;
-
     explicit CppHelperPlugin(QObject* = 0, const QList<QVariant>& = QList<QVariant>());
     virtual ~CppHelperPlugin();
 
@@ -69,8 +67,6 @@ public:
     //@{
     PluginConfiguration& config();
     const PluginConfiguration& config() const;
-    const doc_info_type& managedDocs() const;
-    doc_info_type& managedDocs();
     CXIndex index() const;
     //@}
 
@@ -102,11 +98,11 @@ public:
     /// Helper function to collect unsaved files from current editor
     TranslationUnit::unsaved_files_list_type makeUnsavedFilesList(KTextEditor::Document*) const;
     TranslationUnit& getTranslationUnitByDocument(KTextEditor::Document*);
+    DocumentInfo& getDocumentInfo(KTextEditor::Document*);
 
 public Q_SLOTS:
     void updateDocumentInfo(KTextEditor::Document*);
     void removeDocumentInfo(KTextEditor::Document*);
-    void textInserted(KTextEditor::Document*, const KTextEditor::Range&);
     void openDocument(const KUrl&);
     void makePCHFile(const KUrl&);
 
@@ -120,11 +116,17 @@ private Q_SLOTS:
     void invalidateTranslationUnit();
 
 private:
-    /// Type to assiciate a document with a translation unit
+    /// Type to associate a document with a translation unit
     typedef std::map<
         KTextEditor::Document*
       , std::unique_ptr<TranslationUnit>
       > translation_units_map_type;
+    /// Type to associate a document with a collection of \c #include file ranges
+    /// (i.e. \c DocumentInfo)
+    typedef std::map<
+        KTextEditor::Document*
+      , std::unique_ptr<DocumentInfo>
+      > doc_info_type;
 
     /// Update watcher to monitor a given entry
     void updateDirWatcher(const QString&);
@@ -153,14 +155,6 @@ inline PluginConfiguration& CppHelperPlugin::config()
 inline const PluginConfiguration& CppHelperPlugin::config() const
 {
     return m_config;
-}
-inline auto CppHelperPlugin::managedDocs() const -> const doc_info_type&
-{
-    return m_doc_info;
-}
-inline auto CppHelperPlugin::managedDocs() -> doc_info_type&
-{
-    return m_doc_info;
 }
 inline CXIndex CppHelperPlugin::index() const
 {

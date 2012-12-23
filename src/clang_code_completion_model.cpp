@@ -64,7 +64,6 @@ void ClangCodeCompletionModel::completionInvoked(
   , InvocationType invocationType
   )
 {
-    kDebug() << "some kind of comletion requested";
     // Do nothing if completion not called by user
     if (invocationType != KTextEditor::CodeCompletionModel::UserInvocation)
         return;
@@ -78,9 +77,7 @@ void ClangCodeCompletionModel::completionInvoked(
         kWarning() << "U have to have a document on a disk before use code completion";
         return;
     }
-
     kDebug() << "It seems user has invoked comletion at " << range;
-
 
     // Remove everything collected before
     m_groups.clear();

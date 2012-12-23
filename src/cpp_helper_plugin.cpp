@@ -26,7 +26,6 @@
 #include <src/cpp_helper_plugin_config_page.h>
 #include <src/cpp_helper_plugin_view.h>
 #include <src/document_info.h>
-#include <src/translation_unit.h>
 #include <src/utils.h>
 
 // Standard includes
@@ -244,9 +243,9 @@ void CppHelperPlugin::updateDocumentInfo(KTextEditor::Document* doc)
 
     // Try to remove prev collected info
     {
-        CppHelperPlugin::doc_info_type::iterator it = managedDocs().find(doc);
-        if (it != managedDocs().end())
-            managedDocs().erase(it);
+        CppHelperPlugin::doc_info_type::iterator it = m_doc_info.find(doc);
+        if (it != m_doc_info.end())
+            m_doc_info.erase(it);
     }
 
     // Do we really need to scan this file?
@@ -275,7 +274,7 @@ void CppHelperPlugin::updateDocumentInfo(KTextEditor::Document* doc)
               );
         }
     }
-    managedDocs().insert(std::make_pair(doc, std::move(di)));
+    m_doc_info.insert(std::make_pair(doc, std::move(di)));
 }
 
 void CppHelperPlugin::removeDocumentInfo(KTextEditor::Document* doc)
@@ -284,63 +283,15 @@ void CppHelperPlugin::removeDocumentInfo(KTextEditor::Document* doc)
     kDebug() << "going to remove document" << doc;
     // Try to remove previously collected info
     {
-        auto it = managedDocs().find(doc);
-        if (it != end(managedDocs()))
-            managedDocs().erase(it);
+        auto it = m_doc_info.find(doc);
+        if (it != end(m_doc_info))
+            m_doc_info.erase(it);
     }
     // Remove translation unit for given document
     {
         auto it = m_units.find(doc);
         if (it != end(m_units))
             m_units.erase(it);
-    }
-}
-
-/// \todo Move this method to view class. View may access managed documents via accessor method.
-void CppHelperPlugin::textInserted(KTextEditor::Document* doc, const KTextEditor::Range& range)
-{
-    kDebug() << doc << " new text: " << doc->text(range);
-    KTextEditor::MovingInterface* mv_iface = qobject_cast<KTextEditor::MovingInterface*>(doc);
-    if (!mv_iface)
-    {
-        kDebug() << "No moving iface!!!!!!!!!!!";
-        return;
-    }
-    // Do we really need to scan this file?
-    if (!isCOrPPSource(doc->mimeType(), doc->highlightingMode()))
-    {
-        kDebug() << "Document doesn't looks like C or C++: type ="
-          << doc->mimeType() << ", hl =" << doc->highlightingMode();
-        return;
-    }
-    // Find corresponding document info, insert if needed
-    doc_info_type::iterator it = managedDocs().find(doc);
-    if (it == managedDocs().end())
-    {
-        it = managedDocs().insert(
-            std::make_pair(doc, std::unique_ptr<DocumentInfo>(new DocumentInfo(this)))
-          ).first;
-    }
-    // Search lines and filenames #include'd in this range
-    for (int i = range.start().line(); i < range.end().line() + 1; i++)
-    {
-        const QString& line_str = doc->line(i);
-        kate::IncludeParseResult r = parseIncludeDirective(line_str, true);
-        if (r.m_range.isValid())
-        {
-            r.m_range.setBothLines(i);
-            if (!it->second->isRangeWithSameExists(r.m_range))
-            {
-                it->second->addRange(
-                    mv_iface->newMovingRange(
-                        r.m_range
-                      , KTextEditor::MovingRange::ExpandLeft | KTextEditor::MovingRange::ExpandRight
-                      )
-                  );
-            }
-            else kDebug() << "range already registered";
-        }
-        else kDebug() << "no valid #include found";
     }
 }
 
@@ -456,6 +407,18 @@ TranslationUnit::unsaved_files_list_type CppHelperPlugin::makeUnsavedFilesList(
     return unsaved_files;
 }
 
+DocumentInfo& CppHelperPlugin::getDocumentInfo(KTextEditor::Document* doc)
+{
+    // Find corresponding document info, insert if needed
+    auto it = m_doc_info.find(doc);
+    if (it == end(m_doc_info))
+    {
+        it = m_doc_info.insert(
+            std::make_pair(doc, std::unique_ptr<DocumentInfo>(new DocumentInfo(this)))
+          ).first;
+    }
+    return *it->second;
+}
 /**
  * \throw TranslationUnit::Exception
  */
