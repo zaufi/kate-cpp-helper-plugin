@@ -1,9 +1,11 @@
 #
-# Find clang C API libraries
+# Find clang C API library
 #
 # Copyright 2012 by Alex Turbov <i.zaufi@gmail.com>
 #
 # kate: hl cmake;
+
+include(FindPackageHandleStandardArgs)
 
 # NOTE In gentoo clang library placed into /usr/lib64/llvm,
 # so to find it `llvm-config` required
@@ -15,20 +17,6 @@ find_program(
 if (LLVM_CONFIG_EXECUTABLE)
     message(STATUS "Found LLVM configuration tool: ${LLVM_CONFIG_EXECUTABLE}")
 
-    # Get LLVM CXX flags
-    execute_process(
-        COMMAND ${LLVM_CONFIG_EXECUTABLE} --cxxflags
-        OUTPUT_VARIABLE LLVM_CXXFLAGS
-        OUTPUT_STRIP_TRAILING_WHITESPACE
-      )
-    # Remove undesirable flags
-    string(REPLACE "-DNDEBUG" "" LLVM_CXXFLAGS "${LLVM_CXXFLAGS}")
-    string(
-        REPLACE "-fno-exceptions" ""
-        LLVM_CXXFLAGS
-        "${LLVM_CXXFLAGS}"
-      )
-
     # Get LLVM library dir
     execute_process(
         COMMAND ${LLVM_CONFIG_EXECUTABLE} --libdir
@@ -39,7 +27,7 @@ endif()
 
 # Try to find libclang.so
 find_library(
-    CLANG_C_LIBRARIES
+    LIBCLANG_LIBRARY
     clang
     PATH ${LLVM_LIBDIR}
   )
@@ -47,9 +35,9 @@ find_library(
 try_run(
     _clang_get_version_run_result
     _clang_get_version_compile_result
-    ${CMAKE_BINARY_DIR} ${CMAKE_SOURCE_DIR}/cmake/modules/clang-c-lib-get-version.cpp
+    ${CMAKE_BINARY_DIR} ${CMAKE_SOURCE_DIR}/cmake/modules/libclang-get-version.cpp
     COMPILE_DEFINITIONS ${LLVM_CXXFLAGS}
-    CMAKE_FLAGS -DLINK_LIBRARIES:STRING=${CLANG_C_LIBRARIES}
+    CMAKE_FLAGS -DLINK_LIBRARIES:STRING=${LIBCLANG_LIBRARY}
     COMPILE_OUTPUT_VARIABLE _clang_get_version_compile_output
     RUN_OUTPUT_VARIABLE _clang_get_version_run_output
   )
@@ -60,14 +48,14 @@ try_run(
 string(
     REGEX
     REPLACE ".*clang version ([23][^ \\-]+)[ \\-].*" "\\1"
-    CLANG_C_LIB_VERSION
+    LIBCLANG_VERSION
     "${_clang_get_version_run_output}"
   )
 
-message(STATUS "Found Clang C API version ${CLANG_C_LIB_VERSION}")
+message(STATUS "Found Clang C API version ${LIBCLANG_VERSION}")
 
 find_package_handle_standard_args(
-    CLANG_C_LIBS
-    REQUIRED_VARS CLANG_C_LIBRARIES
-    VERSION_VAR CLANG_C_LIB_VERSION
+    LibClang
+    REQUIRED_VARS LIBCLANG_LIBRARY
+    VERSION_VAR LIBCLANG_VERSION
   )

@@ -38,7 +38,7 @@ endif()
 find_package(KDE4 REQUIRED)
 include(KDE4Defaults)
 
-find_package(ClangCLibs QUIET REQUIRED)
+find_package(LibClang 3.1 REQUIRED)
 
 # find boost
 # NOTE I see no way to make unit tests optional for release mode

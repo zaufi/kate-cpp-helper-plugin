@@ -74,6 +74,8 @@ void debugShowCompletionResult(
               << ", text=" << QString(clang_getCString(text_str));
         }
     }
+    DCXString comment_str = clang_getCompletionBriefComment(str);
+    kDebug() << "  comment:" << QString(clang_getCString(comment_str));
 
     // Show annotations
     for (unsigned ai = 0u, an = clang_getCompletionNumAnnotations(str); ai < an; ++ai)

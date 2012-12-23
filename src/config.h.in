@@ -23,9 +23,9 @@
  */
 
 #ifndef __SRC__CONFIG_H__
-#  define __SRC__CONFIG_H__
+# define __SRC__CONFIG_H__
 
-#  define PLUGIN_VERSION "@VERSION_STRING@"
+# define PLUGIN_VERSION "@VERSION_STRING@"
 
 #endif                                                      // __SRC__CONFIG_H__
 // kate: hl c++11;

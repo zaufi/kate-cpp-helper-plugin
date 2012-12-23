@@ -225,7 +225,7 @@ QPair<QString, int> ClangCodeCompletionItem::executeCompletion() const
 
 QPair<QString, QMap<QString, QString>> ClangCodeCompletionItem::getCompletionTemplate() const
 {
-    QString tpl = m_text + m_after + QLatin1String("${cursor}");
+    QString tpl = m_text + m_after + QLatin1String("%{cursor}");
     switch (m_kind)
     {
         case CXCursor_CXXMethod:

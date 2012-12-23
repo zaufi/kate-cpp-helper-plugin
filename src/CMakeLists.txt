@@ -36,7 +36,7 @@ target_link_libraries(katecpphelperplugin
     ${KDE4_KFILE_LIBS}
     ${KDE4_KTEXTEDITOR_LIBS}
     kateinterfaces
-    ${CLANG_C_LIBRARIES}
+    ${LIBCLANG_LIBRARY}
   )
 
 #
