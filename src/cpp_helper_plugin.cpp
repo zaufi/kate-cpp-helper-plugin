@@ -80,6 +80,12 @@ CppHelperPlugin::CppHelperPlugin(
       );
     connect(
         &m_config
+      , SIGNAL(clangOptionsChanged())
+      , this
+      , SLOT(invalidateTranslationUnits())
+      );
+    connect(
+        &m_config
       , SIGNAL(precompiledHeaderFileChanged())
       , this
       , SLOT(buildPCHIfAbsent())
@@ -211,6 +217,12 @@ void CppHelperPlugin::deletedPath(const QString& path)
     }
 }
 
+void CppHelperPlugin::invalidateTranslationUnit()
+{
+    kDebug() << "Clang options had changed, invalidating translation units...";
+    m_units.clear();
+}
+
 void CppHelperPlugin::updateCurrentView()
 {
     KTextEditor::View* view = application()->activeMainWindow()->activeView();
@@ -268,13 +280,20 @@ void CppHelperPlugin::updateDocumentInfo(KTextEditor::Document* doc)
 
 void CppHelperPlugin::removeDocumentInfo(KTextEditor::Document* doc)
 {
-    kDebug() << "going to remove document" << doc;
-
     assert("Valid document expected" && doc);
+    kDebug() << "going to remove document" << doc;
     // Try to remove previously collected info
-    CppHelperPlugin::doc_info_type::iterator it = managedDocs().find(doc);
-    if (it != managedDocs().end())
-        managedDocs().erase(it);
+    {
+        auto it = managedDocs().find(doc);
+        if (it != end(managedDocs()))
+            managedDocs().erase(it);
+    }
+    // Remove translation unit for given document
+    {
+        auto it = m_units.find(doc);
+        if (it != end(m_units))
+            m_units.erase(it);
+    }
 }
 
 /// \todo Move this method to view class. View may access managed documents via accessor method.
@@ -422,6 +441,64 @@ QList<KTextEditor::HighlightInterface::AttributeBlock> CppHelperPlugin::highligh
         m_hidden_doc->clear();
     }
     return result;
+}
+
+TranslationUnit::unsaved_files_list_type CppHelperPlugin::makeUnsavedFilesList(
+    KTextEditor::Document* doc
+  ) const
+{
+    // Form unsaved files list
+    TranslationUnit::unsaved_files_list_type unsaved_files;
+    //  1) append this document to the list of unsaved files
+    const QString this_filename = doc->url().toLocalFile();
+    unsaved_files.push_back(qMakePair(this_filename, doc->text()));
+    /// \todo Collect other unsaved files
+    return unsaved_files;
+}
+
+/**
+ * \throw TranslationUnit::Exception
+ */
+TranslationUnit& CppHelperPlugin::getTranslationUnitByDocument(KTextEditor::Document* doc)
+{
+    auto it = m_units.find(doc);
+    if (it == end(m_units))
+    {
+        // Form command line parameters
+        //  1) collect configured system and session dirs and make -I option series
+        QStringList options = config().formCompilerOptions();
+        //  2) append PCH options
+        if (!config().pchFile().isEmpty())
+            options << /*"-Xclang" << */"-include-pch" << config().pchFile().toLocalFile();
+        // Form unsaved files list
+        auto unsaved_files = makeUnsavedFilesList(doc);
+
+        // Parse it!
+        it = m_units.insert(
+            std::make_pair(
+                doc
+              , std::unique_ptr<TranslationUnit>(
+                    new TranslationUnit(
+                        index()
+                      , doc->url()
+                      , options
+                      , TranslationUnit::defaultEditingParseOptions()
+                      , unsaved_files
+                      )
+                  )
+              )
+          ).first;
+    }
+    else
+    {
+        /// \todo It would be better to monitor if code has changed before
+        /// \c updateUnsavedFiles() and \c reparse()
+        it->second->updateUnsavedFiles(makeUnsavedFilesList(doc));
+#if 0
+        it->reparse();                                      // Reparse translation unit
+#endif
+    }
+    return *it->second;
 }
 
 //END CppHelperPlugin

@@ -26,6 +26,7 @@
 // Project specific includes
 # include <src/clang_utils.h>
 # include <src/plugin_configuration.h>
+# include <src/translation_unit.h>
 
 // Standard includes
 # include <kate/plugin.h>
@@ -98,6 +99,9 @@ public:
         const QString&
       , const QString&
       );
+    /// Helper function to collect unsaved files from current editor
+    TranslationUnit::unsaved_files_list_type makeUnsavedFilesList(KTextEditor::Document*) const;
+    TranslationUnit& getTranslationUnitByDocument(KTextEditor::Document*);
 
 public Q_SLOTS:
     void updateDocumentInfo(KTextEditor::Document*);
@@ -113,8 +117,15 @@ private Q_SLOTS:
     void buildPCHIfAbsent();                                ///< Make sure a PCH is fresh
     /// Update watcher to monitor currently configured directories
     void updateDirWatcher();
+    void invalidateTranslationUnit();
 
 private:
+    /// Type to assiciate a document with a translation unit
+    typedef std::map<
+        KTextEditor::Document*
+      , std::unique_ptr<TranslationUnit>
+      > translation_units_map_type;
+
     /// Update watcher to monitor a given entry
     void updateDirWatcher(const QString&);
 
@@ -132,6 +143,7 @@ private:
     QString m_last_updated;
     /// A never shown document used to highlight code completion items
     KTextEditor::Document* m_hidden_doc;
+    translation_units_map_type m_units;
 };
 
 inline PluginConfiguration& CppHelperPlugin::config()

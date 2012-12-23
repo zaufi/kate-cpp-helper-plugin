@@ -46,18 +46,6 @@ ClangCodeCompletionModel::ClangCodeCompletionModel(
   , m_diagnostic_text(dt)
   , m_current_view(nullptr)
 {
-    connect(
-        &m_plugin->config()
-      , SIGNAL(clangOptionsChanged())
-      , this
-      , SLOT(invalidateTranslationUnit())
-      );
-}
-
-void ClangCodeCompletionModel::invalidateTranslationUnit()
-{
-    kDebug() << "Clang options had changed, invalidating translation unit...";
-    m_unit.reset();
 }
 
 bool ClangCodeCompletionModel::shouldStartCompletion(
@@ -93,59 +81,19 @@ void ClangCodeCompletionModel::completionInvoked(
 
     kDebug() << "It seems user has invoked comletion at " << range;
 
-    // Obtain a completion data for given document or append a new entry
-    if (!m_unit)
-    {
-        // Form command line parameters
-        //  1) collect configured system and session dirs and make -I option series
-        QStringList options = m_plugin->config().formCompilerOptions();
-        //  2) append PCH options
-        if (!m_plugin->config().pchFile().isEmpty())
-            options << /*"-Xclang" << */"-include-pch" << m_plugin->config().pchFile().toLocalFile();
-        // Form unsaved files list
-        TranslationUnit::unsaved_files_list_type unsaved_files = makeUnsavedFilesList(doc);
-
-        try
-        {
-            // Parse it!
-            m_unit.reset(
-                new TranslationUnit(
-                    m_plugin->index()
-                  , doc->url()
-                  , options
-                  , TranslationUnit::defaultEditingParseOptions()
-                  , unsaved_files
-                  )
-              );
-        }
-        catch (const TranslationUnit::Exception& e)
-        {
-            kError() << "Fail to make a translation unit: " << e.what();
-            /// \todo Show popup?
-            return;
-        }
-    }
-    else
-    {
-        /// \todo It would be better to monitor if code has changed before
-        /// \c updateUnsavedFiles() and \c reparse()
-        m_unit->updateUnsavedFiles(makeUnsavedFilesList(doc));
-#if 0
-        m_unit->reparse();                                  // Reparse translation unit
-#endif
-    }
 
     // Remove everything collected before
     m_groups.clear();
 
     try
     {
+        auto& unit = m_plugin->getTranslationUnitByDocument(doc);
         // Try to make a comletion
-        auto completions = m_unit->completeAt(
+        auto completions = unit.completeAt(
             unsigned(range.start().line() + 1)              // NOTE Kate count lines starting from 0
           , unsigned(range.start().column() + 1)            // NOTE Kate count columns starting from 0
           );
-        m_diagnostic_text->setText(m_unit->getLastDiagnostic());
+        m_diagnostic_text->setText(unit.getLastDiagnostic());
 
         // Transform a plain list into hierarchy grouped by parent context
         std::map<QString, GroupInfo> grouped_completions;
@@ -174,19 +122,6 @@ void ClangCodeCompletionModel::completionInvoked(
     {
         kError() << "Fail to make a code completion: " << e.what();
     }
-}
-
-TranslationUnit::unsaved_files_list_type ClangCodeCompletionModel::makeUnsavedFilesList(
-    KTextEditor::Document* doc
-  )
-{
-    // Form unsaved files list
-    TranslationUnit::unsaved_files_list_type unsaved_files;
-    //  1) append this document to the list of unsaved files
-    const QString this_filename = doc->url().toLocalFile();
-    unsaved_files.push_back(qMakePair(this_filename, doc->text()));
-    /// \todo Collect other unsaved files
-    return unsaved_files;
 }
 
 int ClangCodeCompletionModel::columnCount(const QModelIndex& /*index*/) const

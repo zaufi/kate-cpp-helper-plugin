@@ -25,7 +25,6 @@
 
 // Project specific includes
 # include <src/clang_code_completion_item.h>
-# include <src/translation_unit.h>
 
 // Standard includes
 # include <clang-c/Index.h>
@@ -39,7 +38,6 @@
 #   pragma GCC pop_options
 # endif                                                     // (__GNUC__ >=4 && __GNUC_MINOR__ >= 5)
 # include <KTextEdit>
-# include <memory>
 # include <vector>
 
 namespace kate {
@@ -76,9 +74,6 @@ public:
     void executeCompletionItem2(KTextEditor::Document*, const KTextEditor::Range&, const QModelIndex&) const;
     //END KTextEditor::CodeCompletionModel overrides
 
-private Q_SLOTS:
-    void invalidateTranslationUnit();
-
 private:
     struct GroupInfo
     {
@@ -99,9 +94,6 @@ private:
         GROUP = 0xcafe                                      ///< Group node (level 1)
     };
 
-    /// Helper function to collect unsaved files from current editor
-    TranslationUnit::unsaved_files_list_type makeUnsavedFilesList(KTextEditor::Document*);
-
     QVariant getGroupData(const QModelIndex&, int) const;
     QVariant getItemData(const QModelIndex&, int) const;
     QVariant getItemHighlightData(const QModelIndex&, int) const;
@@ -109,7 +101,6 @@ private:
     CppHelperPlugin* m_plugin;
     KTextEdit* m_diagnostic_text;
     KTextEditor::View* m_current_view;
-    std::unique_ptr<TranslationUnit> m_unit;
     groups_list_type m_groups;                              ///< Level one nodes
 };
 
