@@ -300,6 +300,7 @@ QList<ClangCodeCompletionItem> TranslationUnit::completeAt(const int line, const
         QString typed_text;
         QString text_after;
         QStringList placeholders;
+        int optional_placeholers_start_position = -1;
         // A lambda to append given text to different parts
         // of future completion string, depending on already processed text
         auto appender = [&](const QString& text)
@@ -331,8 +332,6 @@ QList<ClangCodeCompletionItem> TranslationUnit::completeAt(const int line, const
                 // could be a part of the template (but is not required)
                 case CXCompletionChunk_Optional:
                 {
-                    // Put optional parameters into square brackets
-                    text = QLatin1String("[");
                     auto ostr = clang_getCompletionChunkCompletionString(str, j);
                     for (
                         unsigned oci = 0
@@ -342,9 +341,17 @@ QList<ClangCodeCompletionItem> TranslationUnit::completeAt(const int line, const
                       )
                     {
                         DCXString otext_str = clang_getCompletionChunkText(ostr, oci);
-                        text += QString(clang_getCString(otext_str));
+                        QString otext(clang_getCString(otext_str));
+                        auto okind = clang_getCompletionChunkKind(ostr, oci);
+                        if (okind == CXCompletionChunk_Placeholder)
+                        {
+                            appender("%" + QString::number(placeholders.size() + 1) + "%");
+                            placeholders.push_back(otext);
+                            optional_placeholers_start_position = placeholders.size();
+                        }
+                        else appender(otext);
                     }
-                    text += QLatin1String("]");
+                    break;
                 }
                 case CXCompletionChunk_ResultType:
                 case CXCompletionChunk_LeftParen:
@@ -359,9 +366,10 @@ QList<ClangCodeCompletionItem> TranslationUnit::completeAt(const int line, const
                 case CXCompletionChunk_Colon:
                 case CXCompletionChunk_SemiColon:
                 case CXCompletionChunk_Equal:
-                case CXCompletionChunk_HorizontalSpace:
-                case CXCompletionChunk_VerticalSpace:
                 case CXCompletionChunk_CurrentParameter:
+                case CXCompletionChunk_HorizontalSpace:
+                /// \todo Kate can't handle \c '\n' well in completions list
+                case CXCompletionChunk_VerticalSpace:
                     appender(text);
                     break;
                 // Informative text that should be displayed but never inserted
@@ -384,6 +392,7 @@ QList<ClangCodeCompletionItem> TranslationUnit::completeAt(const int line, const
           , typed_text
           , text_after
           , placeholders
+          , optional_placeholers_start_position
           , priority
           , cursor_kind
           , availability == CXAvailability_Deprecated

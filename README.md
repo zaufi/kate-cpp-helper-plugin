@@ -141,6 +141,12 @@ will be lost (configuration groups were renamed as well). To avoid reconfigure e
     $ sed -i 's,IncludeHelper,CppHelper,g' *
 
 
+Known Bugs
+==========
+
+It seems recently released clang 3.2 has a bug with optional parameters: completer return only first one.
+
+
 TODO
 ====
 

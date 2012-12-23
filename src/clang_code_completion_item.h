@@ -52,6 +52,7 @@ public:
       , const QString& text
       , const QString& after
       , const QStringList& placeholders
+      , const int optional_placeholders_pos
       , const unsigned priority
       , const CXCursorKind kind
       , const bool is_deprecated = false
@@ -61,6 +62,7 @@ public:
       , m_text(text)
       , m_after(after)
       , m_placeholders(placeholders)
+      , m_optional_placeholders_pos(optional_placeholders_pos)
       , m_priority(priority)
       , m_kind(kind)
       , m_deprecated(is_deprecated)
@@ -78,13 +80,17 @@ public:
     QPair<QString, QMap<QString, QString>> getCompletionTemplate() const;
 
 private:
+
     QString renderPlaceholders(const QString&, const bool) const;
+
+    static const int NO_OPTIONAL_PLACEHOLDERS = -1;
 
     QString m_parent;                                       ///< Parent context of the curremt completion item
     QString m_before;                                       ///< Everything \e before typed text (return type)
     QString m_text;                                         ///< Text to paste
     QString m_after;                                        ///< Everything \e after typed text (arguments)
     QStringList m_placeholders;                             ///< Parameters to substitute
+    int m_optional_placeholders_pos;                        ///< Position of the first optional placeholder
     unsigned m_priority;
     CXCursorKind m_kind;
     bool m_deprecated;                                      ///< Is current item deprecated?

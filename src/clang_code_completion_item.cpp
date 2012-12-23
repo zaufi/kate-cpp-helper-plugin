@@ -112,16 +112,37 @@ QString ClangCodeCompletionItem::renderPlaceholders(
 {
     QString result = source;
     unsigned i = 0;
-    for (const auto& p : m_placeholders)
+    if (m_optional_placeholders_pos != NO_OPTIONAL_PLACEHOLDERS)
     {
-        const QString fmt = '%' + QString::number(++i) + '%';
-        auto pos = result.indexOf(fmt);
-        if (pos != -1)
-            result = result.replace(
-                pos
-              , fmt.length()
-              , sanitize_required ? sanitizePlaceholder(QString(p)) : p
-              );
+        kDebug() << "Optional params present starting from:" << m_optional_placeholders_pos;
+        // Ok be ready for optional parameters
+        for (const auto& p : m_placeholders)
+        {
+            const QString fmt = '%' + QString::number(++i) + '%';
+            auto pos = result.indexOf(fmt);
+            auto text = sanitize_required ? sanitizePlaceholder(QString(p)) : p;
+            if (i == unsigned(m_optional_placeholders_pos))
+                text.prepend('[');
+            if (i == unsigned(m_placeholders.size()))
+                text.append(']');
+            if (pos != -1)
+                result = result.replace(pos, fmt.length(), text);
+        }
+    }
+    else
+    {
+        // No optional parameters
+        for (const auto& p : m_placeholders)
+        {
+            const QString fmt = '%' + QString::number(++i) + '%';
+            auto pos = result.indexOf(fmt);
+            if (pos != -1)
+                result = result.replace(
+                    pos
+                  , fmt.length()
+                  , sanitize_required ? sanitizePlaceholder(QString(p)) : p
+                  );
+        }
     }
     return result;
 }
