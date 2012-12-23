@@ -623,6 +623,21 @@ void CppHelperPluginView::textInserted(KTextEditor::Document* doc, const KTextEd
     // Find corresponding document info, insert if needed
     auto& di = m_plugin->getDocumentInfo(doc);
     // Search lines and filenames #include'd in this range
+    /**
+     * \todo It would be \b cool to have a view class over a document
+     * so the following code would be possible:
+     * \code
+     *  for (const auto& l : DocumentLinesView(range, doc))
+     *  {
+     *      QString line_str = l;    // auto converstion to strings
+     *      int line_no = l.index(); // tracking of the current line number
+     *  }
+     *  // Or even smth like this
+     *  DocumentLinesView dv = { view->document() };
+     *  // Get line text by number
+     *  QString line_str = dv[line_no];
+     * \endcode
+     */
     for (int i = range.start().line(); i < range.end().line() + 1; i++)
     {
         const QString& line_str = doc->line(i);
@@ -765,7 +780,7 @@ KTextEditor::Range CppHelperPluginView::currentWord() const
     if (r.m_range.isValid())
     {
         r.m_range.setBothLines(line);
-        kDebug() << "Ok,  found #include directive:" << r.m_range;
+        kDebug() << "Ok, found #include directive:" << r.m_range;
         return r.m_range;
     }
 

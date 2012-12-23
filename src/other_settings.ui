@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>496</width>
-    <height>408</height>
+    <height>427</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -180,6 +180,13 @@
         </property>
         <property name="text">
          <string>Sanitize results</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="autocomplete">
+        <property name="text">
+         <string>Enable Autocomplete</string>
         </property>
        </widget>
       </item>

@@ -419,6 +419,7 @@ DocumentInfo& CppHelperPlugin::getDocumentInfo(KTextEditor::Document* doc)
     }
     return *it->second;
 }
+
 /**
  * \throw TranslationUnit::Exception
  */
