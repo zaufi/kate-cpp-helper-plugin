@@ -29,6 +29,19 @@
 // Standard includes
 #include <cassert>
 
+#if defined(CINDEX_VERSION_MAJOR) && defined(CINDEX_VERSION_MINOR)
+# if CINDEX_VERSION_MAJOR == 0 && CINDEX_VERSION_MINOR == 6
+// libclang gets version since clang 3.2
+#   define CLANG_VERSION 30200
+# else
+// Some future version...
+#   define CLANG_VERSION 39999
+# endif
+#else
+// clang piror 3.2
+# define CLANG_VERSION 30000
+#endif
+
 namespace kate { namespace {
 /// Show some debug info about completion string from Clang
 void debugShowCompletionResult(
@@ -74,8 +87,10 @@ void debugShowCompletionResult(
               << ", text=" << QString(clang_getCString(text_str));
         }
     }
+#if CLANG_VERSION >= 30200
     DCXString comment_str = clang_getCompletionBriefComment(str);
     kDebug() << "  comment:" << QString(clang_getCString(comment_str));
+#endif
 
     // Show annotations
     for (unsigned ai = 0u, an = clang_getCompletionNumAnnotations(str); ai < an; ++ai)
