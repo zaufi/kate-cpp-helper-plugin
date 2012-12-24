@@ -348,8 +348,8 @@ void CppHelperPluginView::openHeader()
     QString filename;
     KTextEditor::Document* doc = mainWindow()->activeView()->document();
 
-    KTextEditor::Range r = currentWord();
-    kDebug() << "currentWord() = " << r;
+    KTextEditor::Range r = findIncludeFilenameNearCursor();
+    kDebug() << "findIncludeFilenameNearCursor() = " << r;
     if (!r.isEmpty())
     {
         // NOTE Non empty range means that main window is valid
@@ -751,7 +751,7 @@ bool CppHelperPluginView::eventFilter(QObject* obj, QEvent* event)
     return QObject::eventFilter(obj, event);
 }
 
-KTextEditor::Range CppHelperPluginView::currentWord() const
+KTextEditor::Range CppHelperPluginView::findIncludeFilenameNearCursor() const
 {
     KTextEditor::Range result;                              // default range is empty
     KTextEditor::View* view = mainWindow()->activeView();
@@ -790,9 +790,12 @@ KTextEditor::Range CppHelperPluginView::currentWord() const
     // Get cursor line/column
     int col = view->cursorPosition().column();
 
+    // NOTE Make sure cursor withing a line 
+    // (dunno is it possible to have a cursor far than a line length... 
+    // in block selection mode for example)
     int start = qMax(qMin(col, line_str.length() - 1), 0);
     int end = start;
-    kDebug() << "Arghh... trying w/ word under cursor starting from " << start;
+    kDebug() << "Arghh... trying w/ word under cursor starting from" << start;
 
     // Seeking for start of current word
     for (; start > 0; --start)
@@ -809,7 +812,6 @@ KTextEditor::Range CppHelperPluginView::currentWord() const
 
     return KTextEditor::Range(line, start, line, end);
 }
-
 //END CppHelperPluginView
 
 //BEGIN ChooseFromListDialog

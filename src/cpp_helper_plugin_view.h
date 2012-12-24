@@ -95,7 +95,8 @@ private:
     QStringList findCandidatesAt(const QString&, const QString&, const QStringList&);
     bool eventFilter(QObject*, QEvent*);
 
-    KTextEditor::Range currentWord() const;                 ///< Get word under cursor as range
+    /// Try to get an \c #include filename under cursor as range
+    KTextEditor::Range findIncludeFilenameNearCursor() const;
     void openFile(const QString&);                          ///< Open a single document
     void openFiles(const QStringList&);                     ///< Open documents for all URIs in a given list
     QStringList findFileLocations(const QString&);          ///< Get list of absolute paths to filename

@@ -114,7 +114,6 @@ QString ClangCodeCompletionItem::renderPlaceholders(
     unsigned i = 0;
     if (m_optional_placeholders_pos != NO_OPTIONAL_PLACEHOLDERS)
     {
-        kDebug() << "Optional params present starting from:" << m_optional_placeholders_pos;
         // Ok be ready for optional parameters
         for (const auto& p : m_placeholders)
         {
