@@ -174,8 +174,8 @@ Changes
 Version 0.8.6
 -------------
 
-* insert kate templates when execute completion item so user may see the parameters required for
-  function call.
+* insert kate templates when execute completion item, so user may see and edit parameters required
+  for a function call.
 
 Version 0.8.5
 -------------
