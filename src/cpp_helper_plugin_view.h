@@ -29,8 +29,7 @@
 # include <kate/plugin.h>
 # include <KTextEditor/View>
 # include <KAction>
-# include <KDialog>
-# include <KListWidget>
+# include <KActionMenu>
 # include <KTextEdit>
 # include <map>
 # include <memory>
@@ -80,6 +79,9 @@ private Q_SLOTS:
     void modeChanged(KTextEditor::Document*);
     void urlChanged(KTextEditor::Document*);
     void textInserted(KTextEditor::Document*, const KTextEditor::Range&);
+    void aboutToShow();
+    void whatIsThis();
+    void needTextHint(const KTextEditor::Cursor&, QString&);
 
 private:
     /// Type to hold a completers associated with a view
@@ -106,20 +108,10 @@ private:
     KAction* m_copy_include;                                ///< <em>Copy #include to clipboard</em> action
     KAction* m_switch;                                      ///< <em>Open implementation/header</em> action
     std::unique_ptr<QWidget> m_tool_view;                   ///< Toolview to display clang diagnostic
+    std::unique_ptr<KActionMenu> m_menu;                    ///< Context menu
+    QAction* m_what_is_this;                                ///< Get info about symbol under cursor
     completions_models_map_type m_completers;               ///< Registered completers by view
     KTextEdit* m_diagnostic_text;                           ///< A widget to display diagnostic text
-};
-
-class ChooseFromListDialog : public KDialog
-{
-    Q_OBJECT
-
-public:
-    ChooseFromListDialog(QWidget*);
-    static QString selectHeaderToOpen(QWidget*, const QStringList&);
-
-private:
-    KListWidget* m_list;
 };
 
 }                                                           // namespace kate

@@ -43,7 +43,6 @@ IncludeHelperCompletionModel::IncludeHelperCompletionModel(
 {
 }
 
-/// \todo More effective implementation could be here!
 QModelIndex IncludeHelperCompletionModel::index(int row, int column, const QModelIndex& parent) const
 {
     // kDebug() << "row=" << row << ", col=" << column << ", p=" << parent.isValid();
@@ -90,6 +89,21 @@ bool IncludeHelperCompletionModel::shouldStartCompletion(
         {
             m_closer = r.close_char();
             kDebug() << "closer=" << m_closer;
+        }
+    }
+    else if (position.column() == line.length())
+    {
+        QString text = tryToCompleteIncludeDirective(line.mid(0, position.column()).trimmed());
+        m_should_complete = !text.isEmpty();
+        if (m_should_complete)
+        {
+            /// \todo Hardcoded angle bracket! Better to check what file was selected
+            /// (from system path or session specific) and replace it accordingly...
+            text += QLatin1String(" <");
+            auto start = position;
+            start.setColumn(0);
+            KTextEditor::Range range = {start, position};
+            view->document()->replaceText(range, text);
         }
     }
     return m_should_complete;

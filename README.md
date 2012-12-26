@@ -166,7 +166,14 @@ TODO
 * Issue a warning if /proc/sys/fs/inotify/max_user_watches is not high enough
 * Use `KUrl` for files and dirs instead of `QStrings`
 * Clean `std::enable_if` and `boost::enable_if` from return value and parameters
-
+* Use compilation database if possible.
+* Auto generate doxygen documentation for functions from definition -- just skeleton
+  w/ parameters and return type.
+* Enable code autocompletion (configurable by checkbox)... but how to deal w/ really heavy project?
+  Now one of my current project took ~8sec to show completions (even with PCH) :-(
+  So, definitely there should be possible to turn code autocompleter off.
+* Need to introduce index database to lookup for declarations/definitions/references. It
+  also can be used for code refactorings (like rename smth & etc.)
 
 Changes
 =======

@@ -217,3 +217,31 @@ BOOST_AUTO_TEST_CASE(parse_failures_test)
     fail_parser_test(false);
     fail_parser_test(true);
 }
+
+BOOST_AUTO_TEST_CASE(partial_parse_test)
+{
+    BOOST_CHECK(kate::tryToCompleteIncludeDirective("") == QString());
+    BOOST_CHECK(kate::tryToCompleteIncludeDirective("not #include at all") == QString());
+    BOOST_CHECK(kate::tryToCompleteIncludeDirective("#") == QString());
+    BOOST_CHECK(kate::tryToCompleteIncludeDirective("#i") == QString());
+    BOOST_CHECK(kate::tryToCompleteIncludeDirective("#ia") == QString());
+
+#if 0
+    auto s = kate::tryToCompleteIncludeDirective("#in").toStdString();
+    std::cout << s << std::endl;
+#endif
+
+    BOOST_CHECK(kate::tryToCompleteIncludeDirective("#in") == QString("#include"));
+    BOOST_CHECK(kate::tryToCompleteIncludeDirective("#inc") == QString("#include"));
+    BOOST_CHECK(kate::tryToCompleteIncludeDirective("#incl") == QString("#include"));
+    BOOST_CHECK(kate::tryToCompleteIncludeDirective("#inclu") == QString("#include"));
+    BOOST_CHECK(kate::tryToCompleteIncludeDirective("#includ") == QString("#include"));
+    BOOST_CHECK(kate::tryToCompleteIncludeDirective("#include") == QString("#include"));
+
+    BOOST_CHECK(kate::tryToCompleteIncludeDirective("#include_") == QString());
+
+    BOOST_CHECK(kate::tryToCompleteIncludeDirective("# in") == QString("# include"));
+    BOOST_CHECK(kate::tryToCompleteIncludeDirective("#  in") == QString("#  include"));
+    BOOST_CHECK(kate::tryToCompleteIncludeDirective("#   in") == QString("#   include"));
+}
+// kate: hl C++11/Qt4;

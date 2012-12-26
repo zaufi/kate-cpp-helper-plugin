@@ -10,11 +10,13 @@ set(KATE_CPP_HELPER_PLUGIN_SOURCES
     sanitize_snippet.cpp
     plugin_configuration.cpp
     document_info.cpp
+    document_proxy.cpp
     translation_unit.cpp
     clang_utils.cpp
     clang_code_completion_item.cpp
     clang_code_completion_model.cpp
     include_helper_completion_model.cpp
+    choose_from_list_dialog.cpp
     cpp_helper_plugin_config_page.cpp
     cpp_helper_plugin_view.cpp
     cpp_helper_plugin.cpp

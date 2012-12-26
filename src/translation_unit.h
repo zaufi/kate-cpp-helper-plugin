@@ -88,6 +88,17 @@ public:
             clang_disposeTranslationUnit(m_unit);
     }
 
+    /// Allow implicit conversion to \c CXTranslationUnit, so clang index API
+    /// cound be fed w/ instances of this class
+    operator CXTranslationUnit()
+    {
+        return m_unit;
+    }
+    operator CXTranslationUnit() const
+    {
+        return m_unit;
+    }
+
     void updateUnsavedFiles(const unsaved_files_list_type&);
     QList<ClangCodeCompletionItem> completeAt(const int, const int);
     void storeTo(const KUrl&);

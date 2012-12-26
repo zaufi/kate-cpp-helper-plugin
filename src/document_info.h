@@ -57,9 +57,10 @@ public:
     };
 
     explicit DocumentInfo(CppHelperPlugin*);
-    ~DocumentInfo();
+    virtual ~DocumentInfo();
 
-    bool isRangeWithSameExists(const KTextEditor::Range&) const;
+    bool isRangeWithSameLineExists(const KTextEditor::Range&) const;
+    Status getLineStatus(const int);
 
 public Q_SLOTS:
     void addRange(KTextEditor::MovingRange*);
@@ -72,14 +73,9 @@ private:
         Status m_status;
 
         State(
-            std::unique_ptr<KTextEditor::MovingRange>&& range
-          , KTextEditor::MovingRangeFeedback* fbimpl
-          )
-          : m_range(std::move(range))
-          , m_status(Status::Dunno)
-        {
-            m_range->setFeedback(fbimpl);
-        }
+            std::unique_ptr<KTextEditor::MovingRange>&&
+          , KTextEditor::MovingRangeFeedback*
+          );
         State(State&&) = default;                           ///< Default move ctor
         State& operator=(State&&) = default;                ///< Default move-assign operator
     };
@@ -98,6 +94,32 @@ private:
     ///< List of ranges w/ \c #incldue directives whithing a document
     registered_ranges_type m_ranges;
 };
+
+inline DocumentInfo::State::State(
+    std::unique_ptr<KTextEditor::MovingRange>&& range
+  , KTextEditor::MovingRangeFeedback* fbimpl
+  )
+  : m_range(std::move(range))
+  , m_status(Status::Dunno)
+{
+    m_range->setFeedback(fbimpl);
+}
+
+inline bool DocumentInfo::isRangeWithSameLineExists(const KTextEditor::Range& range) const
+{
+    for (const auto& state : m_ranges)
+        if (state.m_range->start().line() == range.start().line())
+            return true;
+    return false;
+}
+
+inline auto DocumentInfo::getLineStatus(const int line) -> Status
+{
+    for (const auto& state : m_ranges)
+        if (state.m_range->start().line() == line)
+            return state.m_status;
+    return Status::Dunno;
+}
 
 }                                                           // namespace kate
 #endif                                                      // __SRC__DOCUMENTINFO_H__

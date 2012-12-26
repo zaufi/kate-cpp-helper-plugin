@@ -23,8 +23,10 @@
 // Project specific includes
 #include <src/cpp_helper_plugin_view.h>
 #include <src/cpp_helper_plugin.h>
+#include <src/choose_from_list_dialog.h>
 #include <src/clang_code_completion_model.h>
 #include <src/document_info.h>
+#include <src/document_proxy.h>
 #include <src/include_helper_completion_model.h>
 #include <src/utils.h>
 
@@ -32,17 +34,21 @@
 #include <kate/application.h>
 #include <kate/documentmanager.h>
 #include <kate/mainwindow.h>
+#include <KStringHandler>
 #include <KTextEditor/CodeCompletionInterface>
-#include <KTextEditor/MovingInterface>
 #include <KTextEditor/Document>
+#include <KTextEditor/MovingInterface>
+#include <KTextEditor/TextHintInterface>
 #include <KActionCollection>
 #include <KLocalizedString>                                 /// \todo Where is \c i18n() defiend?
+#include <KMenu>
 #include <KPassivePopup>
 #include <QtGui/QApplication>
 #include <QtGui/QClipboard>
 #include <QtGui/QKeyEvent>
 #include <QtCore/QFileInfo>
 #include <QtCore/QDirIterator>
+#include <QtGui/QToolTip>
 #include <cassert>
 
 namespace kate { namespace {
@@ -73,6 +79,7 @@ CppHelperPluginView::CppHelperPluginView(
           , i18n("Completion Diagnostic")
           )
       )
+  , m_menu(new KActionMenu(i18n("C++ Helper: Playground"), this))
   , m_diagnostic_text(new KTextEdit(m_tool_view.get()))
 {
     m_open_header->setText(i18n("Open Header Under Cursor"));
@@ -86,6 +93,16 @@ CppHelperPluginView::CppHelperPluginView(
     m_copy_include->setText(i18n("Copy #include to Clipboard"));
     m_copy_include->setShortcut(QKeySequence(Qt::SHIFT + Qt::Key_F10));
     connect(m_copy_include, SIGNAL(triggered(bool)), this, SLOT(copyInclude()));
+
+    actionCollection()->addAction("popup_cpphelper", m_menu.get());
+    m_what_is_this = m_menu->menu()->addAction(
+        i18n("What is it at cursor?", QString())
+      , this
+      , SLOT(whatIsThis())
+      );
+#if 0
+    connect(m_menu->menu(), SIGNAL(aboutToShow()), this, SLOT(aboutToShow()));
+#endif
 
     // On viewCreated we have to subscribe self to monitor 
     // some document properties and act correspondignly:
@@ -544,6 +561,18 @@ void CppHelperPluginView::viewCreated(KTextEditor::View* view)
     if (handleView(view))
         m_plugin->updateDocumentInfo(view->document());
 
+    auto* th_iface = qobject_cast<KTextEditor::TextHintInterface*>(view);
+    if (th_iface)
+    {
+        connect(
+            view
+          , SIGNAL(needTextHint(const KTextEditor::Cursor&, QString&))
+          , this
+          , SLOT(needTextHint(const KTextEditor::Cursor&, QString&))
+          );
+        th_iface->enableTextHints(3000);                    // 3 seconds
+    }
+
     auto* doc = view->document();
     // Rescan document for #includes on reload
     connect(
@@ -590,6 +619,36 @@ void CppHelperPluginView::viewCreated(KTextEditor::View* view)
     /// on unregister...
 }
 
+void CppHelperPluginView::needTextHint(const KTextEditor::Cursor& pos, QString& text)
+{
+    kDebug() << "TEXT HINT REQUESTED AT " << pos;
+
+    KTextEditor::View* view = mainWindow()->activeView();
+    if (!view)                                              // do nothing if no view
+        return;
+
+    auto* doc = view->document();                           // get current document
+    // Is current file can have some hints?
+    if (isCOrPPSource(doc->mimeType(), doc->highlightingMode()))
+    {
+        auto& di = m_plugin->getDocumentInfo(doc);
+        auto status = di.getLineStatus(pos.line());
+        switch (status)
+        {
+            case DocumentInfo::Status::NotFound:
+                text = i18n("File not found");
+                break;
+            case DocumentInfo::Status::MultipleMatches:
+                text = i18n("Multiple files matched");
+                break;
+            default:
+                break;
+        }
+        QPoint p = view->cursorToCoordinate(pos);
+        QToolTip::showText(p, text, view);
+    }
+}
+
 void CppHelperPluginView::modeChanged(KTextEditor::Document* doc)
 {
     kDebug() << "hl mode has been changed: " << doc->highlightingMode() << ", " << doc->mimeType();
@@ -607,7 +666,7 @@ void CppHelperPluginView::urlChanged(KTextEditor::Document* doc)
 void CppHelperPluginView::textInserted(KTextEditor::Document* doc, const KTextEditor::Range& range)
 {
     kDebug() << doc << " new text: " << doc->text(range);
-    KTextEditor::MovingInterface* mv_iface = qobject_cast<KTextEditor::MovingInterface*>(doc);
+    auto* mv_iface = qobject_cast<KTextEditor::MovingInterface*>(doc);
     if (!mv_iface)
     {
         kDebug() << "No moving iface!!!!!!!!!!!";
@@ -645,7 +704,7 @@ void CppHelperPluginView::textInserted(KTextEditor::Document* doc, const KTextEd
         if (r.m_range.isValid())
         {
             r.m_range.setBothLines(i);
-            if (!di.isRangeWithSameExists(r.m_range))
+            if (!di.isRangeWithSameLineExists(r.m_range))
             {
                 di.addRange(
                     mv_iface->newMovingRange(
@@ -675,8 +734,7 @@ bool CppHelperPluginView::handleView(KTextEditor::View* view)
     if (!view)                                              // Null view is quite possible...
         return false;                                       // do nothing in this case.
 
-    KTextEditor::CodeCompletionInterface* cc_iface =
-        qobject_cast<KTextEditor::CodeCompletionInterface*>(view);
+    auto* cc_iface = qobject_cast<KTextEditor::CodeCompletionInterface*>(view);
     if (!cc_iface)
     {
         kDebug() << "Nothing to do if no completion iface present for a view";
@@ -755,21 +813,12 @@ KTextEditor::Range CppHelperPluginView::findIncludeFilenameNearCursor() const
 {
     KTextEditor::Range result;                              // default range is empty
     KTextEditor::View* view = mainWindow()->activeView();
-    if (!view)
-    {
-        kDebug() << "no KTextEditor::View";
-        return result;
-    }
+    if (!view || !view->cursorPosition().isValid())
+        return result;                                      // do nothing if no view or valid cursor
 
     // Return selected text if any
     if (view->selection())
         return view->selectionRange();
-
-    if (!view->cursorPosition().isValid())
-    {
-        kDebug() << "cursor not valid!";
-        return result;
-    }
 
     // Obtain a line under cursor
     const int line = view->cursorPosition().line();
@@ -812,49 +861,67 @@ KTextEditor::Range CppHelperPluginView::findIncludeFilenameNearCursor() const
 
     return KTextEditor::Range(line, start, line, end);
 }
+
+void CppHelperPluginView::aboutToShow()
+{
+    KTextEditor::View* view = mainWindow()->activeView();
+    if (view && view->cursorPosition().isValid())
+    {
+        DocumentProxy doc = mainWindow()->activeView()->document();
+        auto range = doc.getWordUnderCursor(view->cursorPosition());
+        kDebug() << "current word range: " << range;
+        if (range.isValid() && !range.isEmpty())
+        {
+            m_what_is_this->setEnabled(true);
+            kDebug() << "current word text: " << doc->text(range);
+            const QString squeezed = KStringHandler::csqueeze(doc->text(range), 30);
+            m_what_is_this->setText(i18n("What is '%1'", squeezed));
+            return;
+        }
+    }
+    m_what_is_this->setEnabled(false);
+    m_what_is_this->setText(i18n("What is ..."));
+}
+
+void CppHelperPluginView::whatIsThis()
+{
+    KTextEditor::View* view = mainWindow()->activeView();
+    if (!view || !view->cursorPosition().isValid())
+        return;                                             // do nothing if no view or valid cursor
+
+#if 0
+    // view is of type KTextEditor::View*
+    auto* iface = qobject_cast<KTextEditor::AnnotationViewInterface*>(view);
+    if (iface)
+    {
+        iface->setAnnotationBorderVisible(!iface->isAnnotationBorderVisible());
+    }
+#endif
+
+    QByteArray filename = view->document()->url().toLocalFile().toAscii();
+    auto& unit = m_plugin->getTranslationUnitByDocument(view->document());
+    CXFile file = clang_getFile(unit, filename.constData());
+    CXSourceLocation loc = clang_getLocation(
+        unit
+      , file
+      , view->cursorPosition().line() + 1
+      , view->cursorPosition().column() + 1
+      );
+    CXCursor ctx = clang_getCursor(unit, loc);
+    kDebug() << "Cursor: " << ctx;
+    CXCursor spctx = clang_getCursorSemanticParent(ctx);
+    kDebug() << "Cursor of semantic parent: " << spctx;
+    CXCursor lpctx = clang_getCursorLexicalParent(ctx);
+    kDebug() << "Cursor of lexical parent: " << lpctx;
+
+    DCXString comment = clang_Cursor_getRawCommentText(ctx);
+    kDebug() << "Associated comment:" << clang_getCString(comment);
+
+    DCXString usr = clang_getCursorUSR(ctx);
+    kDebug() << "USR:" << clang_getCString(usr);
+}
+
 //END CppHelperPluginView
 
-//BEGIN ChooseFromListDialog
-ChooseFromListDialog::ChooseFromListDialog(QWidget* parent)
-  : KDialog(parent)
-{
-    setModal(true);
-    setButtons(KDialog::Ok | KDialog::Cancel);
-    showButtonSeparator(true);
-    setCaption(i18n("Choose Header File to Open"));
-
-    m_list = new KListWidget(this);
-    setMainWidget(m_list);
-
-    connect(m_list, SIGNAL(executed(QListWidgetItem*)), this, SLOT(accept()));
-}
-
-QString ChooseFromListDialog::selectHeaderToOpen(QWidget* parent, const QStringList& strings)
-{
-    KConfigGroup gcg(KGlobal::config(), "CppHelperChooserDialog");
-    ChooseFromListDialog dialog(parent);
-    dialog.m_list->addItems(strings);                       // append gien items to the list
-    if (!strings.isEmpty())                                 // if strings list isn't empty
-    {
-        dialog.m_list->setCurrentRow(0);                    // select 1st row in the list
-        dialog.m_list->setFocus(Qt::TabFocusReason);        // and give focus to it
-    }
-    dialog.restoreDialogSize(gcg);                          // restore dialog geometry from config
-
-    QStringList result;
-    if (dialog.exec() == QDialog::Accepted)                 // if user accept smth
-    {
-        // grab seleted items into a result list
-        for (QListWidgetItem* item : dialog.m_list->selectedItems())
-            result.append(item->text());
-    }
-    dialog.saveDialogSize(gcg);                             // write dialog geometry to config
-    gcg.sync();
-    if (result.empty())
-        return QString();
-    assert("The only file expected" && result.size() == 1u);
-    return result[0];
-}
-//END ChooseFromListDialog
 }                                                           // namespace kate
 // kate: hl C++11/Qt4;

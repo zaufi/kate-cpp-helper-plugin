@@ -458,8 +458,8 @@ TranslationUnit& CppHelperPlugin::getTranslationUnitByDocument(KTextEditor::Docu
         /// \todo It would be better to monitor if code has changed before
         /// \c updateUnsavedFiles() and \c reparse()
         it->second->updateUnsavedFiles(makeUnsavedFilesList(doc));
-#if 0
-        it->reparse();                                      // Reparse translation unit
+#if 1
+        it->second->reparse();                              // Reparse translation unit
 #endif
     }
     return *it->second;

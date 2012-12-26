@@ -28,6 +28,7 @@
 // Standard includes
 # include <clang-c/Index.h>
 # include <QtCore/QString>
+# include <QtCore/QDebug>
 
 namespace kate {
 /// RAII helper to release various clang resources
@@ -87,6 +88,34 @@ inline QString toString(const CXCursorKind v)
 
 /// Get a human readable string of \c CXCompletionChunkKind
 QString toString(const CXCompletionChunkKind);
+
+inline QDebug operator<<(QDebug dbg, const CXSourceLocation& l)
+{
+    CXFile file;
+    unsigned line;
+    unsigned column;
+    clang_getSpellingLocation(l, &file, &line, &column, nullptr);
+    DCXString filename = clang_getFileName(file);
+    dbg.nospace() << clang_getCString(filename) << ':' << line << ':' << column;
+    return dbg.space();
+}
+
+inline QDebug operator<<(QDebug dbg, const CXCursor& c)
+{
+    auto kind = clang_getCursorKind(c);
+    DCXString kind_str = clang_getCursorKindSpelling(kind);
+    DCXString csp_str = clang_getCursorDisplayName(c);
+#if 0
+    auto type = clang_getCursorType(c);
+    DCXString type_kind_str = clang_getTypeKindSpelling(type.kind);
+#endif
+    dbg.nospace() << clang_getCursorLocation(c) << ": entity:" << clang_getCString(csp_str)
+      << ", kind:" << clang_getCString(kind_str);
+#if 0
+      << ", type:" << clang_getCString(type_kind_str);
+#endif
+    return dbg.space();
+}
 
 }                                                           // namespace kate
 #endif                                                      // __SRC__CLANG_UTILS_H__

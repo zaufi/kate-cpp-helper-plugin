@@ -73,6 +73,9 @@ struct IncludeParseResult
 /// Get filename of \c #include directive at given line
 IncludeParseResult parseIncludeDirective(const QString&, const bool);
 
+/// Check if given string looks like a \c #include string or its beginning part
+QString tryToCompleteIncludeDirective(const QString&);
+
 /// \c true if given MIME type string belongs to C/C++ source or in case of
 /// \c text-plain (set for new documents), check for highlighting mode
 inline bool isCOrPPSource(const QString& mime_str, const QString& hl_mode)

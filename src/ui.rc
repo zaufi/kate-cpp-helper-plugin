@@ -1,6 +1,6 @@
 <!DOCTYPE kpartgui>
-<gui name="katecpphelper" library="katecpphelperplugin" version="3">
-<MenuBar>
+<gui name="katecpphelper" library="katecpphelperplugin" version="4">
+    <MenuBar>
         <Menu name="file"><text>&amp;File</text>
             <Action name="file_open_included_header" group="open_merge"/>
             <Action name="file_open_switch_iface_impl" group="open_merge"/>
@@ -8,5 +8,9 @@
         <Menu name="edit" noMerge="1"><text>&amp;Edit</text>
             <Action name="edit_copy_include" group="edit_paste_merge"/>
         </Menu>
-</MenuBar>
+
+    </MenuBar>
+    <Menu name="ktexteditor_popup" noMerge="1">
+        <Action name="popup_cpphelper"/>
+    </Menu>
 </gui>

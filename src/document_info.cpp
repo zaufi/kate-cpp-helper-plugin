@@ -231,18 +231,5 @@ void DocumentInfo::rangeInvalid(KTextEditor::MovingRange* range)
     }
 }
 
-bool DocumentInfo::isRangeWithSameExists(const KTextEditor::Range& range) const
-{
-    // std::find_if + lambda!
-    /// \todo Use \c containsLine() ??
-    const registered_ranges_type::const_iterator last = m_ranges.end();
-    for (
-        registered_ranges_type::const_iterator it = m_ranges.begin()
-      ; it != last
-      ; ++it
-      ) if (it->m_range->start().line() == range.start().line()) return true;
-    return false;
-}
-
 }                                                           // namespace kate
 // kate: hl C++11/Qt4;

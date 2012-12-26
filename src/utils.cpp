@@ -28,7 +28,10 @@
 #include <KTextEditor/Range>
 #include <cassert>
 
-namespace kate {
+namespace kate { namespace {
+const char* const INCLUDE_STR = "include";
+}                                                           // anonymous namespace
+
 /**
  * Return a range w/ filename if given line contains a valid \c #include
  * directive, empty range otherwise.
@@ -74,9 +77,9 @@ IncludeParseResult parseIncludeDirective(const QString& line, const bool strict)
         switch (state)
         {
             case skipOptionalInitialSpaces:
-                if (line[pos] != ' ' && line[pos] != '\t')
+                if (!line[pos].isSpace())
                 {
-                    if (line[pos] == '#')
+                    if (line[pos] == QLatin1Char('#'))
                     {
                         state = foundHash;
                         continue;
@@ -88,13 +91,13 @@ IncludeParseResult parseIncludeDirective(const QString& line, const bool strict)
                 }
                 break;
             case foundHash:
-                if (line[pos] == ' ' || line[pos] == '\t')
+                if (line[pos].isSpace())
                     continue;
                 else
                     state = checkInclude;
                 // NOTE No `break' here!
             case checkInclude:
-                if ("include"[tmp++] != line[pos])
+                if (INCLUDE_STR[tmp++] != line[pos])
                 {
 #if 0
                     kDebug() << "pase failure: is not 'include' after '#'";
@@ -105,7 +108,7 @@ IncludeParseResult parseIncludeDirective(const QString& line, const bool strict)
                     state = skipSpace;
                 break;
             case skipSpace:
-                if (line[pos] == ' ' || line[pos] == '\t')
+                if (line[pos].isSpace())
                 {
                     state = skipOptionalSpaces;
                     continue;
@@ -115,17 +118,17 @@ IncludeParseResult parseIncludeDirective(const QString& line, const bool strict)
 #endif
                 return result;                              // Error: no space after '#include'
             case skipOptionalSpaces:
-                if (line[pos] == ' ' || line[pos] == '\t')
+                if (line[pos].isSpace())
                     continue;
                 // Check open char type
-                if (line[pos] == '<')
+                if (line[pos] == QLatin1Char('<'))
                 {
-                    close = '>';
+                    close = QLatin1Char('>');
                     result.m_type = IncludeStyle::global;
                 }
-                else if (line[pos] == '"')
+                else if (line[pos] == QLatin1Char('"'))
                 {
-                    close = '"';
+                    close = QLatin1Char('"');
                     result.m_type = IncludeStyle::local;
                 }
                 else
@@ -149,7 +152,7 @@ IncludeParseResult parseIncludeDirective(const QString& line, const bool strict)
                     state = stop;
                     end = pos;
                 }
-                else if (line[pos] == ' ' || line[pos] == '\t')
+                else if (line[pos].isSpace())
                 {
                     if (strict)
                     {
@@ -203,6 +206,74 @@ IncludeParseResult parseIncludeDirective(const QString& line, const bool strict)
 }
 
 /**
+ * This function used to guess is user started to type \c #include directive...
+ */
+QString tryToCompleteIncludeDirective(const QString& text)
+{
+    // Check if user typed at least '#in' -- there is no other preprocessor
+    // directives than '#include' -- so we can `complete` it as well :)
+    enum struct State
+    {
+        initial
+      , skip_possible_spaces
+      , skip_expected_letter
+      , fail_if_not_end_of_string
+      , end_ok
+      , end_failed
+    };
+    State state = State::initial;
+    int pos = 0;
+    int first_non_space_pos = 0;
+    for (
+        int i = 0, last = text.length()
+      ; i < last && state != State::end_ok && state != State::end_failed
+      ; ++i
+      )
+    {
+        switch (state)
+        {
+            case State::initial:
+                if (text[i] == QLatin1Char('#'))
+                    state = State::skip_possible_spaces;
+                else
+                    state = State::end_failed;
+                break;
+            case State::skip_possible_spaces:
+                if (text[i].isSpace())
+                    break;
+                state = State::skip_expected_letter;
+                first_non_space_pos = i;
+            case State::skip_expected_letter:
+                if (text[i] != QLatin1Char(INCLUDE_STR[pos++]))
+                    state = State::end_failed;
+                else if (pos == 7)
+                    state = State::fail_if_not_end_of_string;
+                break;
+            case State::fail_if_not_end_of_string:
+                state = State::end_failed;
+                break;
+            default:
+                assert(!"Unexpected State! Review your buggy code!");
+                break;
+        }
+    }
+    // Check that at least '#in' string was processed...
+    assert("position expected to be >= 0" && pos >= 0);
+    if ((state == State::skip_expected_letter && 1 < pos) || state == State::fail_if_not_end_of_string)
+        state = State::end_ok;
+
+    // Form a completion result string
+    QString result;
+    if (state == State::end_ok)
+    {
+        result = text.mid(0, first_non_space_pos + pos + 1);
+        if (pos < 7)
+            result += (INCLUDE_STR + pos);
+    }
+    return result;
+}
+
+/**
  * \todo Is there any way to make a joint view for both containers?
  *
  * \param[in] file filename to look for in the next 2 lists...
@@ -239,7 +310,7 @@ void updateListsFromFS(
             QStringList result = QDir(dir).entryList(masks, QDir::Dirs | common_flags);
             for (const QString& r : result)
             {
-                const QString d = r + "/";
+                const QString d = r + '/';
                 if (!dirs.contains(d)) dirs.append(d);
             }
         }
