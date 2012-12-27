@@ -109,14 +109,9 @@ public:
         return m_last_diagnostic_text;
     }
 
-    static unsigned defaultPCHParseOptions()
-    {
-        return CXTranslationUnit_Incomplete | CXTranslationUnit_PrecompiledPreamble;
-    }
-    static unsigned defaultEditingParseOptions()
-    {
-        return clang_defaultEditingTranslationUnitOptions() | CXTranslationUnit_Incomplete;
-    }
+    static unsigned defaultPCHParseOptions();
+    static unsigned defaultEditingParseOptions();
+    static unsigned defaultExplorerParseOptions();
 
 private:
     void showDiagnostic();

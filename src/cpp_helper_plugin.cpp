@@ -62,10 +62,11 @@ CppHelperPlugin::CppHelperPlugin(
   )
   : Kate::Plugin(static_cast<Kate::Application*>(app), "kate_cpphelper_plugin")
   /// \todo Make parameters to \c clang_createIndex() configurable?
-  , m_index(clang_createIndex(1, 1))
+  , m_local_index(clang_createIndex(1, 1))
+  , m_index(clang_createIndex(0, 1))
   , m_hidden_doc(application()->editor()->createDocument(this))
 {
-    assert("clang index expected to be valid" && m_index);
+    assert("clang index expected to be valid" && m_local_index);
 
     // Document require a view to be able to highlight text
     m_hidden_doc->createView(nullptr);
@@ -320,7 +321,7 @@ void CppHelperPlugin::makePCHFile(const KUrl& filename)
         kDebug() << "Going to produce a PCH file" << pch_file_name
             << "from" << config().precompiledHeaderFile();
         TranslationUnit pch_unit(
-            index()
+            localIndex()
           , filename
           , config().formCompilerOptions()
           , TranslationUnit::defaultPCHParseOptions()
@@ -423,44 +424,38 @@ DocumentInfo& CppHelperPlugin::getDocumentInfo(KTextEditor::Document* doc)
 /**
  * \throw TranslationUnit::Exception
  */
-TranslationUnit& CppHelperPlugin::getTranslationUnitByDocument(KTextEditor::Document* doc)
+TranslationUnit& CppHelperPlugin::getTranslationUnitByDocumentImpl(
+    KTextEditor::Document* doc
+  , DCXIndex& index
+  , std::unique_ptr<TranslationUnit> translation_units_map_type::mapped_type::* unit_offset
+  , const unsigned parse_options
+  )
 {
-    auto it = m_units.find(doc);
-    if (it == end(m_units))
+    // Make sure an entry for document exists
+    auto& units_pair = m_units[doc];
+    std::unique_ptr<TranslationUnit>& unit = units_pair.*unit_offset;
+    // Form unsaved files list
+    /// \todo It would be better to monitor if code has changed before
+    /// \c updateUnsavedFiles() and \c reparse()
+    auto unsaved_files = makeUnsavedFilesList(doc);
+    // Check if translation unit created
+    if (!unit)
     {
+        // No! Need to create one...
         // Form command line parameters
         //  1) collect configured system and session dirs and make -I option series
         QStringList options = config().formCompilerOptions();
         //  2) append PCH options
         if (!config().pchFile().isEmpty())
             options << /*"-Xclang" << */"-include-pch" << config().pchFile().toLocalFile();
-        // Form unsaved files list
-        auto unsaved_files = makeUnsavedFilesList(doc);
 
         // Parse it!
-        it = m_units.insert(
-            std::make_pair(
-                doc
-              , std::unique_ptr<TranslationUnit>(
-                    new TranslationUnit(
-                        index()
-                      , doc->url()
-                      , options
-                      , TranslationUnit::defaultEditingParseOptions()
-                      , unsaved_files
-                      )
-                  )
-              )
-          ).first;
+        unit.reset(
+            new TranslationUnit(index, doc->url(), options, parse_options, unsaved_files)
+          );
     }
-    else
-    {
-        /// \todo It would be better to monitor if code has changed before
-        /// \c updateUnsavedFiles() and \c reparse()
-        it->second->updateUnsavedFiles(makeUnsavedFilesList(doc));
-    }
-    it->second->reparse();                                  // Reparse translation unit
-    return *it->second;
+    unit->reparse();
+    return *unit;
 }
 
 //END CppHelperPlugin

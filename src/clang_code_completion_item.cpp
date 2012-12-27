@@ -284,7 +284,9 @@ auto ClangCodeCompletionItem::getCompletionTemplate() const -> CompletionTemplat
             values[arg] = p;
         }
     }
+#if 0
     tpl += QLatin1String("%{cursor}");
+#endif
     return {tpl, values, is_function};
 }
 

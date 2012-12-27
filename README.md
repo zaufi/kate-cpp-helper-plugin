@@ -89,6 +89,8 @@ to complete the code.
 **ATTENTION** Do not forget to add `-x c++` to clang options if you want to complete a C++ code.
 (TODO: I think this option should be turned ON by default).
 
+**ATTENTION** In case of changing clang version used you have to recompile this plugin!
+
 All configured paths (global and session) will be added as `-I` options to clang API by default.
 Other options (like `-x c++`, `-std=c++11`, `-D` or other `-I`) can be added as well.
 Completion has a toolview at bottom to display errors/warnings from clang. So if you expect some

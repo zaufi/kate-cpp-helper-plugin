@@ -90,7 +90,7 @@ void debugShowCompletionResult(
 #if CLANG_VERSION >= 30200
     DCXString comment_str = clang_getCompletionBriefComment(str);
     kDebug() << "  comment:" << QString(clang_getCString(comment_str));
-#endif
+#endif                                                      // CLANG_VERSION >= 30200
 
     // Show annotations
     for (unsigned ai = 0u, an = clang_getCompletionNumAnnotations(str); ai < an; ++ai)
@@ -499,6 +499,25 @@ void TranslationUnit::showDiagnostic()
         kDebug() << "TU WARNING: " << clang_getCString(s);
         m_last_diagnostic_text += '\n';
     }
+}
+
+unsigned TranslationUnit::defaultPCHParseOptions()
+{
+    return CXTranslationUnit_Incomplete
+        | CXTranslationUnit_PrecompiledPreamble
+#if CLANG_VERSION >= 30200
+        | CXTranslationUnit_ForSerialization
+#endif                                                      // CLANG_VERSION >= 30200
+        ;
+}
+unsigned TranslationUnit::defaultEditingParseOptions()
+{
+    return clang_defaultEditingTranslationUnitOptions() | CXTranslationUnit_Incomplete;
+}
+
+unsigned TranslationUnit::defaultExplorerParseOptions()
+{
+    return CXTranslationUnit_Incomplete;
 }
 
 }                                                           // namespace kate

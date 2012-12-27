@@ -76,11 +76,11 @@ CppHelperPluginView::CppHelperPluginView(
             "kate_private_plugin_katecppplugin"
           , Kate::MainWindow::Bottom
           , SmallIcon("source-cpp11")
-          , i18n("Completion Diagnostic")
+          , i18n("C++ Helper")
           )
       )
+  , m_tool_view_interior(new Ui_PluginToolViewWidget())
   , m_menu(new KActionMenu(i18n("C++ Helper: Playground"), this))
-  , m_diagnostic_text(new KTextEdit(m_tool_view.get()))
 {
     m_open_header->setText(i18n("Open Header Under Cursor"));
     m_open_header->setShortcut(QKeySequence(Qt::Key_F10));
@@ -120,10 +120,14 @@ CppHelperPluginView::CppHelperPluginView(
     connect(mainWindow(), SIGNAL(viewChanged()), this, SLOT(viewChanged()));
 
     // Setup toolview
-    m_diagnostic_text->setCheckSpellingEnabled(false);
-    m_diagnostic_text->setReadOnly(true);
-    m_diagnostic_text->setFontFamily("monospace");
+    m_tool_view_interior->setupUi(new QWidget(m_tool_view.get()));
     m_tool_view->installEventFilter(this);
+    connect(
+        m_tool_view_interior->updateButton
+      , SIGNAL(clicked())
+      , this
+      , SLOT(updateInclusionExplorer())
+      );
 
     mainWindow()->guiFactory()->addClient(this);
 }
@@ -182,6 +186,10 @@ void CppHelperPluginView::writeSessionConfig(KConfigBase*, const QString& groupP
  */
 void CppHelperPluginView::switchIfaceImpl()
 {
+    assert(
+        "Active view suppose to be valid at this point! Am I wrong?"
+      && mainWindow()->activeView()
+      );
     // Ok, trying case 1
     KTextEditor::Document* doc = mainWindow()->activeView()->document();
     KUrl url = doc->url();
@@ -361,6 +369,11 @@ QStringList CppHelperPluginView::findCandidatesAt(
 
 void CppHelperPluginView::openHeader()
 {
+    assert(
+        "Active view suppose to be valid at this point! Am I wrong?"
+      && mainWindow()->activeView()
+      );
+
     QStringList candidates;
     QString filename;
     KTextEditor::Document* doc = mainWindow()->activeView()->document();
@@ -369,10 +382,6 @@ void CppHelperPluginView::openHeader()
     kDebug() << "findIncludeFilenameNearCursor() = " << r;
     if (!r.isEmpty())
     {
-        // NOTE Non empty range means that main window is valid
-        // and active view present as well!
-        assert("Main window and active view expected to be valid!" && mainWindow()->activeView());
-
         filename = doc->text(r).trimmed();
         assert("Getting text on non-empty range should return smth!" && !filename.isEmpty());
 
@@ -430,6 +439,11 @@ void CppHelperPluginView::openHeader()
 
 QStringList CppHelperPluginView::findFileLocations(const QString& filename)
 {
+    assert(
+        "Active view suppose to be valid at this point! Am I wrong?"
+      && mainWindow()->activeView()
+      );
+
     KTextEditor::Document* doc = mainWindow()->activeView()->document();
     // Try to find full filename to open
     QStringList candidates = findHeader(filename, m_plugin->config().sessionDirs(), m_plugin->config().systemDirs());
@@ -477,6 +491,11 @@ inline void CppHelperPluginView::openFiles(const QStringList& files)
 
 void CppHelperPluginView::copyInclude()
 {
+    assert(
+        "Active view suppose to be valid at this point! Am I wrong?"
+      && mainWindow()->activeView()
+      );
+
     KTextEditor::View* view = mainWindow()->activeView();
     if (!view)
     {
@@ -533,7 +552,7 @@ void CppHelperPluginView::viewChanged()
     KTextEditor::View* view = mainWindow()->activeView();
     if (!view)
     {
-        kDebug() << "no KTextEditor::View -- leave `open header' action as is...";
+        kDebug() << "no active view yet -- leave `open header' action as is...";
         return;
     }
     const bool enable_open_header_action = isCOrPPSource(
@@ -621,12 +640,14 @@ void CppHelperPluginView::viewCreated(KTextEditor::View* view)
 
 void CppHelperPluginView::needTextHint(const KTextEditor::Cursor& pos, QString& text)
 {
-    kDebug() << "TEXT HINT REQUESTED AT " << pos;
+    assert(
+        "Active view suppose to be valid at this point! Am I wrong?"
+      && mainWindow()->activeView()
+      );
 
-    KTextEditor::View* view = mainWindow()->activeView();
-    if (!view)                                              // do nothing if no view
-        return;
+    kDebug() << "Text hint requested at " << pos;
 
+    auto* view = mainWindow()->activeView();                // get current view
     auto* doc = view->document();                           // get current document
     // Is current file can have some hints?
     if (isCOrPPSource(doc->mimeType(), doc->highlightingMode()))
@@ -753,7 +774,7 @@ bool CppHelperPluginView::handleView(KTextEditor::View* view)
                 new IncludeHelperCompletionModel(view, m_plugin)
               );
             std::unique_ptr<ClangCodeCompletionModel> code_completer(
-                new ClangCodeCompletionModel(view, m_plugin, m_diagnostic_text)
+                new ClangCodeCompletionModel(view, m_plugin, m_tool_view_interior->diagnosticText)
               );
             auto r = m_completers.insert(
                 std::make_pair(
@@ -811,6 +832,11 @@ bool CppHelperPluginView::eventFilter(QObject* obj, QEvent* event)
 
 KTextEditor::Range CppHelperPluginView::findIncludeFilenameNearCursor() const
 {
+    assert(
+        "Active view suppose to be valid at this point! Am I wrong?"
+      && mainWindow()->activeView()
+      );
+
     KTextEditor::Range result;                              // default range is empty
     KTextEditor::View* view = mainWindow()->activeView();
     if (!view || !view->cursorPosition().isValid())
@@ -864,6 +890,11 @@ KTextEditor::Range CppHelperPluginView::findIncludeFilenameNearCursor() const
 
 void CppHelperPluginView::aboutToShow()
 {
+    assert(
+        "Active view suppose to be valid at this point! Am I wrong?"
+      && mainWindow()->activeView()
+      );
+
     KTextEditor::View* view = mainWindow()->activeView();
     if (view && view->cursorPosition().isValid())
     {
@@ -885,6 +916,11 @@ void CppHelperPluginView::aboutToShow()
 
 void CppHelperPluginView::whatIsThis()
 {
+    assert(
+        "Active view suppose to be valid at this point! Am I wrong?"
+      && mainWindow()->activeView()
+      );
+
     KTextEditor::View* view = mainWindow()->activeView();
     if (!view || !view->cursorPosition().isValid())
         return;                                             // do nothing if no view or valid cursor
@@ -921,8 +957,15 @@ void CppHelperPluginView::whatIsThis()
     DCXString usr = clang_getCursorUSR(ctx);
     kDebug() << "USR:" << clang_getCString(usr);
 #endif
+}
 
-    auto& unit = m_plugin->getTranslationUnitByDocument(view->document());
+void CppHelperPluginView::updateInclusionExplorer()
+{
+    assert(
+        "Active view suppose to be valid at this point! Am I wrong?"
+      && mainWindow()->activeView()
+      );
+    auto& unit = m_plugin->getTranslationUnitByDocument(mainWindow()->activeView()->document(), false);
     clang_getInclusions(
         unit
       , [](

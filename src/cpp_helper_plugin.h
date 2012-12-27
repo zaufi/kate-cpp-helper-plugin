@@ -67,6 +67,7 @@ public:
     //@{
     PluginConfiguration& config();
     const PluginConfiguration& config() const;
+    CXIndex localIndex() const;
     CXIndex index() const;
     //@}
 
@@ -97,7 +98,7 @@ public:
       );
     /// Helper function to collect unsaved files from current editor
     TranslationUnit::unsaved_files_list_type makeUnsavedFilesList(KTextEditor::Document*) const;
-    TranslationUnit& getTranslationUnitByDocument(KTextEditor::Document*);
+    TranslationUnit& getTranslationUnitByDocument(KTextEditor::Document*, const bool = true);
     DocumentInfo& getDocumentInfo(KTextEditor::Document*);
 
 public Q_SLOTS:
@@ -119,7 +120,10 @@ private:
     /// Type to associate a document with a translation unit
     typedef std::map<
         KTextEditor::Document*
-      , std::unique_ptr<TranslationUnit>
+      , std::pair<
+            std::unique_ptr<TranslationUnit>                // local translation unit (w/ PCH enabled)
+          , std::unique_ptr<TranslationUnit>                // raw translation unit (w/o PCH)
+          >
       > translation_units_map_type;
     /// Type to associate a document with a collection of \c #include file ranges
     /// (i.e. \c DocumentInfo)
@@ -130,11 +134,20 @@ private:
 
     /// Update watcher to monitor a given entry
     void updateDirWatcher(const QString&);
+    TranslationUnit& getTranslationUnitByDocumentImpl(
+        KTextEditor::Document*
+      , DCXIndex&
+      , std::unique_ptr<TranslationUnit> translation_units_map_type::mapped_type::*
+      , const unsigned
+      );
+
 
     /// An instance of \c PluginConfiguration filled with configuration data
     /// read from application's config
     PluginConfiguration m_config;
     /// Clang-C index instance used by code completer
+    DCXIndex m_local_index;
+    /// Clang-C index instance used by \c #include explorer
     DCXIndex m_index;
     /// A map of \c KTextEditor::Document pointer to \c DocumentInfo
     doc_info_type m_doc_info;
@@ -156,9 +169,30 @@ inline const PluginConfiguration& CppHelperPlugin::config() const
 {
     return m_config;
 }
+inline CXIndex CppHelperPlugin::localIndex() const
+{
+    return m_local_index;
+}
 inline CXIndex CppHelperPlugin::index() const
 {
     return m_index;
+}
+
+inline TranslationUnit& CppHelperPlugin::getTranslationUnitByDocument(
+    KTextEditor::Document* doc
+  , const bool is_local_requested
+  )
+{
+    return getTranslationUnitByDocumentImpl(
+        doc
+      , is_local_requested ? m_local_index : m_index
+      , is_local_requested
+        ? &translation_units_map_type::mapped_type::first
+        : &translation_units_map_type::mapped_type::second
+      , is_local_requested
+        ? TranslationUnit::defaultEditingParseOptions()
+        : TranslationUnit::defaultExplorerParseOptions()
+      );
 }
 
 }                                                           // namespace kate

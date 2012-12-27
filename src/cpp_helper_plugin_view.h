@@ -24,13 +24,13 @@
 # define __SRC__INCLUDE_HELPER_PLUGIN_VIEW_H__
 
 // Project specific includes
+# include <src/ui_plugin_tool_view.h>
 
 // Standard includes
 # include <kate/plugin.h>
 # include <KTextEditor/View>
 # include <KAction>
 # include <KActionMenu>
-# include <KTextEdit>
 # include <clang-c/Index.h>
 # include <map>
 # include <memory>
@@ -83,6 +83,7 @@ private Q_SLOTS:
     void aboutToShow();
     void whatIsThis();
     void needTextHint(const KTextEditor::Cursor&, QString&);
+    void updateInclusionExplorer();
 
 private:
     /// Type to hold a completers associated with a view
@@ -110,10 +111,10 @@ private:
     KAction* m_copy_include;                                ///< <em>Copy #include to clipboard</em> action
     KAction* m_switch;                                      ///< <em>Open implementation/header</em> action
     std::unique_ptr<QWidget> m_tool_view;                   ///< Toolview to display clang diagnostic
+    Ui_PluginToolViewWidget* const m_tool_view_interior;    ///< Widget
     std::unique_ptr<KActionMenu> m_menu;                    ///< Context menu
     QAction* m_what_is_this;                                ///< Get info about symbol under cursor
     completions_models_map_type m_completers;               ///< Registered completers by view
-    KTextEdit* m_diagnostic_text;                           ///< A widget to display diagnostic text
 };
 
 }                                                           // namespace kate
