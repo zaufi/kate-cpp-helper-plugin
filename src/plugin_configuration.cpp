@@ -44,6 +44,7 @@ const QString USE_WILDCARD_SEARCH_ITEM = "UseWildcardSearch";
 const QString MONITOR_DIRS_ITEM = "MonitorDirs";
 const QString HIGHLIGHT_COMPLETIONS_ITEM = "HighlightCompletionItems";
 const QString SANITIZE_COMPLETIONS_ITEM = "SanitizeCompletionItems";
+const QString AUTO_COMPLETIONS_ITEM = "AutoCompletionItems";
 }                                                           // anonymous namespace
 
 void PluginConfiguration::readConfig()
@@ -75,6 +76,7 @@ void PluginConfiguration::readSessionConfig(KConfigBase* config, const QString& 
     m_use_wildcard_search = scg.readEntry(USE_WILDCARD_SEARCH_ITEM, QVariant(false)).toBool();
     m_highlight_completions = scg.readEntry(HIGHLIGHT_COMPLETIONS_ITEM, QVariant(true)).toBool();
     m_sanitize_completions = scg.readEntry(SANITIZE_COMPLETIONS_ITEM, QVariant(true)).toBool();
+    m_auto_completions = scg.readEntry(AUTO_COMPLETIONS_ITEM, QVariant(true)).toBool();
     m_monitor_flags = scg.readEntry(MONITOR_DIRS_ITEM, QVariant(0)).toInt();
     m_config_dirty = false;
 
@@ -110,6 +112,7 @@ void PluginConfiguration::writeSessionConfig(KConfigBase* config, const QString&
     scg.writeEntry(USE_WILDCARD_SEARCH_ITEM, QVariant(m_use_wildcard_search));
     scg.writeEntry(HIGHLIGHT_COMPLETIONS_ITEM, QVariant(m_highlight_completions));
     scg.writeEntry(SANITIZE_COMPLETIONS_ITEM, QVariant(m_sanitize_completions));
+    scg.writeEntry(AUTO_COMPLETIONS_ITEM, QVariant(m_auto_completions));
     scg.writeEntry(MONITOR_DIRS_ITEM, QVariant(m_monitor_flags));
     scg.sync();
     // Write global config
@@ -202,6 +205,12 @@ void PluginConfiguration::setHighlightCompletions(const bool state)
 void PluginConfiguration::setSanitizeCompletions(const bool state)
 {
     m_sanitize_completions = state;
+    m_config_dirty = true;
+    kDebug() << "** set config to `dirty' state!! **";
+}
+void PluginConfiguration::setAutoCompletions(const bool state)
+{
+    m_auto_completions = state;
     m_config_dirty = true;
     kDebug() << "** set config to `dirty' state!! **";
 }

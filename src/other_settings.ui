@@ -161,6 +161,16 @@
      </property>
      <layout class="QVBoxLayout" name="verticalLayout_4">
       <item>
+       <widget class="QCheckBox" name="autoCompletions">
+        <property name="toolTip">
+         <string>Enable automatic completions on member access</string>
+        </property>
+        <property name="text">
+         <string>Automatic completion popup</string>
+        </property>
+       </widget>
+      </item>
+      <item>
        <widget class="QCheckBox" name="highlightResults">
         <property name="toolTip">
          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Colorize completion items using current document's mode&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>

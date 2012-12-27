@@ -178,6 +178,16 @@ TODO
 Changes
 =======
 
+Version 0.8.7
+-------------
+
+* tooltips over highlighted `#include` lines displaying a reson
+* there is no ambiguity if user types `#in` it can be only `#include` directive
+  (`#include_next` is a really rare case, and I wrote it about 5 times in my life),
+  so automatic completer added for this case.
+* speedup getting completions
+* enable automatic completions popup when member accessed
+
 Version 0.8.6
 -------------
 

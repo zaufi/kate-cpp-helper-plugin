@@ -52,6 +52,7 @@ public:
       , m_use_wildcard_search(false)
       , m_highlight_completions(true)
       , m_sanitize_completions(true)
+      , m_auto_completions(true)
     {}
 
     /// \name Accessors
@@ -68,6 +69,7 @@ public:
     int what_to_monitor() const;
     bool sanitizeCompletions() const;
     bool highlightCompletions() const;
+    bool autoCompletions() const;
 
     //@}
 
@@ -85,6 +87,7 @@ public:
     void setWhatToMonitor(const int);
     void setSanitizeCompletions(const bool);
     void setHighlightCompletions(const bool);
+    void setAutoCompletions(const bool);
     //@}
 
     void readSessionConfig(KConfigBase*, const QString&);
@@ -116,6 +119,7 @@ private:
     bool m_use_wildcard_search;
     bool m_highlight_completions;
     bool m_sanitize_completions;
+    bool m_auto_completions;
 };
 
 inline const QStringList& PluginConfiguration::sessionDirs() const
@@ -158,13 +162,17 @@ inline int PluginConfiguration::what_to_monitor() const
 {
     return m_monitor_flags;
 }
+inline bool PluginConfiguration::sanitizeCompletions() const
+{
+    return m_sanitize_completions;
+}
 inline bool PluginConfiguration::highlightCompletions() const
 {
     return m_highlight_completions;
 }
-inline bool PluginConfiguration::sanitizeCompletions() const
+inline bool PluginConfiguration::autoCompletions() const
 {
-    return m_sanitize_completions;
+    return m_auto_completions;
 }
 
 inline void PluginConfiguration::setPrecompiledFile(const KUrl& file)

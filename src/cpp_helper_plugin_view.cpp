@@ -868,7 +868,7 @@ void CppHelperPluginView::aboutToShow()
     if (view && view->cursorPosition().isValid())
     {
         DocumentProxy doc = mainWindow()->activeView()->document();
-        auto range = doc.getWordUnderCursor(view->cursorPosition());
+        auto range = doc.getIdentifierUnderCursor(view->cursorPosition());
         kDebug() << "current word range: " << range;
         if (range.isValid() && !range.isEmpty())
         {
@@ -898,6 +898,7 @@ void CppHelperPluginView::whatIsThis()
     }
 #endif
 
+#if 0
     QByteArray filename = view->document()->url().toLocalFile().toAscii();
     auto& unit = m_plugin->getTranslationUnitByDocument(view->document());
     CXFile file = clang_getFile(unit, filename.constData());
@@ -919,6 +920,33 @@ void CppHelperPluginView::whatIsThis()
 
     DCXString usr = clang_getCursorUSR(ctx);
     kDebug() << "USR:" << clang_getCString(usr);
+#endif
+
+    auto& unit = m_plugin->getTranslationUnitByDocument(view->document());
+    clang_getInclusions(
+        unit
+      , [](
+            CXFile file
+          , CXSourceLocation* stack
+          , unsigned stack_size
+          , CXClientData data
+          )
+        {
+            auto* self = static_cast<CppHelperPluginView* const>(data);
+            self->inclusionVisitor(file, stack, stack_size);
+        }
+      , this
+      );
+}
+
+void CppHelperPluginView::inclusionVisitor(
+    CXFile file
+  , CXSourceLocation* stack
+  , unsigned stack_size
+  )
+{
+    DCXString fname = clang_getFileName(file);
+    kDebug() << "file:" << clang_getCString(fname);
 }
 
 //END CppHelperPluginView

@@ -256,6 +256,7 @@ void CppHelperPluginConfigPage::apply()
     m_plugin->config().setUseWildcardSearch(m_pss_config->useWildcardSearch->isChecked());
     m_plugin->config().setHighlightCompletions(m_pss_config->highlightResults->isChecked());
     m_plugin->config().setSanitizeCompletions(m_pss_config->sanitizeResults->isChecked());
+    m_plugin->config().setAutoCompletions(m_pss_config->autoCompletions->isChecked());
     m_plugin->config().setWhatToMonitor(
         int(m_pss_config->nothing->isChecked()) * 0
       + int(m_pss_config->session->isChecked()) * 1
@@ -282,6 +283,7 @@ void CppHelperPluginConfigPage::reset()
     m_pss_config->useWildcardSearch->setChecked(m_plugin->config().useWildcardSearch());
     m_pss_config->highlightResults->setChecked(m_plugin->config().highlightCompletions());
     m_pss_config->sanitizeResults->setChecked(m_plugin->config().sanitizeCompletions());
+    m_pss_config->autoCompletions->setChecked(m_plugin->config().autoCompletions());
 
     // Setup dirs watcher
     int flags = m_plugin->config().what_to_monitor();

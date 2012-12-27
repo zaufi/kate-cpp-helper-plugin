@@ -4,6 +4,9 @@
  * \brief Class \c kate::DocumentProxy (interface)
  *
  * \date Tue Dec 25 08:45:27 MSK 2012 -- Initial design
+ *
+ * \todo Unit tests are badly required. Dunno is it possible at all being
+ * not in the \e kate.git
  */
 /*
  * KateCppHelperPlugin is free software: you can redistribute it and/or modify it
@@ -94,7 +97,9 @@ public:
       , Predicate
       );
 
-    KTextEditor::Range getWordUnderCursor(const KTextEditor::Cursor&);
+    KTextEditor::Range getIdentifierUnderCursor(const KTextEditor::Cursor&);
+    KTextEditor::Range firstWordBeforeCursor(const KTextEditor::Cursor&);
+    KTextEditor::Range firstWordAfterCursor(const KTextEditor::Cursor&);
 
 private:
     template <typename Predicate>

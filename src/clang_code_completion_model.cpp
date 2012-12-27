@@ -15,7 +15,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License along
  * with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
@@ -23,8 +23,9 @@
 // Project specific includes
 #include <src/clang_code_completion_model.h>
 #include <src/clang_utils.h>
-#include <src/translation_unit.h>
 #include <src/cpp_helper_plugin.h>
+#include <src/document_proxy.h>
+#include <src/translation_unit.h>
 
 // Standard includes
 #include <ktexteditor/highlightinterface.h>
@@ -50,24 +51,27 @@ ClangCodeCompletionModel::ClangCodeCompletionModel(
 
 bool ClangCodeCompletionModel::shouldStartCompletion(
     KTextEditor::View* /*view*/
-  , const QString& /*inserted_text*/
-  , bool /*user_insertion*/
+  , const QString& inserted_text
+  , bool user_insertion
   , const KTextEditor::Cursor& /*position*/
   )
 {
-    return false;
+    bool result = false;
+    if (user_insertion && m_plugin->config().autoCompletions())
+    {
+        auto text = inserted_text.trimmed();
+        result = text.endsWith(QLatin1String(".")) || text.endsWith(QLatin1String("->"));
+    }
+    kDebug() << "result:" << result;
+    return result;
 }
 
 void ClangCodeCompletionModel::completionInvoked(
     KTextEditor::View* view
   , const KTextEditor::Range& range
-  , InvocationType invocationType
+  , InvocationType /*invocationType*/
   )
 {
-    // Do nothing if completion not called by user
-    if (invocationType != KTextEditor::CodeCompletionModel::UserInvocation)
-        return;
-
     m_current_view = view;
     KTextEditor::Document* doc = view->document();
     KUrl url = doc->url();
@@ -77,7 +81,7 @@ void ClangCodeCompletionModel::completionInvoked(
         kWarning() << "U have to have a document on a disk before use code completion";
         return;
     }
-    kDebug() << "It seems user has invoked comletion at " << range;
+    kDebug() << "Comletion required at " << range << "for" << doc->text(range);
 
     // Remove everything collected before
     m_groups.clear();
@@ -319,12 +323,12 @@ QVariant ClangCodeCompletionModel::getItemHighlightData(const QModelIndex& index
 }
 
 void ClangCodeCompletionModel::executeCompletionItem2(
-    KTextEditor::Document* document
+    KTextEditor::Document* doc
   , const KTextEditor::Range& word
   , const QModelIndex& index
   ) const
 {
-    assert("Active view expected to be equal to the stored one" && document->activeView() == m_current_view);
+    assert("Active view expected to be equal to the stored one" && doc->activeView() == m_current_view);
     assert("Invalid index is not expected here!" && index.isValid());
     assert("Parent index is not valid" && index.parent().isValid());
     assert("Parent index must be GROUP" && index.parent().internalId() == Level::GROUP);
@@ -344,17 +348,32 @@ void ClangCodeCompletionModel::executeCompletionItem2(
     if (template_iface)
     {
         kDebug() << "TemplateInterface available for a view" << m_current_view;
-        auto result = m_groups[index.internalId()].second.m_completions[index.row()].getCompletionTemplate();
-        kDebug() << "Template:" << result.first;
-        kDebug() << "Values:" << result.second;
-        document->removeText(word);
-        template_iface->insertTemplateText(word.start(), result.first, result.second);
+        ClangCodeCompletionItem::CompletionTemplateData result = m_groups[index.internalId()]
+          .second.m_completions[index.row()]
+          .getCompletionTemplate();
+        kDebug() << "Template:" << result.m_tpl;
+        kDebug() << "Values:" << result.m_values;
+        // Check if current template is a function and there is a '()' right after cursor
+        auto range = word;
+        if (result.m_is_function)
+        {
+            auto next_word_range = DocumentProxy(doc).firstWordAfterCursor(word.end());
+            kDebug() << "OK THIS IS FUNCTION TEMPLATE: next word range" << next_word_range;
+            kDebug() << "replace range before:" << range;
+            if (next_word_range.isValid() && doc->text(next_word_range).startsWith(QLatin1String("()")))
+            {
+                range.end().setColumn(next_word_range.start().column() + 2);
+                kDebug() << "replace range after:" << range;
+            }
+        }
+        doc->removeText(range);
+        template_iface->insertTemplateText(range.start(), result.m_tpl, result.m_values);
     }
     else
     {
         kDebug() << "No TemplateInterface for a view" << m_current_view;
         auto p = m_groups[index.internalId()].second.m_completions[index.row()].executeCompletion();
-        document->replaceText(word, p.first);
+        doc->replaceText(word, p.first);
         // Try to reposition a cursor inside a current (hope it still is) view
         auto pos = word.start();
         pos.setColumn(pos.column() + p.second);

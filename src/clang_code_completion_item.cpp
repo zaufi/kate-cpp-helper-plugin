@@ -243,17 +243,21 @@ QPair<QString, int> ClangCodeCompletionItem::executeCompletion() const
     return qMakePair(result, result.length() + pos + 1);
 }
 
-QPair<QString, QMap<QString, QString>> ClangCodeCompletionItem::getCompletionTemplate() const
+auto ClangCodeCompletionItem::getCompletionTemplate() const -> CompletionTemplateData
 {
-    QString tpl = m_text + m_after + QLatin1String("%{cursor}");
+    QString tpl = m_text + m_after;
+    bool is_function = false;
     switch (m_kind)
     {
         case CXCursor_CXXMethod:
+        case CXCursor_Constructor:
+        case CXCursor_Destructor:
         case CXCursor_FunctionDecl:
         case CXCursor_FunctionTemplate:
-        case CXCursor_MemberRef:
         case CXCursor_OverloadedDeclRef:
         {
+            is_function = true;
+            // Strip informational text: like `const' or `volatile' from function-members
             auto pos = tpl.lastIndexOf(')');
             if (pos != -1)
                 tpl.remove(pos + 1, tpl.length());
@@ -280,7 +284,8 @@ QPair<QString, QMap<QString, QString>> ClangCodeCompletionItem::getCompletionTem
             values[arg] = p;
         }
     }
-    return qMakePair(tpl, values);
+    tpl += QLatin1String("%{cursor}");
+    return {tpl, values, is_function};
 }
 
 }                                                           // namespace kate

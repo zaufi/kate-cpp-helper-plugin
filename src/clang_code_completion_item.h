@@ -15,7 +15,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License along
  * with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
@@ -40,6 +40,14 @@ namespace kate {
 class ClangCodeCompletionItem
 {
 public:
+    /// Type to hold data required to render a templated snipped to a user
+    struct CompletionTemplateData
+    {
+        QString m_tpl;
+        QMap<QString, QString> m_values;
+        bool m_is_function;
+    };
+
     /// Default constructor
     ClangCodeCompletionItem()
       : m_priority(0)
@@ -77,7 +85,7 @@ public:
     }
     /// Get a string to be inserted and column position withing the string
     QPair<QString, int> executeCompletion() const;
-    QPair<QString, QMap<QString, QString>> getCompletionTemplate() const;
+    CompletionTemplateData getCompletionTemplate() const;
 
 private:
 

@@ -31,6 +31,7 @@
 # include <KAction>
 # include <KActionMenu>
 # include <KTextEdit>
+# include <clang-c/Index.h>
 # include <map>
 # include <memory>
 
@@ -102,6 +103,7 @@ private:
     void openFile(const QString&);                          ///< Open a single document
     void openFiles(const QStringList&);                     ///< Open documents for all URIs in a given list
     QStringList findFileLocations(const QString&);          ///< Get list of absolute paths to filename
+    void inclusionVisitor(CXFile, CXSourceLocation*, unsigned);
 
     CppHelperPlugin* m_plugin;                              ///< Parent plugin
     KAction* m_open_header;                                 ///< <em>Open header</em> action
