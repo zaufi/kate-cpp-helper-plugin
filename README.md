@@ -175,6 +175,7 @@ TODO
   So, definitely there should be possible to turn code autocompleter off.
 * Need to introduce index database to lookup for declarations/definitions/references. It
   also can be used for code refactorings (like rename smth & etc.)
+* Give a context hint to code completer
 
 Changes
 =======
@@ -182,11 +183,11 @@ Changes
 Version 0.8.7
 -------------
 
-* tooltips over highlighted `#include` lines displaying a reson
-* there is no ambiguity if user types `#in` it can be only `#include` directive
+* tooltips over highlighted `#include` lines displaying a reason
+* there is no ambiguity if user types `#in` -- it can be only `#include` directive
   (`#include_next` is a really rare case, and I wrote it about 5 times in my life),
   so automatic completer added for this case.
-* speedup getting completions
+* speedup getting code completions
 * enable automatic completions popup when member accessed
 * `#include` explorer has been added. It can hihglight "redundand" headers included in a translation unit.
 
