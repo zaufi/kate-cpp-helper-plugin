@@ -23,7 +23,6 @@ in your sources. Here is also few little cute things:
 Since version 0.6 I've added a code completion based on clang API and decide to rename _Kate Include Helper_
 into _Kate C++ Helper Plugin_.
 
-
 Requirements
 ------------
 
@@ -31,7 +30,7 @@ Requirements
 * [clang](http://clang.llvm.org) >= 3.1
 * [cmake](http://cmake.org) >= 2.8
 * [Kate](http://kate-editor.org) editor version >= 2.9.
-
+* [boost](http://boost.org) library >= 1.42 required since version 0.8.7
 
 Installation
 ------------
