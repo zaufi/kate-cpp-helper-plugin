@@ -244,4 +244,16 @@ BOOST_AUTO_TEST_CASE(partial_parse_test)
     BOOST_CHECK(kate::tryToCompleteIncludeDirective("#  in") == QString("#  include"));
     BOOST_CHECK(kate::tryToCompleteIncludeDirective("#   in") == QString("#   include"));
 }
+
+BOOST_AUTO_TEST_CASE(is_suitable_document_test)
+{
+    using kate::isSuitableDocument;
+
+    BOOST_CHECK_EQUAL(isSuitableDocument("application/xslt+xml", "xslt"), false);
+
+    BOOST_CHECK_EQUAL(isSuitableDocument("text/x-c++hdr", "C++"), true);
+    BOOST_CHECK_EQUAL(isSuitableDocument("text/x-c++hdr", "C++11"), true);
+    BOOST_CHECK_EQUAL(isSuitableDocument("text/x-c++hdr", "C++11/Qt4"), true);
+}
+
 // kate: hl C++11/Qt4;

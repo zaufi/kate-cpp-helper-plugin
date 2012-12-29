@@ -120,7 +120,7 @@ CppHelperPluginView::CppHelperPluginView(
     // We want to enable/disable open header action depending on
     // mime-type of the current document, so we have to subscribe
     // to view changes...
-    connect(mainWindow(), SIGNAL(viewChanged()), this, SLOT(viewChanged()));
+    connect(mainWindow(), SIGNAL(viewChanged()), this, SLOT(updateCppActionsAvailability()));
 
     // Setup toolview
     m_tool_view_interior->setupUi(new QWidget(m_tool_view.get()));
@@ -521,12 +521,7 @@ void CppHelperPluginView::copyInclude()
       && mainWindow()->activeView()
       );
 
-    KTextEditor::View* view = mainWindow()->activeView();
-    if (!view)
-    {
-        kDebug() << "no KTextEditor::View";
-        return;
-    }
+    const auto* view = mainWindow()->activeView();
     const KUrl& uri = view->document()->url().prettyUrl();
     QString current_dir = uri.directory();
     QString longest_matched;
@@ -546,10 +541,12 @@ void CppHelperPluginView::copyInclude()
             if (current_dir.startsWith(dir) && longest_matched.length() < dir.length())
                 longest_matched = dir;
     }
+    const bool is_suitable_document =
+        isSuitableDocument(view->document()->mimeType(), view->document()->highlightingMode());
+    QString text;
     if (!longest_matched.isEmpty())
     {
-        QString text;
-        if (isSuitableDocument(view->document()->mimeType(), view->document()->highlightingMode()))
+        if (is_suitable_document)
         {
             kDebug() << "current_dir=" << current_dir << ", lm=" << longest_matched;
             int count = longest_matched.size();
@@ -563,32 +560,17 @@ void CppHelperPluginView::copyInclude()
               .arg(current_dir + uri.fileName())
               .arg(close);
         }
-        else
-        {
-            text = uri.prettyUrl();
-        }
-        QApplication::clipboard()->setText(text);
+        else text = uri.prettyUrl();
     }
-}
-
-void CppHelperPluginView::viewChanged()
-{
-    kDebug() << "update view?";
-    KTextEditor::View* view = mainWindow()->activeView();
-    if (!view)
-    {
-        kDebug() << "no active view yet -- leave `open header' action as is...";
-        return;
-    }
-    const bool enable_open_header_action = isSuitableDocument(
-        view->document()->mimeType()
-      , view->document()->highlightingMode()
-      );
-    m_open_header->setEnabled(enable_open_header_action);
-    if (enable_open_header_action)
-        m_copy_include->setText(i18n("Copy #include to Clipboard"));
     else
-        m_copy_include->setText(i18n("Copy File URI to Clipboard"));
+    {
+        if (is_suitable_document)
+            text = QString("#include \"%1\"").arg(uri.toLocalFile());
+        else text = uri.prettyUrl();
+    }
+    kDebug() << "Result:" << text;
+    if (!text.isEmpty())
+        QApplication::clipboard()->setText(text);
 }
 
 /**
@@ -796,6 +778,11 @@ bool CppHelperPluginView::handleView(KTextEditor::View* view)
     if (!view)                                              // Null view is quite possible...
         return false;                                       // do nothing in this case.
 
+    const bool is_suitable_document =
+        isSuitableDocument(view->document()->mimeType(), view->document()->highlightingMode());
+
+    updateCppActionsAvailability(is_suitable_document);
+
     auto* cc_iface = qobject_cast<KTextEditor::CodeCompletionInterface*>(view);
     if (!cc_iface)
     {
@@ -805,7 +792,7 @@ bool CppHelperPluginView::handleView(KTextEditor::View* view)
     bool result = false;
     auto it = m_completers.find(view);
     // Is current document has suitable type (or highlighting)
-    if (isSuitableDocument(view->document()->mimeType(), view->document()->highlightingMode()))
+    if (is_suitable_document)
     {
         // Yeah! Check if still registration required
         if (it == end(m_completers))
@@ -1196,6 +1183,34 @@ void CppHelperPluginView::includeFileDblClickedFromList(const QModelIndex& index
     mainWindow()->activeView()->setSelection({line, 0, line + 1, 0});
 }
 
+/**
+ * Enable/disable C++ specific actions (copy \c #include, update button in explorer, etc.)
+ */
+void CppHelperPluginView::updateCppActionsAvailability()
+{
+    KTextEditor::View* view = mainWindow()->activeView();
+    if (!view)
+    {
+        kDebug() << "no active view yet -- leave `open header' action as is...";
+        return;
+    }
+    const auto& mime = view->document()->mimeType();
+    const auto& hl = view->document()->highlightingMode();
+    const bool is_ok = isSuitableDocument(mime, hl);
+    kDebug() << "MIME:" << mime << ", HL:" << hl << " --> " << (is_ok ? "Enable" : "Disable");
+    updateCppActionsAvailability(is_ok);
+}
+
+void CppHelperPluginView::updateCppActionsAvailability(const bool enable_cpp_specific_actions)
+{
+    kDebug() << "Enable C++ specific actions:" << enable_cpp_specific_actions;
+    m_open_header->setEnabled(enable_cpp_specific_actions);
+    m_tool_view_interior->updateButton->setEnabled(enable_cpp_specific_actions);
+    if (enable_cpp_specific_actions)
+        m_copy_include->setText(i18n("Copy #include to Clipboard"));
+    else
+        m_copy_include->setText(i18n("Copy File URI to Clipboard"));
+}
 //END CppHelperPluginView
 
 }                                                           // namespace kate

@@ -79,7 +79,6 @@ private Q_SLOTS:
     void openHeader();                                      ///< Open header file under cursor
     void switchIfaceImpl();                                 ///< Open corresponding header/implementation file
     void copyInclude();                                     ///< From #include directive w/ current file in the clipboard
-    void viewChanged();
     void viewCreated(KTextEditor::View*);
     void modeChanged(KTextEditor::Document*);
     void urlChanged(KTextEditor::Document*);
@@ -92,6 +91,7 @@ private Q_SLOTS:
     void includeFileDblClickedFromTree(const QModelIndex&);
     void includeFileDblClickedFromList(const QModelIndex&);
     void onDocumentClose(KTextEditor::Document*);
+    void updateCppActionsAvailability();                    ///< Enable/disable C++ specific actions in UI
 
 private:
     /// Type to hold a completers associated with a view
@@ -115,6 +115,7 @@ private:
     void inclusionVisitor(DocumentInfo*, CXFile, CXSourceLocation*, unsigned);
     void updateTreeModel(DocumentInfo*, const int, QStandardItem*, std::set<int>&);
     void dblClickOpenFile(QString&&);
+    void updateCppActionsAvailability(const bool);          ///< Enable/disable C++ specific actions in UI
 
     CppHelperPlugin* m_plugin;                              ///< Parent plugin
     KAction* m_open_header;                                 ///< <em>Open header</em> action

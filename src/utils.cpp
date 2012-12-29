@@ -298,6 +298,7 @@ bool isSuitableDocument(const QString& mime_str, const QString& hl_mode)
             it = boost::find(SUITABLE_HIGHLIGHT_TYPES, hl_mode);
             return it != end(SUITABLE_HIGHLIGHT_TYPES);
         }
+        return false;
     }
     return true;
 }

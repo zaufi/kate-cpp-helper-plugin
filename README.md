@@ -180,6 +180,12 @@ TODO
 Changes
 =======
 
+Version 0.8.8
+-------------
+
+* copy `#include` to clipboard improved (and recent bug has fixed)
+* disable C++ specific cations for non C++ documents
+
 Version 0.8.7
 -------------
 
