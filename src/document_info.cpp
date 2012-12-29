@@ -231,5 +231,66 @@ void DocumentInfo::rangeInvalid(KTextEditor::MovingRange* range)
     }
 }
 
+std::vector<int> DocumentInfo::getListOfIncludedBy(const int id) const
+{
+    std::vector<int> result;
+    auto p = m_includes.get<include_idx>().equal_range(id);
+    if (p.first != m_includes.get<include_idx>().end())
+    {
+        result.reserve(std::distance(p.first, p.second));
+        std::transform(
+            p.first
+          , p.second
+          , std::back_inserter(result)
+          , [](const IncludeLocationData& item)
+            {
+                return item.m_included_by_id;
+            }
+          );
+    }
+#if 0
+    kDebug() << "got" << result.size() << "items for header ID" << id;
+#endif
+    return result;
+}
+
+auto DocumentInfo::getListOfIncludedBy2(const int id) const -> std::vector<IncludeLocationData>
+{
+    std::vector<IncludeLocationData> result;
+    auto p = m_includes.get<include_idx>().equal_range(id);
+    if (p.first != m_includes.get<include_idx>().end())
+    {
+        result.reserve(std::distance(p.first, p.second));
+        std::copy(p.first, p.second, std::back_inserter(result));
+    }
+#if 0
+    kDebug() << "got" << result.size() << "items for header ID" << id;
+#endif
+    return result;
+}
+
+std::vector<int> DocumentInfo::getIncludedHeaders(const int id) const
+{
+    std::vector<int> result;
+    auto p = m_includes.get<included_by_idx>().equal_range(id);
+    if (p.first != m_includes.get<included_by_idx>().end())
+    {
+        result.reserve(std::distance(p.first, p.second));
+        std::transform(
+            p.first
+          , p.second
+          , std::back_inserter(result)
+          , [](const IncludeLocationData& item)
+            {
+                return item.m_header_id;
+            }
+          );
+    }
+#if 0
+    kDebug() << "got" << result.size() << "items for header ID" << id;
+#endif
+    return result;
+}
+
 }                                                           // namespace kate
 // kate: hl C++11/Qt4;

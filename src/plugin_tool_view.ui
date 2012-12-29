@@ -63,7 +63,13 @@
            <item>
             <widget class="QTreeView" name="includesTree">
              <property name="toolTip">
-              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;List of &lt;tt&gt;#include&lt;/tt&gt; files used by current translation unit&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              <string/>
+             </property>
+             <property name="whatsThis">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;List of &lt;span style=&quot; font-family:'Courier New,courier';&quot;&gt;#include&lt;/span&gt; files used by current translation unit. Redundand &lt;tt&gt;#includes&lt;/tt&gt; printed in yellow color.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
+             <property name="editTriggers">
+              <set>QAbstractItemView::NoEditTriggers</set>
              </property>
             </widget>
            </item>
@@ -81,7 +87,13 @@
            <item>
             <widget class="QListView" name="includedFromList">
              <property name="toolTip">
+              <string/>
+             </property>
+             <property name="whatsThis">
               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;List of files which &lt;tt&gt;#include&lt;/tt&gt; a selected one&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
+             <property name="editTriggers">
+              <set>QAbstractItemView::NoEditTriggers</set>
              </property>
             </widget>
            </item>

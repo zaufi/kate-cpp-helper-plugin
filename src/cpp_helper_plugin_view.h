@@ -25,15 +25,19 @@
 
 // Project specific includes
 # include <src/ui_plugin_tool_view.h>
+# include <src/document_info.h>
 
 // Standard includes
 # include <kate/plugin.h>
 # include <KTextEditor/View>
 # include <KAction>
 # include <KActionMenu>
+# include <QtGui/QStandardItemModel>
+# include <QtGui/QStandardItem>
 # include <clang-c/Index.h>
 # include <map>
 # include <memory>
+# include <set>
 
 namespace kate {
 class CppHelperPlugin;                                  // forward declaration
@@ -84,6 +88,10 @@ private Q_SLOTS:
     void whatIsThis();
     void needTextHint(const KTextEditor::Cursor&, QString&);
     void updateInclusionExplorer();
+    void includeFileClicked(const QModelIndex&);
+    void includeFileDblClickedFromTree(const QModelIndex&);
+    void includeFileDblClickedFromList(const QModelIndex&);
+    void onDocumentClose(KTextEditor::Document*);
 
 private:
     /// Type to hold a completers associated with a view
@@ -104,7 +112,9 @@ private:
     void openFile(const QString&);                          ///< Open a single document
     void openFiles(const QStringList&);                     ///< Open documents for all URIs in a given list
     QStringList findFileLocations(const QString&);          ///< Get list of absolute paths to filename
-    void inclusionVisitor(CXFile, CXSourceLocation*, unsigned);
+    void inclusionVisitor(DocumentInfo*, CXFile, CXSourceLocation*, unsigned);
+    void updateTreeModel(DocumentInfo*, const int, QStandardItem*, std::set<int>&);
+    void dblClickOpenFile(QString&&);
 
     CppHelperPlugin* m_plugin;                              ///< Parent plugin
     KAction* m_open_header;                                 ///< <em>Open header</em> action
@@ -112,6 +122,9 @@ private:
     KAction* m_switch;                                      ///< <em>Open implementation/header</em> action
     std::unique_ptr<QWidget> m_tool_view;                   ///< Toolview to display clang diagnostic
     Ui_PluginToolViewWidget* const m_tool_view_interior;    ///< Widget
+    QStandardItemModel* m_tree_model;
+    QStandardItemModel* m_list_model;
+    KTextEditor::Document* m_last_explored_document;        ///< Document explored in the \c #includes view
     std::unique_ptr<KActionMenu> m_menu;                    ///< Context menu
     QAction* m_what_is_this;                                ///< Get info about symbol under cursor
     completions_models_map_type m_completers;               ///< Registered completers by view

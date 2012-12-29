@@ -27,6 +27,7 @@
 
 // Standard includes
 #include <KTextEditor/Document>
+#include <KTextEditor/HighlightInterface>
 #include <KTextEditor/View>
 #include <KLocalizedString>                                 /// \todo Where is \c i18n() defiend?
 
@@ -66,7 +67,7 @@ QModelIndex IncludeHelperCompletionModel::index(int row, int column, const QMode
 /**
  * Initiate completion when there is \c #include on a line (\c m_range
  * in a result of \c parseIncludeDirective() not empty -- i.e. there is some file present)
- * and cursor placed withing that range... despite of completeness of the whole line.
+ * and cursor placed within that range... despite of completeness of the whole line.
  */
 bool IncludeHelperCompletionModel::shouldStartCompletion(
     KTextEditor::View* view
@@ -76,7 +77,16 @@ bool IncludeHelperCompletionModel::shouldStartCompletion(
   )
 {
     kDebug() << "position=" << position << ", inserted_text=" << inserted_text << ", ui=" << user_insertion;
-    QString line = view->document()->line(position.line()); // Get current line
+
+    m_should_complete = false;
+    auto* doc = view->document();                           // get current document
+    auto line = doc->line(position.line());                 // get current line
+    KTextEditor::HighlightInterface* iface = qobject_cast<KTextEditor::HighlightInterface*>(doc);
+    // Do nothing if no highlighting interface or not suitable document or
+    // a place within it... (we won't to complete smth in non C++ files or comments for example)
+    if (!iface || !isSuitableDocumentAndHighlighting(doc->mimeType(), iface->highlightingModeAt(position)))
+        return m_should_complete;
+
     // Try to parse it...
     IncludeParseResult r = parseIncludeDirective(line, false);
     m_should_complete = r.m_range.isValid();

@@ -250,7 +250,7 @@ void CppHelperPlugin::updateDocumentInfo(KTextEditor::Document* doc)
     }
 
     // Do we really need to scan this file?
-    if (!isCOrPPSource(doc->mimeType(), doc->highlightingMode()))
+    if (!isSuitableDocument(doc->mimeType(), doc->highlightingMode()))
     {
         kDebug() << "Document doesn't looks like C or C++: type ="
           << doc->mimeType() << ", hl =" << doc->highlightingMode();
@@ -327,6 +327,7 @@ void CppHelperPlugin::makePCHFile(const KUrl& filename)
           , TranslationUnit::defaultPCHParseOptions()
           );
         pch_unit.storeTo(pch_file_name);
+        config().setPrecompiledFile(pch_file_name);         // Set PCH file only if everything is Ok
     }
     catch (const TranslationUnit::Exception::ParseFailure&)
     {
@@ -364,6 +365,8 @@ void CppHelperPlugin::buildPCHIfAbsent()
     QFileInfo pi(pch_file_name);
     if (!pi.exists())
         makePCHFile(config().precompiledHeaderFile());
+    else
+        config().setPrecompiledFile(pch_file_name);         // Ok, file exists!
 
     //
     kDebug() << "PCH header: " << config().precompiledHeaderFile();
@@ -429,11 +432,11 @@ TranslationUnit& CppHelperPlugin::getTranslationUnitByDocumentImpl(
   , DCXIndex& index
   , std::unique_ptr<TranslationUnit> translation_units_map_type::mapped_type::* unit_offset
   , const unsigned parse_options
+  , const bool use_pch
   )
 {
     // Make sure an entry for document exists
-    auto& units_pair = m_units[doc];
-    std::unique_ptr<TranslationUnit>& unit = units_pair.*unit_offset;
+    std::unique_ptr<TranslationUnit>& unit = m_units[doc].*unit_offset;
     // Form unsaved files list
     /// \todo It would be better to monitor if code has changed before
     /// \c updateUnsavedFiles() and \c reparse()
@@ -446,13 +449,19 @@ TranslationUnit& CppHelperPlugin::getTranslationUnitByDocumentImpl(
         //  1) collect configured system and session dirs and make -I option series
         QStringList options = config().formCompilerOptions();
         //  2) append PCH options
-        if (!config().pchFile().isEmpty())
+        kDebug() << config().precompiledHeaderFile();
+        kDebug() << config().pchFile();
+        if (use_pch && !config().pchFile().isEmpty())
             options << /*"-Xclang" << */"-include-pch" << config().pchFile().toLocalFile();
 
         // Parse it!
         unit.reset(
             new TranslationUnit(index, doc->url(), options, parse_options, unsaved_files)
           );
+    }
+    else
+    {
+        unit->updateUnsavedFiles(unsaved_files);
     }
     unit->reparse();
     return *unit;

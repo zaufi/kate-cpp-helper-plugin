@@ -24,12 +24,27 @@
 #include <src/utils.h>
 
 // Standard includes
+#include <boost/range/algorithm/find.hpp>
 #include <KDebug>
 #include <KTextEditor/Range>
+#include <algorithm>
 #include <cassert>
+#include <vector>
 
 namespace kate { namespace {
 const char* const INCLUDE_STR = "include";
+const std::vector<QString> SUITABLE_DOCUMENT_TYPES = {
+    QString("text/x-c++src")
+  , QString("text/x-c++hdr")
+  , QString("text/x-csrc")
+  , QString("text/x-chdr")
+};
+const std::vector<QString> SUITABLE_HIGHLIGHT_TYPES = {
+    QString("C++")
+  , QString("C++11")
+  , QString("C++11/Qt4")
+  , QString("C")
+};
 }                                                           // anonymous namespace
 
 /**
@@ -271,6 +286,31 @@ QString tryToCompleteIncludeDirective(const QString& text)
             result += (INCLUDE_STR + pos);
     }
     return result;
+}
+
+bool isSuitableDocument(const QString& mime_str, const QString& hl_mode)
+{
+    auto it = boost::find(SUITABLE_DOCUMENT_TYPES, mime_str);
+    if (it == end(SUITABLE_DOCUMENT_TYPES))
+    {
+        if (mime_str == QLatin1String("text/plain"))
+        {
+            it = boost::find(SUITABLE_HIGHLIGHT_TYPES, hl_mode);
+            return it != end(SUITABLE_HIGHLIGHT_TYPES);
+        }
+    }
+    return true;
+}
+
+bool isSuitableDocumentAndHighlighting(const QString& mime_str, const QString& hl_mode)
+{
+    auto it = boost::find(SUITABLE_DOCUMENT_TYPES, mime_str);
+    if (it != end(SUITABLE_DOCUMENT_TYPES) || mime_str == QLatin1String("text/plain"))
+    {
+        it = boost::find(SUITABLE_HIGHLIGHT_TYPES, hl_mode);
+        return it != end(SUITABLE_HIGHLIGHT_TYPES);
+    }
+    return false;
 }
 
 /**

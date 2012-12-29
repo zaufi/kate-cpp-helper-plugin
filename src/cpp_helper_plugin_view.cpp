@@ -80,6 +80,9 @@ CppHelperPluginView::CppHelperPluginView(
           )
       )
   , m_tool_view_interior(new Ui_PluginToolViewWidget())
+  , m_tree_model(new QStandardItemModel())
+  , m_list_model(new QStandardItemModel())
+  , m_last_explored_document(nullptr)
   , m_menu(new KActionMenu(i18n("C++ Helper: Playground"), this))
 {
     m_open_header->setText(i18n("Open Header Under Cursor"));
@@ -121,12 +124,34 @@ CppHelperPluginView::CppHelperPluginView(
 
     // Setup toolview
     m_tool_view_interior->setupUi(new QWidget(m_tool_view.get()));
+    m_tool_view_interior->includesTree->setHeaderHidden(true);
+    m_tool_view_interior->includesTree->setModel(m_tree_model);
+    m_tool_view_interior->includedFromList->setModel(m_list_model);
     m_tool_view->installEventFilter(this);
+
     connect(
         m_tool_view_interior->updateButton
       , SIGNAL(clicked())
       , this
       , SLOT(updateInclusionExplorer())
+      );
+    connect(
+        m_tool_view_interior->includesTree
+      , SIGNAL(clicked(const QModelIndex&))
+      , this
+      , SLOT(includeFileClicked(const QModelIndex&))
+      );
+    connect(
+        m_tool_view_interior->includesTree
+      , SIGNAL(doubleClicked(const QModelIndex&))
+      , this
+      , SLOT(includeFileDblClickedFromTree(const QModelIndex&))
+      );
+    connect(
+        m_tool_view_interior->includedFromList
+      , SIGNAL(doubleClicked(const QModelIndex&))
+      , this
+      , SLOT(includeFileDblClickedFromList(const QModelIndex&))
       );
 
     mainWindow()->guiFactory()->addClient(this);
@@ -524,7 +549,7 @@ void CppHelperPluginView::copyInclude()
     if (!longest_matched.isEmpty())
     {
         QString text;
-        if (isCOrPPSource(view->document()->mimeType(), view->document()->highlightingMode()))
+        if (isSuitableDocument(view->document()->mimeType(), view->document()->highlightingMode()))
         {
             kDebug() << "current_dir=" << current_dir << ", lm=" << longest_matched;
             int count = longest_matched.size();
@@ -555,7 +580,7 @@ void CppHelperPluginView::viewChanged()
         kDebug() << "no active view yet -- leave `open header' action as is...";
         return;
     }
-    const bool enable_open_header_action = isCOrPPSource(
+    const bool enable_open_header_action = isSuitableDocument(
         view->document()->mimeType()
       , view->document()->highlightingMode()
       );
@@ -629,6 +654,12 @@ void CppHelperPluginView::viewCreated(KTextEditor::View* view)
       , this
       , SLOT(urlChanged(KTextEditor::Document*))
       );
+    connect(
+        doc
+      , SIGNAL(aboutToClose(KTextEditor::Document*))
+      , this
+      , SLOT(onDocumentClose(KTextEditor::Document*))
+      );
     /// \note We don't need to subscribe to document close (connecting to
     /// \c Document::aboutToClose signal) to unregister completers cuz at this
     /// moment no views exists! I.e. iterating over \c view() gives no matches
@@ -650,7 +681,7 @@ void CppHelperPluginView::needTextHint(const KTextEditor::Cursor& pos, QString& 
     auto* view = mainWindow()->activeView();                // get current view
     auto* doc = view->document();                           // get current document
     // Is current file can have some hints?
-    if (isCOrPPSource(doc->mimeType(), doc->highlightingMode()))
+    if (isSuitableDocument(doc->mimeType(), doc->highlightingMode()))
     {
         auto& di = m_plugin->getDocumentInfo(doc);
         auto status = di.getLineStatus(pos.line());
@@ -667,6 +698,16 @@ void CppHelperPluginView::needTextHint(const KTextEditor::Cursor& pos, QString& 
         }
         QPoint p = view->cursorToCoordinate(pos);
         QToolTip::showText(p, text, view);
+    }
+}
+
+void CppHelperPluginView::onDocumentClose(KTextEditor::Document* doc)
+{
+    if (doc == m_last_explored_document)
+    {
+        m_last_explored_document = nullptr;
+        m_tree_model->clear();
+        m_list_model->clear();
     }
 }
 
@@ -694,7 +735,7 @@ void CppHelperPluginView::textInserted(KTextEditor::Document* doc, const KTextEd
         return;
     }
     // Do we really need to scan this file?
-    if (!isCOrPPSource(doc->mimeType(), doc->highlightingMode()))
+    if (!isSuitableDocument(doc->mimeType(), doc->highlightingMode()))
     {
         kDebug() << "Document doesn't looks like C or C++: type ="
           << doc->mimeType() << ", hl =" << doc->highlightingMode();
@@ -764,7 +805,7 @@ bool CppHelperPluginView::handleView(KTextEditor::View* view)
     bool result = false;
     auto it = m_completers.find(view);
     // Is current document has suitable type (or highlighting)
-    if (isCOrPPSource(view->document()->mimeType(), view->document()->highlightingMode()))
+    if (isSuitableDocument(view->document()->mimeType(), view->document()->highlightingMode()))
     {
         // Yeah! Check if still registration required
         if (it == end(m_completers))
@@ -959,37 +1000,200 @@ void CppHelperPluginView::whatIsThis()
 #endif
 }
 
+namespace {
+struct InclusionVisitorData
+{
+    CppHelperPluginView* const m_self;
+    DocumentInfo* m_di;
+};
+}                                                           // anonymous namespace
+
 void CppHelperPluginView::updateInclusionExplorer()
 {
     assert(
         "Active view suppose to be valid at this point! Am I wrong?"
       && mainWindow()->activeView()
       );
-    auto& unit = m_plugin->getTranslationUnitByDocument(mainWindow()->activeView()->document(), false);
+
+    // Show busy mouse pointer
+    QApplication::setOverrideCursor(QCursor(Qt::BusyCursor));
+
+    auto* doc = mainWindow()->activeView()->document();
+    auto& unit = m_plugin->getTranslationUnitByDocument(doc, false);
+    m_tool_view_interior->diagnosticText->setText(unit.getLastDiagnostic());
+    InclusionVisitorData data = {this, &m_plugin->getDocumentInfo(doc)};
+    data.m_di->clearInclusionTree();                        // Clear a previous tree in the document info
+    m_tree_model->clear();                                  // and in the tree view model
+    m_list_model->clear();                                  // as well as `included by` list
     clang_getInclusions(
         unit
       , [](
             CXFile file
           , CXSourceLocation* stack
           , unsigned stack_size
-          , CXClientData data
+          , CXClientData d
           )
         {
-            auto* self = static_cast<CppHelperPluginView* const>(data);
-            self->inclusionVisitor(file, stack, stack_size);
+            auto* user_data = static_cast<InclusionVisitorData* const>(d);
+            user_data->m_self->inclusionVisitor(user_data->m_di, file, stack, stack_size);
         }
-      , this
+      , &data
       );
+    // Ok, data has been collected: update the view
+    std::set<int> visited_ids;
+    updateTreeModel(
+        data.m_di
+      , DocumentInfo::IncludeLocationData::ROOT
+      , m_tree_model->invisibleRootItem()
+      , visited_ids
+      );
+    m_last_explored_document = doc;                         // Remember the document last explored
+
+    QApplication::restoreOverrideCursor();                  // Restore mouse pointer to normal
+    kDebug() << "headers cache now has" << m_plugin->headersCache().size() << "items!";
 }
 
 void CppHelperPluginView::inclusionVisitor(
-    CXFile file
+    DocumentInfo* di
+  , CXFile file
   , CXSourceLocation* stack
   , unsigned stack_size
   )
 {
-    DCXString fname = clang_getFileName(file);
-    kDebug() << "file:" << clang_getCString(fname);
+    DCXString header_name_cl = clang_getFileName(file);
+    const QString header_name = clang_getCString(header_name_cl);
+
+    if (stack_size)                                         // Is there anything on top of inclusion stack?
+    {
+        // Yep, add an ordinal inclusion entry
+        CXFile including_file;
+        unsigned line;
+        unsigned column;
+        clang_getSpellingLocation(
+            stack[0]                                        // Get only top stack item!
+          , &including_file
+          , &line
+          , &column
+          , 0
+          );
+        const DCXString included_from_cl = clang_getFileName(including_file);
+        const QString included_from = clang_getCString(included_from_cl);
+#if 0
+        kDebug() << "File" << header_name << "included from:" << included_from << '@' << line << ':' << column;
+#endif
+        di->addInclusionEntry({
+            m_plugin->headersCache()[header_name]
+          , m_plugin->headersCache()[included_from]
+          , int(line)
+          , int(column)
+        });
+    }
+    else
+    {
+        // Ok, this is the root entry (belong to translation unit)
+        di->addInclusionEntry({
+            m_plugin->headersCache()[header_name]
+          , DocumentInfo::IncludeLocationData::ROOT
+          , 0
+          , 0
+          });
+#if 0
+        kDebug() << "Add root entry for file:" << header_name;
+#endif
+    }
+}
+
+void CppHelperPluginView::updateTreeModel(
+    DocumentInfo* di
+  , const int parent_id
+  , QStandardItem* parent
+  , std::set<int>& visited_ids
+  )
+{
+    auto include_list = di->getIncludedHeaders(parent_id);
+    for (const auto& ii : include_list)
+    {
+        auto text = m_plugin->headersCache()[ii];
+        bool already_visited = visited_ids.find(ii) != end(visited_ids);
+        if (already_visited)
+            text += QLatin1String(" ...");
+        auto* item = new QStandardItem(text);
+        if (already_visited)
+            item->setForeground(Qt::yellow);           /// \todo Hardcoded color
+        if (!already_visited)
+        {
+            visited_ids.insert(ii);
+            updateTreeModel(di, ii, item, visited_ids);
+        }
+        parent->appendRow(item);
+    }
+}
+
+void CppHelperPluginView::includeFileClicked(const QModelIndex& index)
+{
+    assert("Document expected to be alive" && m_last_explored_document);
+
+    m_list_model->clear();
+#if 0
+    auto* parent = m_list_model->invisibleRootItem();
+#endif
+
+    const HeaderFilesCache& cache = const_cast<const CppHelperPlugin* const>(m_plugin)->headersCache();
+    QString filename = m_tree_model->itemFromIndex(index)->text();
+    if (filename.endsWith(QLatin1String(" ...")))
+        filename.remove(filename.length() - 4, 4);
+    int id = cache[filename];
+    if (id != HeaderFilesCache::NOT_FOUND)
+    {
+        const DocumentInfo& di = m_plugin->getDocumentInfo(m_last_explored_document);
+        std::vector<DocumentInfo::IncludeLocationData> included_from = di.getListOfIncludedBy2(id);
+        for (const auto& entry : included_from)
+        {
+            if (entry.m_included_by_id != DocumentInfo::IncludeLocationData::ROOT)
+            {
+                QStandardItem* item = new QStandardItem(
+                    QString("%1[%2]").arg(
+                        cache[entry.m_included_by_id]
+                      , QString::number(entry.m_line)
+                      )
+                  );
+                m_list_model->appendRow(item);
+            }
+        }
+    }
+    else
+    {
+        kDebug() << "WTF: " << filename << "NOT FOUND!?";
+    }
+}
+
+void CppHelperPluginView::dblClickOpenFile(QString&& filename)
+{
+    assert("Filename expected to be non empty" && !filename.isEmpty());
+    if (filename.endsWith(QLatin1String(" ...")))
+        filename.remove(filename.length() - 4, 4);
+    openFile(filename);
+}
+
+void CppHelperPluginView::includeFileDblClickedFromTree(const QModelIndex& index)
+{
+    dblClickOpenFile(m_tree_model->itemFromIndex(index)->text());
+}
+
+void CppHelperPluginView::includeFileDblClickedFromList(const QModelIndex& index)
+{
+    assert(
+        "Active view suppose to be valid at this point! Am I wrong?"
+      && mainWindow()->activeView()
+      );
+
+    auto filename = m_list_model->itemFromIndex(index)->text();
+    auto pos = filename.lastIndexOf('[');
+    auto line = filename.mid(pos + 1, filename.lastIndexOf(']') - pos - 1).toInt(nullptr);
+    filename.remove(pos, filename.size());
+    dblClickOpenFile(std::move(filename));
+    mainWindow()->activeView()->setCursorPosition({line, 0});
+    mainWindow()->activeView()->setSelection({line, 0, line + 1, 0});
 }
 
 //END CppHelperPluginView

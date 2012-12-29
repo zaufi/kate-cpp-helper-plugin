@@ -27,6 +27,7 @@
 # include <src/clang_utils.h>
 # include <src/plugin_configuration.h>
 # include <src/translation_unit.h>
+# include <src/header_files_cache.h>
 
 // Standard includes
 # include <kate/plugin.h>
@@ -69,6 +70,8 @@ public:
     const PluginConfiguration& config() const;
     CXIndex localIndex() const;
     CXIndex index() const;
+    HeaderFilesCache& headersCache();
+    const HeaderFilesCache& headersCache() const;
     //@}
 
     /// \name \c Kate::PluginConfigPageInterface interface implementation
@@ -139,8 +142,8 @@ private:
       , DCXIndex&
       , std::unique_ptr<TranslationUnit> translation_units_map_type::mapped_type::*
       , const unsigned
+      , const bool
       );
-
 
     /// An instance of \c PluginConfiguration filled with configuration data
     /// read from application's config
@@ -159,6 +162,7 @@ private:
     /// A never shown document used to highlight code completion items
     KTextEditor::Document* m_hidden_doc;
     translation_units_map_type m_units;
+    HeaderFilesCache m_headers_cache;
 };
 
 inline PluginConfiguration& CppHelperPlugin::config()
@@ -177,6 +181,14 @@ inline CXIndex CppHelperPlugin::index() const
 {
     return m_index;
 }
+inline HeaderFilesCache& CppHelperPlugin::headersCache()
+{
+    return m_headers_cache;
+}
+inline const HeaderFilesCache& CppHelperPlugin::headersCache() const
+{
+    return m_headers_cache;
+}
 
 inline TranslationUnit& CppHelperPlugin::getTranslationUnitByDocument(
     KTextEditor::Document* doc
@@ -192,6 +204,7 @@ inline TranslationUnit& CppHelperPlugin::getTranslationUnitByDocument(
       , is_local_requested
         ? TranslationUnit::defaultEditingParseOptions()
         : TranslationUnit::defaultExplorerParseOptions()
+      , is_local_requested
       );
 }
 

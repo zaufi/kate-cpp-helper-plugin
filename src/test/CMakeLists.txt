@@ -5,6 +5,7 @@ set(UNIT_TESTS_SOURCES
     ${CMAKE_SOURCE_DIR}/src/sanitize_snippet.cpp
     utils_tester.cpp
     ${CMAKE_SOURCE_DIR}/src/utils.cpp
+    header_files_cache_tester.cpp
   )
 
 # Unit tests executable

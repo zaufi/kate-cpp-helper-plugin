@@ -45,15 +45,16 @@ find_package(LibClang 3.0 REQUIRED)
 # BUILD_TESTING will always turned ON... so caller have to disable
 # it explicitly if required.
 if (BUILD_TESTING)
-    find_package(Boost 1.42 COMPONENTS unit_test_framework)
-    if (Boost_UNIT_TEST_FRAMEWORK_LIBRARY MATCHES NOTFOUND)
-        message(STATUS "Unit tests disabled")
-        set(BUILD_TESTING OFF)
-    else()
-        include(AddBoostTests)
-    endif()
+    set(NEEDED_BOOST_COMPONENTS unit_test_framework)
 else()
     message(STATUS "Unit tests disabled")
+endif()
+find_package(Boost 1.42 COMPONENTS ${NEEDED_BOOST_COMPONENTS})
+if (NOT Boost_UNIT_TEST_FRAMEWORK_LIBRARY)
+    message(STATUS "Unit tests disabled")
+    set(BUILD_TESTING OFF)
+else()
+    include(AddBoostTests)
 endif()
 
 #---------------------------------------------------------

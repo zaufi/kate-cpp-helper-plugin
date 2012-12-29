@@ -74,9 +74,9 @@ public:
       , const unsaved_files_list_type& = unsaved_files_list_type()
       );
     /// Move ctor
-    TranslationUnit(TranslationUnit&&);
+    TranslationUnit(TranslationUnit&&) noexcept;
     /// Move-assign operator
-    TranslationUnit& operator=(TranslationUnit&&);
+    TranslationUnit& operator=(TranslationUnit&&) noexcept;
     /// Delete copy ctor
     TranslationUnit(const TranslationUnit&) = delete;
     /// Delete copy-assign operator

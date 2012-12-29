@@ -26,10 +26,11 @@
 #include <src/cpp_helper_plugin.h>
 #include <src/document_proxy.h>
 #include <src/translation_unit.h>
+#include <src/utils.h>
 
 // Standard includes
-#include <ktexteditor/highlightinterface.h>
 #include <KTextEditor/Document>
+#include <KTextEditor/HighlightInterface>
 #include <KTextEditor/TemplateInterface>
 #include <KTextEditor/View>
 #include <KLocalizedString>                                 /// \todo Where is \c i18n() defiend?
@@ -50,17 +51,27 @@ ClangCodeCompletionModel::ClangCodeCompletionModel(
 }
 
 bool ClangCodeCompletionModel::shouldStartCompletion(
-    KTextEditor::View* /*view*/
+    KTextEditor::View* view
   , const QString& inserted_text
   , bool user_insertion
-  , const KTextEditor::Cursor& /*position*/
+  , const KTextEditor::Cursor& pos
   )
 {
+    auto* doc = view->document();                           // get current document
     bool result = false;
-    if (user_insertion && m_plugin->config().autoCompletions())
+    KTextEditor::HighlightInterface* iface = qobject_cast<KTextEditor::HighlightInterface*>(doc);
+    if (iface)
     {
-        auto text = inserted_text.trimmed();
-        result = text.endsWith(QLatin1String(".")) || text.endsWith(QLatin1String("->"));
+        kDebug() << "higlighting mode at" << pos << ':' << iface->highlightingModeAt(pos);
+        bool is_completion_needed = user_insertion
+          && m_plugin->config().autoCompletions()
+          && isSuitableDocumentAndHighlighting(doc->mimeType(), iface->highlightingModeAt(pos))
+          ;
+        if (is_completion_needed)
+        {
+            auto text = inserted_text.trimmed();
+            result = text.endsWith(QLatin1String(".")) || text.endsWith(QLatin1String("->"));
+        }
     }
     kDebug() << "result:" << result;
     return result;

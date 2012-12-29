@@ -47,6 +47,8 @@ namespace kate {
  *
  * \note There is no overload dereference operator cuz most of the time Kate API accept
  * documents by raw pointers, so there is no need to dereference it in user (plugin) code.
+ *
+ * \todo Add a function to get highligting mode at specified location
  */
 class DocumentProxy
 {

@@ -26,6 +26,11 @@
 // Project specific includes
 
 // Standard includes
+# include <boost/multi_index_container.hpp>
+# include <boost/multi_index/member.hpp>
+# include <boost/multi_index/ordered_index.hpp>
+# include <boost/multi_index/tag.hpp>
+# include <boost/multi_index/indexed_by.hpp>
 # include <KTextEditor/MovingRange>
 # include <ktexteditor/movingrangefeedback.h>
 # include <cassert>
@@ -56,11 +61,25 @@ public:
       , MultipleMatches
     };
 
+    struct IncludeLocationData
+    {
+        static const int ROOT = -1;
+        int m_header_id;                                    ///< ID of the \c #included file
+        int m_included_by_id;                               ///< ID of a parent of the current file
+        int m_line;                                         ///< inclusion line
+        int m_column;                                       ///< inclusion column
+    };
+
     explicit DocumentInfo(CppHelperPlugin*);
     virtual ~DocumentInfo();
 
     bool isRangeWithSameLineExists(const KTextEditor::Range&) const;
     Status getLineStatus(const int);
+    void addInclusionEntry(const IncludeLocationData&);
+    void clearInclusionTree();
+    std::vector<int> getListOfIncludedBy(const int) const;
+    std::vector<IncludeLocationData> getListOfIncludedBy2(const int) const;
+    std::vector<int> getIncludedHeaders(const int) const;
 
 public Q_SLOTS:
     void addRange(KTextEditor::MovingRange*);
@@ -82,6 +101,31 @@ private:
 
     typedef std::vector<State> registered_ranges_type;
 
+    /// Type to hold index of header files and assigned IDs
+    struct include_idx;
+    struct included_by_idx;
+    typedef boost::multi_index_container<
+        IncludeLocationData
+      , boost::multi_index::indexed_by<
+            boost::multi_index::ordered_non_unique<
+                boost::multi_index::tag<include_idx>
+              , boost::multi_index::member<
+                    IncludeLocationData
+                  , int
+                  , &IncludeLocationData::m_header_id
+                  >
+              >
+          , boost::multi_index::ordered_non_unique<
+                boost::multi_index::tag<included_by_idx>
+              , boost::multi_index::member<
+                    IncludeLocationData
+                  , int
+                  , &IncludeLocationData::m_included_by_id
+                  >
+              >
+          >
+      > inclusion_index_type;
+
     void updateStatus(State&);                              ///< Update single range
     registered_ranges_type::iterator findRange(KTextEditor::MovingRange*);
     //BEGIN MovingRangeFeedback interface
@@ -93,6 +137,7 @@ private:
     CppHelperPlugin* m_plugin;                              ///< Parent plugin
     ///< List of ranges w/ \c #incldue directives whithing a document
     registered_ranges_type m_ranges;
+    inclusion_index_type m_includes;
 };
 
 inline DocumentInfo::State::State(
@@ -119,6 +164,16 @@ inline auto DocumentInfo::getLineStatus(const int line) -> Status
         if (state.m_range->start().line() == line)
             return state.m_status;
     return Status::Dunno;
+}
+
+inline void DocumentInfo::addInclusionEntry(const IncludeLocationData& item)
+{
+    m_includes.insert(item);
+}
+
+inline void DocumentInfo::clearInclusionTree()
+{
+    m_includes.clear();
 }
 
 }                                                           // namespace kate

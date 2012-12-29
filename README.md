@@ -189,6 +189,7 @@ Version 0.8.7
   so automatic completer added for this case.
 * speedup getting completions
 * enable automatic completions popup when member accessed
+* `#include` explorer has been added. It can hihglight "redundand" headers included in a translation unit.
 
 Version 0.8.6
 -------------

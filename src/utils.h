@@ -78,23 +78,8 @@ QString tryToCompleteIncludeDirective(const QString&);
 
 /// \c true if given MIME type string belongs to C/C++ source or in case of
 /// \c text-plain (set for new documents), check for highlighting mode
-inline bool isCOrPPSource(const QString& mime_str, const QString& hl_mode)
-{
-    return (mime_str == QLatin1String("text/x-c++src"))
-      || (mime_str == QLatin1String("text/x-c++hdr"))
-      || (mime_str == QLatin1String("text/x-csrc"))
-      || (mime_str == QLatin1String("text/x-chdr"))
-      || (
-          mime_str == QLatin1String("text/plain") &&
-          (
-               hl_mode == QLatin1String("C++")
-            || hl_mode == QLatin1String("C++11")
-            || hl_mode == QLatin1String("C++11/Qt4")
-            || hl_mode == QLatin1String("C")
-            )
-        )
-      ;
-}
+bool isSuitableDocument(const QString&, const QString&);
+bool isSuitableDocumentAndHighlighting(const QString&, const QString&);
 
 /**
  * \brief Remove duplicates from strings list

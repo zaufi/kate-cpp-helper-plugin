@@ -213,11 +213,12 @@ TranslationUnit::TranslationUnit(
       , m_unsaved_files.size()
       , parse_options
       );
+    showDiagnostic();
     if (!m_unit)
         throw Exception::ParseFailure("Failure to parse C++ code");
 }
 
-TranslationUnit::TranslationUnit(TranslationUnit&& other)
+TranslationUnit::TranslationUnit(TranslationUnit&& other) noexcept
   : m_unsaved_files_utf8(std::move(other.m_unsaved_files_utf8))
   , m_unsaved_files(std::move(other.m_unsaved_files))
   , m_unit(other.m_unit)
@@ -226,7 +227,7 @@ TranslationUnit::TranslationUnit(TranslationUnit&& other)
     other.m_unit = nullptr;
 }
 
-TranslationUnit& TranslationUnit::operator=(TranslationUnit&& other)
+TranslationUnit& TranslationUnit::operator=(TranslationUnit&& other) noexcept
 {
     m_unsaved_files_utf8 = std::move(other.m_unsaved_files_utf8);
     m_unsaved_files = std::move(other.m_unsaved_files);
@@ -510,14 +511,20 @@ unsigned TranslationUnit::defaultPCHParseOptions()
 #endif                                                      // CLANG_VERSION >= 30200
         ;
 }
+
 unsigned TranslationUnit::defaultEditingParseOptions()
 {
-    return clang_defaultEditingTranslationUnitOptions() | CXTranslationUnit_Incomplete;
+    return clang_defaultEditingTranslationUnitOptions()
+      | CXTranslationUnit_Incomplete
+#if CLANG_VERSION >= 30200
+      | CXTranslationUnit_IncludeBriefCommentsInCodeCompletion
+#endif                                                      // CLANG_VERSION >= 30200
+      ;
 }
 
 unsigned TranslationUnit::defaultExplorerParseOptions()
 {
-    return CXTranslationUnit_Incomplete;
+    return CXTranslationUnit_Incomplete | CXTranslationUnit_SkipFunctionBodies;
 }
 
 }                                                           // namespace kate
