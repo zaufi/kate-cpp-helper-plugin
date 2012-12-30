@@ -36,7 +36,6 @@
 #include <kate/mainwindow.h>
 #include <KStringHandler>
 #include <KTextEditor/CodeCompletionInterface>
-#include <KTextEditor/Document>
 #include <KTextEditor/MovingInterface>
 #include <KTextEditor/TextHintInterface>
 #include <KActionCollection>
@@ -50,6 +49,8 @@
 #include <QtCore/QDirIterator>
 #include <QtGui/QToolTip>
 #include <cassert>
+#include <set>
+#include <stack>
 
 namespace kate { namespace {
 const QStringList HDR_EXTENSIONS = QStringList() << "h" << "hh" << "hpp" << "hxx" << "H";
@@ -987,13 +988,17 @@ void CppHelperPluginView::whatIsThis()
 #endif
 }
 
-namespace {
+namespace details {
 struct InclusionVisitorData
 {
     CppHelperPluginView* const m_self;
     DocumentInfo* m_di;
+    std::stack<QStandardItem*> m_parents;
+    std::set<int> m_visited_ids;
+    QStandardItem* m_last_added_item;
+    unsigned m_last_stack_size;
 };
-}                                                           // anonymous namespace
+}                                                           // namespace details
 
 void CppHelperPluginView::updateInclusionExplorer()
 {
@@ -1008,10 +1013,11 @@ void CppHelperPluginView::updateInclusionExplorer()
     auto* doc = mainWindow()->activeView()->document();
     auto& unit = m_plugin->getTranslationUnitByDocument(doc, false);
     m_tool_view_interior->diagnosticText->setText(unit.getLastDiagnostic());
-    InclusionVisitorData data = {this, &m_plugin->getDocumentInfo(doc)};
+    details::InclusionVisitorData data = {this, &m_plugin->getDocumentInfo(doc), {}, {}, nullptr, 0};
     data.m_di->clearInclusionTree();                        // Clear a previous tree in the document info
     m_tree_model->clear();                                  // and in the tree view model
     m_list_model->clear();                                  // as well as `included by` list
+    data.m_parents.push(m_tree_model->invisibleRootItem());
     clang_getInclusions(
         unit
       , [](
@@ -1021,18 +1027,10 @@ void CppHelperPluginView::updateInclusionExplorer()
           , CXClientData d
           )
         {
-            auto* user_data = static_cast<InclusionVisitorData* const>(d);
-            user_data->m_self->inclusionVisitor(user_data->m_di, file, stack, stack_size);
+            auto* user_data = static_cast<details::InclusionVisitorData* const>(d);
+            user_data->m_self->inclusionVisitor(user_data, file, stack, stack_size);
         }
       , &data
-      );
-    // Ok, data has been collected: update the view
-    std::set<int> visited_ids;
-    updateTreeModel(
-        data.m_di
-      , DocumentInfo::IncludeLocationData::ROOT
-      , m_tree_model->invisibleRootItem()
-      , visited_ids
       );
     m_last_explored_document = doc;                         // Remember the document last explored
 
@@ -1041,7 +1039,7 @@ void CppHelperPluginView::updateInclusionExplorer()
 }
 
 void CppHelperPluginView::inclusionVisitor(
-    DocumentInfo* di
+    details::InclusionVisitorData* data
   , CXFile file
   , CXSourceLocation* stack
   , unsigned stack_size
@@ -1049,71 +1047,67 @@ void CppHelperPluginView::inclusionVisitor(
 {
     DCXString header_name_cl = clang_getFileName(file);
     const QString header_name = clang_getCString(header_name_cl);
+    const int header_id = m_plugin->headersCache()[header_name];
+    kDebug() << "LSS:" << data->m_last_stack_size << ", CSS:" << stack_size;
+    kDebug() << "Visiting" << header_name << '[' << header_id << ']';
 
-    if (stack_size)                                         // Is there anything on top of inclusion stack?
+    QString included_from;
+    unsigned line = 0;
+    unsigned column = 0;
+    int included_from_id = DocumentInfo::IncludeLocationData::ROOT;
+    if (stack_size)                                         // Is there anything on stack
     {
-        // Yep, add an ordinal inclusion entry
         CXFile including_file;
-        unsigned line;
-        unsigned column;
-        clang_getSpellingLocation(
-            stack[0]                                        // Get only top stack item!
-          , &including_file
-          , &line
-          , &column
-          , 0
-          );
+        // NOTE Take filename from top of stack only!
+        clang_getSpellingLocation(stack[0], &including_file, &line, &column, 0);
+        // Obtain a filename and its ID in headers cache
         const DCXString included_from_cl = clang_getFileName(including_file);
-        const QString included_from = clang_getCString(included_from_cl);
-#if 0
-        kDebug() << "File" << header_name << "included from:" << included_from << '@' << line << ':' << column;
-#endif
-        di->addInclusionEntry({
-            m_plugin->headersCache()[header_name]
-          , m_plugin->headersCache()[included_from]
-          , int(line)
-          , int(column)
-        });
+        included_from = clang_getCString(included_from_cl);
+        included_from_id = m_plugin->headersCache()[included_from];
+        //
+        kDebug() << "File" << header_name << "[" << header_id <<
+          "] included from" << included_from << '[' << included_from_id <<
+          "] @" << line << ':' << column
+          ;
+        // Kate has zero based cursor position
+        line--;
+        column--;
+    }
+    data->m_di->addInclusionEntry({header_id, included_from_id, int(line), int(column)});
+
+    QStandardItem* parent = nullptr;
+    if (data->m_last_stack_size < stack_size)               // Is current stack grew relative to the last call
+    {
+        assert("Sanity check!" && (stack_size - data->m_last_stack_size == 1));
+        // We have to add one more parent
+        data->m_parents.push(data->m_last_added_item);
+        parent = data->m_last_added_item;
+        kDebug() << "Added new parent";
+    }
+    else if (stack_size < data->m_last_stack_size)
+    {
+        // Stack size reduced since tha last call: remove our top
+        for (unsigned i = data->m_last_stack_size; i > stack_size; --i)
+            data->m_parents.pop();
+        assert("Stack expected to be non empty!" && !data->m_parents.empty());
+        parent = data->m_parents.top();
+        kDebug() << "Remove some parent(s)";
     }
     else
     {
-        // Ok, this is the root entry (belong to translation unit)
-        di->addInclusionEntry({
-            m_plugin->headersCache()[header_name]
-          , DocumentInfo::IncludeLocationData::ROOT
-          , 0
-          , 0
-          });
-#if 0
-        kDebug() << "Add root entry for file:" << header_name;
-#endif
+        assert("Sanity check!" && stack_size == data->m_last_stack_size);
+        parent = data->m_parents.top();
+        kDebug() << "Reuse same parent";
     }
-}
-
-void CppHelperPluginView::updateTreeModel(
-    DocumentInfo* di
-  , const int parent_id
-  , QStandardItem* parent
-  , std::set<int>& visited_ids
-  )
-{
-    auto include_list = di->getIncludedHeaders(parent_id);
-    for (const auto& ii : include_list)
-    {
-        auto text = m_plugin->headersCache()[ii];
-        bool already_visited = visited_ids.find(ii) != end(visited_ids);
-        if (already_visited)
-            text += QLatin1String(" ...");
-        auto* item = new QStandardItem(text);
-        if (already_visited)
-            item->setForeground(Qt::yellow);           /// \todo Hardcoded color
-        if (!already_visited)
-        {
-            visited_ids.insert(ii);
-            updateTreeModel(di, ii, item, visited_ids);
-        }
-        parent->appendRow(item);
-    }
+    assert("Sanity check!" && parent);
+    data->m_last_added_item = new QStandardItem(header_name);
+    parent->appendRow(data->m_last_added_item);
+    auto it = data->m_visited_ids.find(header_id);
+    if (it != end(data->m_visited_ids))
+        data->m_last_added_item->setForeground(Qt::yellow);
+    else
+        data->m_visited_ids.insert(header_id);
+    data->m_last_stack_size = stack_size;
 }
 
 void CppHelperPluginView::includeFileClicked(const QModelIndex& index)
@@ -1127,8 +1121,6 @@ void CppHelperPluginView::includeFileClicked(const QModelIndex& index)
 
     const HeaderFilesCache& cache = const_cast<const CppHelperPlugin* const>(m_plugin)->headersCache();
     QString filename = m_tree_model->itemFromIndex(index)->text();
-    if (filename.endsWith(QLatin1String(" ...")))
-        filename.remove(filename.length() - 4, 4);
     int id = cache[filename];
     if (id != HeaderFilesCache::NOT_FOUND)
     {
@@ -1157,8 +1149,6 @@ void CppHelperPluginView::includeFileClicked(const QModelIndex& index)
 void CppHelperPluginView::dblClickOpenFile(QString&& filename)
 {
     assert("Filename expected to be non empty" && !filename.isEmpty());
-    if (filename.endsWith(QLatin1String(" ...")))
-        filename.remove(filename.length() - 4, 4);
     openFile(filename);
 }
 

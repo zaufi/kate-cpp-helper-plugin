@@ -37,12 +37,14 @@
 # include <clang-c/Index.h>
 # include <map>
 # include <memory>
-# include <set>
 
-namespace kate {
-class CppHelperPlugin;                                  // forward declaration
+namespace kate { namespace details {
+struct InclusionVisitorData;
+}                                                           // namespace details
+class CppHelperPlugin;
 class IncludeHelperCompletionModel;
 class ClangCodeCompletionModel;
+
 
 /**
  * \brief [Type brief class description here]
@@ -112,8 +114,7 @@ private:
     void openFile(const QString&);                          ///< Open a single document
     void openFiles(const QStringList&);                     ///< Open documents for all URIs in a given list
     QStringList findFileLocations(const QString&);          ///< Get list of absolute paths to filename
-    void inclusionVisitor(DocumentInfo*, CXFile, CXSourceLocation*, unsigned);
-    void updateTreeModel(DocumentInfo*, const int, QStandardItem*, std::set<int>&);
+    void inclusionVisitor(details::InclusionVisitorData*, CXFile, CXSourceLocation*, unsigned);
     void dblClickOpenFile(QString&&);
     void updateCppActionsAvailability(const bool);          ///< Enable/disable C++ specific actions in UI
 
