@@ -184,7 +184,7 @@ Version 0.8.8
 -------------
 
 * copy `#include` to clipboard improved (and recent bug has fixed)
-* disable C++ specific cations for non C++ documents
+* disable C++ specific actions for non C++ documents
 * tree builder refactored in `#include` explorer, now everything is Ok w/ tree structure
 
 Version 0.8.7

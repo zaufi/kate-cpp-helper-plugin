@@ -98,13 +98,13 @@ CppHelperPluginView::CppHelperPluginView(
     m_copy_include->setShortcut(QKeySequence(Qt::SHIFT + Qt::Key_F10));
     connect(m_copy_include, SIGNAL(triggered(bool)), this, SLOT(copyInclude()));
 
+#if 0
     actionCollection()->addAction("popup_cpphelper", m_menu.get());
     m_what_is_this = m_menu->menu()->addAction(
         i18n("What is it at cursor?", QString())
       , this
       , SLOT(whatIsThis())
       );
-#if 0
     connect(m_menu->menu(), SIGNAL(aboutToShow()), this, SLOT(aboutToShow()));
 #endif
 
@@ -1048,8 +1048,10 @@ void CppHelperPluginView::inclusionVisitor(
     DCXString header_name_cl = clang_getFileName(file);
     const QString header_name = clang_getCString(header_name_cl);
     const int header_id = m_plugin->headersCache()[header_name];
+#if 0
     kDebug() << "LSS:" << data->m_last_stack_size << ", CSS:" << stack_size;
     kDebug() << "Visiting" << header_name << '[' << header_id << ']';
+#endif
 
     QString included_from;
     unsigned line = 0;
@@ -1065,10 +1067,12 @@ void CppHelperPluginView::inclusionVisitor(
         included_from = clang_getCString(included_from_cl);
         included_from_id = m_plugin->headersCache()[included_from];
         //
+#if 0
         kDebug() << "File" << header_name << "[" << header_id <<
           "] included from" << included_from << '[' << included_from_id <<
           "] @" << line << ':' << column
           ;
+#endif
         // Kate has zero based cursor position
         line--;
         column--;
@@ -1082,7 +1086,9 @@ void CppHelperPluginView::inclusionVisitor(
         // We have to add one more parent
         data->m_parents.push(data->m_last_added_item);
         parent = data->m_last_added_item;
+#if 0
         kDebug() << "Added new parent";
+#endif
     }
     else if (stack_size < data->m_last_stack_size)
     {
@@ -1091,13 +1097,17 @@ void CppHelperPluginView::inclusionVisitor(
             data->m_parents.pop();
         assert("Stack expected to be non empty!" && !data->m_parents.empty());
         parent = data->m_parents.top();
+#if 0
         kDebug() << "Remove some parent(s)";
+#endif
     }
     else
     {
         assert("Sanity check!" && stack_size == data->m_last_stack_size);
         parent = data->m_parents.top();
+#if 0
         kDebug() << "Reuse same parent";
+#endif
     }
     assert("Sanity check!" && parent);
     data->m_last_added_item = new QStandardItem(header_name);
@@ -1115,9 +1125,6 @@ void CppHelperPluginView::includeFileClicked(const QModelIndex& index)
     assert("Document expected to be alive" && m_last_explored_document);
 
     m_list_model->clear();
-#if 0
-    auto* parent = m_list_model->invisibleRootItem();
-#endif
 
     const HeaderFilesCache& cache = const_cast<const CppHelperPlugin* const>(m_plugin)->headersCache();
     QString filename = m_tree_model->itemFromIndex(index)->text();
