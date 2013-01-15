@@ -213,9 +213,11 @@ TranslationUnit::TranslationUnit(
       , m_unsaved_files.size()
       , parse_options
       );
-    showDiagnostic();
     if (!m_unit)
+    {
+        showDiagnostic();
         throw Exception::ParseFailure("Failure to parse C++ code");
+    }
 }
 
 TranslationUnit::TranslationUnit(TranslationUnit&& other) noexcept

@@ -26,7 +26,6 @@
 // Project specific includes
 
 // Standard includes
-// # include <KUrl>
 # include <KTextEditor/Range>
 # include <QtCore/QDir>
 # include <QtCore/QFileInfo>

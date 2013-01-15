@@ -85,7 +85,6 @@ private Q_SLOTS:
     void modeChanged(KTextEditor::Document*);
     void urlChanged(KTextEditor::Document*);
     void textInserted(KTextEditor::Document*, const KTextEditor::Range&);
-    void aboutToShow();
     void whatIsThis();
     void needTextHint(const KTextEditor::Cursor&, QString&);
     void updateInclusionExplorer();
@@ -94,6 +93,9 @@ private Q_SLOTS:
     void includeFileDblClickedFromList(const QModelIndex&);
     void onDocumentClose(KTextEditor::Document*);
     void updateCppActionsAvailability();                    ///< Enable/disable C++ specific actions in UI
+#if 0
+    void aboutToShow();
+#endif
 
 private:
     /// Type to hold a completers associated with a view
@@ -127,8 +129,10 @@ private:
     QStandardItemModel* m_tree_model;
     QStandardItemModel* m_list_model;
     KTextEditor::Document* m_last_explored_document;        ///< Document explored in the \c #includes view
+#if 0
     std::unique_ptr<KActionMenu> m_menu;                    ///< Context menu
     QAction* m_what_is_this;                                ///< Get info about symbol under cursor
+#endif
     completions_models_map_type m_completers;               ///< Registered completers by view
 };
 
