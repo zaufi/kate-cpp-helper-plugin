@@ -84,10 +84,9 @@ CppHelperPluginView::CppHelperPluginView(
   , m_tree_model(new QStandardItemModel())
   , m_list_model(new QStandardItemModel())
   , m_last_explored_document(nullptr)
-#if 0
   , m_menu(new KActionMenu(i18n("C++ Helper: Playground"), this))
-#endif
 {
+    //BEGIN Setup plugin actions
     m_open_header->setText(i18n("Open Header Under Cursor"));
     m_open_header->setShortcut(QKeySequence(Qt::Key_F10));
     connect(m_open_header, SIGNAL(triggered(bool)), this, SLOT(openHeader()));
@@ -100,7 +99,6 @@ CppHelperPluginView::CppHelperPluginView(
     m_copy_include->setShortcut(QKeySequence(Qt::SHIFT + Qt::Key_F10));
     connect(m_copy_include, SIGNAL(triggered(bool)), this, SLOT(copyInclude()));
 
-#if 0
     actionCollection()->addAction("popup_cpphelper", m_menu.get());
     m_what_is_this = m_menu->menu()->addAction(
         i18n("What is it at cursor?", QString())
@@ -108,7 +106,7 @@ CppHelperPluginView::CppHelperPluginView(
       , SLOT(whatIsThis())
       );
     connect(m_menu->menu(), SIGNAL(aboutToShow()), this, SLOT(aboutToShow()));
-#endif
+    //END Setup plugin actions
 
     // On viewCreated we have to subscribe self to monitor 
     // some document properties and act correspondignly:
@@ -919,7 +917,6 @@ KTextEditor::Range CppHelperPluginView::findIncludeFilenameNearCursor() const
     return KTextEditor::Range(line, start, line, end);
 }
 
-#if 0
 void CppHelperPluginView::aboutToShow()
 {
     assert(
@@ -945,7 +942,70 @@ void CppHelperPluginView::aboutToShow()
     m_what_is_this->setEnabled(false);
     m_what_is_this->setText(i18n("What is ..."));
 }
-#endif
+
+namespace {
+const char* getEntityKindString(CXIdxEntityKind kind)
+{
+    switch (kind)
+    {
+        case CXIdxEntity_Unexposed: return "<<UNEXPOSED>>";
+        case CXIdxEntity_Typedef: return "typedef";
+        case CXIdxEntity_Function: return "function";
+        case CXIdxEntity_Variable: return "variable";
+        case CXIdxEntity_Field: return "field";
+        case CXIdxEntity_EnumConstant: return "enumerator";
+        case CXIdxEntity_ObjCClass: return "objc-class";
+        case CXIdxEntity_ObjCProtocol: return "objc-protocol";
+        case CXIdxEntity_ObjCCategory: return "objc-category";
+        case CXIdxEntity_ObjCInstanceMethod: return "objc-instance-method";
+        case CXIdxEntity_ObjCClassMethod: return "objc-class-method";
+        case CXIdxEntity_ObjCProperty: return "objc-property";
+        case CXIdxEntity_ObjCIvar: return "objc-ivar";
+        case CXIdxEntity_Enum: return "enum";
+        case CXIdxEntity_Struct: return "struct";
+        case CXIdxEntity_Union: return "union";
+        case CXIdxEntity_CXXClass: return "c++-class";
+        case CXIdxEntity_CXXNamespace: return "namespace";
+        case CXIdxEntity_CXXNamespaceAlias: return "namespace-alias";
+        case CXIdxEntity_CXXStaticVariable: return "c++-static-var";
+        case CXIdxEntity_CXXStaticMethod: return "c++-static-method";
+        case CXIdxEntity_CXXInstanceMethod: return "c++-instance-method";
+        case CXIdxEntity_CXXConstructor: return "constructor";
+        case CXIdxEntity_CXXDestructor: return "destructor";
+        case CXIdxEntity_CXXConversionFunction: return "conversion-func";
+        case CXIdxEntity_CXXTypeAlias: return "type-alias";
+        case CXIdxEntity_CXXInterface: return "c++-__interface";
+        default: assert(!"Garbage entity kind");
+    }
+    return 0;
+}
+
+const char* getEntityTemplateKindString(CXIdxEntityCXXTemplateKind kind)
+{
+    switch (kind)
+    {
+        case CXIdxEntity_NonTemplate: return "";
+        case CXIdxEntity_Template: return "-template";
+        case CXIdxEntity_TemplatePartialSpecialization:
+            return "-template-partial-spec";
+        case CXIdxEntity_TemplateSpecialization: return "-template-spec";
+        default:
+            assert(!"Garbage entity kind");
+    }
+    return 0;
+}
+
+const char* getCXIndexContainer(const CXIdxContainerInfo *info)
+{
+    CXIdxClientContainer container;
+    container = clang_index_getClientContainer(info);
+    if (!container)
+        return "[<<NULL>>]";
+    return (const char *)container;
+}
+
+
+}                                                           // anonymous namespace
 
 void CppHelperPluginView::whatIsThis()
 {
@@ -990,6 +1050,71 @@ void CppHelperPluginView::whatIsThis()
     DCXString usr = clang_getCursorUSR(ctx);
     kDebug() << "USR:" << clang_getCString(usr);
 #endif
+
+    IndexerCallbacks index_callbacks = {
+        // abort query
+        [](CXClientData client_data, void*) -> int
+        {
+            auto* const self = static_cast<CppHelperPluginView*>(client_data);
+            kDebug() << "CB: abort query";
+            return 0;
+        }
+      , [](CXClientData, CXDiagnosticSet, void*)
+        {
+            kDebug() << "CB: diagnostic";
+        }
+      , // entered main file
+        [](CXClientData client_data, CXFile file, void*) -> CXIdxClientFile
+        {
+            DCXString filename = clang_getFileName(file);
+            kDebug() << "CB: entering" << clang_getCString(filename);
+            return static_cast<CXIdxClientFile>(file);
+        }
+      , [](CXClientData client_data, const CXIdxIncludedFileInfo* info) -> CXIdxClientFile
+        {
+            kDebug() << "CB: #included file:" << info->filename;
+            return static_cast<CXIdxClientFile>(info->file);
+        }
+      , [](CXClientData client_data, const CXIdxImportedASTFileInfo* info) -> CXIdxClientASTFile
+        {
+            kDebug() << "CB: AST file imported";
+            return static_cast<CXIdxClientFile>(info->file);
+        }
+      , [](CXClientData client_data, void*) -> CXIdxClientContainer
+        {
+            kDebug() << "CB: TU started";
+            return nullptr;
+        }
+      , [](CXClientData client_data, const CXIdxDeclInfo* info)
+        {
+            const char* name = info->entityInfo->name ? info->entityInfo->name : "anonymous";
+            kDebug() << "CB: index declaration: name =" << name;
+            kDebug() << "CB: index declaration: kind =" << getEntityKindString(info->entityInfo->kind) <<
+              ' ' << getEntityTemplateKindString(info->entityInfo->templateKind);
+            kDebug() << "CB: index declaration: cursor:" << info->cursor;
+            kDebug() << "CB: index declaration: semantic container:" << getCXIndexContainer(info->semanticContainer);
+            kDebug() << "CB: index declaration: lexican container:" << getCXIndexContainer(info->lexicalContainer);
+        }
+      , [](CXClientData client_data, const CXIdxEntityRefInfo* info)
+        {
+            kDebug() << "CB: index reference";
+        }
+    };
+
+    auto index = m_plugin->localIndex();
+    CXTranslationUnit unit = m_plugin->getTranslationUnitByDocument(
+        mainWindow()->activeView()->document()
+      , false
+      );
+    DCXIndexAction action = clang_IndexAction_create(index);
+    auto result = clang_indexTranslationUnit(
+        action
+      , nullptr
+      , &index_callbacks
+      , sizeof(index_callbacks)
+      , CXIndexOpt_IndexFunctionLocalSymbols //| CXIndexOpt_SuppressRedundantRefs
+      , unit
+      );
 }
 
 namespace details {

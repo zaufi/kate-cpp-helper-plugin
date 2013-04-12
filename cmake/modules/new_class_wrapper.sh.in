@@ -1,10 +1,18 @@
 #!/bin/sh
-# Copyright 2011,2012 by Alex Turbov <i.zaufi@gmail.com>
+# Copyright 2004-2013 by Alex Turbov <i.zaufi@gmail.com>
 #
 # Helper to generate class skeletons
 #
+#
+# TODO Add parameters to control what to generate: header only and/or implementation
+#
+# TODO Guess `subdir' from `ns' and vise versa if smth absent
+#
+# TODO Add parameter to control filename if latter isn't same as a class name... or maybe
+#      better to generate a file w/o predefined class if `fn' specified instead of `class'
+#
 
-. @CMAKE_SOURCE_DIR@/cmake/support/output-helpers.sh
+. @DSGT_BASE_DIR@/output-helpers.sh
 
 show_help()
 {
@@ -13,7 +21,7 @@ show_help()
     einfo "  class  -- class name to generate skeletons for"
     einfo "  subdir -- dir to put generated sources to (relative to project root)"
     einfo "  ns     -- namespaces to put generated class into"
-    einfo "Exmaple: make new-class class=some_class subdir=dzen/debug ns=dzen::debug"
+    einfo "Exmaple: make new-class class=some_class subdir=src/common ns=myspace::common"
 }
 
 if [ -z "$class" ]; then
@@ -39,19 +47,20 @@ xCamel)
 esac
 
 # Ok. Lets work!
-ebegin "Generate class skeleton files for $class: $transformed_name.cpp and $transformed_name.h"
+ebegin "Generate class skeleton files for $class: $transformed_name.@SKELETON_IMPL_EXT@ and $transformed_name.@SKELETON_HEADER_EXT@"
 rf=@CMAKE_BINARY_DIR@/$transformed_name.def
 # Generate response file for autogen
-echo "autogen definitions @CMAKE_SOURCE_DIR@/cmake/support/class.tpl;" > $rf \
+echo "autogen definitions @CMAKE_BINARY_DIR@/class.tpl;" > $rf \
   && echo "subdir=$subdir;" >> $rf \
   && echo "guard_base=`echo "$subdir" | sed -e 's,/,__,g' -e 's,[^0-9A-Za-z],_,g'`;" >> $rf \
   && echo "classname=$class;" >> $rf \
+  && echo "no_license=@NO_LICENSE@;" >>$rf \
   && echo "project=@PROJECT_NAME@;" >> $rf \
   && echo "filename=$transformed_name;" >> $rf \
-  && ( test -n "$ns" && echo "$ns" | awk -F '::' -f @CMAKE_SOURCE_DIR@/cmake/support/mknslist.awk >> $rf \
-      || ( test -f @CMAKE_SOURCE_DIR@/cmake/support/tpl-defaults.def && cat @CMAKE_SOURCE_DIR@/cmake/support/tpl-defaults.def >> $rf ) \
+  && ( test -n "$ns" && echo "$ns" | awk -F '::' -f @DSGT_BASE_DIR@/mknslist.awk >> $rf \
+      || ( test -f @CMAKE_BINARY_DIR@/tpl_defaults.def && cat @CMAKE_BINARY_DIR@/tpl_defaults.def >> $rf ) \
       ) \
-  && @AUTOGEN_EXECUTABLE@ -L @CMAKE_SOURCE_DIR@/cmake/support $rf
+  && @AUTOGEN_EXECUTABLE@ -L @CMAKE_BINARY_DIR@ $rf
 result=$?
 eend $result
 test "$result" = "0" || exit 1
@@ -60,7 +69,7 @@ if [ "@CMAKE_BINARY_DIR@" != "@CMAKE_SOURCE_DIR@" ]; then
     # Move generated files from CMAKE_BINARY_DIR to desired subdir (if exists)
     dst=`test -d "@CMAKE_SOURCE_DIR@/$subdir" && echo "@CMAKE_SOURCE_DIR@/$subdir" || echo "@CMAKE_SOURCE_DIR@"`
     ebegin "Move generated files to $dst"
-    mv -i @CMAKE_BINARY_DIR@/$transformed_name.h @CMAKE_BINARY_DIR@/$transformed_name.cpp $dst
+    mv -i @CMAKE_BINARY_DIR@/$transformed_name.@SKELETON_HEADER_EXT@ @CMAKE_BINARY_DIR@/$transformed_name.@SKELETON_IMPL_EXT@ $dst
     eend $?
 fi
 

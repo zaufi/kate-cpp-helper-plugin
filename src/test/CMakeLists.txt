@@ -9,9 +9,16 @@ set(UNIT_TESTS_SOURCES
   )
 
 # Unit tests executable
-add_executable(${UNIT_TESTS} ${UNIT_TESTS_SOURCES})
-target_link_libraries(${UNIT_TESTS}
+add_executable(
+    ${UNIT_TESTS}
+    ${UNIT_TESTS_SOURCES}
+  )
+target_link_libraries(
+    ${UNIT_TESTS}
     ${KDE4_KTEXTEDITOR_LIBS}
     ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}
   )
-add_boost_tests(${UNIT_TESTS} "--catch_system_errors=no" ${UNIT_TESTS_SOURCES})
+add_boost_tests(
+    TARGET ${UNIT_TESTS}
+    SOURCES ${UNIT_TESTS_SOURCES}
+  )

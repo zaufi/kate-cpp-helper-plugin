@@ -1,9 +1,7 @@
+# Copyright 2012 by Alex Turbov <i.zaufi@gmail.com>
 #
 # Find clang C API library
 #
-# Copyright 2012 by Alex Turbov <i.zaufi@gmail.com>
-#
-# kate: hl cmake;
 
 include(FindPackageHandleStandardArgs)
 
@@ -35,7 +33,7 @@ find_library(
 try_run(
     _clang_get_version_run_result
     _clang_get_version_compile_result
-    ${CMAKE_BINARY_DIR} ${CMAKE_SOURCE_DIR}/cmake/modules/libclang-get-version.cpp
+    ${CMAKE_BINARY_DIR} ${CMAKE_CURRENT_LIST_DIR}/libclang-get-version.cpp
     COMPILE_DEFINITIONS ${LLVM_CXXFLAGS}
     CMAKE_FLAGS -DLINK_LIBRARIES:STRING=${LIBCLANG_LIBRARY}
     COMPILE_OUTPUT_VARIABLE _clang_get_version_compile_output
@@ -59,3 +57,10 @@ find_package_handle_standard_args(
     REQUIRED_VARS LIBCLANG_LIBRARY
     VERSION_VAR LIBCLANG_VERSION
   )
+
+# kate: hl cmake;
+# X-Chewy-RepoBase: https://raw.github.com/mutanabbi/chewy-cmake-rep/master/
+# X-Chewy-Path: FindLibClang.cmake
+# X-Chewy-Version: 1.1
+# X-Chewy-Description: Find clang C API library
+# X-Chewy-AddonFile: libclang-get-version.cpp

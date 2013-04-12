@@ -1,6 +1,6 @@
+# Copyright (c) 2012 by Alex Turbov
 #
 # Collect a list of foreign headers used in a project as a file to be compiled into PCH
-# Copyright (c) 2012 by Alex Turbov
 #
 
 execute_process(
@@ -12,12 +12,11 @@ execute_process(
  )
 # message(STATUS "tldm: ${TOP_LEVEL_SOURCE_DIRS_MASK}")
 
-
 execute_process(
-    COMMAND grep -r -e "^#\\s*include\\s*<.*>" --include=*.h --include=*.cpp
-    @update_pch_header_FILTER_DIRS_COMMAND@
+    COMMAND grep -r -e "^#\\s*include\\s*<.*>" --include=*.hh --include=*.cc
+    @use_pch_file_FILTER_DIRS_COMMAND@
     COMMAND sed -e "s,[^:]*:# *include *<\\(.*\\)>.*$,\\1,"
-    @update_pch_header_FILTER_FILES_COMMAND@
+    @use_pch_file_FILTER_FILES_COMMAND@
     COMMAND sort
     COMMAND uniq -c
     COMMAND sort -nr
@@ -32,6 +31,6 @@ string(RANDOM LENGTH 15 ALPHABET "QWERTYUIOPASDFGHJKLZXCVBNM0123456789" use_pch_
 set(use_pch_file_GUARD "__PCH_${use_pch_file_GUARD}__")
 
 # Render a PCH file
-configure_file(@CMAKE_SOURCE_DIR@/cmake/modules/pch-template.h.in @update_pch_header_PCH_FILE@ @ONLY)
+configure_file(@CMAKE_SOURCE_DIR@/cmake/modules/pch-template.h.in @use_pch_file_PCH_FILE@ @ONLY)
 
 # kate: hl cmake;

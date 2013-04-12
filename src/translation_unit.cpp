@@ -214,10 +214,7 @@ TranslationUnit::TranslationUnit(
       , parse_options
       );
     if (!m_unit)
-    {
-        showDiagnostic();
         throw Exception::ParseFailure("Failure to parse C++ code");
-    }
 }
 
 TranslationUnit::TranslationUnit(TranslationUnit&& other) noexcept
@@ -507,11 +504,11 @@ void TranslationUnit::showDiagnostic()
 unsigned TranslationUnit::defaultPCHParseOptions()
 {
     return CXTranslationUnit_Incomplete
-        | CXTranslationUnit_PrecompiledPreamble
+      | CXTranslationUnit_PrecompiledPreamble
 #if CLANG_VERSION >= 30200
-        | CXTranslationUnit_ForSerialization
+      | CXTranslationUnit_ForSerialization
 #endif                                                      // CLANG_VERSION >= 30200
-        ;
+      ;
 }
 
 unsigned TranslationUnit::defaultEditingParseOptions()

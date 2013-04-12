@@ -105,15 +105,8 @@ inline QDebug operator<<(QDebug dbg, const CXCursor& c)
     auto kind = clang_getCursorKind(c);
     DCXString kind_str = clang_getCursorKindSpelling(kind);
     DCXString csp_str = clang_getCursorDisplayName(c);
-#if 0
-    auto type = clang_getCursorType(c);
-    DCXString type_kind_str = clang_getTypeKindSpelling(type.kind);
-#endif
     dbg.nospace() << clang_getCursorLocation(c) << ": entity:" << clang_getCString(csp_str)
       << ", kind:" << clang_getCString(kind_str);
-#if 0
-      << ", type:" << clang_getCString(type_kind_str);
-#endif
     return dbg.space();
 }
 

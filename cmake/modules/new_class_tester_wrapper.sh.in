@@ -1,10 +1,10 @@
 #!/bin/sh
-# Copyright 2011,2012 by Alex Turbov <i.zaufi@gmail.com>
+# Copyright 2004-2013 by Alex Turbov <i.zaufi@gmail.com>
 #
 # Helper to generate unit test skeletons
 #
 
-. @PROJECT_SOURCE_DIR@/cmake/support/output-helpers.sh
+. @DSGT_BASE_DIR@/output-helpers.sh
 
 show_help()
 {
@@ -33,20 +33,21 @@ esac
 ebegin "Generate class skeleton unit-test file for class $class: ${transformed_name}_tester.cpp"
 rf=@PROJECT_BINARY_DIR@/$transformed_name.def
 # Generate response file for autogen
-echo "autogen definitions @PROJECT_SOURCE_DIR@/cmake/support/class_tester.tpl;" > $rf \
+echo "autogen definitions @CMAKE_BINARY_DIR@/class_tester.tpl;" > $rf \
   && echo "classname=$class;" >> $rf \
+  && echo "no_license=@NO_LICENSE@;" >>$rf \
   && echo "filename=$transformed_name;" >> $rf \
   && echo "project=@PROJECT_NAME@;" >> $rf \
-  && @AUTOGEN_EXECUTABLE@ -L @PROJECT_SOURCE_DIR@/cmake/support $rf
+  && @AUTOGEN_EXECUTABLE@ -L @CMAKE_BINARY_DIR@ $rf
 result=$?
 eend $result
 test "$result" = "0" || exit 1
 
-if [ "@PROJECT_BINARY_DIR@" != "@PROJECT_SOURCE_DIR@" ]; then
-    # Move generated files from PROJECT_BINARY_DIR to desired subdir (if exists)
-    dst=`test -d "@PROJECT_SOURCE_DIR@/$subdir" && echo "@PROJECT_SOURCE_DIR@/$subdir" || echo "@PROJECT_SOURCE_DIR@"`
+if [ "@CMAKE_BINARY_DIR@" != "@CMAKE_SOURCE_DIR@" ]; then
+    # Move generated files from CMAKE_BINARY_DIR to desired subdir (if exists)
+    dst=`test -d "@CMAKE_SOURCE_DIR@/$subdir" && echo "@CMAKE_SOURCE_DIR@/$subdir" || echo "@CMAKE_SOURCE_DIR@"`
     ebegin "Move $transformed_name""_tester.cpp to $dst"
-    mv -i "@PROJECT_BINARY_DIR@/${transformed_name}_tester.cpp" $dst
+    mv -i "@CMAKE_BINARY_DIR@/${transformed_name}_tester.@SKELETON_IMPL_EXT@" $dst
     eend $?
 fi
 
@@ -57,11 +58,12 @@ eend $?
 
 # Validate configuration
 einfo "Validate build configuration..."
-if [ ! -f "@PROJECT_SOURCE_DIR@/$subdir/CMakeLists.txt" ]; then
-  ebegin "Making @PROJECT_SOURCE_DIR@/$subdir/CMakeLists.txt..."
-  sed "s,FIRST_SOURCE_FILE,${transformed_name}_tester.cpp," "@PROJECT_SOURCE_DIR@/cmake/support/TestCMakeLists.txt.in" \
-    > "@PROJECT_SOURCE_DIR@/$subdir/CMakeLists.txt"
+if [ ! -f "@CMAKE_SOURCE_DIR@/$subdir/CMakeLists.txt" -a -d "@CMAKE_SOURCE_DIR@/$subdir" ]; then
+  ebegin "Making @CMAKE_SOURCE_DIR@/$subdir/CMakeLists.txt..."
+  sed "s,FIRST_SOURCE_FILE,${transformed_name}_tester.@SKELETON_IMPL_EXT@," "@DSGT_BASE_DIR@/TestCMakeLists.txt.in" \
+    > "@CMAKE_SOURCE_DIR@/$subdir/CMakeLists.txt"
   eend $?
+  ewarn "Do not forget to update an upper level CMakeLists.txt with 'add_subdirrectory(tests)'"
 else
-  ewarn "Do not forget to update @PROJECT_SOURCE_DIR@/$subdir/CMakeLists.txt!"
+  ewarn "Do not forget to update @CMAKE_SOURCE_DIR@/$subdir/CMakeLists.txt!"
 fi

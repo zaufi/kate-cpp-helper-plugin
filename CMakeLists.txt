@@ -85,9 +85,19 @@ add_definitions(${LLVM_CXXFLAGS})
 #       To make sure all vars r defined!
 #---------------------------------------------------------
 
-#include(DefineDoxyDocsTargetIfPossible)
-set(NAMING_STYLE Camel)
+include(DefineDoxyDocsTargetIfPossible)
 include(DefineSkeletonGenerationTargetsIfPossible)
+define_skeleton_generation_targets(
+    PROJECT_LICENSE GPL
+    PROJECT_NAMESPACE kate
+    PROJECT_OWNER "Alex Turbov"
+    PROJECT_YEARS "2011-2013"
+    HEADER_EXT "h"
+    IMPL_EXT "cpp"
+    ENABLE_TESTS
+    USE_CAMEL_STYLE
+  )
+
 include(UpdatePCHFile)
 update_pch_header(
     PCH_FILE ${CMAKE_BINARY_DIR}/most_included_files.h
