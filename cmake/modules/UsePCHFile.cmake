@@ -38,14 +38,14 @@ function(use_pch_file)
     # Render a script to produce a header file w/ most used external headers
     configure_file(
         ${_USE_PHC_FILE_MODULE_BASE_DIR}/PreparePCHHeader.cmake.in
-        ${_USE_PHC_FILE_MODULE_BASE_DIR}/PreparePCHHeader.cmake
+        ${CMAKE_BINARY_DIR}/PreparePCHHeader.cmake
         @ONLY
       )
 
     add_custom_target(
         update-pch-header
         COMMAND ${CMAKE_COMMAND} -P ${_USE_PHC_FILE_MODULE_BASE_DIR}/PreparePCHHeader.cmake
-        MAIN_DEPENDENCY ${_USE_PHC_FILE_MODULE_BASE_DIR}/PreparePCHHeader.cmake
+        MAIN_DEPENDENCY ${CMAKE_BINARY_DIR}/PreparePCHHeader.cmake
         COMMENT "Updating ${use_pch_file_PCH_FILE}"
       )
 
@@ -54,7 +54,7 @@ endfunction()
 # kate: hl cmake;
 # X-Chewy-RepoBase: https://raw.github.com/mutanabbi/chewy-cmake-rep/master/
 # X-Chewy-Path: UsePCHFile.cmake
-# X-Chewy-Version: 2.5
+# X-Chewy-Version: 2.6
 # X-Chewy-Description: Add Precompiled Header Support
 # X-Chewy-AddonFile: PreparePCHHeader.cmake.in
 # X-Chewy-AddonFile: pch-template.h.in

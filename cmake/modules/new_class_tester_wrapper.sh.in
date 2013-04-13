@@ -38,7 +38,7 @@ echo "autogen definitions @CMAKE_BINARY_DIR@/class_tester.tpl;" > $rf \
   && echo "no_license=@NO_LICENSE@;" >>$rf \
   && echo "filename=$transformed_name;" >> $rf \
   && echo "project=@PROJECT_NAME@;" >> $rf \
-  && @AUTOGEN_EXECUTABLE@ -L @CMAKE_BINARY_DIR@ $rf
+  && @AUTOGEN_EXECUTABLE@ -L @CMAKE_SOURCE_DIR@ -L @CMAKE_BINARY_DIR@ $rf
 result=$?
 eend $result
 test "$result" = "0" || exit 1

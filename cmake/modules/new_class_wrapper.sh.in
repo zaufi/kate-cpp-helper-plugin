@@ -60,7 +60,7 @@ echo "autogen definitions @CMAKE_BINARY_DIR@/class.tpl;" > $rf \
   && ( test -n "$ns" && echo "$ns" | awk -F '::' -f @DSGT_BASE_DIR@/mknslist.awk >> $rf \
       || ( test -f @CMAKE_BINARY_DIR@/tpl_defaults.def && cat @CMAKE_BINARY_DIR@/tpl_defaults.def >> $rf ) \
       ) \
-  && @AUTOGEN_EXECUTABLE@ -L @CMAKE_BINARY_DIR@ $rf
+  && @AUTOGEN_EXECUTABLE@ -L @CMAKE_SOURCE_DIR@ -L @CMAKE_BINARY_DIR@ $rf
 result=$?
 eend $result
 test "$result" = "0" || exit 1
