@@ -14,11 +14,13 @@
  */[+ IF (== (get "no_license") "no") +]
 /*
 [+ (license-full "@PROJECT_LICENSE@" "@PROJECT_PREFIX@" " * " "@PROJECT_OWNER@" "@PROJECT_YEARS@") +]
- */[+ ENDIF +][+define incguard+]__[+ (string-upcase (get "guard_base")) +]__[+ (string-upcase (get "filename")) +]_HH__[+enddef +][+
+ */[+ ENDIF +][+ IF (== (get "use_pragma") "no") +][+ define incguard
++]__[+ (string-upcase (get "guard_base")) +]__[+ (string-upcase (get "filename")) +]_HH__[+
+enddef +][+ ENDIF +][+
 IF ( == (suffix) "hh") +]
 [+(out-move (sprintf "%s.@SKELETON_HEADER_EXT@" (get "filename"))) +]
-#ifndef [+ incguard +]
-# define [+ incguard +]
+[+ IF (== (get "use_pragma") "no") +]#ifndef [+ incguard +]
+# define [+ incguard +][+ELSE+]#pragma once[+ENDIF+]
 
 // Project specific includes
 
@@ -43,8 +45,8 @@ public:
     virtual ~[+ classname +]() {}
 };
 
-[+ ns-close +]// namespace [+ ns-rev-list +]
-#endif                                                      // [+ incguard +][+
+[+ ns-close +]// namespace [+ ns-rev-list +][+ IF (== (get "use_pragma") "no") +]
+#endif                                                      // [+ incguard +][+ ENDIF +][+
 (set-writable 1) +][+
 ELSE +]
 

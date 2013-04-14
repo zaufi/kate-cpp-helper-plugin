@@ -54,6 +54,7 @@ echo "autogen definitions @CMAKE_BINARY_DIR@/class.tpl;" > $rf \
   && echo "subdir=$subdir;" >> $rf \
   && echo "guard_base=`echo "$subdir" | sed -e 's,/,__,g' -e 's,[^0-9A-Za-z],_,g'`;" >> $rf \
   && echo "classname=$class;" >> $rf \
+  && echo "use_pragma=@USE_PRAGMA_ONCE@;" >>$rf \
   && echo "no_license=@NO_LICENSE@;" >>$rf \
   && echo "project=@PROJECT_NAME@;" >> $rf \
   && echo "filename=$transformed_name;" >> $rf \

@@ -18,7 +18,7 @@ function(define_skeleton_generation_targets)
     endif()
 
     # Parse function arguments
-    set(options USE_CAMEL_STYLE ENABLE_TESTS)
+    set(options USE_CAMEL_STYLE ENABLE_TESTS USE_PRAGMA_ONCE)
     set(one_value_args HEADER_EXT IMPL_EXT PROJECT_PREFIX PROJECT_LICENSE PROJECT_NAMESPACE PROJECT_OWNER PROJECT_YEARS)
     set(multi_value_args)
     cmake_parse_arguments(define_skeleton_generation_targets "${options}" "${one_value_args}" "${multi_value_args}" ${ARGN})
@@ -34,6 +34,12 @@ function(define_skeleton_generation_targets)
     # Check optional arguments and assign defaults of ommited
     if(define_skeleton_generation_targets_USE_CAMEL_STYLE)
         set(NAMING_STYLE "Camel")
+    endif()
+    #
+    if(define_skeleton_generation_targets_USE_PRAGMA_ONCE)
+        set(USE_PRAGMA_ONCE "yes")
+    else()
+        set(USE_PRAGMA_ONCE "no")
     endif()
     #
     if(define_skeleton_generation_targets_HEADER_EXT)
@@ -139,7 +145,7 @@ endfunction()
 # kate: hl cmake;
 # X-Chewy-RepoBase: https://raw.github.com/mutanabbi/chewy-cmake-rep/master/
 # X-Chewy-Path: DefineSkeletonGenerationTargetsIfPossible.cmake
-# X-Chewy-Version: 5.3
+# X-Chewy-Version: 5.4
 # X-Chewy-Description: Add targets to generate class header/implementation and unit-tests skeleton files
 # X-Chewy-AddonFile: TestCMakeLists.txt.in
 # X-Chewy-AddonFile: class.tpl.in
