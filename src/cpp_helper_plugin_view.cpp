@@ -99,6 +99,7 @@ CppHelperPluginView::CppHelperPluginView(
     m_copy_include->setShortcut(QKeySequence(Qt::SHIFT + Qt::Key_F10));
     connect(m_copy_include, SIGNAL(triggered(bool)), this, SLOT(copyInclude()));
 
+#if 0
     actionCollection()->addAction("popup_cpphelper", m_menu.get());
     m_what_is_this = m_menu->menu()->addAction(
         i18n("What is it at cursor?", QString())
@@ -106,6 +107,7 @@ CppHelperPluginView::CppHelperPluginView(
       , SLOT(whatIsThis())
       );
     connect(m_menu->menu(), SIGNAL(aboutToShow()), this, SLOT(aboutToShow()));
+#endif
     //END Setup plugin actions
 
     // On viewCreated we have to subscribe self to monitor 
@@ -374,6 +376,13 @@ void CppHelperPluginView::switchIfaceImpl()
     }
 }
 
+/**
+ * Funtction to gather a list of candidates when switching header/implementation.
+ * \param name filename to lookup header/implementation for
+ * \param path path to check for candidates
+ * \param extensions list of extensions to try
+ * \return list of possible candidates
+ */
 QStringList CppHelperPluginView::findCandidatesAt(
     const QString& name
   , const QString& path
@@ -393,6 +402,9 @@ QStringList CppHelperPluginView::findCandidatesAt(
     return result;
 }
 
+/**
+ * Action to open a header under cursor
+ */
 void CppHelperPluginView::openHeader()
 {
     assert(
@@ -575,7 +587,7 @@ void CppHelperPluginView::copyInclude()
 }
 
 /**
- * \todo What if view/document will change mme type? (after save as... for example)?
+ * \todo What if view/document will change mime type? (after save as... for example)?
  * Maybe better to check highlighting style? For example wen new document just created,
  * but highlighted as C++ the code below wouldn't work! Even more, after document gets
  * saved to disk completion still wouldn't work! That is definitely SUXX
@@ -612,7 +624,7 @@ void CppHelperPluginView::viewCreated(KTextEditor::View* view)
     connect(
         doc
       , SIGNAL(textInserted(KTextEditor::Document*, const KTextEditor::Range&))
-      , m_plugin
+      , this
       , SLOT(textInserted(KTextEditor::Document*, const KTextEditor::Range&))
       );
     // Unnamed documents can change highlighting mode, so we have to register
@@ -708,6 +720,9 @@ void CppHelperPluginView::urlChanged(KTextEditor::Document* doc)
         m_plugin->updateDocumentInfo(doc);
 }
 
+/**
+ * \todo Move to the plugin class?
+ */
 void CppHelperPluginView::textInserted(KTextEditor::Document* doc, const KTextEditor::Range& range)
 {
     kDebug() << doc << " new text: " << doc->text(range);
