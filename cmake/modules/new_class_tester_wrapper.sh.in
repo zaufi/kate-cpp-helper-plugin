@@ -60,6 +60,7 @@ eend $?
 einfo "Validate build configuration..."
 if [ ! -f "@CMAKE_SOURCE_DIR@/$subdir/CMakeLists.txt" -a -d "@CMAKE_SOURCE_DIR@/$subdir" ]; then
   ebegin "Making @CMAKE_SOURCE_DIR@/$subdir/CMakeLists.txt..."
+  # TODO Use cmake to render a configuration file
   sed "s,FIRST_SOURCE_FILE,${transformed_name}_tester.@SKELETON_IMPL_EXT@," "@DSGT_BASE_DIR@/TestCMakeLists.txt.in" \
     > "@CMAKE_SOURCE_DIR@/$subdir/CMakeLists.txt"
   eend $?

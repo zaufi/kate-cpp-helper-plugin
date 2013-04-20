@@ -85,7 +85,29 @@ add_definitions(${LLVM_CXXFLAGS})
 #       To make sure all vars r defined!
 #---------------------------------------------------------
 
+# Setup doxygen
+set(DOXYGEN_PROJECT_BRIEF "\"Kate C++ Helper Plugin\"")
+set(DOXYGEN_TAGFILES "~/.cache/doxygen/libstdc++.tag=http://gcc.gnu.org/onlinedocs/libstdc++/latest-doxygen/")
+set(DOXYGEN_PROJECT_NUMBER ${VERSION_STRING})
+set(DOXYGEN_BUILTIN_STL_SUPPORT YES)
+set(DOXYGEN_FULL_PATH_NAMES YES)
+set(DOXYGEN_INLINE_SIMPLE_STRUCTS YES)
+set(DOXYGEN_SOURCE_BROWSER YES)
+set(DOXYGEN_STRIP_CODE_COMMENTS NO)
+set(DOXYGEN_GENERATE_LATEX NO)
+set(DOXYGEN_DOT_CLEANUP NO)
+set(DOXYGEN_EXTRACT_ALL YES)
+set(DOXYGEN_EXTRACT_PRIVATE YES)
+set(DOXYGEN_EXTRACT_STATIC YES)
+set(DOXYGEN_EXTRACT_LOCAL_METHODS YES)
+set(DOXYGEN_INTERNAL_DOCS YES)
+set(DOXYGEN_SORT_BRIEF_DOCS YES)
+set(DOXYGEN_SORT_MEMBERS_CTORS_1ST YES)
+set(DOXYGEN_SORT_GROUP_NAMES YES)
+set(DOXYGEN_SORT_BY_SCOPE_NAME YES)
+set(DOXYGEN_STRIP_CODE_COMMENTS NO)
 include(DefineDoxyDocsTargetIfPossible)
+
 include(DefineSkeletonGenerationTargetsIfPossible)
 define_skeleton_generation_targets(
     PROJECT_LICENSE GPL
