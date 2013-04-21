@@ -84,7 +84,9 @@ CppHelperPluginView::CppHelperPluginView(
   , m_tree_model(new QStandardItemModel())
   , m_list_model(new QStandardItemModel())
   , m_last_explored_document(nullptr)
+#if 0
   , m_menu(new KActionMenu(i18n("C++ Helper: Playground"), this))
+#endif
 {
     //BEGIN Setup plugin actions
     m_open_header->setText(i18n("Open Header Under Cursor"));
@@ -932,6 +934,7 @@ KTextEditor::Range CppHelperPluginView::findIncludeFilenameNearCursor() const
     return KTextEditor::Range(line, start, line, end);
 }
 
+#if 0
 void CppHelperPluginView::aboutToShow()
 {
     assert(
@@ -957,6 +960,8 @@ void CppHelperPluginView::aboutToShow()
     m_what_is_this->setEnabled(false);
     m_what_is_this->setText(i18n("What is ..."));
 }
+#endif
+#if 0
 
 namespace {
 const char* getEntityKindString(CXIdxEntityKind kind)
@@ -1131,6 +1136,7 @@ void CppHelperPluginView::whatIsThis()
       , unit
       );
 }
+#endif
 
 namespace details {
 struct InclusionVisitorData

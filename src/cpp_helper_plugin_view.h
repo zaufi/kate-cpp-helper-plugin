@@ -85,7 +85,9 @@ private Q_SLOTS:
     void modeChanged(KTextEditor::Document*);
     void urlChanged(KTextEditor::Document*);
     void textInserted(KTextEditor::Document*, const KTextEditor::Range&);
+#if 0
     void whatIsThis();
+#endif
     void needTextHint(const KTextEditor::Cursor&, QString&);
     void updateInclusionExplorer();
     void includeFileClicked(const QModelIndex&);
@@ -93,7 +95,9 @@ private Q_SLOTS:
     void includeFileDblClickedFromList(const QModelIndex&);
     void onDocumentClose(KTextEditor::Document*);
     void updateCppActionsAvailability();                    ///< Enable/disable C++ specific actions in UI
+#if 0
     void aboutToShow();
+#endif
 
 private:
     /// Type to hold a completers associated with a view
@@ -123,12 +127,14 @@ private:
     KAction* m_copy_include;                                ///< <em>Copy #include to clipboard</em> action
     KAction* m_switch;                                      ///< <em>Open implementation/header</em> action
     std::unique_ptr<QWidget> m_tool_view;                   ///< Toolview to display clang diagnostic
-    Ui_PluginToolViewWidget* const m_tool_view_interior;    ///< Widget
+    Ui_PluginToolViewWidget* const m_tool_view_interior;    ///< Interior widget of a tool view
     QStandardItemModel* m_tree_model;
     QStandardItemModel* m_list_model;
     KTextEditor::Document* m_last_explored_document;        ///< Document explored in the \c #includes view
+#if 0
     std::unique_ptr<KActionMenu> m_menu;                    ///< Context menu
     QAction* m_what_is_this;                                ///< Get info about symbol under cursor
+#endif
     completions_models_map_type m_completers;               ///< Registered completers by view
 };
 

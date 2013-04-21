@@ -45,6 +45,7 @@ const QString MONITOR_DIRS_ITEM = "MonitorDirs";
 const QString HIGHLIGHT_COMPLETIONS_ITEM = "HighlightCompletionItems";
 const QString SANITIZE_COMPLETIONS_ITEM = "SanitizeCompletionItems";
 const QString AUTO_COMPLETIONS_ITEM = "AutoCompletionItems";
+const QString IGNORE_EXTENSIONS_ITEM = "IgnoreExtensions";
 }                                                           // anonymous namespace
 
 void PluginConfiguration::readConfig()
@@ -72,6 +73,7 @@ void PluginConfiguration::readSessionConfig(KConfigBase* config, const QString& 
     m_clang_params = scg.readPathEntry(CLANG_CMDLINE_PARAMS_ITEM, QString());
     m_use_ltgt = scg.readEntry(USE_LT_GT_ITEM, QVariant(false)).toBool();
     m_use_cwd = scg.readEntry(USE_CWD_ITEM, QVariant(false)).toBool();
+    m_ignore_ext = scg.readEntry(IGNORE_EXTENSIONS_ITEM, QStringList());
     m_open_first = scg.readEntry(OPEN_FIRST_INCLUDE_ITEM, QVariant(false)).toBool();
     m_use_wildcard_search = scg.readEntry(USE_WILDCARD_SEARCH_ITEM, QVariant(false)).toBool();
     m_highlight_completions = scg.readEntry(HIGHLIGHT_COMPLETIONS_ITEM, QVariant(true)).toBool();
@@ -108,6 +110,7 @@ void PluginConfiguration::writeSessionConfig(KConfigBase* config, const QString&
     scg.writeEntry(CLANG_CMDLINE_PARAMS_ITEM, m_clang_params);
     scg.writeEntry(USE_LT_GT_ITEM, QVariant(m_use_ltgt));
     scg.writeEntry(USE_CWD_ITEM, QVariant(m_use_cwd));
+    scg.writeEntry(IGNORE_EXTENSIONS_ITEM, m_ignore_ext);
     scg.writeEntry(OPEN_FIRST_INCLUDE_ITEM, QVariant(m_open_first));
     scg.writeEntry(USE_WILDCARD_SEARCH_ITEM, QVariant(m_use_wildcard_search));
     scg.writeEntry(HIGHLIGHT_COMPLETIONS_ITEM, QVariant(m_highlight_completions));
@@ -137,7 +140,7 @@ void PluginConfiguration::setSessionDirs(QStringList& dirs)
     }
 }
 
-void PluginConfiguration::setGlobalDirs(QStringList& dirs)
+void PluginConfiguration::setSystemDirs(QStringList& dirs)
 {
     kDebug() << "Got system dirs: " << m_system_dirs;
     kDebug() << "... system dirs: " << dirs;
@@ -150,6 +153,18 @@ void PluginConfiguration::setGlobalDirs(QStringList& dirs)
         kDebug() << "** set config to `dirty' state!! **";
     }
 }
+
+void PluginConfiguration::setIgnoreExtensions(QStringList& extensions)
+{
+    kDebug() << "Got ignore extensions: " << m_ignore_ext;
+    if (m_ignore_ext != extensions)
+    {
+        m_ignore_ext.swap(extensions);
+        m_config_dirty = true;
+        kDebug() << "** set config to `dirty' state!! **";
+    }
+}
+
 void PluginConfiguration::setClangParams(const QString& params)
 {
     if (m_clang_params != params)

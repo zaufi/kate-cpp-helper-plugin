@@ -183,11 +183,25 @@ void IncludeHelperCompletionModel::updateCompletionList(const QString& start, co
     mask.append(name);
     kDebug() << "mask=" << mask;
     // Complete session dirst first
-    updateListsFromFS(path, m_plugin->config().sessionDirs(), mask, m_dir_completions, m_file_completions);
+    updateListsFromFS(
+        path
+      , m_plugin->config().sessionDirs()
+      , mask
+      , m_dir_completions
+      , m_file_completions
+      , m_plugin->config().ignoreExtensions()
+      );
     if (!only_local)
     {
         // Complete global dirs next
-        updateListsFromFS(path, m_plugin->config().systemDirs(), mask, m_dir_completions, m_file_completions);
+        updateListsFromFS(
+            path
+          , m_plugin->config().systemDirs()
+          , mask
+          , m_dir_completions
+          , m_file_completions
+          , m_plugin->config().ignoreExtensions()
+          );
     }
     //
     kDebug() << "Got file completions: " << m_file_completions;

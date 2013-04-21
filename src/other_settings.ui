@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>496</width>
-    <height>402</height>
+    <height>471</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -43,6 +43,32 @@
         </property>
         <property name="text">
          <string>Use current dir to search for headers in addition to configured paths</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="ignoreExtensionsLabel">
+        <property name="text">
+         <string>Filename extensions to ignore by autocompleter:</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="KLineEdit" name="ignoreExtensions">
+        <property name="urlDropsEnabled">
+         <bool>false</bool>
+        </property>
+        <property name="trapEnterKeyEvent" stdset="0">
+         <bool>true</bool>
+        </property>
+        <property name="squeezedTextEnabled">
+         <bool>false</bool>
+        </property>
+        <property name="clickMessage">
+         <string notr="true"/>
+        </property>
+        <property name="showClearButton" stdset="0">
+         <bool>true</bool>
         </property>
        </widget>
       </item>
@@ -217,6 +243,11 @@
    <extends>QGroupBox</extends>
    <header>kbuttongroup.h</header>
    <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>KLineEdit</class>
+   <extends>QLineEdit</extends>
+   <header>klineedit.h</header>
   </customwidget>
  </customwidgets>
  <resources/>

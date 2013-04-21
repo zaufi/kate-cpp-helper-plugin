@@ -340,6 +340,7 @@ void updateListsFromFS(
   , const QStringList& masks                                ///< Filename masks used for globbing
   , QStringList& dirs                                       ///< Directories list to append to
   , QStringList& files                                      ///< Files list to append to
+  , const QStringList& ignore_extensions                    ///< Extensions to ignore
   )
 {
     const QDir::Filters common_flags = QDir::NoDotAndDotDot | QDir::CaseSensitive | QDir::Readable;
@@ -359,8 +360,16 @@ void updateListsFromFS(
             QStringList result = QDir(dir).entryList(masks, QDir::Files | common_flags);
             for (const QString& r : result)
             {
-                if (!files.contains(r))
+                const bool ignore = std::any_of(
+                    std::begin(ignore_extensions)
+                  , std::end(ignore_extensions)
+                  , [r](const QString& ext) { return r.endsWith(ext); }
+                  );
+                // Append if a file not in the list yet, and shouldn't be ignored
+                if (!files.contains(r) && !ignore)
                     files.append(r);
+                else
+                    kDebug() << "Skip " << r;
             }
         }
     }

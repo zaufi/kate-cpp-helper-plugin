@@ -160,10 +160,10 @@ TODO
 * List of currently `#included` files in a dialog and/or menu (done)
 * _OpenFile_ dialog for current `#include` line
 * Is it possible to use annotations iface somehow to indicate 'not-found' `#include` file?
-* Add quick open dialog -- like quick document switcher, but allows to find file to open
+* Add quick open dialog -- like quick document switcher, but allows to find a file to open
   based on configured include paths by partial name match...
-* Add view to explore a tree of `#included` files
-* Add option(s) to include/exclude files from completion list
+* Add view to explore a tree of `#included` files (done someway)
+* Add option(s) to include/exclude files from completion list (exclusion list of extensions done)
 * Issue a warning if /proc/sys/fs/inotify/max_user_watches is not high enough
 * Use `KUrl` for files and dirs instead of `QStrings`
 * Clean `std::enable_if` and `boost::enable_if` from return value and parameters
@@ -176,9 +176,19 @@ TODO
 * Need to introduce index database to lookup for declarations/definitions/references. It
   also can be used for code refactorings (like rename smth & etc.)
 * Give a context hint to code completer
+* Not quite related to C++, but it would be nice to have a CMake autocompleter.
+  It can complete variables, functions, properties, `include()` or `find_package()` files.
+  Also it can retrieve `help` screen for particular module.
+
 
 Changes
 =======
+
+Version 0.9
+-----------
+
+* add a list of file extesnsions to be ignored by #include autocompleter (per session)
+* fix regression with header file presence checker
 
 Version 0.8.8
 -------------

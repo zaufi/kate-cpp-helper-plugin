@@ -210,6 +210,8 @@ CppHelperPluginConfigPage::CppHelperPluginConfigPage(
         QWidget* pss_tab = new QWidget(tab);
         m_pss_config->setupUi(pss_tab);
         tab->addTab(pss_tab, i18n("Other Settings"));
+        // Disable completion on 'ignore extensions' like edit
+        m_pss_config->ignoreExtensions->setCompletionMode(KGlobalSettings::CompletionNone);
     }
 
     // Subscribe self to compiler process signals
@@ -235,7 +237,7 @@ CppHelperPluginConfigPage::CppHelperPluginConfigPage(
 void CppHelperPluginConfigPage::apply()
 {
     kDebug() << "** CONFIG-PAGE **: Applying configuration";
-    // Notify about configuration changes
+    // Update configuration
     {
         QStringList dirs;
         for (int i = 0; i < m_session_list->pathsList->count(); ++i)
@@ -246,7 +248,7 @@ void CppHelperPluginConfigPage::apply()
         QStringList dirs;
         for (int i = 0; i < m_system_list->pathsList->count(); ++i)
             dirs.append(m_system_list->pathsList->item(i)->text());
-        m_plugin->config().setGlobalDirs(dirs);
+        m_plugin->config().setSystemDirs(dirs);
     }
     m_plugin->config().setPrecompiledHeaderFile(m_clang_config->pchHeader->text());
     m_plugin->config().setClangParams(m_clang_config->commandLineParams->toPlainText());
@@ -263,6 +265,14 @@ void CppHelperPluginConfigPage::apply()
       + int(m_pss_config->system->isChecked()) * 2
       + int(m_pss_config->all->isChecked()) * 3
       );
+    {
+        auto extensions = m_pss_config
+          ->ignoreExtensions
+          ->text()
+          .split(QRegExp("[, :;]+"), QString::SkipEmptyParts);
+        kDebug() << "Extensions to ignore:" << extensions;
+        m_plugin->config().setIgnoreExtensions(extensions);
+    }
 }
 
 /// \todo This method should do a reset configuration to default!
@@ -279,6 +289,9 @@ void CppHelperPluginConfigPage::reset()
 
     m_pss_config->includeMarkersSwitch->setChecked(m_plugin->config().useLtGt());
     m_pss_config->useCurrentDirSwitch->setChecked(m_plugin->config().useCwd());
+    m_pss_config->ignoreExtensions->setText(
+        m_plugin->config().ignoreExtensions().join(", ")
+      );
     m_pss_config->openFirstHeader->setChecked(m_plugin->config().shouldOpenFirstInclude());
     m_pss_config->useWildcardSearch->setChecked(m_plugin->config().useWildcardSearch());
     m_pss_config->highlightResults->setChecked(m_plugin->config().highlightCompletions());

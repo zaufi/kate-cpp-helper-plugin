@@ -59,6 +59,7 @@ public:
     //@{
     const QStringList& sessionDirs() const;
     const QStringList& systemDirs() const;
+    const QStringList& ignoreExtensions() const;
     const KUrl& precompiledHeaderFile() const;
     const KUrl& pchFile() const;
     const QString& clangParams() const;
@@ -76,7 +77,8 @@ public:
     /// \name Modifiers
     //@{
     void setSessionDirs(QStringList&);
-    void setGlobalDirs(QStringList&);
+    void setSystemDirs(QStringList&);
+    void setIgnoreExtensions(QStringList&);
     void setClangParams(const QString&);
     void setPrecompiledHeaderFile(const KUrl&);
     void setPrecompiledFile(const KUrl&);
@@ -106,6 +108,7 @@ Q_SIGNALS:
 private:
     QStringList m_system_dirs;
     QStringList m_session_dirs;
+    QStringList m_ignore_ext;
     KUrl m_pch_header;
     KUrl m_pch_file;
     QString m_clang_params;
@@ -129,6 +132,10 @@ inline const QStringList& PluginConfiguration::sessionDirs() const
 inline const QStringList& PluginConfiguration::systemDirs() const
 {
     return m_system_dirs;
+}
+inline const QStringList& PluginConfiguration::ignoreExtensions() const
+{
+    return m_ignore_ext;
 }
 inline const KUrl& PluginConfiguration::precompiledHeaderFile() const
 {

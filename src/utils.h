@@ -132,6 +132,7 @@ void updateListsFromFS(
   , const QStringList&
   , QStringList&
   , QStringList&
+  , const QStringList&
   );
 
 /// Find given header withing list of paths
