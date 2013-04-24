@@ -217,7 +217,7 @@ void CppHelperPlugin::deletedPath(const QString& path)
     }
 }
 
-void CppHelperPlugin::invalidateTranslationUnit()
+void CppHelperPlugin::invalidateTranslationUnits()
 {
     kDebug() << "Clang options had changed, invalidating translation units...";
     m_units.clear();

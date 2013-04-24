@@ -117,7 +117,7 @@ private Q_SLOTS:
     void buildPCHIfAbsent();                                ///< Make sure a PCH is fresh
     /// Update watcher to monitor currently configured directories
     void updateDirWatcher();
-    void invalidateTranslationUnit();
+    void invalidateTranslationUnits();
 
 private:
     /// Type to associate a document with a translation unit
