@@ -66,7 +66,14 @@ include_directories(${KDE4_INCLUDES} ${QT_INCLUDES} ${Boost_INCLUDE_DIRS})
 
 # Set generic compiler flags: turn ON C++11 (C++03 is suxx) and exceptions
 # set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS} ${KDE4_ENABLE_EXCEPTIONS}")
-add_definitions(-std=c++11 ${KDE4_ENABLE_EXCEPTIONS})
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS "4.7.0")
+        set(CXX11_FLAG "-std=c++0x")
+    else()
+        set(CXX11_FLAG "-std=c++11")
+    endif()
+endif()
+add_definitions(${CXX11_FLAG} ${KDE4_ENABLE_EXCEPTIONS})
 
 # Tell to boost::result_of to use decltype to decay return type of callable.
 # NOTE This would enable to use C++11 labmda expressions w/ boost::rage adaptors
