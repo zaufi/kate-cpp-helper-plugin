@@ -127,7 +127,7 @@ void ClangCodeCompletionModel::completionInvoked(
             std::make_move_iterator(begin(grouped_completions))
           , std::make_move_iterator(end(grouped_completions))
           , std::back_inserter(m_groups)
-          , [](decltype(grouped_completions)::value_type&& p) { return std::move(p); }
+          , [](std::pair<QString, GroupInfo>&& p) { return std::move(p); }
           );
     }
     catch (const TranslationUnit::Exception& e)
