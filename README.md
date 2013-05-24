@@ -184,6 +184,12 @@ TODO
 Changes
 =======
 
+Version 0.9.1
+-------------
+
+* add a quick search (filter) to the `#include` explorer
+* fixed build w/ gcc 4.6.x (patch from Alexander Mezin)
+
 Version 0.9
 -----------
 

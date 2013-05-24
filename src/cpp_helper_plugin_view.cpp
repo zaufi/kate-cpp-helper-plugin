@@ -81,7 +81,6 @@ CppHelperPluginView::CppHelperPluginView(
           )
       )
   , m_tool_view_interior(new Ui_PluginToolViewWidget())
-  , m_tree_model(new QStandardItemModel())
   , m_list_model(new QStandardItemModel())
   , m_last_explored_document(nullptr)
 #if 0
@@ -130,8 +129,8 @@ CppHelperPluginView::CppHelperPluginView(
     // Setup toolview
     m_tool_view_interior->setupUi(new QWidget(m_tool_view.get()));
     m_tool_view_interior->includesTree->setHeaderHidden(true);
-    m_tool_view_interior->includesTree->setModel(m_tree_model);
     m_tool_view_interior->includedFromList->setModel(m_list_model);
+    m_tool_view_interior->searchFilter->addTreeWidget(m_tool_view_interior->includesTree);
     m_tool_view->installEventFilter(this);
 
     connect(
@@ -142,15 +141,15 @@ CppHelperPluginView::CppHelperPluginView(
       );
     connect(
         m_tool_view_interior->includesTree
-      , SIGNAL(clicked(const QModelIndex&))
+      , SIGNAL(itemDoubleClicked(QTreeWidgetItem*, int))
       , this
-      , SLOT(includeFileClicked(const QModelIndex&))
+      , SLOT(includeFileDblClickedFromTree(QTreeWidgetItem*, int))
       );
     connect(
         m_tool_view_interior->includesTree
-      , SIGNAL(doubleClicked(const QModelIndex&))
+      , SIGNAL(itemActivated(QTreeWidgetItem*, int))
       , this
-      , SLOT(includeFileDblClickedFromTree(const QModelIndex&))
+      , SLOT(includeFileActivatedFromTree(QTreeWidgetItem*, int))
       );
     connect(
         m_tool_view_interior->includedFromList
@@ -703,7 +702,7 @@ void CppHelperPluginView::onDocumentClose(KTextEditor::Document* doc)
     if (doc == m_last_explored_document)
     {
         m_last_explored_document = nullptr;
-        m_tree_model->clear();
+        m_tool_view_interior->includesTree->clear();
         m_list_model->clear();
     }
 }
@@ -960,8 +959,6 @@ void CppHelperPluginView::aboutToShow()
     m_what_is_this->setEnabled(false);
     m_what_is_this->setText(i18n("What is ..."));
 }
-#endif
-#if 0
 
 namespace {
 const char* getEntityKindString(CXIdxEntityKind kind)
@@ -1143,9 +1140,9 @@ struct InclusionVisitorData
 {
     CppHelperPluginView* const m_self;
     DocumentInfo* m_di;
-    std::stack<QStandardItem*> m_parents;
+    std::stack<QTreeWidgetItem*> m_parents;
     std::set<int> m_visited_ids;
-    QStandardItem* m_last_added_item;
+    QTreeWidgetItem* m_last_added_item;
     unsigned m_last_stack_size;
 };
 }                                                           // namespace details
@@ -1165,9 +1162,9 @@ void CppHelperPluginView::updateInclusionExplorer()
     m_tool_view_interior->diagnosticText->setText(unit.getLastDiagnostic());
     details::InclusionVisitorData data = {this, &m_plugin->getDocumentInfo(doc), {}, {}, nullptr, 0};
     data.m_di->clearInclusionTree();                        // Clear a previous tree in the document info
-    m_tree_model->clear();                                  // and in the tree view model
+    m_tool_view_interior->includesTree->clear();            // and in the tree view model
     m_list_model->clear();                                  // as well as `included by` list
-    data.m_parents.push(m_tree_model->invisibleRootItem());
+    data.m_parents.push(m_tool_view_interior->includesTree->invisibleRootItem());
     clang_getInclusions(
         unit
       , [](
@@ -1229,7 +1226,7 @@ void CppHelperPluginView::inclusionVisitor(
     }
     data->m_di->addInclusionEntry({header_id, included_from_id, int(line), int(column)});
 
-    QStandardItem* parent = nullptr;
+    QTreeWidgetItem* parent = nullptr;
     if (data->m_last_stack_size < stack_size)               // Is current stack grew relative to the last call
     {
         assert("Sanity check!" && (stack_size - data->m_last_stack_size == 1));
@@ -1260,24 +1257,24 @@ void CppHelperPluginView::inclusionVisitor(
 #endif
     }
     assert("Sanity check!" && parent);
-    data->m_last_added_item = new QStandardItem(header_name);
-    parent->appendRow(data->m_last_added_item);
+    data->m_last_added_item = new QTreeWidgetItem(parent);
+    data->m_last_added_item->setText(0, header_name);
     auto it = data->m_visited_ids.find(header_id);
     if (it != end(data->m_visited_ids))
-        data->m_last_added_item->setForeground(Qt::yellow);
+        data->m_last_added_item->setForeground(0, Qt::yellow);
     else
         data->m_visited_ids.insert(header_id);
     data->m_last_stack_size = stack_size;
 }
 
-void CppHelperPluginView::includeFileClicked(const QModelIndex& index)
+void CppHelperPluginView::includeFileActivatedFromTree(QTreeWidgetItem* item, int column)
 {
     assert("Document expected to be alive" && m_last_explored_document);
 
     m_list_model->clear();
 
     const HeaderFilesCache& cache = const_cast<const CppHelperPlugin* const>(m_plugin)->headersCache();
-    QString filename = m_tree_model->itemFromIndex(index)->text();
+    QString filename = item->data(column, Qt::DisplayRole).toString();
     int id = cache[filename];
     if (id != HeaderFilesCache::NOT_FOUND)
     {
@@ -1309,9 +1306,9 @@ void CppHelperPluginView::dblClickOpenFile(QString&& filename)
     openFile(filename);
 }
 
-void CppHelperPluginView::includeFileDblClickedFromTree(const QModelIndex& index)
+void CppHelperPluginView::includeFileDblClickedFromTree(QTreeWidgetItem* item, int column)
 {
-    dblClickOpenFile(m_tree_model->itemFromIndex(index)->text());
+    dblClickOpenFile(item->data(column, Qt::DisplayRole).toString());
 }
 
 void CppHelperPluginView::includeFileDblClickedFromList(const QModelIndex& index)

@@ -90,8 +90,8 @@ private Q_SLOTS:
 #endif
     void needTextHint(const KTextEditor::Cursor&, QString&);
     void updateInclusionExplorer();
-    void includeFileClicked(const QModelIndex&);
-    void includeFileDblClickedFromTree(const QModelIndex&);
+    void includeFileActivatedFromTree(QTreeWidgetItem*, int);
+    void includeFileDblClickedFromTree(QTreeWidgetItem*, int);
     void includeFileDblClickedFromList(const QModelIndex&);
     void onDocumentClose(KTextEditor::Document*);
     void updateCppActionsAvailability();                    ///< Enable/disable C++ specific actions in UI
@@ -128,7 +128,6 @@ private:
     KAction* m_switch;                                      ///< <em>Open implementation/header</em> action
     std::unique_ptr<QWidget> m_tool_view;                   ///< Toolview to display clang diagnostic
     Ui_PluginToolViewWidget* const m_tool_view_interior;    ///< Interior widget of a tool view
-    QStandardItemModel* m_tree_model;
     QStandardItemModel* m_list_model;
     KTextEditor::Document* m_last_explored_document;        ///< Document explored in the \c #includes view
 #if 0

@@ -2,22 +2,14 @@
 <ui version="4.0">
  <class>PluginToolViewWidget</class>
  <widget class="QWidget" name="PluginToolViewWidget">
-  <property name="geometry">
-   <rect>
-    <x>0</x>
-    <y>0</y>
-    <width>596</width>
-    <height>322</height>
-   </rect>
-  </property>
   <property name="windowTitle">
-   <string>Form</string>
+   <string>C++ Helper ToolView</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_3">
    <item>
     <widget class="KTabWidget" name="tabs">
      <property name="currentIndex">
-      <number>0</number>
+      <number>1</number>
      </property>
      <widget class="QWidget" name="completionDisgnostic">
       <attribute name="title">
@@ -30,6 +22,9 @@
           <font>
            <family>Monospace</family>
           </font>
+         </property>
+         <property name="undoRedoEnabled">
+          <bool>false</bool>
          </property>
          <property name="readOnly">
           <bool>true</bool>
@@ -51,17 +46,17 @@
          <property name="orientation">
           <enum>Qt::Horizontal</enum>
          </property>
-         <widget class="QWidget" name="">
+         <widget class="QWidget" name="layoutWidget1">
           <layout class="QVBoxLayout" name="ivl2">
            <item>
             <widget class="QLabel" name="treeLabel">
              <property name="text">
-              <string>Include files tree</string>
+              <string>Include files tree:</string>
              </property>
             </widget>
            </item>
            <item>
-            <widget class="QTreeView" name="includesTree">
+            <widget class="QTreeWidget" name="includesTree">
              <property name="toolTip">
               <string/>
              </property>
@@ -71,23 +66,31 @@
              <property name="editTriggers">
               <set>QAbstractItemView::NoEditTriggers</set>
              </property>
+             <property name="headerHidden">
+              <bool>true</bool>
+             </property>
+             <column>
+              <property name="text">
+               <string notr="true">1</string>
+              </property>
+             </column>
             </widget>
            </item>
           </layout>
          </widget>
-         <widget class="QWidget" name="">
+         <widget class="QWidget" name="layoutWidget2">
           <layout class="QVBoxLayout" name="ivl1">
            <item>
             <widget class="QLabel" name="includedByLabel">
              <property name="text">
-              <string>Included by</string>
+              <string>Included by:</string>
              </property>
             </widget>
            </item>
            <item>
             <widget class="QListView" name="includedFromList">
              <property name="toolTip">
-              <string/>
+              <string>Double click to open corresponding document</string>
              </property>
              <property name="whatsThis">
               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;List of files which &lt;tt&gt;#include&lt;/tt&gt; a selected one&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -104,17 +107,14 @@
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout">
          <item>
-          <spacer name="horizontalSpacer">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
+          <widget class="KTreeWidgetSearchLine" name="searchFilter">
+           <property name="toolTip">
+            <string>Quick find in a tree</string>
            </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>40</width>
-             <height>20</height>
-            </size>
+           <property name="placeholderText">
+            <string>Quick search for file</string>
            </property>
-          </spacer>
+          </widget>
          </item>
          <item>
           <widget class="KPushButton" name="updateButton">
@@ -136,9 +136,19 @@
  </widget>
  <customwidgets>
   <customwidget>
+   <class>KLineEdit</class>
+   <extends>QLineEdit</extends>
+   <header>klineedit.h</header>
+  </customwidget>
+  <customwidget>
    <class>KPushButton</class>
    <extends>QPushButton</extends>
    <header>kpushbutton.h</header>
+  </customwidget>
+  <customwidget>
+   <class>KTreeWidgetSearchLine</class>
+   <extends>KLineEdit</extends>
+   <header>ktreewidgetsearchline.h</header>
   </customwidget>
   <customwidget>
    <class>KTextEdit</class>
