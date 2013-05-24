@@ -2,14 +2,6 @@
 <ui version="4.0">
  <class>PathListConfigWidget</class>
  <widget class="QWidget" name="PathListConfigWidget">
-  <property name="geometry">
-   <rect>
-    <x>0</x>
-    <y>0</y>
-    <width>444</width>
-    <height>244</height>
-   </rect>
-  </property>
   <property name="windowTitle">
    <string>Form</string>
   </property>
