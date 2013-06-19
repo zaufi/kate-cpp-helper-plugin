@@ -13,7 +13,7 @@ execute_process(
 # message(STATUS "tldm: ${TOP_LEVEL_SOURCE_DIRS_MASK}")
 
 execute_process(
-    COMMAND grep -r -e "^#\\s*include\\s*<.*>" --include=*.hh --include=*.cc
+    COMMAND grep -r -e "^#\\s*include\\s*<.*>" @use_pch_file_include_options@
     @use_pch_file_FILTER_DIRS_COMMAND@
     COMMAND sed -e "s,[^:]*:# *include *<\\(.*\\)>.*$,\\1,"
     @use_pch_file_FILTER_FILES_COMMAND@
@@ -31,6 +31,6 @@ string(RANDOM LENGTH 15 ALPHABET "QWERTYUIOPASDFGHJKLZXCVBNM0123456789" use_pch_
 set(use_pch_file_GUARD "__PCH_${use_pch_file_GUARD}__")
 
 # Render a PCH file
-configure_file(@CMAKE_SOURCE_DIR@/cmake/modules/pch-template.h.in @use_pch_file_PCH_FILE@ @ONLY)
+configure_file(@CMAKE_SOURCE_DIR@/cmake/modules/pch_template.h.in @use_pch_file_PCH_FILE@ @ONLY)
 
 # kate: hl cmake;

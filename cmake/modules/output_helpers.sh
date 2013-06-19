@@ -1,6 +1,6 @@
-#!/bin/bash
+#!/bin/sh
 #
-# Pretty spam helper functions.
+# Pretty SPAM^W print helper functions.
 # Reuse Gentoo output subsystem if available.
 #
 
@@ -8,7 +8,7 @@
 test -f /etc/init.d/functions.sh && source /etc/init.d/functions.sh
 
 # Declare homecooked (simplified) spam functions if not available on this system
-if test "${RC_GOT_FUNCTIONS}" != "yes"; then
+if test "x${RC_GOT_FUNCTIONS}" != "xyes"; then
 ebegin()
 {
     echo "${indent_level}$1"

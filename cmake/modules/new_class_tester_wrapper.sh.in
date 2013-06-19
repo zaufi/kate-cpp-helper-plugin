@@ -4,7 +4,7 @@
 # Helper to generate unit test skeletons
 #
 
-. @DSGT_BASE_DIR@/output-helpers.sh
+source "@DSGT_BASE_DIR@/output_helpers.sh"
 
 show_help()
 {

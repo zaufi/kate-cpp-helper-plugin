@@ -1,8 +1,34 @@
-# Copyright 2011-2013 Alex Turbov <i.zaufi@gmail.com>
+# - Define targets to generate skeleton files.
+# This can be considered as a CLI based replacement for 'wizards' in various IDEs.
 #
-# Define targets to generate skeleton files for header/implementation
-# and for unit-tests.
+# It is possible to generate skeleton files for C++ header/implementation files
+# and for boost::test based unit-tests.
 #
+# To make a new skeleton class one may use the following command:
+#   $ cd <project-build-dir>
+#   $ make new-class class=name subdir=project/source/relative/path ns=vendor::lib
+#
+# To generate unit tests skeleton:
+#   $ cd <project-build-dir>
+#   $ make new-class-tester class=name subdir=relative/path/to/tests
+#
+# NOTE GNU Autogen used internally.
+#
+# TODO Rewrite this stuff using Python + jinja2
+#
+
+#=============================================================================
+# Copyright 2011-2013 by Alex Turbov <i.zaufi@gmail.com>
+#
+# Distributed under the OSI-approved BSD License (the "License");
+# see accompanying file LICENSE for details.
+#
+# This software is distributed WITHOUT ANY WARRANTY; without even the
+# implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+# See the License for more information.
+#=============================================================================
+# (To distribute this file outside of this repository, substitute the full
+#  License text for the above reference.)
 
 include(CMakeParseArguments)
 
@@ -145,7 +171,7 @@ endfunction()
 # kate: hl cmake;
 # X-Chewy-RepoBase: https://raw.github.com/mutanabbi/chewy-cmake-rep/master/
 # X-Chewy-Path: DefineSkeletonGenerationTargetsIfPossible.cmake
-# X-Chewy-Version: 5.5
+# X-Chewy-Version: 5.6
 # X-Chewy-Description: Add targets to generate class header/implementation and unit-tests skeleton files
 # X-Chewy-AddonFile: TestCMakeLists.txt.in
 # X-Chewy-AddonFile: class.tpl.in
@@ -153,5 +179,5 @@ endfunction()
 # X-Chewy-AddonFile: mknslist.awk
 # X-Chewy-AddonFile: new_class_tester_wrapper.sh.in
 # X-Chewy-AddonFile: new_class_wrapper.sh.in
-# X-Chewy-AddonFile: output-helpers.sh
+# X-Chewy-AddonFile: output_helpers.sh
 # X-Chewy-AddonFile: tpl_defaults.def.in

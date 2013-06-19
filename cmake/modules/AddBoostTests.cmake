@@ -1,6 +1,4 @@
-# Copyright 2011-2013 by Alex Turbov <i.zaufi@gmail.com>
-#
-# Integrate Boost unit tests into cmake infrastructure
+# - Integrate Boost unit tests into CMake infrastructure
 #
 # Usage:
 #   add_boost_tests(
@@ -15,7 +13,21 @@
 #
 # Source files will be canned for automatic test cases.
 # Every found test will be added to ctest list.
+# This function can be considered as 'improved' add_executable(unit_tests <sources>).
 #
+
+#=============================================================================
+# Copyright 2011-2013 by Alex Turbov <i.zaufi@gmail.com>
+#
+# Distributed under the OSI-approved BSD License (the "License");
+# see accompanying file LICENSE for details.
+#
+# This software is distributed WITHOUT ANY WARRANTY; without even the
+# implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+# See the License for more information.
+#=============================================================================
+# (To distribute this file outside of this repository, substitute the full
+#  License text for the above reference.)
 
 include(CMakeParseArguments)
 
@@ -86,5 +98,5 @@ endfunction(add_boost_tests)
 # kate: hl cmake;
 # X-Chewy-RepoBase: https://raw.github.com/mutanabbi/chewy-cmake-rep/master/
 # X-Chewy-Path: AddBoostTests.cmake
-# X-Chewy-Version: 2.1
+# X-Chewy-Version: 2.2
 # X-Chewy-Description: Integrate Boost unit tests into CMake infrastructure

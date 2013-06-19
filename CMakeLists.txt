@@ -110,8 +110,8 @@ define_skeleton_generation_targets(
     USE_CAMEL_STYLE
   )
 
-include(UpdatePCHFile)
-update_pch_header(
+include(UsePCHFile)
+use_pch_file(
     PCH_FILE ${CMAKE_BINARY_DIR}/most_included_files.h
   )
 

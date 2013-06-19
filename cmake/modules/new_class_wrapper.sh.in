@@ -12,7 +12,7 @@
 #      better to generate a file w/o predefined class if `fn' specified instead of `class'
 #
 
-. @DSGT_BASE_DIR@/output-helpers.sh
+source "@DSGT_BASE_DIR@/output_helpers.sh"
 
 show_help()
 {

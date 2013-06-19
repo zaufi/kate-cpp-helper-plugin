@@ -5,15 +5,18 @@
 # and generate a file w/ #include directives for all of them.
 #
 #   use_pch_file(PCH_FILE <file>
-#       EXCLUDE_DIRS dir1 [... dirN]
-#       EXCLUDE_HEADERS file1 [... fileN]
+#       [EXCLUDE_DIRS dir1 [... dirN]]
+#       [EXCLUDE_HEADERS file1 [... fileN]]
+#       [SOURCE_EXTENSIONS ext1 [... extN]]
 #     )
 #
 # Parameters are:
 #
-#   PCH_FILE        -- an output filename to be generated
-#   EXCLUDE_DIRS    -- a list of directories to exclude from scan
-#   EXCLUDE_HEADERS -- a list of header files to exclude from result PCH file
+#   PCH_FILE          -- an output filename to be generated
+#   EXCLUDE_DIRS      -- a list of directories to exclude from scan
+#   EXCLUDE_HEADERS   -- a list of header files to exclude from result PCH file
+#   SOURCE_EXTENSIONS -- a list of source file extensions to scan
+#                        default is: *.hh, *.cc, *.h, *.c, *.hpp, *.cpp, *.hxx, *.cxx
 #
 
 #=============================================================================
@@ -33,8 +36,16 @@ set(_USE_PHC_FILE_MODULE_BASE_DIR "${CMAKE_CURRENT_LIST_DIR}")
 
 function(use_pch_file)
     set(oneValueArgs PCH_FILE)
-    set(multiValueArgs EXCLUDE_DIRS EXCLUDE_HEADERS)
+    set(multiValueArgs EXCLUDE_DIRS EXCLUDE_HEADERS SOURCE_EXTENSIONS)
     cmake_parse_arguments(use_pch_file "" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+
+    if (NOT use_pch_file_PCH_FILE)
+        message(FATAL_ERROR "PCH_FILE option required to call cmake_parse_arguments()")
+    endif()
+
+    if(NOT use_pch_file_SOURCE_EXTENSIONS)
+        set(use_pch_file_SOURCE_EXTENSIONS hh cc hpp cpp h c hxx cxx)
+    endif()
 
     if (use_pch_file_EXCLUDE_DIRS)
         foreach(_dir ${use_pch_file_EXCLUDE_DIRS})
@@ -60,6 +71,10 @@ function(use_pch_file)
           )
     endif()
 
+    foreach(ext ${use_pch_file_SOURCE_EXTENSIONS})
+        set(use_pch_file_include_options "${use_pch_file_include_options} --include=*.${ext}")
+    endforeach()
+
     # Render a script to produce a header file w/ most used external headers
     configure_file(
         ${_USE_PHC_FILE_MODULE_BASE_DIR}/PreparePCHHeader.cmake.in
@@ -73,13 +88,12 @@ function(use_pch_file)
         MAIN_DEPENDENCY ${CMAKE_BINARY_DIR}/PreparePCHHeader.cmake
         COMMENT "Updating ${use_pch_file_PCH_FILE}"
       )
-
 endfunction()
 
 # kate: hl cmake;
 # X-Chewy-RepoBase: https://raw.github.com/mutanabbi/chewy-cmake-rep/master/
 # X-Chewy-Path: UsePCHFile.cmake
-# X-Chewy-Version: 2.7
+# X-Chewy-Version: 2.10
 # X-Chewy-Description: Add Precompiled Header Support
 # X-Chewy-AddonFile: PreparePCHHeader.cmake.in
-# X-Chewy-AddonFile: pch-template.h.in
+# X-Chewy-AddonFile: pch_template.h.in
