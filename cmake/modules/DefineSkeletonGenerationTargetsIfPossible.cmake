@@ -40,7 +40,7 @@ find_program(AUTOGEN_EXECUTABLE autogen)
 
 function(define_skeleton_generation_targets)
     if(NOT AUTOGEN_EXECUTABLE)
-        message(WARNING "You need to install GNU Autogen")
+        message(STATUS "WARNING: You need to install GNU Autogen to be able to produce new C++ sources from skeletons")
     endif()
 
     # Parse function arguments
@@ -171,7 +171,7 @@ endfunction()
 # kate: hl cmake;
 # X-Chewy-RepoBase: https://raw.github.com/mutanabbi/chewy-cmake-rep/master/
 # X-Chewy-Path: DefineSkeletonGenerationTargetsIfPossible.cmake
-# X-Chewy-Version: 5.6
+# X-Chewy-Version: 5.8
 # X-Chewy-Description: Add targets to generate class header/implementation and unit-tests skeleton files
 # X-Chewy-AddonFile: TestCMakeLists.txt.in
 # X-Chewy-AddonFile: class.tpl.in

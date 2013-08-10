@@ -8,12 +8,13 @@
 #       [CATCH_SYSTEM_ERRORS | NO_CATCH_SYSTEM_ERRORS]
 #     )
 #   executable -- name of unit tests binary (if ommited, `unit_tests' will be used)
-#   source1-N  -- list of source files scanned to be scanned
-#   dir        -- cd to this directory before run test
+#   source1-N  -- list of source files to be scanned for test cases
+#   dir        -- `cd` to this directory before run any test
 #
-# Source files will be canned for automatic test cases.
+# Source files will be scanned for automatic test cases.
 # Every found test will be added to ctest list.
-# This function can be considered as 'improved' add_executable(unit_tests <sources>).
+# This function can be considered as 'improved' add_executable(unit_tests <sources>)
+# to build boost based unit tests and integrate them into cmake's `make test`.
 #
 
 #=============================================================================
@@ -61,9 +62,7 @@ function(add_boost_tests)
     endif()
 
     if(NOT add_boost_tests_WORKING_DIRECTORY)
-        set(work_dir ${CMAKE_CURRENT_BINARY_DIR})
-    else()
-        set(work_dir ${add_boost_tests_WORKING_DIRECTORY})
+        set(add_boost_tests_WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
     endif()
 
     # Add unit tests executable target to current directory
@@ -79,7 +78,7 @@ function(add_boost_tests)
             add_test(
                 NAME ${test_name}
                 COMMAND ${add_boost_tests_TARGET} --run_test=${test_name} ${extra_args}
-                WORKING_DIRECTORY ${work_dir}
+                WORKING_DIRECTORY ${add_boost_tests_WORKING_DIRECTORY}
             )
         endforeach()
         # Append BOOST_FIXTURE_TEST_CASEs
@@ -87,16 +86,15 @@ function(add_boost_tests)
         foreach(hit ${found_tests})
             string(REGEX REPLACE ".*\\(([A-Za-z_0-9]+), ([A-Za-z_0-9]+)\\).*" "\\1" test_name ${hit})
             add_test(
-                ${test_name}
-                ${add_boost_tests_TARGET} --run_test=${test_name} ${extra_args}
-                WORKING_DIRECTORY ${work_dir}
+                NAME ${test_name}
+                COMMAND ${add_boost_tests_TARGET} --run_test=${test_name} ${extra_args}
+                WORKING_DIRECTORY ${add_boost_tests_WORKING_DIRECTORY}
               )
         endforeach()
     endforeach()
 endfunction(add_boost_tests)
 
-# kate: hl cmake;
 # X-Chewy-RepoBase: https://raw.github.com/mutanabbi/chewy-cmake-rep/master/
 # X-Chewy-Path: AddBoostTests.cmake
-# X-Chewy-Version: 2.2
+# X-Chewy-Version: 2.4
 # X-Chewy-Description: Integrate Boost unit tests into CMake infrastructure

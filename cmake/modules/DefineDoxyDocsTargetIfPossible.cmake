@@ -47,7 +47,7 @@ else()
         set(DOXYGEN_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/doc")
     endif()
     if(NOT DEFINED DOXYGEN_EXCLUDE_PATTERNS)
-        set(DOXYGEN_EXCLUDE_PATTERNS "*/.git/* */.svn/* */.hg/* */tests/* *_tester.cc */CMakeFiles/* */cmake/*")
+        set(DOXYGEN_EXCLUDE_PATTERNS "*/.git/* */.svn/* */.hg/* */tests/* *_tester.cc */CMakeFiles/* */cmake/* */_CPack_Packages/*")
     endif()
     if(NOT DEFINED DOXYGEN_DOT_IMAGE_FORMAT)
         set(DOXYGEN_DOT_IMAGE_FORMAT svg)
@@ -121,7 +121,7 @@ else()
       )
 
     # cleanup $build/docs on "make clean"
-    set_property(DIRECTORY APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES docs)
+    set_property(DIRECTORY APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES ${DOXYGEN_OUTPUT_DIRECTORY})
 
     find_program(
         XDG_OPEN_EXECUTABLE
@@ -139,7 +139,7 @@ else()
         add_dependencies(show-api-documentation doxygen)
     endif()
 
-    if(NOT NO_DOXY_DOCS)
+    if(NOT NO_DOXY_DOCS OR NOT NO_DOXY_DOCS STREQUAL "ON")
         # make sure documentation will be produced before (possible) install
         configure_file(
             ${CMAKE_CURRENT_LIST_DIR}/DoxygenInstall.cmake.in
@@ -147,12 +147,14 @@ else()
             @ONLY
           )
         install(SCRIPT ${CMAKE_BINARY_DIR}/DoxygenInstall.cmake)
+    else()
+        message(STATUS "Doxygened documentation will not be installed!")
     endif()
 endif()
 
 # X-Chewy-RepoBase: https://raw.github.com/mutanabbi/chewy-cmake-rep/master/
 # X-Chewy-Path: DefineDoxyDocsTargetIfPossible.cmake
-# X-Chewy-Version: 2.2
+# X-Chewy-Version: 2.5
 # X-Chewy-Description: Define `make doxygen` target to build API documentation using `doxygen`
 # X-Chewy-AddonFile: Doxyfile.in
 # X-Chewy-AddonFile: DoxygenInstall.cmake.in
