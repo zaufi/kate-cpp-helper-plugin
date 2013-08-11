@@ -31,7 +31,7 @@
 
 #if defined(CINDEX_VERSION_MAJOR) && defined(CINDEX_VERSION_MINOR)
 # if CINDEX_VERSION_MAJOR == 0 && CINDEX_VERSION_MINOR == 6
-// libclang gets version since clang 3.2
+// libclang got version macros since clang 3.2
 #   define CLANG_VERSION 30200
 # else
 // Some future version...
@@ -57,7 +57,7 @@ void debugShowCompletionResult(
 
     // Show info about parent context
     CXCursorKind parent_ck;
-    const DCXString parent = clang_getCompletionParent(str, &parent_ck);
+    const DCXString parent = {clang_getCompletionParent(str, &parent_ck)};
     const auto parent_str = clang_getCString(parent);
     kDebug() << "  parent: " << (parent_str ? parent_str : "<none>")
       << ',' << toString(parent_ck).toUtf8().constData();
@@ -73,7 +73,7 @@ void debugShowCompletionResult(
             for (unsigned oci = 0, ocn = clang_getNumCompletionChunks(ostr); oci < ocn; ++oci)
             {
                 auto okind = clang_getCompletionChunkKind(ostr, oci);
-                DCXString otext_str = clang_getCompletionChunkText(ostr, oci);
+                DCXString otext_str = {clang_getCompletionChunkText(ostr, oci)};
                 kDebug() << "  chunk [" << i << ':' << ci << ':' << oci << "]: "
                   << toString(okind).toUtf8().constData()
                   << ", text=" << QString(clang_getCString(otext_str));
@@ -82,13 +82,13 @@ void debugShowCompletionResult(
         }
         else
         {
-            DCXString text_str = clang_getCompletionChunkText(str, ci);
+            DCXString text_str = {clang_getCompletionChunkText(str, ci)};
             kDebug() << "  chunk [" << i << ':' << ci << "]: " << toString(kind).toUtf8().constData()
               << ", text=" << QString(clang_getCString(text_str));
         }
     }
 #if CLANG_VERSION >= 30200
-    DCXString comment_str = clang_getCompletionBriefComment(str);
+    DCXString comment_str = {clang_getCompletionBriefComment(str)};
     kDebug() << "  comment:" << QString(clang_getCString(comment_str));
 #endif                                                      // CLANG_VERSION >= 30200
 
@@ -215,6 +215,7 @@ TranslationUnit::TranslationUnit(
       );
     if (!m_unit)
         throw Exception::ParseFailure("Failure to parse C++ code");
+    updateDiagnostic();
 }
 
 TranslationUnit::TranslationUnit(TranslationUnit&& other) noexcept
@@ -258,33 +259,31 @@ QList<ClangCodeCompletionItem> TranslationUnit::completeAt(const int line, const
 {
     QList<ClangCodeCompletionItem> completions;
 
-    DCXCodeCompleteResults res = clang_codeCompleteAt(
-        m_unit
-      , m_filename.constData()
-      , unsigned(line)
-      , unsigned(column)
-      , m_unsaved_files.data()
-      , m_unsaved_files.size()
-      , 0 /*clang_defaultCodeCompleteOptions()*/
-      );
+    DCXCodeCompleteResults res = {
+        clang_codeCompleteAt(
+            m_unit
+          , m_filename.constData()
+          , unsigned(line)
+          , unsigned(column)
+          , m_unsaved_files.data()
+          , m_unsaved_files.size()
+          , clang_defaultCodeCompleteOptions()
+          )
+      };
     if (!res)
     {
-        throw Exception::CompletionFailure("Can't complete");
+        throw Exception::CompletionFailure("Unable to perform code completion");
     }
 
 #if 0
     clang_sortCodeCompletionResults(res->Results, res->NumResults);
 #endif
 
-    // Show some diagnostic SPAM
-    m_last_diagnostic_text.clear();
+    // Collect some diagnostic SPAM
     for (unsigned i = 0; i < clang_codeCompleteGetNumDiagnostics(res); ++i)
     {
-        DCXDiagnostic diag = clang_codeCompleteGetDiagnostic(res, i);
-        DCXString s = clang_formatDiagnostic(diag, clang_defaultDiagnosticDisplayOptions());
-        m_last_diagnostic_text += clang_getCString(s);
-        kWarning() << "Clang WARNING: " << clang_getCString(s);
-        m_last_diagnostic_text += '\n';
+        DCXDiagnostic diag = {clang_codeCompleteGetDiagnostic(res, i)};
+        appendDiagnostic(diag);
     }
 
     completions.reserve(res->NumResults);                   // Peallocate enough space for completion results
@@ -328,7 +327,7 @@ QList<ClangCodeCompletionItem> TranslationUnit::completeAt(const int line, const
         for (unsigned j = 0, chunks = clang_getNumCompletionChunks(str); j < chunks; ++j)
         {
             auto kind = clang_getCompletionChunkKind(str, j);
-            DCXString text_str = clang_getCompletionChunkText(str, j);
+            DCXString text_str = {clang_getCompletionChunkText(str, j)};
             QString text = clang_getCString(text_str);
             switch (kind)
             {
@@ -355,7 +354,7 @@ QList<ClangCodeCompletionItem> TranslationUnit::completeAt(const int line, const
                       ; ++oci
                       )
                     {
-                        DCXString otext_str = clang_getCompletionChunkText(ostr, oci);
+                        DCXString otext_str = {clang_getCompletionChunkText(ostr, oci)};
                         QString otext(clang_getCString(otext_str));
                         auto okind = clang_getCompletionChunkKind(ostr, oci);
                         if (okind == CXCompletionChunk_Placeholder)
@@ -392,7 +391,7 @@ QList<ClangCodeCompletionItem> TranslationUnit::completeAt(const int line, const
                 case CXCompletionChunk_Informative:
                     // Informative text before CXCompletionChunk_TypedText usually
                     // just a method scope (i.e. long name of an owner class)
-                    // and it's useless for completer cuz it can group items 
+                    // and it's useless for completer cuz it can group items
                     // by parent already...
                     if (!typed_text.isEmpty())
                         appender(text);
@@ -423,7 +422,7 @@ QList<ClangCodeCompletionItem> TranslationUnit::completeAt(const int line, const
 QString TranslationUnit::makeParentText(CXCompletionString str)
 {
     CXCursorKind parent_ck;
-    const DCXString parent_clstr = clang_getCompletionParent(str, &parent_ck);
+    const DCXString parent_clstr = {clang_getCompletionParent(str, &parent_ck)};
     const auto parent_cstr = clang_getCString(parent_clstr);
     if (parent_cstr)
     {
@@ -467,7 +466,8 @@ void TranslationUnit::storeTo(const KUrl& filename)
     kDebug() << "result=" << result;
     if (result != CXSaveError_None)
     {
-        showDiagnostic();
+        if (result == CXSaveError_TranslationErrors)
+            updateDiagnostic();
         throw Exception::SaveFailure("Failure on save a translation unit into a file");
     }
 }
@@ -482,22 +482,88 @@ void TranslationUnit::reparse()
       );
     if (result)
     {
-        showDiagnostic();
         throw Exception::ReparseFailure("It seems preparsed file is invalid");
     }
 }
 
-void TranslationUnit::showDiagnostic()
+void TranslationUnit::appendDiagnostic(const CXDiagnostic& diag)
 {
-    m_last_diagnostic_text.clear();
+    // Should we ignore this item?
+    const auto severity = clang_getDiagnosticSeverity(diag);
+    if (severity == CXDiagnostic_Ignored)
+        return;
+    kDebug() << "TU diagnostic severity level: " << severity;
 
+#if 0
+    // Show some SPAM to console
+    {
+        const auto display_opts = CXDiagnostic_DisplaySourceLocation
+        | CXDiagnostic_DisplayColumn
+        | CXDiagnostic_DisplaySourceRanges
+        | CXDiagnostic_DisplayOption
+        ;
+        DCXString msg = {clang_formatDiagnostic(diag, display_opts)};
+        kDebug() << "TU diag.fmt: " << clang_getCString(msg);
+    }
+#endif
+
+    // Get record type
+    DiagnosticMessagesModel::Record::type type;
+    switch (severity)
+    {
+        case CXDiagnostic_Note:
+            type = DiagnosticMessagesModel::Record::type::info;
+            break;
+        case CXDiagnostic_Warning:
+            type = DiagnosticMessagesModel::Record::type::warning;
+            break;
+        case CXDiagnostic_Error:
+        case CXDiagnostic_Fatal:
+            type = DiagnosticMessagesModel::Record::type::error;
+            break;
+        default:
+            assert(!"Unexpected severity level! Code review required!");
+    }
+
+    // Get location
+    unsigned line = 0;
+    unsigned column = 0;
+    QString filename;
+    /// \attention \c Notes have no location attached!?
+    if (severity != CXDiagnostic_Note)
+    {
+        CXFile file;
+        clang_getSpellingLocation(clang_getDiagnosticLocation(diag), &file, &line, &column, nullptr);
+        if (!file)
+        {
+            kDebug() << "TU diag.fmt: Can't get diagnostic location";
+        }
+        else
+        {
+            DCXString filename_cstr = {clang_getFileName(file)};
+            filename = clang_getCString(filename_cstr);
+        }
+    }
+
+    // Get diagnostic text
+    DCXString msg = {clang_getDiagnosticSpelling(diag)};
+
+    // Form a new diagnostic record
+    m_last_diagnostic_messages.emplace_back(
+        std::move(filename)
+      , line
+      , column
+      , clang_getCString(msg)
+      , type
+      );
+}
+
+void TranslationUnit::updateDiagnostic()
+{
     for (unsigned i = 0, last = clang_getNumDiagnostics(m_unit); i < last; ++i)
     {
-        DCXDiagnostic diag = clang_getDiagnostic(m_unit, i);
-        DCXString s = clang_formatDiagnostic(diag, clang_defaultDiagnosticDisplayOptions());
-        m_last_diagnostic_text += clang_getCString(s);
-        kDebug() << "TU WARNING: " << clang_getCString(s);
-        m_last_diagnostic_text += '\n';
+        DCXDiagnostic diag = {clang_getDiagnostic(m_unit, i)};
+        appendDiagnostic(diag);
     }
 }
 
@@ -515,6 +581,10 @@ unsigned TranslationUnit::defaultEditingParseOptions()
 {
     return clang_defaultEditingTranslationUnitOptions()
       | CXTranslationUnit_Incomplete
+#if 0
+        /// \todo Make it configurable
+      | CXTranslationUnit_CacheCompletionResults
+#endif
 #if CLANG_VERSION >= 30200
       | CXTranslationUnit_IncludeBriefCommentsInCodeCompletion
 #endif                                                      // CLANG_VERSION >= 30200

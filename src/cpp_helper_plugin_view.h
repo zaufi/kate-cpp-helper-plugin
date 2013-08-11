@@ -25,6 +25,7 @@
 
 // Project specific includes
 # include <src/ui_plugin_tool_view.h>
+# include <src/diagnostic_messages_model.h>
 # include <src/document_info.h>
 
 // Standard includes
@@ -93,6 +94,7 @@ private Q_SLOTS:
     void includeFileActivatedFromTree(QTreeWidgetItem*, int);
     void includeFileDblClickedFromTree(QTreeWidgetItem*, int);
     void includeFileDblClickedFromList(const QModelIndex&);
+    void diagnosticMessageActivated(const QModelIndex&);
     void onDocumentClose(KTextEditor::Document*);
     void updateCppActionsAvailability();                    ///< Enable/disable C++ specific actions in UI
 #if 0
@@ -126,9 +128,10 @@ private:
     KAction* m_open_header;                                 ///< <em>Open header</em> action
     KAction* m_copy_include;                                ///< <em>Copy #include to clipboard</em> action
     KAction* m_switch;                                      ///< <em>Open implementation/header</em> action
-    std::unique_ptr<QWidget> m_tool_view;                   ///< Toolview to display clang diagnostic
-    Ui_PluginToolViewWidget* const m_tool_view_interior;    ///< Interior widget of a tool view
-    QStandardItemModel* m_list_model;
+    DiagnosticMessagesModel m_diagnostic_data;              ///< Storage (model) for diagnostic messages
+    std::unique_ptr<QWidget> m_tool_view;                   ///< A tool-view widget of this plugin
+    Ui_PluginToolViewWidget* const m_tool_view_interior;    ///< Interior widget of a tool-view
+    QStandardItemModel* m_includes_list_model;
     KTextEditor::Document* m_last_explored_document;        ///< Document explored in the \c #includes view
 #if 0
     std::unique_ptr<KActionMenu> m_menu;                    ///< Context menu

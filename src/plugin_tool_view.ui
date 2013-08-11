@@ -9,7 +9,7 @@
    <item>
     <widget class="KTabWidget" name="tabs">
      <property name="currentIndex">
-      <number>1</number>
+      <number>0</number>
      </property>
      <widget class="QWidget" name="completionDisgnostic">
       <attribute name="title">
@@ -17,20 +17,21 @@
       </attribute>
       <layout class="QVBoxLayout" name="verticalLayout">
        <item>
-        <widget class="KTextEdit" name="diagnosticText">
-         <property name="font">
-          <font>
-           <family>Monospace</family>
-          </font>
+        <widget class="QListView" name="diagnosticMessages">
+         <property name="styleSheet">
+          <string notr="true">font: 9pt &quot;Monospace&quot;;</string>
          </property>
-         <property name="undoRedoEnabled">
+         <property name="editTriggers">
+          <set>QAbstractItemView::NoEditTriggers</set>
+         </property>
+         <property name="showDropIndicator" stdset="0">
           <bool>false</bool>
          </property>
-         <property name="readOnly">
+         <property name="textElideMode">
+          <enum>Qt::ElideNone</enum>
+         </property>
+         <property name="wordWrap">
           <bool>true</bool>
-         </property>
-         <property name="checkSpellingEnabled">
-          <bool>false</bool>
          </property>
         </widget>
        </item>
@@ -149,11 +150,6 @@
    <class>KTreeWidgetSearchLine</class>
    <extends>KLineEdit</extends>
    <header>ktreewidgetsearchline.h</header>
-  </customwidget>
-  <customwidget>
-   <class>KTextEdit</class>
-   <extends>QTextEdit</extends>
-   <header>ktextedit.h</header>
   </customwidget>
   <customwidget>
    <class>KTabWidget</class>

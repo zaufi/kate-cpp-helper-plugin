@@ -81,7 +81,7 @@ CppHelperPluginView::CppHelperPluginView(
           )
       )
   , m_tool_view_interior(new Ui_PluginToolViewWidget())
-  , m_list_model(new QStandardItemModel())
+  , m_includes_list_model(new QStandardItemModel())
   , m_last_explored_document(nullptr)
 #if 0
   , m_menu(new KActionMenu(i18n("C++ Helper: Playground"), this))
@@ -128,11 +128,18 @@ CppHelperPluginView::CppHelperPluginView(
 
     // Setup toolview
     m_tool_view_interior->setupUi(new QWidget(m_tool_view.get()));
+    m_tool_view_interior->diagnosticMessages->setModel(&m_diagnostic_data);
     m_tool_view_interior->includesTree->setHeaderHidden(true);
-    m_tool_view_interior->includedFromList->setModel(m_list_model);
+    m_tool_view_interior->includedFromList->setModel(m_includes_list_model);
     m_tool_view_interior->searchFilter->addTreeWidget(m_tool_view_interior->includesTree);
     m_tool_view->installEventFilter(this);
 
+    connect(
+        m_tool_view_interior->diagnosticMessages
+      , SIGNAL(activated(const QModelIndex&))
+      , this
+      , SLOT(diagnosticMessageActivated(const QModelIndex&))
+      );
     connect(
         m_tool_view_interior->updateButton
       , SIGNAL(clicked())
@@ -703,7 +710,7 @@ void CppHelperPluginView::onDocumentClose(KTextEditor::Document* doc)
     {
         m_last_explored_document = nullptr;
         m_tool_view_interior->includesTree->clear();
-        m_list_model->clear();
+        m_includes_list_model->clear();
     }
 }
 
@@ -819,7 +826,7 @@ bool CppHelperPluginView::handleView(KTextEditor::View* view)
                 new IncludeHelperCompletionModel(view, m_plugin)
               );
             std::unique_ptr<ClangCodeCompletionModel> code_completer(
-                new ClangCodeCompletionModel(view, m_plugin, m_tool_view_interior->diagnosticText)
+                new ClangCodeCompletionModel(view, m_plugin, m_diagnostic_data)
               );
             auto r = m_completers.insert(
                 std::make_pair(
@@ -1159,11 +1166,18 @@ void CppHelperPluginView::updateInclusionExplorer()
 
     auto* doc = mainWindow()->activeView()->document();
     auto& unit = m_plugin->getTranslationUnitByDocument(doc, false);
-    m_tool_view_interior->diagnosticText->setText(unit.getLastDiagnostic());
+    // Obtain diagnostic if any
+    {
+        auto diag = unit.getLastDiagnostic();
+        m_diagnostic_data.append(
+            std::make_move_iterator(begin(diag))
+          , std::make_move_iterator(end(diag))
+          );
+    }
     details::InclusionVisitorData data = {this, &m_plugin->getDocumentInfo(doc), {}, {}, nullptr, 0};
     data.m_di->clearInclusionTree();                        // Clear a previous tree in the document info
     m_tool_view_interior->includesTree->clear();            // and in the tree view model
-    m_list_model->clear();                                  // as well as `included by` list
+    m_includes_list_model->clear();                         // as well as `included by` list
     data.m_parents.push(m_tool_view_interior->includesTree->invisibleRootItem());
     clang_getInclusions(
         unit
@@ -1192,7 +1206,7 @@ void CppHelperPluginView::inclusionVisitor(
   , unsigned stack_size
   )
 {
-    DCXString header_name_cl = clang_getFileName(file);
+    DCXString header_name_cl = {clang_getFileName(file)};
     const QString header_name = clang_getCString(header_name_cl);
     const int header_id = m_plugin->headersCache()[header_name];
 #if 0
@@ -1210,7 +1224,7 @@ void CppHelperPluginView::inclusionVisitor(
         // NOTE Take filename from top of stack only!
         clang_getSpellingLocation(stack[0], &including_file, &line, &column, 0);
         // Obtain a filename and its ID in headers cache
-        const DCXString included_from_cl = clang_getFileName(including_file);
+        const DCXString included_from_cl = {clang_getFileName(including_file)};
         included_from = clang_getCString(included_from_cl);
         included_from_id = m_plugin->headersCache()[included_from];
         //
@@ -1267,11 +1281,11 @@ void CppHelperPluginView::inclusionVisitor(
     data->m_last_stack_size = stack_size;
 }
 
-void CppHelperPluginView::includeFileActivatedFromTree(QTreeWidgetItem* item, int column)
+void CppHelperPluginView::includeFileActivatedFromTree(QTreeWidgetItem* item, const int column)
 {
     assert("Document expected to be alive" && m_last_explored_document);
 
-    m_list_model->clear();
+    m_includes_list_model->clear();
 
     const HeaderFilesCache& cache = const_cast<const CppHelperPlugin* const>(m_plugin)->headersCache();
     QString filename = item->data(column, Qt::DisplayRole).toString();
@@ -1290,7 +1304,7 @@ void CppHelperPluginView::includeFileActivatedFromTree(QTreeWidgetItem* item, in
                       , QString::number(entry.m_line)
                       )
                   );
-                m_list_model->appendRow(item);
+                m_includes_list_model->appendRow(item);
             }
         }
     }
@@ -1306,7 +1320,7 @@ void CppHelperPluginView::dblClickOpenFile(QString&& filename)
     openFile(filename);
 }
 
-void CppHelperPluginView::includeFileDblClickedFromTree(QTreeWidgetItem* item, int column)
+void CppHelperPluginView::includeFileDblClickedFromTree(QTreeWidgetItem* item, const int column)
 {
     dblClickOpenFile(item->data(column, Qt::DisplayRole).toString());
 }
@@ -1318,13 +1332,34 @@ void CppHelperPluginView::includeFileDblClickedFromList(const QModelIndex& index
       && mainWindow()->activeView()
       );
 
-    auto filename = m_list_model->itemFromIndex(index)->text();
+    auto filename = m_includes_list_model->itemFromIndex(index)->text();
     auto pos = filename.lastIndexOf('[');
     auto line = filename.mid(pos + 1, filename.lastIndexOf(']') - pos - 1).toInt(nullptr);
     filename.remove(pos, filename.size());
     dblClickOpenFile(std::move(filename));
     mainWindow()->activeView()->setCursorPosition({line, 0});
     mainWindow()->activeView()->setSelection({line, 0, line + 1, 0});
+}
+
+void CppHelperPluginView::diagnosticMessageActivated(const QModelIndex& index)
+{
+    KUrl url;
+    int line;
+    int column;
+    std::tie(url, line, column) = m_diagnostic_data.getLocationByIndex(index);
+    if (line)
+    {
+        const auto& filename = url.toLocalFile();
+        assert("Filename expected to be non empty!" && !filename.isEmpty());
+        openFile(filename);
+        // NOTE Kate has line/column numbers started from 0, but clang is more
+        // human readable...
+        mainWindow()->activeView()->setCursorPosition({line - 1, column - 1});
+#if 0
+        /// \todo Make it configurable?
+        mainWindow()->activeView()->setFocus(Qt::MouseFocusReason);
+#endif
+    }
 }
 
 /**

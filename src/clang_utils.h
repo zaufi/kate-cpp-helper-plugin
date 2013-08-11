@@ -41,6 +41,11 @@ public:
     {
         DisposeFn(m_value);
     }
+    /// Delete copy ctor
+    disposable(const disposable&) = delete;
+    /// Delete copy-assign operator
+    disposable& operator=(const disposable&) = delete;
+    /// Implicit conversion to \c T
     operator T() const
     {
         return m_value;
@@ -59,10 +64,16 @@ public:
     {
         DisposeFn(m_value);
     }
+    /// Delete move ctor
+    disposable(disposable&&) = delete;
+    /// Delete move-assign operator
+    disposable& operator=(disposable&&) = delete;
+    /// Implicit conversion to \c T*
     operator T*() const
     {
         return m_value;
     }
+    /// Get access to underlaid pointer
     T* operator ->() const
     {
         return m_value;
@@ -82,7 +93,7 @@ typedef disposable<CXCodeCompleteResults*, &clang_disposeCodeCompleteResults> DC
 /// Get a human readable string of \c CXCursorKind
 inline QString toString(const CXCursorKind v)
 {
-    DCXString str = clang_getCursorKindSpelling(v);
+    DCXString str = {clang_getCursorKindSpelling(v)};
     return QString(clang_getCString(str));
 }
 
@@ -95,7 +106,7 @@ inline QDebug operator<<(QDebug dbg, const CXSourceLocation& l)
     unsigned line;
     unsigned column;
     clang_getSpellingLocation(l, &file, &line, &column, nullptr);
-    DCXString filename = clang_getFileName(file);
+    DCXString filename = {clang_getFileName(file)};
     dbg.nospace() << clang_getCString(filename) << ':' << line << ':' << column;
     return dbg.space();
 }
@@ -103,8 +114,8 @@ inline QDebug operator<<(QDebug dbg, const CXSourceLocation& l)
 inline QDebug operator<<(QDebug dbg, const CXCursor& c)
 {
     auto kind = clang_getCursorKind(c);
-    DCXString kind_str = clang_getCursorKindSpelling(kind);
-    DCXString csp_str = clang_getCursorDisplayName(c);
+    DCXString kind_str = {clang_getCursorKindSpelling(kind)};
+    DCXString csp_str = {clang_getCursorDisplayName(c)};
     dbg.nospace() << clang_getCursorLocation(c) << ": entity:" << clang_getCString(csp_str)
       << ", kind:" << clang_getCString(kind_str);
     return dbg.space();

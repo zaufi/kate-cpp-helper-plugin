@@ -184,6 +184,13 @@ TODO
 Changes
 =======
 
+Version 0.9.2
+-------------
+
+* fix (avoid actually) _pure virtual function_ crash with clang 3.3 on
+  attempts to get a source code location for _Note_ diagnostic messages.
+* diagnostic messages tab in the tool view was transformed into a (clickable) list view
+
 Version 0.9.1
 -------------
 

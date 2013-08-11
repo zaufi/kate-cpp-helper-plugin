@@ -41,7 +41,9 @@
 # include <vector>
 
 namespace kate {
-class CppHelperPlugin;                                  // forward declaration
+// forward declarations
+class CppHelperPlugin;
+class DiagnosticMessagesModel;
 
 /**
  * \brief [Type brief class description here]
@@ -58,7 +60,7 @@ class ClangCodeCompletionModel
 
 public:
     /// Default constructor
-    ClangCodeCompletionModel(QObject*, CppHelperPlugin*, KTextEdit*);
+    ClangCodeCompletionModel(QObject*, CppHelperPlugin*, DiagnosticMessagesModel&);
 
     //BEGIN KTextEditor::CodeCompletionModel overrides
     /// Generate completions for given range
@@ -99,7 +101,7 @@ private:
     QVariant getItemHighlightData(const QModelIndex&, int) const;
 
     CppHelperPlugin* m_plugin;
-    KTextEdit* m_diagnostic_text;
+    DiagnosticMessagesModel& m_diagnostic_model;
     KTextEditor::View* m_current_view;
     groups_list_type m_groups;                              ///< Level one nodes
 };

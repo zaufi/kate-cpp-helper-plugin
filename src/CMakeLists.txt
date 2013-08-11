@@ -11,6 +11,7 @@ set(KATE_CPP_HELPER_PLUGIN_SOURCES
     plugin_configuration.cpp
     document_info.cpp
     document_proxy.cpp
+    diagnostic_messages_model.cpp
     translation_unit.cpp
     clang_utils.cpp
     clang_code_completion_item.cpp

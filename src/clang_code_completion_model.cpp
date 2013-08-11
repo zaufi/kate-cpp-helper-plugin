@@ -25,6 +25,7 @@
 #include <src/clang_utils.h>
 #include <src/cpp_helper_plugin.h>
 #include <src/document_proxy.h>
+#include <src/diagnostic_messages_model.h>
 #include <src/translation_unit.h>
 #include <src/utils.h>
 
@@ -41,11 +42,11 @@ namespace kate {
 ClangCodeCompletionModel::ClangCodeCompletionModel(
     QObject* parent
   , CppHelperPlugin* plugin
-  , KTextEdit* dt
+  , DiagnosticMessagesModel& dmm
   )
   : KTextEditor::CodeCompletionModel2(parent)
   , m_plugin(plugin)
-  , m_diagnostic_text(dt)
+  , m_diagnostic_model(dmm)
   , m_current_view(nullptr)
 {
 }
@@ -100,12 +101,29 @@ void ClangCodeCompletionModel::completionInvoked(
     try
     {
         auto& unit = m_plugin->getTranslationUnitByDocument(doc);
-        // Try to make a comletion
+        // Obtain diagnostic if any
+        {
+            auto diag = unit.getLastDiagnostic();
+            if (!diag.empty())
+                m_diagnostic_model.append(
+                    std::make_move_iterator(begin(diag))
+                  , std::make_move_iterator(end(diag))
+                  );
+        }
+        // Try to make a completion
         auto completions = unit.completeAt(
             unsigned(range.start().line() + 1)              // NOTE Kate count lines starting from 0
           , unsigned(range.start().column() + 1)            // NOTE Kate count columns starting from 0
           );
-        m_diagnostic_text->setText(unit.getLastDiagnostic());
+        // Obtain diagnostic if any
+        {
+            auto diag = unit.getLastDiagnostic();
+            if (!diag.empty())
+                m_diagnostic_model.append(
+                    std::make_move_iterator(begin(diag))
+                  , std::make_move_iterator(end(diag))
+                  );
+        }
 
         // Transform a plain list into hierarchy grouped by parent context
         std::map<QString, GroupInfo> grouped_completions;
@@ -314,10 +332,10 @@ QVariant ClangCodeCompletionModel::getItemHighlightData(const QModelIndex& index
                         QList<QVariant> attributes;
                         for (const auto& a : attrs)
                             attributes
-                            << a.start
-                            << (a.start + a.length)
-                            << KTextEditor::Attribute(*a.attribute)
-                            ;
+                              << a.start
+                              << (a.start + a.length)
+                              << KTextEditor::Attribute(*a.attribute)
+                              ;
                         return attributes;
                     }
                     // NOTE Fallback to default case...

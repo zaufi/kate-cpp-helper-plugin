@@ -25,6 +25,7 @@
 
 // Project specific includes
 # include <src/clang_code_completion_item.h>
+# include <src/diagnostic_messages_model.h>
 
 // Standard includes
 # include <KUrl>
@@ -56,6 +57,7 @@ public:
 
         explicit Exception(const std::string&);
     };
+    typedef std::vector<DiagnosticMessagesModel::Record> records_list_type;
     typedef QVector<QPair<QString, QString>> unsaved_files_list_type;
     /// Make a translation unit from a previously serialized file (PCH)
     TranslationUnit(CXIndex, const KUrl&);
@@ -104,9 +106,13 @@ public:
     void storeTo(const KUrl&);
     void reparse();
 
-    const QString& getLastDiagnostic() const
+    /// Obtain diagnostic messages after last operation
+    /// \note Leave internal container empty
+    records_list_type getLastDiagnostic() noexcept
     {
-        return m_last_diagnostic_text;
+        records_list_type result;
+        swap(result, m_last_diagnostic_messages);
+        return result;
     }
 
     static unsigned defaultPCHParseOptions();
@@ -114,14 +120,15 @@ public:
     static unsigned defaultExplorerParseOptions();
 
 private:
-    void showDiagnostic();
+    void updateDiagnostic();
+    void appendDiagnostic(const CXDiagnostic&);
     static QString makeParentText(CXCompletionString);
 
     std::vector<std::pair<QByteArray, QByteArray>> m_unsaved_files_utf8;
     std::vector<CXUnsavedFile> m_unsaved_files;
+    records_list_type m_last_diagnostic_messages;
     QByteArray m_filename;
     CXTranslationUnit m_unit;
-    QString m_last_diagnostic_text;
 };
 
 struct TranslationUnit::Exception::CompletionFailure : public TranslationUnit::Exception
