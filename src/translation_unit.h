@@ -102,7 +102,7 @@ public:
     }
 
     void updateUnsavedFiles(const unsaved_files_list_type&);
-    QList<ClangCodeCompletionItem> completeAt(const int, const int);
+    QList<ClangCodeCompletionItem> completeAt(int, int);
     void storeTo(const KUrl&);
     void reparse();
 

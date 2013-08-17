@@ -87,6 +87,12 @@ public:
     QPair<QString, int> executeCompletion() const;
     CompletionTemplateData getCompletionTemplate() const;
 
+    /// Get cursor kind for this completion item
+    CXCursorKind kind() const
+    {
+        return m_kind;
+    }
+
 private:
 
     QString renderPlaceholders(const QString&, const bool) const;
