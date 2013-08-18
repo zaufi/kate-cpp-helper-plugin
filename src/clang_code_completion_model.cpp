@@ -37,10 +37,7 @@
 #include <KLocalizedString>                                 /// \todo Where is \c i18n() defiend?
 #include <algorithm>
 
-namespace kate { namespace {
-const QString MACRO_GROUP_NAME = "Preprocessor Macro";
-}                                                           // anonymous namespace
-
+namespace kate {
 
 ClangCodeCompletionModel::ClangCodeCompletionModel(
     QObject* parent
@@ -132,18 +129,12 @@ void ClangCodeCompletionModel::completionInvoked(
         std::map<QString, GroupInfo> grouped_completions;
         for (auto&& comp : completions)
         {
-            QString group_name;
-            if (comp.kind() == CXCursor_MacroDefinition)
-                group_name = MACRO_GROUP_NAME;
-            else
-                group_name = comp.parentText();
-            kDebug() << "Selected group name: " << group_name;
             // Find a group for current item
-            auto it = grouped_completions.find(group_name);
+            auto it = grouped_completions.find(comp.parentText());
             if (it == end(grouped_completions))
             {
                 // No group yet, let create a new one
-                it = grouped_completions.insert(std::make_pair(group_name, GroupInfo())).first;
+                it = grouped_completions.insert(std::make_pair(comp.parentText(), GroupInfo())).first;
             }
             // Add a current item to the list of completions in the current group
             it->second.m_completions.emplace_back(std::move(comp));

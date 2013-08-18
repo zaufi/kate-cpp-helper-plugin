@@ -120,6 +120,15 @@ void debugShowCompletionResult(
     kDebug() << ">>> -----------------------------------";
 }
 
+const QString GLOBAL_NS_GROUP_STR = {"Global"};
+const QString PREPROCESSOR_GROUP_STR = {"Preprocessor Macro"};
+
+const QString STRUCT_NS_STR = {"struct"};
+const QString ENUM_NS_STR = {"enum"};
+const QString UNION_NS_STR = {"union"};
+const QString CLASS_NS_STR = {"class"};
+const QString TYPEDEF_NS_STR = {"typedef"};
+const QString NAMESPACE_NS_STR = {"namespace"};
 }                                                           // anonymous namespace
 
 /**
@@ -401,7 +410,7 @@ QList<ClangCodeCompletionItem> TranslationUnit::completeAt(const int line, const
         }
         assert("Priority expected to be less than 100" && priority < 101u);
         completions.push_back({
-            makeParentText(str)
+            makeParentText(str, cursor_kind)
           , text_before
           , typed_text
           , text_after
@@ -419,40 +428,45 @@ QList<ClangCodeCompletionItem> TranslationUnit::completeAt(const int line, const
 /**
  * Get human readable text representation of a parent context of the given completion string
  */
-QString TranslationUnit::makeParentText(CXCompletionString str)
+QString TranslationUnit::makeParentText(CXCompletionString str, const CXCursorKind cur_kind)
 {
     CXCursorKind parent_ck;
     const DCXString parent_clstr = {clang_getCompletionParent(str, &parent_ck)};
     const auto parent_cstr = clang_getCString(parent_clstr);
     if (parent_cstr)
     {
+        const auto parent_str = QString(parent_cstr).trimmed();
+        if (parent_str.isEmpty())
+            return GLOBAL_NS_GROUP_STR;
         QString prefix;
         switch (parent_ck)
         {
             case CXCursor_StructDecl:
-                prefix = "struct";
+                prefix = STRUCT_NS_STR;
                 break;
             case CXCursor_UnionDecl:
-                prefix = "union";
+                prefix = UNION_NS_STR;
                 break;
             case CXCursor_ClassDecl:
-                prefix = "class";
+                prefix = CLASS_NS_STR;
                 break;
             case CXCursor_EnumDecl:
-                prefix = "enum";
+                prefix = ENUM_NS_STR;
                 break;
             case CXCursor_Namespace:
-                prefix = "namespace";
+                prefix = NAMESPACE_NS_STR;
                 break;
-            /// \todo More types
+            /// \todo More types?
             default:
                 break;
         }
         if (!prefix.isEmpty())
             prefix += ' ';
-        return prefix + parent_cstr;
+        return prefix + parent_str;
     }
-    return "Global";
+    else if (cur_kind == CXCursor_MacroDefinition)
+        return PREPROCESSOR_GROUP_STR;
+    return GLOBAL_NS_GROUP_STR;
 }
 
 void TranslationUnit::storeTo(const KUrl& filename)
@@ -468,7 +482,7 @@ void TranslationUnit::storeTo(const KUrl& filename)
     {
         if (result == CXSaveError_TranslationErrors)
             updateDiagnostic();
-        throw Exception::SaveFailure("Failure on save a translation unit into a file");
+        throw Exception::SaveFailure("Failure on save translation unit into a file");
     }
 }
 

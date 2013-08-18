@@ -65,13 +65,14 @@ QVariant ClangCodeCompletionItem::data(const QModelIndex& index, const int role,
                     {
                         switch (m_kind)
                         {
-                            case CXCursor_TypedefDecl:   prefix = QLatin1String("typedef");         break;
-                            case CXCursor_ClassDecl:     prefix = QLatin1String("class");           break;
-                            case CXCursor_ClassTemplate: prefix = QLatin1String("template class");  break;
-                            case CXCursor_StructDecl:    prefix = QLatin1String("struct");          break;
-                            case CXCursor_EnumDecl:      prefix = QLatin1String("enum");            break;
-                            case CXCursor_Namespace:     prefix = QLatin1String("namespace");       break;
-                            case CXCursor_UnionDecl:     prefix = QLatin1String("union");           break;
+                            case CXCursor_TypedefDecl:      prefix = QLatin1String("typedef");         break;
+                            case CXCursor_ClassDecl:        prefix = QLatin1String("class");           break;
+                            case CXCursor_ClassTemplate:    prefix = QLatin1String("template class");  break;
+                            case CXCursor_StructDecl:       prefix = QLatin1String("struct");          break;
+                            case CXCursor_EnumDecl:         prefix = QLatin1String("enum");            break;
+                            case CXCursor_Namespace:        prefix = QLatin1String("namespace");       break;
+                            case CXCursor_UnionDecl:        prefix = QLatin1String("union");           break;
+                            case CXCursor_MacroDefinition:  prefix = QLatin1String("macro");           break;
                             default: break;
                         }
                         result = prefix;

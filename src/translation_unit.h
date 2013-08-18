@@ -122,7 +122,7 @@ public:
 private:
     void updateDiagnostic();
     void appendDiagnostic(const CXDiagnostic&);
-    static QString makeParentText(CXCompletionString);
+    static QString makeParentText(CXCompletionString, CXCursorKind);
 
     std::vector<std::pair<QByteArray, QByteArray>> m_unsaved_files_utf8;
     std::vector<CXUnsavedFile> m_unsaved_files;

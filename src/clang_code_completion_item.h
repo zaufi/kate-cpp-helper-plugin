@@ -99,7 +99,7 @@ private:
 
     static const int NO_OPTIONAL_PLACEHOLDERS = -1;
 
-    QString m_parent;                                       ///< Parent context of the curremt completion item
+    QString m_parent;                                       ///< Parent context of the current completion item
     QString m_before;                                       ///< Everything \e before typed text (return type)
     QString m_text;                                         ///< Text to paste
     QString m_after;                                        ///< Everything \e after typed text (arguments)
