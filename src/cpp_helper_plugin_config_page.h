@@ -24,21 +24,26 @@
 # define __SRC__INCLUDE_HELPER_PLUGIN_CONFIG_PAGE_H__
 
 // Project specific includes
-# include <src/ui_clang_settings.h>
-# include <src/ui_detect_compiler_paths.h>
-# include <src/ui_other_settings.h>
-# include <src/ui_path_config.h>
-# include <src/ui_session_paths_sets.h>
 
 // Standard includes
 # include <kate/plugin.h>
 # include <kate/pluginconfigpageinterface.h>
 # include <KProcess>
+# include <KListWidget>
 # include <KSharedConfig>
 # include <map>
 
+namespace Ui {
+class CLangOptionsWidget;
+class CompletionSettings;
+class DetectCompilerPathsWidget;
+class PathListConfigWidget;
+class PerSessionSettingsConfigWidget;
+class SessionPathsSetsWidget;
+}                                                           // namespace Ui
+
 namespace kate {
-class CppHelperPlugin;                                  // forward declaration
+class CppHelperPlugin;                                      // forward declaration
 
 /**
  * \brief Configuration page for the plugin
@@ -54,16 +59,13 @@ public:
     explicit CppHelperPluginConfigPage(QWidget* = 0, CppHelperPlugin* = 0);
     virtual ~CppHelperPluginConfigPage() {}
 
+public Q_SLOTS:
     /// \name \c Kate::PluginConfigPage interface implementation
     //@{
     void apply();
     void reset();
-    void defaults() {}
+    void defaults();
     //@}
-
-Q_SIGNALS:
-    void sessionDirsUpdated(const QStringList&);
-    void systemDirsUpdated(const QStringList&);
 
 private Q_SLOTS:
     void addGlobalIncludeDir();                             ///< Add directory to the list
@@ -90,6 +92,12 @@ private Q_SLOTS:
     void readyReadStandardOutput();                         ///< Ready to read standard input
     void readyReadStandardError();                          ///< Ready to read standard error
     void updateSuggestions();
+    void addEmptySanitizeRule();
+    void removeSanitizeRule();
+    void moveSanitizeRuleUp();
+    void moveSanitizeRuleDown();
+    void validateSanitizeRule(int, int);
+    std::pair<bool, QString> isSanitizeRuleValid(int, int) const;
 
 private:
     bool contains(const QString&, const KListWidget*);      ///< Check if directories list contains given item
@@ -97,14 +105,16 @@ private:
     QString getCurrentCompiler() const;
     void addDirTo(const KUrl&, KListWidget*);
     void updateSets();                                      ///< Update predefined \c #include sets
+    void swapRuleRows(int, int);                            ///< Swap rule parts in a given rows
 
     CppHelperPlugin* m_plugin;                              ///< Parent plugin
-    Ui_PerSessionSettingsConfigWidget* const m_pss_config;
-    Ui_CLangOptionsWidget* const m_clang_config;
-    Ui_PathListConfigWidget* const m_system_list;
-    Ui_PathListConfigWidget* const m_session_list;
-    Ui_DetectCompilerPathsWidget* const m_compiler_paths;
-    Ui_SessionPathsSetsWidget* const m_favorite_sets;
+    Ui::PerSessionSettingsConfigWidget* const m_pss_config;
+    Ui::CLangOptionsWidget* const m_clang_config;
+    Ui::PathListConfigWidget* const m_system_list;
+    Ui::PathListConfigWidget* const m_session_list;
+    Ui::DetectCompilerPathsWidget* const m_compiler_paths;
+    Ui::SessionPathsSetsWidget* const m_favorite_sets;
+    Ui::CompletionSettings* const m_completion_settings;
     KProcess m_compiler_proc;
     QString m_output;
     QString m_error;

@@ -3,7 +3,7 @@
 #
 
 #=============================================================================
-# Copyright 2010 by Alex Turbov <i.zaufi@gmail.com>
+# Copyright 2012 by Alex Turbov <i.zaufi@gmail.com>
 #
 # Distributed under the OSI-approved BSD License (the "License");
 # see accompanying file LICENSE for details.

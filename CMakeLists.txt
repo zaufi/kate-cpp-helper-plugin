@@ -12,7 +12,7 @@ project(KateCppHelperPlugin C CXX)
 
 set(VERSION_MAJOR 0)
 set(VERSION_MINOR 9)
-set(VERSION_PATCH 2)
+set(VERSION_PATCH 3)
 set(VERSION_STRING ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/modules" ${CMAKE_MODULE_PATH})
 
@@ -84,6 +84,10 @@ add_definitions(${QT_DEFINITIONS} ${KDE4_DEFINITIONS})
 add_definitions(${LLVM_CXXFLAGS})
 # Use Kate plugins debug area as default
 # add_definitions(-DDEBUG_AREA=13040)
+
+# Keep RPATH to found libraries (particularly LLVM's) in installed .so file
+# BUG https://github.com/zaufi/kate-cpp-helper-plugin/issues/6
+set(CMAKE_INSTALL_RPATH "${LLVM_LIBDIR}")
 
 #---------------------------------------------------------
 # Section: Define some helpful targets (using included)

@@ -25,6 +25,7 @@
 // Project specific includes
 #include <src/translation_unit.h>
 #include <src/clang_utils.h>
+#include <src/sanitize_snippet.h>
 
 // Standard includes
 #include <cassert>
@@ -264,7 +265,12 @@ void TranslationUnit::updateUnsavedFiles(const unsaved_files_list_type& unsaved_
     }
 }
 
-QList<ClangCodeCompletionItem> TranslationUnit::completeAt(const int line, const int column)
+QList<ClangCodeCompletionItem> TranslationUnit::completeAt(
+    const int line
+  , const int column
+  , const unsigned completion_falgs
+  , const PluginConfiguration::sanitize_rules_list_type& sanitize_rules
+  )
 {
     QList<ClangCodeCompletionItem> completions;
 
@@ -276,7 +282,7 @@ QList<ClangCodeCompletionItem> TranslationUnit::completeAt(const int line, const
           , unsigned(column)
           , m_unsaved_files.data()
           , m_unsaved_files.size()
-          , clang_defaultCodeCompleteOptions()
+          , completion_falgs
           )
       };
     if (!res)
@@ -333,7 +339,13 @@ QList<ClangCodeCompletionItem> TranslationUnit::completeAt(const int line, const
             else
                 text_after += text;
         };
-        for (unsigned j = 0, chunks = clang_getNumCompletionChunks(str); j < chunks; ++j)
+        bool skip_this_item = false;
+        for (
+            unsigned j = 0
+          , chunks = clang_getNumCompletionChunks(str)
+          ; j < chunks && !skip_this_item
+          ; ++j
+          )
         {
             auto kind = clang_getCompletionChunkKind(str, j);
             DCXString text_str = {clang_getCompletionChunkText(str, j)};
@@ -344,13 +356,27 @@ QList<ClangCodeCompletionItem> TranslationUnit::completeAt(const int line, const
                 case CXCompletionChunk_TypedText:
                 // Text that should be inserted as part of a code-completion result
                 case CXCompletionChunk_Text:
-                    typed_text += text;
+                {
+                    auto p = sanitize(text, sanitize_rules);// Pipe given piece of text through sanitizer
+                    if (p.first)
+                        typed_text += p.second;
+                    else                                    // Go for next completion item
+                        skip_this_item = true;
                     break;
+                }
                 // Placeholder text that should be replaced by the user
                 case CXCompletionChunk_Placeholder:
-                    appender("%" + QString::number(placeholders.size() + 1) + "%");
-                    placeholders.push_back(text);
+                {
+                    auto p = sanitize(text, sanitize_rules);// Pipe given piece of text through sanitizer
+                    if (p.first)
+                    {
+                        appender("%" + QString::number(placeholders.size() + 1) + "%");
+                        placeholders.push_back(p.second);
+                    }
+                    else                                    // Go for next completion item
+                        skip_this_item = true;
                     break;
+                }
                 // A code-completion string that describes "optional" text that
                 // could be a part of the template (but is not required)
                 case CXCompletionChunk_Optional:
@@ -364,15 +390,25 @@ QList<ClangCodeCompletionItem> TranslationUnit::completeAt(const int line, const
                       )
                     {
                         DCXString otext_str = {clang_getCompletionChunkText(ostr, oci)};
-                        QString otext(clang_getCString(otext_str));
-                        auto okind = clang_getCompletionChunkKind(ostr, oci);
-                        if (okind == CXCompletionChunk_Placeholder)
+                        QString otext{clang_getCString(otext_str)};
+                        // Pipe given piece of text through sanitizer
+                        auto p = sanitize(otext, sanitize_rules);
+                        if (p.first)
                         {
-                            appender("%" + QString::number(placeholders.size() + 1) + "%");
-                            placeholders.push_back(otext);
-                            optional_placeholers_start_position = placeholders.size();
+                            auto okind = clang_getCompletionChunkKind(ostr, oci);
+                            if (okind == CXCompletionChunk_Placeholder)
+                            {
+                                appender("%" + QString::number(placeholders.size() + 1) + "%");
+                                placeholders.push_back(p.second);
+                                optional_placeholers_start_position = placeholders.size();
+                            }
+                            else appender(p.second);
                         }
-                        else appender(otext);
+                        else
+                        {
+                            skip_this_item = true;
+                            break;
+                        }
                     }
                     break;
                 }
@@ -393,8 +429,14 @@ QList<ClangCodeCompletionItem> TranslationUnit::completeAt(const int line, const
                 case CXCompletionChunk_HorizontalSpace:
                 /// \todo Kate can't handle \c '\n' well in completions list
                 case CXCompletionChunk_VerticalSpace:
-                    appender(text);
+                {
+                    auto p = sanitize(text, sanitize_rules);// Pipe given piece of text through sanitizer
+                    if (p.first)
+                        appender(p.second);
+                    else                                    // Go for next completion item
+                        skip_this_item = true;
                     break;
+                }
                 // Informative text that should be displayed but never inserted
                 // as part of the template
                 case CXCompletionChunk_Informative:
@@ -403,12 +445,24 @@ QList<ClangCodeCompletionItem> TranslationUnit::completeAt(const int line, const
                     // and it's useless for completer cuz it can group items
                     // by parent already...
                     if (!typed_text.isEmpty())
-                        appender(text);
+                    {
+                        // Pipe given piece of text through sanitizer
+                        auto p = sanitize(text, sanitize_rules);
+                        if (p.first)
+                            appender(p.second);
+                        else                                // Go for next completion item
+                            skip_this_item = true;
+                    }
+                    break;
                 default:
                     break;
             }
         }
+        // Does it pass the completion items sanitizer?
+        if (skip_this_item) continue;                       // No! Skip it!
+
         assert("Priority expected to be less than 100" && priority < 101u);
+        //
         completions.push_back({
             makeParentText(str, cursor_kind)
           , text_before

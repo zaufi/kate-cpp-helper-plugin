@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>CompletionSettings</class>
+ <widget class="QWidget" name="CompletionSettings">
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout_2">
+   <item>
+    <widget class="KButtonGroup" name="completionOptions">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="title">
+      <string>Code Completion Options</string>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout_4">
+      <item>
+       <widget class="QCheckBox" name="autoCompletions">
+        <property name="toolTip">
+         <string>Enable automatic completions on member access</string>
+        </property>
+        <property name="text">
+         <string>Automatic completion popup</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="includeMacros">
+        <property name="toolTip">
+         <string>Show defined preprocessor macros in completion results</string>
+        </property>
+        <property name="text">
+         <string>Include MACROs to completion results</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="highlightResults">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Colorize completion items using current document's mode&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="text">
+         <string>Highlight completion results</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="KButtonGroup" name="sanitizeResults">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+       <horstretch>0</horstretch>
+       <verstretch>10</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="toolTip">
+      <string>Pass completion results throuth sanitize rules</string>
+     </property>
+     <property name="title">
+      <string>Sanitize Completion Results</string>
+     </property>
+     <property name="checkable">
+      <bool>true</bool>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout">
+      <item>
+       <widget class="QTableWidget" name="sanitizeRules">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="whatsThis">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Every sanitize rule consists of two parts: what to &lt;span style=&quot; font-style:italic;&quot;&gt;find&lt;/span&gt; and text to &lt;span style=&quot; font-style:italic;&quot;&gt;replace&lt;/span&gt;. The &lt;span style=&quot; font-style:italic;&quot;&gt;find &lt;/span&gt;part is a regular expression. The &lt;span style=&quot; font-style:italic;&quot;&gt;replace&lt;/span&gt; part is a text, possible with placeholders, to be substituted instead.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="showDropIndicator" stdset="0">
+         <bool>false</bool>
+        </property>
+        <property name="rowCount">
+         <number>0</number>
+        </property>
+        <property name="columnCount">
+         <number>2</number>
+        </property>
+        <attribute name="horizontalHeaderStretchLastSection">
+         <bool>true</bool>
+        </attribute>
+        <column>
+         <property name="text">
+          <string>Find</string>
+         </property>
+        </column>
+        <column>
+         <property name="text">
+          <string>Replace</string>
+         </property>
+        </column>
+       </widget>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="hl">
+        <item>
+         <spacer name="hs">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item>
+         <widget class="KPushButton" name="addRule">
+          <property name="toolTip">
+           <string>Add new empty rule</string>
+          </property>
+          <property name="text">
+           <string/>
+          </property>
+          <property name="icon">
+           <iconset theme="list-add"/>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="KPushButton" name="removeRule">
+          <property name="toolTip">
+           <string>Remove current rule</string>
+          </property>
+          <property name="text">
+           <string/>
+          </property>
+          <property name="icon">
+           <iconset theme="list-remove"/>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="KPushButton" name="upRule">
+          <property name="toolTip">
+           <string>Move current rule up</string>
+          </property>
+          <property name="icon">
+           <iconset theme="arrow-up"/>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="KPushButton" name="downRule">
+          <property name="toolTip">
+           <string>Move current rule down</string>
+          </property>
+          <property name="icon">
+           <iconset theme="arrow-down"/>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <spacer name="vs">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>40</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+  </layout>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>KButtonGroup</class>
+   <extends>QGroupBox</extends>
+   <header>kbuttongroup.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>KPushButton</class>
+   <extends>QPushButton</extends>
+   <header>kpushbutton.h</header>
+  </customwidget>
+ </customwidgets>
+ <tabstops>
+  <tabstop>autoCompletions</tabstop>
+  <tabstop>highlightResults</tabstop>
+  <tabstop>sanitizeResults</tabstop>
+  <tabstop>sanitizeRules</tabstop>
+  <tabstop>addRule</tabstop>
+  <tabstop>removeRule</tabstop>
+  <tabstop>upRule</tabstop>
+  <tabstop>downRule</tabstop>
+ </tabstops>
+ <resources/>
+ <connections/>
+</ui>

@@ -110,6 +110,25 @@ with `#include` directives of all used headers in a project. This file can be co
 file in plugins' configuration dialog. It will be _precompiled_ and used by code completer.
 
 
+Completion Results Sanitizer
+----------------------------
+
+Since version 0.9.3 the plugin has configurable rules to sanitize completion results.
+A rule consist of two parts: _find regex_ and _replace text_. The first one can be used
+to match some part of a completion item and do some capture sites. Latter can be used in
+_replace text_ part for text substitution. If second part is empty, and first is matched, that
+completion item will be removed from a result list. This can be used to filter out undesired
+stuff. For example, Boost Preprocessor library has a bunch of internally used macros, which
+definitely shouldn't appear to the end-user. To filter them just add the following rule:
+
+    BOOST_(PP_[A-Z_]+_(\d+|[A-Z])|.*_HPP(_INCLUDED)?$|[A-Z_]+_AUX_)
+
+This rule also remove `#include` guards and internal macros used by various libs (like MPL and TTI).
+Few other helpful rules can be found in unit tests 
+[`sanitize_snippet_tester.cpp`](https://github.com/zaufi/kate-cpp-helper-plugin/blob/master/src/test/sanitize_snippet_tester.cpp).
+
+
+
 Some (other) important notes
 ----------------------------
 
@@ -128,172 +147,49 @@ Some (other) important notes
         fs.inotify.max_user_watches = 16384
 
 
-Update Config files
--------------------
-
-Unfortunately after renaming from _Kate Include Helper_ all configured data (global and session)
-will be lost (configuration groups were renamed as well). To avoid reconfigure everything one may use
-`sed` to do the following:
-
-    $ cd ~/.kde4/share/apps/kate/sessions
-    $ sed -i 's,kateincludehelperplugin,katecpphelperplugin,g' *
-    $ sed -i 's,:include-helper,:cpp-helper,g' *
-    $ cd ~/.kde4/share/config
-    $ sed -i 's,IncludeHelper,CppHelper,g' *
-
 
 Known Bugs
 ==========
 
-It seems recently released clang 3.2 has a bug with optional parameters: completer return only first one.
+* It seems recently released clang 3.2 has a bug with optional parameters: completer return only first one.
+* clang 3.3 has a bug w/ _pure virtual function call_ when accessing some completion diagnostic messages.
+  If you see a call to `clang_getSpellingLocation` in a backtrace, do not report a bug to me ;-)
 
 
 TODO
 ====
 
-* Add autocompleter for `#include` files (done)
-* Handle multiple matches (done)
-* Passive popups if nothing found (done)
+* <del>Add autocompleter for `#include` files</del> [done]
+* <del>Handle multiple matches</del> [done]
+* <del>Passive popups if nothing found</del> [done]
 * Handle #include files w/ relative path
 * Use `Shift+F10` to go back in stack (?)
-* Form an `#include` directive w/ filename currently active in a clipboard (done)
-* List of currently `#included` files in a dialog and/or menu (done)
-* _OpenFile_ dialog for current `#include` line
-* Is it possible to use annotations iface somehow to indicate 'not-found' `#include` file?
+* <del>Form an `#include` directive w/ filename currently active in a clipboard</del> [done]
+* <del>List of currently `#included` files in a dialog and/or menu</del> [done]
+* _OpenFile_ dialog for current `#include` line to choose (another) header
+* <del>Is it possible to use annotations iface somehow to indicate 'not-found' `#include` file?</del> [done]
 * Add quick open dialog -- like quick document switcher, but allows to find a file to open
   based on configured include paths by partial name match...
-* Add view to explore a tree of `#included` files (done someway)
-* Add option(s) to include/exclude files from completion list (exclusion list of extensions done)
+* <del>Add view to explore a tree of `#included` files</del> [done someway]
+* <del>Add option(s) to include/exclude files from completion list</del> [exclusion list of extensions done]
 * Issue a warning if /proc/sys/fs/inotify/max_user_watches is not high enough
-* Use `KUrl` for files and dirs instead of `QStrings`
-* Clean `std::enable_if` and `boost::enable_if` from return value and parameters
-* Use compilation database if possible.
+* Use `KUrl` for files and dirs instead of `QStrings` [code review requried]
+* <del>Clean `std::enable_if` and `boost::enable_if` from return value and parameters</del> [use sanitizers]
+* Use compilation database if possible. [what to do w/ headers which are not in there?]
 * Auto generate doxygen documentation for functions from definition -- just skeleton
   w/ parameters and return type.
 * Enable code autocompletion (configurable by checkbox)... but how to deal w/ really heavy project?
-  Now one of my current project took ~8sec to show completions (even with PCH) :-(
-  So, definitely there should be possible to turn code autocompleter off.
+  Nowadays for one of my current project it took ~8sec to show completions (even with PCH) :-(
+  <del>So, definitely there should be possible to turn code autocompleter off</del> [done]
 * Need to introduce index database to lookup for declarations/definitions/references. It
   also can be used for code refactorings (like rename smth & etc.)
 * Give a context hint to code completer
-* Not quite related to C++, but it would be nice to have a CMake autocompleter.
+* <del>Not quite related to C++, but it would be nice to have a CMake autocompleter.
   It can complete variables, functions, properties, `include()` or `find_package()` files.
-  Also it can retrieve `help` screen for particular module.
-
-
-Changes
-=======
-
-Version 0.9.2
--------------
-
-* fix (avoid actually) _pure virtual function_ crash with clang 3.3 on
-  attempts to get a source code location for _Note_ diagnostic messages.
-* diagnostic messages tab in the tool view was transformed into a (clickable) list view
-
-Version 0.9.1
--------------
-
-* add a quick search (filter) to the `#include` explorer
-* fixed build w/ gcc 4.6.x (patch from Alexander Mezin)
-
-Version 0.9
------------
-
-* add a list of file extesnsions to be ignored by #include autocompleter (per session)
-* fix regression with header file presence checker
-
-Version 0.8.8
--------------
-
-* copy `#include` to clipboard improved (and recent bug has fixed)
-* disable C++ specific actions for non C++ documents
-* tree builder refactored in `#include` explorer, now everything is Ok w/ tree structure
-
-Version 0.8.7
--------------
-
-* tooltips over highlighted `#include` lines displaying a reason
-* there is no ambiguity if user types `#in` -- it can be only `#include` directive
-  (`#include_next` is a really rare case, and I wrote it about 5 times in my life),
-  so automatic completer added for this case.
-* speedup getting code completions
-* enable automatic completions popup when member accessed
-* `#include` explorer has been added. It can hihglight "redundand" headers included in a translation unit.
-
-Version 0.8.6
--------------
-
-* insert kate templates when execute completion item, so user may see and edit parameters required
-  for a function call.
-
-Version 0.8.5
--------------
-
-* add completion items highlighting
-* add completion items sanitizer: some complex template types can be replaced with shorter equivalent.
-  For example `std::basic_string<char>` to `std::string`. This feature help to reduce width of completion
-  popup for STL types. Also some boost types (`boost::variant` and MPL sequences) are supported.
-* completers registration refactored and bug with absent completers for C++ code from file templates
-  is gone finally
-
-Version 0.8
------------
-
-* added session `#include` sets. Now it is possible to save session's `#inclue` paths and reuse in other
-  sessions, so configuring sessions will takes less time. Also one perdefined set shipped: Qt4 --
-  based on `#include` paths detected when this plugin get compiled.
-* added UI to ask `g++` or `clang++` compiler (if found in `PATH`) about predefined `#include` paths,
-  and append them to _System Paths_ tab.
-* other UI cleaned up a little as well
-* display optional parameters in completions list
-
-Version 0.7.1
--------------
-
-* added cmake script to detect clang C API
-* fix cmake configuration for unit tests building: check if `-DBUILD_TESTING` present
-* fix a bug when parse incorrect `#include` directive
-
-Version 0.6-0.7
----------------
-
-* add clang based code completion
-* rename this plugin from _Kate Include Helper_ to _Kate C++ Helper_ (cuz it became smth bigger, than
-  just `#include` helper :-)
-
-Version 0.5
------------
-
-* add an action to switch between header and implementation file, just like an official *Open Header*
-  plugin but smarter ;-) See details above.
-
-Version 0.4.5
--------------
-
-* fix nasty bug w/ path remove from config dialog
-
-Version 0.4.4
--------------
-
-* if file going to open is inaccessible for writing, open it in RO mode, so implicit modifications
-  (like TAB to space conversions or trailing spaces removal) wouldn't annoy on close
-
-Version 0.4.3
--------------
-
-* make directory monitoring optional and configured via plugin's *Other Settings* configuration page
-
-Version 0.4.2
--------------
-
-* watch configured directories for changes and update `#include` files status
-* add support to create source tarball
-
-Version 0.4.1
--------------
-
-* open dialog w/ currently `#included` files, if unable to open a file under cursor
-  or cursor not on a word at all
-* remove duplicates from completion list: for out of source builds and if both, source
-  and binary dirs are in the search list, it led to duplicates
+  Also it can retrieve `help` screen for particular module.</del> [done in kate.git and KDE SC 4.11]
+* Collect sanitizer stats (rule hits) -- it can help to understand what rules must be first in
+  a configured list (to speedup completer + sanitizer).
+* Add a bunch of default sanitizer rules
+* Add import/export sanitizer rules
+* Show some diagnostic from sanitizer
+* Colorize and group diagnostic messages

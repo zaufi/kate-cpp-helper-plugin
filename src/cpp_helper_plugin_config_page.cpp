@@ -23,6 +23,12 @@
 // Project specific includes
 #include <src/cpp_helper_plugin_config_page.h>
 #include <src/cpp_helper_plugin.h>
+#include <src/ui_clang_completion_settings.h>
+#include <src/ui_clang_settings.h>
+#include <src/ui_detect_compiler_paths.h>
+#include <src/ui_other_settings.h>
+#include <src/ui_path_config.h>
+#include <src/ui_session_paths_sets.h>
 #include <src/utils.h>
 
 // Standard includes
@@ -90,18 +96,23 @@ bool isOneOfWellKnownPaths(const QString& url)
 }                                                           // anonymous namespace
 
 //BEGIN CppHelperPluginConfigPage
+/**
+ * The main task of the constructor is to setup GUI.
+ * To populate GUI w/ current configuration \c reset() called after that.
+ */
 CppHelperPluginConfigPage::CppHelperPluginConfigPage(
     QWidget* parent
   , CppHelperPlugin* plugin
   )
   : Kate::PluginConfigPage(parent)
   , m_plugin(plugin)
-  , m_pss_config(new Ui_PerSessionSettingsConfigWidget())
-  , m_clang_config(new Ui_CLangOptionsWidget())
-  , m_system_list(new Ui_PathListConfigWidget())
-  , m_session_list(new Ui_PathListConfigWidget())
-  , m_compiler_paths(new Ui_DetectCompilerPathsWidget())
-  , m_favorite_sets(new Ui_SessionPathsSetsWidget())
+  , m_pss_config(new Ui::PerSessionSettingsConfigWidget())
+  , m_clang_config(new Ui::CLangOptionsWidget())
+  , m_system_list(new Ui::PathListConfigWidget())
+  , m_session_list(new Ui::PathListConfigWidget())
+  , m_compiler_paths(new Ui::DetectCompilerPathsWidget())
+  , m_favorite_sets(new Ui::SessionPathsSetsWidget())
+  , m_completion_settings(new Ui::CompletionSettings())
   , m_compiler_proc(this)
 {
     QLayout* layout = new QVBoxLayout(this);
@@ -205,6 +216,23 @@ CppHelperPluginConfigPage::CppHelperPluginConfigPage(
         connect(m_clang_config->rebuildPch, SIGNAL(clicked()), this, SLOT(rebuildPCH()));
     }
 
+    // Completion settings
+    {
+        QWidget* comp_tab = new QWidget(tab);
+        m_completion_settings->setupUi(comp_tab);
+        tab->addTab(comp_tab, i18n("Code Completion Settings"));
+        connect(m_completion_settings->addRule, SIGNAL(clicked()), this, SLOT(addEmptySanitizeRule()));
+        connect(m_completion_settings->removeRule, SIGNAL(clicked()), this, SLOT(removeSanitizeRule()));
+        connect(m_completion_settings->upRule, SIGNAL(clicked()), this, SLOT(moveSanitizeRuleUp()));
+        connect(m_completion_settings->downRule, SIGNAL(clicked()), this, SLOT(moveSanitizeRuleDown()));
+        connect(
+            m_completion_settings->sanitizeRules
+          , SIGNAL(cellChanged(int, int))
+          , this
+          , SLOT(validateSanitizeRule(int, int))
+          );
+    }
+
     // Other settings
     {
         QWidget* pss_tab = new QWidget(tab);
@@ -230,35 +258,38 @@ CppHelperPluginConfigPage::CppHelperPluginConfigPage(
     connect(&m_compiler_proc, SIGNAL(readyReadStandardError()), this, SLOT(readyReadStandardError()));
     connect(&m_compiler_proc, SIGNAL(readyReadStandardOutput()), this, SLOT(readyReadStandardOutput()));
 
-    // Populate configuration w/ dirs
+    // Populate configuration w/ data
     reset();
 }
 
 void CppHelperPluginConfigPage::apply()
 {
     kDebug() << "** CONFIG-PAGE **: Applying configuration";
-    // Update configuration
+    // Get settings from 'System #include dirs' tab
     {
         QStringList dirs;
         for (int i = 0; i < m_session_list->pathsList->count(); ++i)
             dirs.append(m_session_list->pathsList->item(i)->text());
         m_plugin->config().setSessionDirs(dirs);
     }
+
+    // Get settings from 'Session #include dirs' tab
     {
         QStringList dirs;
         for (int i = 0; i < m_system_list->pathsList->count(); ++i)
             dirs.append(m_system_list->pathsList->item(i)->text());
         m_plugin->config().setSystemDirs(dirs);
     }
+
+    // Get settings from 'Clang (compiler) Settings' tab
     m_plugin->config().setPrecompiledHeaderFile(m_clang_config->pchHeader->text());
     m_plugin->config().setClangParams(m_clang_config->commandLineParams->toPlainText());
+
+    // Get settings from 'Per Session Settings' tab
     m_plugin->config().setUseLtGt(m_pss_config->includeMarkersSwitch->isChecked());
     m_plugin->config().setUseCwd(m_pss_config->useCurrentDirSwitch->isChecked());
     m_plugin->config().setOpenFirst(m_pss_config->openFirstHeader->isChecked());
     m_plugin->config().setUseWildcardSearch(m_pss_config->useWildcardSearch->isChecked());
-    m_plugin->config().setHighlightCompletions(m_pss_config->highlightResults->isChecked());
-    m_plugin->config().setSanitizeCompletions(m_pss_config->sanitizeResults->isChecked());
-    m_plugin->config().setAutoCompletions(m_pss_config->autoCompletions->isChecked());
     m_plugin->config().setWhatToMonitor(
         int(m_pss_config->nothing->isChecked()) * 0
       + int(m_pss_config->session->isChecked()) * 1
@@ -273,13 +304,37 @@ void CppHelperPluginConfigPage::apply()
         kDebug() << "Extensions to ignore:" << extensions;
         m_plugin->config().setIgnoreExtensions(extensions);
     }
+
+    // Get settings from 'Clang Completion Settings' tab
+    m_plugin->config().setAutoCompletions(m_completion_settings->autoCompletions->isChecked());
+    m_plugin->config().setIncludeMacros(m_completion_settings->includeMacros->isChecked());
+    m_plugin->config().setHighlightCompletions(m_completion_settings->highlightResults->isChecked());
+    m_plugin->config().setSanitizeCompletions(m_completion_settings->sanitizeResults->isChecked());
+    // Collect sanitize rules
+    PluginConfiguration::sanitize_rules_list_type rules;
+    rules.reserve(m_completion_settings->sanitizeRules->rowCount());
+    for (int row = 0; row != m_completion_settings->sanitizeRules->rowCount(); ++row)
+    {
+        auto* find_item = m_completion_settings->sanitizeRules->item(row, 0);
+        auto* repl_item = m_completion_settings->sanitizeRules->item(row, 1);
+        auto find_regex = QRegExp{find_item->text()};
+        if (find_regex.isValid())
+            rules.emplace_back(find_regex, repl_item->text());
+        else
+            kWarning() << "Ignore sanitize rule w/ invalid regex" << find_item->text();
+    }
+    kDebug() << rules.size() << " sanitize rules collected";
+    m_plugin->config().setSanitizeRules(std::move(rules));
 }
 
-/// \todo This method should do a reset configuration to default!
+/**
+ * This method should do a reset configuration to current state --
+ * i.e. reread configuration data from the plugin's storage.
+ */
 void CppHelperPluginConfigPage::reset()
 {
     kDebug() << "** CONFIG-PAGE **: Reseting configuration";
-    m_plugin->config().readConfig();
+
     // Put dirs to the list
     m_system_list->pathsList->addItems(m_plugin->config().systemDirs());
     m_session_list->pathsList->addItems(m_plugin->config().sessionDirs());
@@ -294,9 +349,30 @@ void CppHelperPluginConfigPage::reset()
       );
     m_pss_config->openFirstHeader->setChecked(m_plugin->config().shouldOpenFirstInclude());
     m_pss_config->useWildcardSearch->setChecked(m_plugin->config().useWildcardSearch());
-    m_pss_config->highlightResults->setChecked(m_plugin->config().highlightCompletions());
-    m_pss_config->sanitizeResults->setChecked(m_plugin->config().sanitizeCompletions());
-    m_pss_config->autoCompletions->setChecked(m_plugin->config().autoCompletions());
+
+    m_completion_settings->highlightResults->setChecked(m_plugin->config().highlightCompletions());
+    m_completion_settings->sanitizeResults->setChecked(m_plugin->config().sanitizeCompletions());
+    m_completion_settings->autoCompletions->setChecked(m_plugin->config().autoCompletions());
+    m_completion_settings->includeMacros->setChecked(m_plugin->config().includeMacros());
+
+    const auto& rules = m_plugin->config().sanitizeRules();
+    m_completion_settings->sanitizeRules->clear();
+    m_completion_settings->sanitizeRules->setRowCount(rules.size());
+    kDebug() << "Sanitize rules count: " << rules.size();
+    int row = 0;
+    for (const auto& rule : rules)
+    {
+        auto* find = new QTableWidgetItem(rule.first.pattern());
+        auto* replace = new QTableWidgetItem(rule.second);
+        m_completion_settings->sanitizeRules->setItem(row, 0, find);
+        m_completion_settings->sanitizeRules->setItem(row, 1, replace);
+        row++;
+        kDebug() << row << ") setting find =" << find << ", replace =" << replace;
+    }
+    m_completion_settings->sanitizeRules->resizeColumnsToContents();
+    /// \todo Why headers text can't be taken from \c ui file?
+    m_completion_settings->sanitizeRules->setHorizontalHeaderItem(0, new QTableWidgetItem(i18n("Find")));
+    m_completion_settings->sanitizeRules->setHorizontalHeaderItem(1, new QTableWidgetItem(i18n("Replace")));
 
     // Setup dirs watcher
     int flags = m_plugin->config().what_to_monitor();
@@ -310,17 +386,26 @@ void CppHelperPluginConfigPage::reset()
     updateSets();
 }
 
+void CppHelperPluginConfigPage::defaults()
+{
+    kDebug() << "** CONFIG-PAGE **: Default configuration requested";
+    /// \todo Fill configuration elements w/ default values
+}
+
 void CppHelperPluginConfigPage::addSessionIncludeDir()
 {
     addDirTo(
         KDirSelectDialog::selectDirectory(KUrl(), true, this)
       , m_session_list->pathsList
       );
+    Q_EMIT(changed());
 }
 
 void CppHelperPluginConfigPage::delSessionIncludeDir()
 {
+    /// \todo \c delete ? really? any other (better) way to remove item?
     delete m_session_list->pathsList->currentItem();
+    Q_EMIT(changed());
 }
 
 void CppHelperPluginConfigPage::moveSessionDirUp()
@@ -333,6 +418,7 @@ void CppHelperPluginConfigPage::moveSessionDirUp()
           , m_session_list->pathsList->takeItem(current)
           );
         m_session_list->pathsList->setCurrentRow(current - 1);
+        Q_EMIT(changed());
     }
 }
 
@@ -346,12 +432,14 @@ void CppHelperPluginConfigPage::moveSessionDirDown()
           , m_session_list->pathsList->takeItem(current)
           );
         m_session_list->pathsList->setCurrentRow(current + 1);
+        Q_EMIT(changed());
     }
 }
 
 void CppHelperPluginConfigPage::clearSessionDirs()
 {
     m_session_list->pathsList->clear();
+    Q_EMIT(changed());
 }
 
 /**
@@ -364,8 +452,12 @@ void CppHelperPluginConfigPage::addSet()
     {
         KConfigGroup general(it->second.m_config, INCSET_GROUP_NAME);
         auto dirs = general.readPathEntry(INCSET_DIRS_KEY, QStringList());
-        for (const auto& dir : dirs)
-            addDirTo(dir, m_session_list->pathsList);
+        if (!dirs.isEmpty())
+        {
+            for (const auto& dir : dirs)
+                addDirTo(dir, m_session_list->pathsList);
+            Q_EMIT(changed());
+        }
     }
 }
 
@@ -407,9 +499,9 @@ void CppHelperPluginConfigPage::storeSet()
             auto filename = QString(QUrl::toPercentEncoding(set_name));
             auto incset_file = KStandardDirs::locateLocal(
                 "appdata"
-            , QString(INCSET_FILE_TPL).arg(filename)
-            , true
-            );
+              , QString(INCSET_FILE_TPL).arg(filename)
+              , true
+              );
             kDebug() << "Going to make a new incset file for it:" << incset_file;
             cfg = KSharedConfig::openConfig(incset_file, KConfig::SimpleConfig);
         }
@@ -433,6 +525,7 @@ void CppHelperPluginConfigPage::storeSet()
 void CppHelperPluginConfigPage::addSuggestedDir()
 {
     addDirTo(m_favorite_sets->suggestionsList->currentText(), m_session_list->pathsList);
+    Q_EMIT(changed());
 }
 
 void CppHelperPluginConfigPage::addGlobalIncludeDir()
@@ -441,11 +534,13 @@ void CppHelperPluginConfigPage::addGlobalIncludeDir()
         KDirSelectDialog::selectDirectory(KUrl(), true, this)
       , m_system_list->pathsList
       );
+    Q_EMIT(changed());
 }
 
 void CppHelperPluginConfigPage::delGlobalIncludeDir()
 {
     delete m_system_list->pathsList->currentItem();
+    Q_EMIT(changed());
 }
 
 void CppHelperPluginConfigPage::moveGlobalDirUp()
@@ -458,6 +553,7 @@ void CppHelperPluginConfigPage::moveGlobalDirUp()
           , m_system_list->pathsList->takeItem(current)
           );
         m_system_list->pathsList->setCurrentRow(current - 1);
+        Q_EMIT(changed());
     }
 }
 
@@ -471,12 +567,14 @@ void CppHelperPluginConfigPage::moveGlobalDirDown()
           , m_system_list->pathsList->takeItem(current)
           );
         m_system_list->pathsList->setCurrentRow(current + 1);
+        Q_EMIT(changed());
     }
 }
 
 void CppHelperPluginConfigPage::clearGlobalDirs()
 {
     m_system_list->pathsList->clear();
+    Q_EMIT(changed());
 }
 
 /**
@@ -520,6 +618,7 @@ void CppHelperPluginConfigPage::pchHeaderChanged(const QString& filename)
       << filename << ", result=" << is_valid_pch_file;
     m_clang_config->openPchHeader->setEnabled(is_valid_pch_file);
     m_clang_config->rebuildPch->setEnabled(is_valid_pch_file);
+    Q_EMIT(changed());
 }
 
 void CppHelperPluginConfigPage::pchHeaderChanged(const KUrl& filename)
@@ -765,6 +864,98 @@ void CppHelperPluginConfigPage::updateSuggestions()
     const auto is_enabled = !dirs.isEmpty();
     m_favorite_sets->addSuggestedDirButton->setEnabled(is_enabled);
     m_favorite_sets->suggestionsList->setEnabled(is_enabled);
+}
+
+void CppHelperPluginConfigPage::addEmptySanitizeRule()
+{
+    kDebug() << "rules rows =" << m_completion_settings->sanitizeRules->rowCount();
+    kDebug() << "rules cols =" << m_completion_settings->sanitizeRules->columnCount();
+
+    const auto row = m_completion_settings->sanitizeRules->rowCount();
+    m_completion_settings->sanitizeRules->insertRow(row);
+    m_completion_settings->sanitizeRules->setItem(row, 0, new QTableWidgetItem());
+    m_completion_settings->sanitizeRules->setItem(row, 1, new QTableWidgetItem());
+}
+
+void CppHelperPluginConfigPage::removeSanitizeRule()
+{
+    m_completion_settings->sanitizeRules->removeRow(
+        m_completion_settings->sanitizeRules->currentRow()
+      );
+    Q_EMIT(changed());
+}
+
+void CppHelperPluginConfigPage::swapRuleRows(const int src, const int dst)
+{
+    auto* src_col_0 = m_completion_settings->sanitizeRules->takeItem(src, 0);
+    auto* src_col_1 = m_completion_settings->sanitizeRules->takeItem(src, 1);
+    auto* dst_col_0 = m_completion_settings->sanitizeRules->takeItem(dst, 0);
+    auto* dst_col_1 = m_completion_settings->sanitizeRules->takeItem(dst, 1);
+    m_completion_settings->sanitizeRules->setItem(src, 0, dst_col_0);
+    m_completion_settings->sanitizeRules->setItem(src, 1, dst_col_1);
+    m_completion_settings->sanitizeRules->setItem(dst, 0, src_col_0);
+    m_completion_settings->sanitizeRules->setItem(dst, 1, src_col_1);
+}
+
+void CppHelperPluginConfigPage::moveSanitizeRuleUp()
+{
+    const int current = m_completion_settings->sanitizeRules->currentRow();
+    if (current)
+    {
+        kDebug() << "Current rule row " << current;
+        swapRuleRows(current - 1, current);
+        Q_EMIT(changed());
+    }
+}
+
+void CppHelperPluginConfigPage::moveSanitizeRuleDown()
+{
+    const int current = m_completion_settings->sanitizeRules->currentRow();
+    if (current < m_completion_settings->sanitizeRules->rowCount() - 1)
+    {
+        kDebug() << "Current rule row " << current;
+        swapRuleRows(current, current + 1);
+        Q_EMIT(changed());
+    }
+}
+
+std::pair<bool, QString> CppHelperPluginConfigPage::isSanitizeRuleValid(
+    const int row
+  , const int column
+  ) const
+{
+    if (!column)                                            // Only 1st column can be validated...
+    {
+        auto* item = m_completion_settings->sanitizeRules->item(row, column);
+        auto expr = QRegExp(item->text());
+        kDebug() << "Validate regex text: " << item->text() << ", pattern text:" << expr.pattern();
+        return std::make_pair(expr.isValid(), expr.errorString());
+    }
+    /// \todo Make sure that \e replace part contains valid number of
+    /// capture contexts...
+    return std::make_pair(true, QString());
+}
+
+void CppHelperPluginConfigPage::validateSanitizeRule(const int row, const int column)
+{
+    kDebug() << "Sanitize rule has been changed: row =" << row << ", col =" << column;
+    auto p = isSanitizeRuleValid(row, column);
+    if (!p.first)
+    {
+        KPassivePopup::message(
+            i18n("Error")
+          , i18n(
+                "Regular expression at %1, %2 is not valid: %3"
+              , row
+              , column
+              , p.second
+              )
+          , qobject_cast<QWidget*>(this)
+          );
+        /// \todo How to enter in edit mode?
+        m_completion_settings->sanitizeRules->cellWidget(row, column)->setFocus();
+    }
+    Q_EMIT(changed());
 }
 
 //END CppHelperPluginConfigPage

@@ -31,6 +31,7 @@ kde4_add_ui_files(
     detect_compiler_paths.ui
     session_paths_sets.ui
     plugin_tool_view.ui
+    clang_completion_settings.ui
   )
 
 kde4_add_plugin(katecpphelperplugin ${KATE_CPP_HELPER_PLUGIN_SOURCES})
@@ -46,7 +47,7 @@ target_link_libraries(katecpphelperplugin
 #
 # Generate predefined #include sets for Qt4 and KDE 4.x
 #
-macro(append_if_set  _var  _list)
+macro(append_if_set _var _list)
     if(${_var})
         if(${_list})
             set(${_list} "${${_list}},${${_var}}")

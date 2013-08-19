@@ -77,7 +77,7 @@ public:
     {
     }
 
-    QVariant data(const QModelIndex&, const int, const bool) const;
+    QVariant data(const QModelIndex&, const int) const;
     KTextEditor::CodeCompletionModel::CompletionProperty completionProperty() const;
     const QString& parentText() const                       ///< Return a parent (scope) text to display
     {
@@ -95,7 +95,7 @@ public:
 
 private:
 
-    QString renderPlaceholders(const QString&, const bool) const;
+    QString renderPlaceholders(const QString&) const;
 
     static const int NO_OPTIONAL_PLACEHOLDERS = -1;
 
@@ -106,7 +106,7 @@ private:
     QStringList m_placeholders;                             ///< Parameters to substitute
     int m_optional_placeholders_pos;                        ///< Position of the first optional placeholder
     unsigned m_priority;
-    CXCursorKind m_kind;
+    CXCursorKind m_kind;                                    ///< Cursor kind of this completion
     bool m_deprecated;                                      ///< Is current item deprecated?
 };
 

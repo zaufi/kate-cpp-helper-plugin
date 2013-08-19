@@ -143,11 +143,13 @@ Kate::PluginConfigPage* CppHelperPlugin::configPage(uint number, QWidget* parent
 //BEGIN Kate::Plugin interface implementation
 void CppHelperPlugin::readSessionConfig(KConfigBase* cfg, const QString& groupPrefix)
 {
+    kDebug() << "** PLUGIN **: Reading session config: " << groupPrefix;
     config().readSessionConfig(cfg, groupPrefix);
     buildPCHIfAbsent();
 }
 void CppHelperPlugin::writeSessionConfig(KConfigBase* cfg, const QString& groupPrefix)
 {
+    kDebug() << "** PLUGIN **: Writing session config: " << groupPrefix;
     config().writeSessionConfig(cfg, groupPrefix);
 }
 Kate::PluginView* CppHelperPlugin::createView(Kate::MainWindow* parent)

@@ -24,6 +24,7 @@
 #include <src/plugin_configuration.h>
 
 // Standard includes
+#include <clang-c/Index.h>
 #include <KConfigGroup>
 #include <KDebug>
 #include <KGlobal>
@@ -35,6 +36,7 @@ namespace kate { namespace {
 const QString GLOBAL_CONFIG_GROUP_NAME = "CppHelper";
 const QString SESSION_GROUP_SUFFIX = ":cpp-helper";
 const QString CONFIGURED_DIRS_ITEM = "ConfiguredDirs";
+const QString SANITIZE_RULES_ITEM = "SanitizeRules";
 const QString PCH_FILE_ITEM = "PCHFile";
 const QString CLANG_CMDLINE_PARAMS_ITEM = "ClangCmdLineParams";
 const QString USE_LT_GT_ITEM = "UseLtGt";
@@ -45,7 +47,10 @@ const QString MONITOR_DIRS_ITEM = "MonitorDirs";
 const QString HIGHLIGHT_COMPLETIONS_ITEM = "HighlightCompletionItems";
 const QString SANITIZE_COMPLETIONS_ITEM = "SanitizeCompletionItems";
 const QString AUTO_COMPLETIONS_ITEM = "AutoCompletionItems";
+const QString INCLUDE_MACROS_ITEM = "IncludeMacrosToCompletionResults";
 const QString IGNORE_EXTENSIONS_ITEM = "IgnoreExtensions";
+
+const QString SANITIZE_RULE_SEPARATOR = "<$replace-with$>";
 }                                                           // anonymous namespace
 
 void PluginConfiguration::readConfig()
@@ -53,9 +58,38 @@ void PluginConfiguration::readConfig()
     // Read global config
     kDebug() << "Reading global config: " << KGlobal::config()->name();
     KConfigGroup gcg(KGlobal::config(), GLOBAL_CONFIG_GROUP_NAME);
-    QStringList dirs = gcg.readPathEntry(CONFIGURED_DIRS_ITEM, QStringList());
+    auto dirs = gcg.readPathEntry(CONFIGURED_DIRS_ITEM, QStringList());
     kDebug() << "Got global configured include path list: " << dirs;
     m_system_dirs = dirs;
+    // Read sanitize rules from serializable form
+    m_sanitize_rules.clear();
+    auto rules = gcg.readPathEntry(SANITIZE_RULES_ITEM, QStringList());
+    for (auto&& rule : rules)
+    {
+        auto l = rule.split(SANITIZE_RULE_SEPARATOR);
+        QString find;
+        QString replace;
+        switch (l.size())
+        {
+            case 2:
+                replace.swap(l[1]);
+            case 1:
+                find.swap(l[0]);
+                break;
+            default:
+            kWarning() << "Invalid sanitize rule ignored: " << rule;
+        }
+        kDebug() << "Got sanitize rule: find =" << find << ", replace =" << replace;
+        if (!find.isEmpty())
+        {
+            auto find_regex = QRegExp(find);
+            if (find_regex.isValid())
+                m_sanitize_rules.emplace_back(std::move(find_regex), std::move(replace));
+            else
+                kWarning() << "Invalid sanitize rule ignored: " << rule;
+        }
+    }
+    kDebug() << "Got" << m_sanitize_rules.size() << "sanitize rules total";
     //
     Q_EMIT(sessionDirsChanged());
     Q_EMIT(systemDirsChanged());
@@ -64,7 +98,7 @@ void PluginConfiguration::readConfig()
 
 void PluginConfiguration::readSessionConfig(KConfigBase* config, const QString& groupPrefix)
 {
-    kDebug() << "Reading session config: " << groupPrefix;
+    kDebug() << "** CONFIG-MGR **: Reading session config: " << groupPrefix;
     // Read session config
     /// \todo Rename it!
     KConfigGroup scg(config, groupPrefix + SESSION_GROUP_SUFFIX);
@@ -79,6 +113,7 @@ void PluginConfiguration::readSessionConfig(KConfigBase* config, const QString& 
     m_highlight_completions = scg.readEntry(HIGHLIGHT_COMPLETIONS_ITEM, QVariant(true)).toBool();
     m_sanitize_completions = scg.readEntry(SANITIZE_COMPLETIONS_ITEM, QVariant(true)).toBool();
     m_auto_completions = scg.readEntry(AUTO_COMPLETIONS_ITEM, QVariant(true)).toBool();
+    m_include_macros = scg.readEntry(INCLUDE_MACROS_ITEM, QVariant(true)).toBool();
     m_monitor_flags = scg.readEntry(MONITOR_DIRS_ITEM, QVariant(0)).toInt();
     m_config_dirty = false;
 
@@ -89,7 +124,7 @@ void PluginConfiguration::readSessionConfig(KConfigBase* config, const QString& 
 
 void PluginConfiguration::writeSessionConfig(KConfigBase* config, const QString& groupPrefix)
 {
-    kDebug() << "Writing session config: " << groupPrefix;
+    kDebug() << "** CONFIG-MGR **: Writing session config: " << groupPrefix;
     if (!m_config_dirty)
     {
         /// \todo Maybe I don't understand smth, but rally strange things r going on here:
@@ -116,12 +151,33 @@ void PluginConfiguration::writeSessionConfig(KConfigBase* config, const QString&
     scg.writeEntry(HIGHLIGHT_COMPLETIONS_ITEM, QVariant(m_highlight_completions));
     scg.writeEntry(SANITIZE_COMPLETIONS_ITEM, QVariant(m_sanitize_completions));
     scg.writeEntry(AUTO_COMPLETIONS_ITEM, QVariant(m_auto_completions));
+    scg.writeEntry(INCLUDE_MACROS_ITEM, QVariant(m_include_macros));
     scg.writeEntry(MONITOR_DIRS_ITEM, QVariant(m_monitor_flags));
     scg.sync();
     // Write global config
     kDebug() << "Write global configured include path list: " << m_system_dirs;
     KConfigGroup gcg(KGlobal::config(), GLOBAL_CONFIG_GROUP_NAME);
     gcg.writePathEntry(CONFIGURED_DIRS_ITEM, m_system_dirs);
+    // Transform sanitize rules into a serializable list of strings
+    QStringList rules;
+    for (auto&& rule : m_sanitize_rules)
+    {
+        auto r = rule.first.pattern();
+        if (!rule.first.isValid())                          // Ignore invalid regular expressions
+        {
+            kWarning() << "Ignore invalid sanitize regex: " << r;
+            continue;
+        }
+        if (r.isEmpty())                                    // Ignore rules w/ empty find part
+        {
+            kWarning() << "Ignore invalid sanitize rule: " << rule.second;
+            continue;
+        }
+        if (!rule.second.isEmpty())
+            r += SANITIZE_RULE_SEPARATOR + rule.second;
+        rules << r;
+    }
+    gcg.writePathEntry(SANITIZE_RULES_ITEM, rules);
     gcg.sync();
     m_config_dirty = false;
 }
@@ -176,6 +232,7 @@ void PluginConfiguration::setClangParams(const QString& params)
         Q_EMIT(precompiledHeaderFileChanged());
     }
 }
+
 void PluginConfiguration::setPrecompiledHeaderFile(const KUrl& filename)
 {
     if (m_pch_header != filename)
@@ -186,6 +243,7 @@ void PluginConfiguration::setPrecompiledHeaderFile(const KUrl& filename)
         Q_EMIT(precompiledHeaderFileChanged());
     }
 }
+
 void PluginConfiguration::setUseLtGt(const bool state)
 {
     m_use_ltgt = state;
@@ -199,36 +257,61 @@ void PluginConfiguration::setUseCwd(const bool state)
     m_config_dirty = true;
     kDebug() << "** set config to `dirty' state!! **";
 }
+
 void PluginConfiguration::setOpenFirst(const bool state)
 {
     m_open_first = state;
     m_config_dirty = true;
     kDebug() << "** set config to `dirty' state!! **";
 }
+
 void PluginConfiguration::setUseWildcardSearch(const bool state)
 {
     m_use_wildcard_search = state;
     m_config_dirty = true;
     kDebug() << "** set config to `dirty' state!! **";
 }
+
 void PluginConfiguration::setHighlightCompletions(const bool state)
 {
     m_highlight_completions = state;
     m_config_dirty = true;
     kDebug() << "** set config to `dirty' state!! **";
 }
+
 void PluginConfiguration::setSanitizeCompletions(const bool state)
 {
     m_sanitize_completions = state;
     m_config_dirty = true;
     kDebug() << "** set config to `dirty' state!! **";
 }
+
 void PluginConfiguration::setAutoCompletions(const bool state)
 {
     m_auto_completions = state;
     m_config_dirty = true;
     kDebug() << "** set config to `dirty' state!! **";
 }
+
+void PluginConfiguration::setIncludeMacros(const bool state)
+{
+    m_include_macros = state;
+    m_config_dirty = true;
+    kDebug() << "** set config to `dirty' state!! **";
+}
+
+/**
+ * \todo Add overload to accept a sequence of pairs of \c QString,
+ * and move regex validation code here avoiding duplicates outside of
+ * this class.
+ */
+void PluginConfiguration::setSanitizeRules(sanitize_rules_list_type&& rules)
+{
+    m_sanitize_rules = std::move(rules);
+    m_config_dirty = true;
+    kDebug() << "** set config to `dirty' state!! **";
+}
+
 void PluginConfiguration::setWhatToMonitor(const int tgt)
 {
     if (m_monitor_flags != tgt)
@@ -257,6 +340,17 @@ QStringList PluginConfiguration::formCompilerOptions() const
         options.push_back("-I" + dir);
 
     return options;
+}
+
+unsigned PluginConfiguration::completionFlags() const
+{
+    auto flags = static_cast<unsigned>(CXCodeComplete_IncludeBriefComments);
+    if (includeMacros())
+    {
+        kDebug() << "Allow preprocessor MACROS in completion results";
+        flags |= CXCodeComplete_IncludeMacros;
+    }
+    return flags;
 }
 
 }                                                           // namespace kate

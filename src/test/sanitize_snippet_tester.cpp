@@ -68,28 +68,123 @@ std::vector<std::pair<std::string, std::string>> INPUT_OUTPUT_LIST = {
 };
 }                                                           // anonymous namespace
 
-BOOST_AUTO_TEST_CASE(sanitize_snippet_test)
+BOOST_AUTO_TEST_CASE(sanitize_test_1)
 {
-    for (const auto& p : INPUT_OUTPUT_LIST)
+    QString result;
+    bool must_keep;
+    std::tie(must_keep, result) = kate::sanitize(
+        "boost::mpl::true_"
+      , {{QRegExp{"boost"}, QString{}}}
+      );
+    BOOST_CHECK_EQUAL(must_keep, false);
+}
+
+BOOST_AUTO_TEST_CASE(sanitize_test_2)
+{
+    QString result;
+    bool must_keep;
+    std::tie(must_keep, result) = kate::sanitize(
+        "boost::mpl::true_"
+      , {{QRegExp{"boost"}, QString{"moost"}}}
+      );
+    BOOST_CHECK_EQUAL(must_keep, true);
+    BOOST_CHECK_EQUAL(result.toStdString(), "moost::mpl::true_");
+}
+
+BOOST_AUTO_TEST_CASE(sanitize_test_3)
+{
+    QString result;
+    bool must_keep;
+    std::tie(must_keep, result) = kate::sanitize(
+        "operator==(const U& )"
+      , {{QRegExp{" ([\\)\\]>])"}, QString{"\\1"}}}
+      );
+    BOOST_CHECK_EQUAL(must_keep, true);
+    BOOST_CHECK_EQUAL(result.toStdString(), "operator==(const U&)");
+}
+
+BOOST_AUTO_TEST_CASE(sanitize_test_4)
+{
+    kate::PluginConfiguration::sanitize_rules_list_type rules = {
+        {QRegExp{"(, ((boost::detail::variant|mpl_)::)?(void_|na))*>"}, QString{">"}}
+    };
     {
-        BOOST_TEST_MESSAGE("input: " << p.first);
-        BOOST_TEST_MESSAGE("expected: " << p.second);
-        QString r = kate::sanitizePrefix(p.first.c_str());
-        BOOST_TEST_MESSAGE("result: " << r.toStdString());
-        BOOST_CHECK_EQUAL(r.toStdString(), p.second);
+        QString result;
+        bool must_keep;
+        std::tie(must_keep, result) = kate::sanitize(
+            "boost::mpl::vector<bool, char, short, int, mpl_::na, mpl_::na, mpl_::na>"
+          , rules
+          );
+        BOOST_CHECK_EQUAL(must_keep, true);
+        BOOST_CHECK_EQUAL(result.toStdString(), "boost::mpl::vector<bool, char, short, int>");
+    }
+    {
+        QString result;
+        bool must_keep;
+        std::tie(must_keep, result) = kate::sanitize(
+            "boost::variant<bool, char, boost::detail::variant::void_, void_>"
+          , rules
+          );
+        BOOST_CHECK_EQUAL(must_keep, true);
+        BOOST_CHECK_EQUAL(result.toStdString(), "boost::variant<bool, char>");
     }
 }
 
-BOOST_AUTO_TEST_CASE(sanitize_placeholder_snippet_test)
+BOOST_AUTO_TEST_CASE(sanitize_test_5)
 {
+    kate::PluginConfiguration::sanitize_rules_list_type rules = {
+        {QRegExp{"BOOST_(PP_[A-Z_]+_(\\d|[DIOMR])|.*_HPP(_INCLUDED)?$|[A-Z_]+_AUX_)"}, QString{}}
+    };
     {
-        QString r = kate::sanitizePlaceholder("int __x");
-        BOOST_CHECK_EQUAL(r.toStdString(), "int x");
+        QString result;
+        bool must_keep;
+        std::tie(must_keep, result) = kate::sanitize(
+            "BOOST_PP_BOOL_123"
+          , rules
+          );
+        BOOST_CHECK_EQUAL(must_keep, false);
+        BOOST_CHECK_EQUAL(result.toStdString(), std::string());
     }
     {
-        QString r = kate::sanitizePlaceholder("std::pair<int, long> &__x");
-        BOOST_CHECK_EQUAL(r.toStdString(), "std::pair<int, long>& x");
+        QString result;
+        bool must_keep;
+        std::tie(must_keep, result) = kate::sanitize(
+            "BOOST_PP_FOR_EACH_I"
+          , rules
+          );
+        BOOST_CHECK_EQUAL(must_keep, false);
+        BOOST_CHECK_EQUAL(result.toStdString(), std::string());
+    }
+    {
+        QString result;
+        bool must_keep;
+        std::tie(must_keep, result) = kate::sanitize(
+            "BOOST_CONFIG_HPP"
+          , rules
+          );
+        BOOST_CHECK_EQUAL(must_keep, false);
+    }
+    {
+        QString result;
+        bool must_keep;
+        std::tie(must_keep, result) = kate::sanitize(
+            "BOOST_CONFIG_HPP_INCLUDED"
+          , rules
+          );
+        BOOST_CHECK_EQUAL(must_keep, false);
+    }
+    {
+        QString result;
+        bool must_keep;
+        std::tie(must_keep, result) = kate::sanitize(
+            "BOOST_VARIANT_AUX_RETURN_TYPE"
+          , rules
+          );
+        BOOST_CHECK_EQUAL(must_keep, false);
+        BOOST_CHECK_EQUAL(result.toStdString(), std::string());
     }
 }
+
+
 
 // kate: hl C++11/Qt4;

@@ -26,6 +26,7 @@
 // Project specific includes
 # include <src/clang_code_completion_item.h>
 # include <src/diagnostic_messages_model.h>
+# include <src/plugin_configuration.h>
 
 // Standard includes
 # include <KUrl>
@@ -72,7 +73,7 @@ public:
         CXIndex
       , const KUrl&
       , const QStringList&
-      , const unsigned
+      , unsigned
       , const unsaved_files_list_type& = unsaved_files_list_type()
       );
     /// Move ctor
@@ -102,7 +103,12 @@ public:
     }
 
     void updateUnsavedFiles(const unsaved_files_list_type&);
-    QList<ClangCodeCompletionItem> completeAt(int, int);
+    QList<ClangCodeCompletionItem> completeAt(
+        int
+      , int
+      , unsigned
+      , const PluginConfiguration::sanitize_rules_list_type&
+      );
     void storeTo(const KUrl&);
     void reparse();
 

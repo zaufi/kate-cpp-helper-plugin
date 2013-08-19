@@ -24,7 +24,8 @@
 #include <src/sanitize_snippet.h>
 
 // Standard includes
-#include <QtCore/QRegExp>
+#include <KDebug>
+#include <cassert>
 #include <map>
 #include <vector>
 
@@ -152,6 +153,38 @@ QString sanitizePlaceholder(QString&& str)
             result.remove(last_space_pos, count);
     }
     return result;
+}
+
+std::pair<bool, QString> sanitize(
+    QString text
+  , const PluginConfiguration::sanitize_rules_list_type& sanitize_rules
+  )
+{
+    kDebug() << "Sanitize snippet: " << text;
+    bool result = true;
+    QString output = std::move(text);
+    // Try to sanitize completion items
+    for (const auto& rule : sanitize_rules)
+    {
+        assert("A valid regex expected here!" && rule.first.isValid());
+        kDebug() << "Trying " << rule.first.pattern() << " w/ replace text " << rule.second;
+        if (rule.second.isEmpty())
+        {
+            // If replace text is empty, just ignore completion item if it matches...
+            if (text.contains(rule.first))
+            {
+                result = false;                             // Must skip this item!
+                output.clear();
+                break;                                      // No need to match other rules!
+            }
+        }
+        else
+        {
+            output.replace(rule.first, rule.second);
+            kDebug() << "  output: " << output;
+        }
+    }
+    return std::make_pair(result, output);
 }
 
 }                                                           // namespace kate

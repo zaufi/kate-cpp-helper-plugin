@@ -24,17 +24,26 @@
 # define __SRC__SANITIZE_SNIPPET_H__
 
 // Project specific includes
+# include <src/plugin_configuration.h>
 
 // Standard includes
 # include <QtCore/QString>
 
 namespace kate {
+#if 0
 /// Cleanup completion item result type
 QString sanitizePrefix(QString&&);
 /// Cleanup completion items parameters
 QString sanitizeParams(QString&&);
 /// Cleanup placeholder from completion item arguments list
 QString sanitizePlaceholder(QString&&);
+#endif
+/// Sanitize a text through a rules set
+std::pair<bool, QString> sanitize(
+    QString
+  , const PluginConfiguration::sanitize_rules_list_type&
+  );
+
 }                                                           // kate
 #endif                                                      // __SRC__SANITIZE_SNIPPET_H__
 // kate: hl C++11/Qt4;

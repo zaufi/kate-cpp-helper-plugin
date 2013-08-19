@@ -29,11 +29,14 @@
 # include <KConfigBase>
 # include <KUrl>
 # include <QtCore/QStringList>
+# include <QtCore/QRegExp>
+# include <vector>
+# include <utility>
 
 namespace kate {
 
 /**
- * \brief Class to manage configuration data of the plugin
+ * \brief Class to manage configuration data of the plug-in
  *
  * [More detailed description here]
  *
@@ -44,6 +47,8 @@ class PluginConfiguration
     Q_OBJECT
 
 public:
+    typedef std::vector<std::pair<QRegExp, QString>> sanitize_rules_list_type;
+
     PluginConfiguration()
       : m_monitor_flags(0)
       , m_use_ltgt(true)
@@ -53,6 +58,7 @@ public:
       , m_highlight_completions(true)
       , m_sanitize_completions(true)
       , m_auto_completions(true)
+      , m_include_macros(true)
     {}
 
     /// \name Accessors
@@ -71,7 +77,9 @@ public:
     bool sanitizeCompletions() const;
     bool highlightCompletions() const;
     bool autoCompletions() const;
-
+    const sanitize_rules_list_type& sanitizeRules() const;
+    bool includeMacros() const;
+    unsigned completionFlags() const;
     //@}
 
     /// \name Modifiers
@@ -82,14 +90,16 @@ public:
     void setClangParams(const QString&);
     void setPrecompiledHeaderFile(const KUrl&);
     void setPrecompiledFile(const KUrl&);
-    void setUseLtGt(const bool);
-    void setUseCwd(const bool);
-    void setOpenFirst(const bool);
-    void setUseWildcardSearch(const bool);
-    void setWhatToMonitor(const int);
-    void setSanitizeCompletions(const bool);
-    void setHighlightCompletions(const bool);
-    void setAutoCompletions(const bool);
+    void setUseLtGt(bool);
+    void setUseCwd(bool);
+    void setOpenFirst(bool);
+    void setUseWildcardSearch(bool);
+    void setWhatToMonitor(int);
+    void setSanitizeCompletions(bool);
+    void setHighlightCompletions(bool);
+    void setAutoCompletions(bool);
+    void setSanitizeRules(sanitize_rules_list_type&&);
+    void setIncludeMacros(bool);
     //@}
 
     void readSessionConfig(KConfigBase*, const QString&);
@@ -106,6 +116,8 @@ Q_SIGNALS:
     void clangOptionsChanged();
 
 private:
+
+    sanitize_rules_list_type m_sanitize_rules;
     QStringList m_system_dirs;
     QStringList m_session_dirs;
     QStringList m_ignore_ext;
@@ -123,6 +135,7 @@ private:
     bool m_highlight_completions;
     bool m_sanitize_completions;
     bool m_auto_completions;
+    bool m_include_macros;
 };
 
 inline const QStringList& PluginConfiguration::sessionDirs() const
@@ -181,10 +194,19 @@ inline bool PluginConfiguration::autoCompletions() const
 {
     return m_auto_completions;
 }
+inline auto PluginConfiguration::sanitizeRules() const -> const sanitize_rules_list_type&
+{
+    return m_sanitize_rules;
+}
 
 inline void PluginConfiguration::setPrecompiledFile(const KUrl& file)
 {
     m_pch_file = file;
+}
+
+inline bool PluginConfiguration::includeMacros() const
+{
+    return m_include_macros;
 }
 
 }                                                           // namespace kate

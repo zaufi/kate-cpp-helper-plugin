@@ -114,6 +114,10 @@ void ClangCodeCompletionModel::completionInvoked(
         auto completions = unit.completeAt(
             unsigned(range.start().line() + 1)              // NOTE Kate count lines starting from 0
           , unsigned(range.start().column() + 1)            // NOTE Kate count columns starting from 0
+          , m_plugin->config().completionFlags()
+          , m_plugin->config().sanitizeCompletions()
+              ? m_plugin->config().sanitizeRules()
+              : PluginConfiguration::sanitize_rules_list_type()
           );
         // Obtain diagnostic if any
         {
@@ -125,7 +129,7 @@ void ClangCodeCompletionModel::completionInvoked(
                   );
         }
 
-        // Transform a plain list into hierarchy grouped by parent context
+        // Transform a plain list into hierarchy grouped by a parent context
         std::map<QString, GroupInfo> grouped_completions;
         for (auto&& comp : completions)
         {
@@ -268,7 +272,6 @@ QVariant ClangCodeCompletionModel::getItemData(const QModelIndex& index, int rol
     result = m_groups[index.internalId()].second.m_completions[index.row()].data(
         index
       , role
-      , m_plugin->config().sanitizeCompletions()
       );
     return result;
 }
@@ -314,7 +317,7 @@ QVariant ClangCodeCompletionModel::getItemHighlightData(const QModelIndex& index
                     // Request item for text to highlight
                     auto text = m_groups[index.internalId()]
                       .second.m_completions[index.row()]
-                      .data(index, Qt::DisplayRole, m_plugin->config().sanitizeCompletions())
+                      .data(index, Qt::DisplayRole)
                       .toString()
                       ;
                     // Do not waste time if nothing to highlight

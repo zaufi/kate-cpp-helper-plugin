@@ -2,6 +2,14 @@
 <ui version="4.0">
  <class>PerSessionSettingsConfigWidget</class>
  <widget class="QWidget" name="PerSessionSettingsConfigWidget">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>463</width>
+    <height>376</height>
+   </rect>
+  </property>
   <property name="windowTitle">
    <string>Session Settings</string>
   </property>
@@ -160,54 +168,6 @@
         </property>
         <property name="text">
          <string>Use wildcard source files search</string>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </widget>
-   </item>
-   <item>
-    <widget class="KButtonGroup" name="completionOptions">
-     <property name="sizePolicy">
-      <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
-       <horstretch>0</horstretch>
-       <verstretch>0</verstretch>
-      </sizepolicy>
-     </property>
-     <property name="title">
-      <string>Code Completion Options</string>
-     </property>
-     <layout class="QVBoxLayout" name="verticalLayout_4">
-      <item>
-       <widget class="QCheckBox" name="autoCompletions">
-        <property name="toolTip">
-         <string>Enable automatic completions on member access</string>
-        </property>
-        <property name="text">
-         <string>Automatic completion popup</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QCheckBox" name="highlightResults">
-        <property name="toolTip">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Colorize completion items using current document's mode&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-        </property>
-        <property name="text">
-         <string>Highlight results</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QCheckBox" name="sanitizeResults">
-        <property name="toolTip">
-         <string>Transfrom some long templated types into shorter equivalent</string>
-        </property>
-        <property name="whatsThis">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If checked, code completer will do some types replacements before display completion items. For example &lt;span style=&quot; font-family:'Courier New,courier';&quot;&gt;std::basic_string&amp;lt;char&amp;gt;&lt;/span&gt; will be replaced with &lt;span style=&quot; font-family:'Courier New,courier';&quot;&gt;std::string&lt;/span&gt;. There is a bunch of hardcoded rules for some STL and boost types. If you see some strange completion items, try to turn this option OFF and report a bug.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-        </property>
-        <property name="text">
-         <string>Sanitize results</string>
         </property>
        </widget>
       </item>
