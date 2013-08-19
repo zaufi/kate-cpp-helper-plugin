@@ -42,8 +42,8 @@ Installation
         $ mkdir build && cd build
         $ cmake -DBUILD_TESTING=OFF -DCMAKE_INSTALL_PREFIX=~/.kde4 .. && make && make install
 
-* To make a system-wide installation, set the prefix to /usr and become a superuser to `make install`
-* After that u have to enable it from `Settings->Configure Kate...->Plugins` and configure the include paths
+* To make a system-wide installation, set the prefix to `/usr` and become a superuser to `make install`
+* After that you have to enable it from `Settings->Configure Kate...->Plugins` and configure the include paths
   globally and/or per session...
 
 Note: One may use `kde4-config` utility with option `--localprefix` or `--prefix` to get
@@ -115,15 +115,16 @@ Completion Results Sanitizer
 
 Since version 0.9.3 the plugin has configurable rules to sanitize completion results.
 A rule consist of two parts: _find regex_ and _replace text_. The first one can be used
-to match some part of a completion item and do some capture sites. Latter can be used in
-_replace text_ part for text substitution. If second part is empty, and first is matched, that
-completion item will be removed from a result list. This can be used to filter out undesired
-stuff. For example, Boost Preprocessor library has a bunch of internally used macros, which
-definitely shouldn't appear to the end-user. To filter them just add the following rule:
+to match some part of a completion item and capture some pieces of text. Latter can be used in
+_replace text_ part for text substitution. If a second part is empty, and the first is matched,
+that completion item will be removed from a result list. This can be used to filter out undesired
+items. For example, a lot of Boost libraries (especially Boost Preprocessor) has a bunch of internally 
+used macros, which are definitely shouldn't appear to the end-user. To filter them, just add the 
+following rule:
 
     BOOST_(PP_[A-Z_]+_(\d+|[A-Z])|.*_HPP(_INCLUDED)?$|[A-Z_]+_AUX_)
 
-This rule also remove `#include` guards and internal macros used by various libs (like MPL and TTI).
+This rule remove `#include` guards and internal macros used by various libs (like PP, MPL and TTI).
 Few other helpful rules can be found in unit tests 
 [`sanitize_snippet_tester.cpp`](https://github.com/zaufi/kate-cpp-helper-plugin/blob/master/src/test/sanitize_snippet_tester.cpp).
 
