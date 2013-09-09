@@ -59,7 +59,7 @@ Open Header/Implementation: How it works
 Kate shipped with a plugin named *Open Header*, but sooner after I started to use it I've found
 few cases when it can't helps me. Nowadays I have 2 "real life" examples when it fails:
 
-Often one may find a source tree separate `${project}/src/` and `${project}/include` dirs.
+Often one may find a source tree with separate `${project}/src/` and `${project}/include` dirs.
 So, when you are at some header from `include/` dir, that plugin never will find your source file.
 And vise versa.
 
