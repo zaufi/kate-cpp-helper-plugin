@@ -748,15 +748,15 @@ QString CppHelperPluginConfigPage::findBinary(const QString& binary) const
 {
     assert("binary name expected to be non-empty" && !binary.isEmpty());
 
-    auto path_env = std::getenv("PATH");
+    const auto* path_env = std::getenv("PATH");
     QString result;
     if (path_env)
     {
         /// \todo Is there any portable way to get paths separator?
         auto paths = QString(path_env).split(':', QString::SkipEmptyParts);
-        for (auto&& path : paths)
+        for (const auto& path : paths)
         {
-            const auto full_path = path + '/' + binary;
+            const QString full_path = path + '/' + binary;
             const auto fi = QFileInfo(full_path);
             if (fi.exists() && fi.isExecutable())
             {

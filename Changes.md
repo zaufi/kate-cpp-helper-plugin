@@ -1,6 +1,11 @@
 Changes
 =======
 
+Version 0.9.4
+-------------
+
+* close issue #8
+
 Version 0.9.3
 -------------
 

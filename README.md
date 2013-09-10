@@ -194,3 +194,9 @@ TODO
 * Add import/export sanitizer rules
 * Show some diagnostic from sanitizer
 * Colorize and group diagnostic messages
+* Add icons to completion types
+* Get/show list of possible exceptions in particular function call
+* Highlight interior of user specified `#ifdefs` (like `__linux__`, `__WIN32__`, etc) w/ a user specified color
+* Try to get a location for completion item and show it as suffix in a completion list
+* Add ptr/ref/const/etc to a type under cursor (by hot-key)
+* Show a real type of typedefs (as a tooltip?)
