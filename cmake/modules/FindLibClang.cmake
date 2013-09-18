@@ -34,6 +34,11 @@ if (LLVM_CONFIG_EXECUTABLE)
         OUTPUT_VARIABLE LLVM_LIBDIR
         OUTPUT_STRIP_TRAILING_WHITESPACE
       )
+    execute_process(
+        COMMAND ${LLVM_CONFIG_EXECUTABLE} --includedir
+        OUTPUT_VARIABLE LLVM_INCLUDEDIR
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+      )
 endif()
 
 # Try to find libclang.so
@@ -47,8 +52,9 @@ try_run(
     _clang_get_version_run_result
     _clang_get_version_compile_result
     ${CMAKE_BINARY_DIR} ${CMAKE_CURRENT_LIST_DIR}/libclang_get_version.cpp
-    COMPILE_DEFINITIONS ${LLVM_CXXFLAGS}
-    CMAKE_FLAGS -DLINK_LIBRARIES:STRING=${LIBCLANG_LIBRARY}
+    CMAKE_FLAGS
+        -DLINK_LIBRARIES:STRING=${LIBCLANG_LIBRARY}
+        -DINCLUDE_DIRECTORIES:STRING=${LLVM_INCLUDEDIR}
     COMPILE_OUTPUT_VARIABLE _clang_get_version_compile_output
     RUN_OUTPUT_VARIABLE _clang_get_version_run_output
   )
@@ -73,6 +79,6 @@ find_package_handle_standard_args(
 
 # X-Chewy-RepoBase: https://raw.github.com/mutanabbi/chewy-cmake-rep/master/
 # X-Chewy-Path: FindLibClang.cmake
-# X-Chewy-Version: 1.2
+# X-Chewy-Version: 1.3
 # X-Chewy-Description: Find clang C API library
 # X-Chewy-AddonFile: libclang_get_version.cpp

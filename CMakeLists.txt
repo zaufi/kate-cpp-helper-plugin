@@ -12,7 +12,7 @@ project(KateCppHelperPlugin C CXX)
 
 set(VERSION_MAJOR 0)
 set(VERSION_MINOR 9)
-set(VERSION_PATCH 4)
+set(VERSION_PATCH 5)
 set(VERSION_STRING ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/modules" ${CMAKE_MODULE_PATH})
 
@@ -62,7 +62,7 @@ endif()
 #---------------------------------------------------------
 # NOTE Order is important!
 include_directories(${PROJECT_SOURCE_DIR} ${PROJECT_BINARY_DIR})
-include_directories(${KDE4_INCLUDES} ${QT_INCLUDES} ${Boost_INCLUDE_DIRS})
+include_directories(${KDE4_INCLUDES} ${QT_INCLUDES} ${Boost_INCLUDE_DIRS} ${LLVM_INCLUDEDIR})
 
 # Set generic compiler flags: turn ON C++11 (C++03 is suxx) and exceptions
 # set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS} ${KDE4_ENABLE_EXCEPTIONS}")
