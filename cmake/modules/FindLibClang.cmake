@@ -69,7 +69,7 @@ string(
     "${_clang_get_version_run_output}"
   )
 
-message(STATUS "Found Clang C API version ${LIBCLANG_VERSION}")
+message(STATUS "Found Clang C API: ${LIBCLANG_LIBRARY} (version ${LIBCLANG_VERSION})")
 
 find_package_handle_standard_args(
     LibClang

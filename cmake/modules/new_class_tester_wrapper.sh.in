@@ -4,7 +4,7 @@
 # Helper to generate unit test skeletons
 #
 
-source "@DSGT_BASE_DIR@/output_helpers.sh"
+source "@_DSGT_BASE_DIR@/output_helpers.sh"
 
 show_help()
 {
@@ -31,37 +31,37 @@ esac
 
 # Ok. Lets work! At least class name defined...
 ebegin "Generate class skeleton unit-test file for class $class: ${transformed_name}_tester.cpp"
-rf=@PROJECT_BINARY_DIR@/$transformed_name.def
+rf="@PROJECT_BINARY_DIR@/$transformed_name.def"
 # Generate response file for autogen
 echo "autogen definitions @CMAKE_BINARY_DIR@/class_tester.tpl;" > $rf \
   && echo "classname=$class;" >> $rf \
   && echo "no_license=@NO_LICENSE@;" >>$rf \
   && echo "filename=$transformed_name;" >> $rf \
   && echo "project=@PROJECT_NAME@;" >> $rf \
-  && @AUTOGEN_EXECUTABLE@ -L @CMAKE_SOURCE_DIR@ -L @CMAKE_BINARY_DIR@ $rf
+  && @AUTOGEN_EXECUTABLE@ -L '@CMAKE_SOURCE_DIR@' -L '@CMAKE_BINARY_DIR@' $rf
 result=$?
 eend $result
 test "$result" = "0" || exit 1
 
-if [ "@CMAKE_BINARY_DIR@" != "@CMAKE_SOURCE_DIR@" ]; then
+if [ '@CMAKE_BINARY_DIR@' != '@CMAKE_SOURCE_DIR@' ]; then
     # Move generated files from CMAKE_BINARY_DIR to desired subdir (if exists)
-    dst=`test -d "@CMAKE_SOURCE_DIR@/$subdir" && echo "@CMAKE_SOURCE_DIR@/$subdir" || echo "@CMAKE_SOURCE_DIR@"`
-    ebegin "Move $transformed_name""_tester.cpp to $dst"
+    dst=`test -d "@CMAKE_SOURCE_DIR@/$subdir" && echo "@CMAKE_SOURCE_DIR@/$subdir" || echo '@CMAKE_SOURCE_DIR@'`
+    ebegin "Move ${transformed_name}_tester.cpp to $dst"
     mv -i "@CMAKE_BINARY_DIR@/${transformed_name}_tester.@SKELETON_IMPL_EXT@" $dst
     eend $?
 fi
 
 # Cleanup
-ebegin "Cleanup"
+ebegin 'Cleanup'
 rm -f $rf
 eend $?
 
 # Validate configuration
-einfo "Validate build configuration..."
+einfo 'Validate build configuration...'
 if [ ! -f "@CMAKE_SOURCE_DIR@/$subdir/CMakeLists.txt" -a -d "@CMAKE_SOURCE_DIR@/$subdir" ]; then
   ebegin "Making @CMAKE_SOURCE_DIR@/$subdir/CMakeLists.txt..."
   # TODO Use cmake to render a configuration file
-  sed "s,FIRST_SOURCE_FILE,${transformed_name}_tester.@SKELETON_IMPL_EXT@," "@DSGT_BASE_DIR@/TestCMakeLists.txt.in" \
+  sed "s,FIRST_SOURCE_FILE,${transformed_name}_tester.@SKELETON_IMPL_EXT@," "@_DSGT_BASE_DIR@/TestCMakeLists.txt.in" \
     > "@CMAKE_SOURCE_DIR@/$subdir/CMakeLists.txt"
   eend $?
   ewarn "Do not forget to update an upper level CMakeLists.txt with 'add_subdirrectory(tests)'"

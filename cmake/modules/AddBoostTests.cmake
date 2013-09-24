@@ -7,12 +7,19 @@
 #       [WORKING_DIRECTORY dir]
 #       [CATCH_SYSTEM_ERRORS | NO_CATCH_SYSTEM_ERRORS]
 #     )
-#   executable -- name of unit tests binary (if ommited, `unit_tests' will be used)
+#   executable -- name of unit tests binary (if omitted, `unit_tests' will be used)
 #   source1-N  -- list of source files to be scanned for test cases
 #   dir        -- `cd` to this directory before run any test
 #
 # Source files will be scanned for automatic test cases.
-# Every found test will be added to ctest list.
+# Every found test will be added to ctest list. Be aware that "scanner" is very
+# limited (yep, it is not a full functional C++ parser). Particularly:
+#  - BOOST_AUTO_TEST_CASE, BOOST_FIXTURE_TEST_SUITE, BOOST_FIXTURE_TEST_CASE
+#    and BOOST_AUTO_TEST_SUITE_END the only recognizable tokens
+#  - every token must be at line start
+#  - parameter list followed immediately after token name -- i.e. no space
+#    between toked identifier and opening parenthesis
+#  - parameters for listed macros are expected at the same line
 # This function can be considered as 'improved' add_executable(unit_tests <sources>)
 # to build boost based unit tests and integrate them into cmake's `make test`.
 #
@@ -31,6 +38,8 @@
 #  License text for the above reference.)
 
 include(CMakeParseArguments)
+
+set(_ADD_BOOST_TEST_BASE_DIR "${CMAKE_CURRENT_LIST_DIR}")
 
 function(add_boost_tests)
     set(options CATCH_SYSTEM_ERRORS NO_CATCH_SYSTEM_ERRORS)
@@ -66,25 +75,74 @@ function(add_boost_tests)
     endif()
 
     # Add unit tests executable target to current directory
-    add_executable(${add_boost_tests_TARGET} ${add_boost_tests_SOURCES})
+    add_executable(
+        ${add_boost_tests_TARGET}
+        ${_ADD_BOOST_TEST_BASE_DIR}/unit_tests_main_skeleton.cc ${add_boost_tests_SOURCES}
+      )
 
     # Scan source files for well known boost test framework macros and add test by found name
     foreach(source ${add_boost_tests_SOURCES})
+        #message(STATUS "scanning ${source}")
         file(READ "${source}" contents)
-        # Append BOOST_AUTO_TEST_CASEs
-        string(REGEX MATCHALL "BOOST_AUTO_TEST_CASE\\(([A-Za-z0-9_]+)\\)" found_tests "${contents}")
-        foreach(hit ${found_tests})
-            string(REGEX REPLACE ".*\\(([A-Za-z0-9_]+)\\).*" "\\1" test_name ${hit})
-            add_test(
-                NAME ${test_name}
-                COMMAND ${add_boost_tests_TARGET} --run_test=${test_name} ${extra_args}
-                WORKING_DIRECTORY ${add_boost_tests_WORKING_DIRECTORY}
-            )
+        string(REGEX REPLACE ";" "\\\\;" contents "${contents}")
+        string(REGEX REPLACE "\n" ";" contents "${contents}")
+        set(current_suite "<NONE>")
+        set(found_tests "")
+        foreach(line ${contents})
+            # Try BOOST_AUTO_TEST_CASE
+            string(REGEX MATCH "BOOST_AUTO_TEST_CASE\\([A-Za-z0-9_]+\\)" found_test "${line}")
+            if(found_test)
+                string(REGEX REPLACE "BOOST_AUTO_TEST_CASE\\(([A-Za-z0-9_]+)\\)" "\\1" found_test "${line}")
+                if(current_suite STREQUAL "<NONE>")
+                    list(APPEND found_tests ${found_test})
+                else()
+                    list(APPEND found_tests "${current_suite}/${found_test}")
+                endif()
+            else()
+                # Try BOOST_FIXTURE_TEST_CASE
+                string(
+                    REGEX MATCH
+                        "BOOST_FIXTURE_TEST_CASE\\([A-Za-z_0-9]+, [A-Za-z_0-9]+\\)"
+                    found_test
+                    "${line}"
+                  )
+                if(found_test)
+                    string(
+                        REGEX REPLACE
+                            "BOOST_FIXTURE_TEST_CASE\\(([A-Za-z_0-9]+), [A-Za-z_0-9]+\\)"
+                            "\\1"
+                        found_test
+                        "${line}"
+                      )
+                    if(current_suite STREQUAL "<NONE>")
+                        list(APPEND found_tests ${found_test})
+                    else()
+                        list(APPEND found_tests "${current_suite}/${found_test}")
+                    endif()
+                else()
+                    string(
+                        REGEX MATCH
+                            "BOOST_FIXTURE_TEST_SUITE\\([A-Za-z_0-9]+, [A-Za-z_0-9]+\\)"
+                        found_test
+                        "${line}"
+                        )
+                    if(found_test)
+                        string(
+                            REGEX REPLACE
+                                "BOOST_FIXTURE_TEST_SUITE\\(([A-Za-z_0-9]+), [A-Za-z_0-9]+\\)"
+                                "\\1"
+                            current_suite
+                            "${line}"
+                          )
+                    elseif(line MATCHES "BOOST_AUTO_TEST_SUITE_END\\(\\)")
+                        set(current_suite "<NONE>")
+                    endif()
+                endif()
+            endif()
         endforeach()
-        # Append BOOST_FIXTURE_TEST_CASEs
-        string(REGEX MATCHALL "BOOST_FIXTURE_TEST_SUITE\\(([A-Za-z_0-9]+), ([A-Za-z_0-9]+)\\)" found_tests "${contents}")
-        foreach(hit ${found_tests})
-            string(REGEX REPLACE ".*\\(([A-Za-z_0-9]+), ([A-Za-z_0-9]+)\\).*" "\\1" test_name ${hit})
+        #message(STATUS "  found tests: ${found_tests}")
+        # Register found tests
+        foreach(test_name ${found_tests})
             add_test(
                 NAME ${test_name}
                 COMMAND ${add_boost_tests_TARGET} --run_test=${test_name} ${extra_args}
@@ -96,5 +154,6 @@ endfunction(add_boost_tests)
 
 # X-Chewy-RepoBase: https://raw.github.com/mutanabbi/chewy-cmake-rep/master/
 # X-Chewy-Path: AddBoostTests.cmake
-# X-Chewy-Version: 2.4
+# X-Chewy-Version: 3.0
 # X-Chewy-Description: Integrate Boost unit tests into CMake infrastructure
+# X-Chewy-AddonFile: unit_tests_main_skeleton.cc

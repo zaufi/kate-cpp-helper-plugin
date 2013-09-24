@@ -29,8 +29,7 @@ if (NOT CMAKE_BUILD_TYPE)
 endif()
 message(STATUS "Configuration type choosen: ${CMAKE_BUILD_TYPE}")
 
-# kate: hl cmake;
 # X-Chewy-RepoBase: https://raw.github.com/mutanabbi/chewy-cmake-rep/master/
 # X-Chewy-Path: GuessBuildType.cmake
-# X-Chewy-Version: 1.4
+# X-Chewy-Version: 1.5
 # X-Chewy-Description: Guess build type if not specified explicitly

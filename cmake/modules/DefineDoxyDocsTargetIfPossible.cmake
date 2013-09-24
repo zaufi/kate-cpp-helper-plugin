@@ -1,9 +1,34 @@
+# - Find `doxygen` (and `mscgen`), render a `Doxyfile` and define
+#   a target 'doxygen' to build a project documentation.
 #
+# To configure desired doxygen options one may set them before
+# include this module. Every doxygen variable (found in ordinal Doxyfile)
+# must be prefixed w/ `DOXYGEN_` to be defined form CMake script.
+#
+# This module also define two targets: `doxygen' and `show-api-documentation'.
+# Latter uses `xdg-open` to start a default browser and open generated `index.html`.
+#
+# Tools like `dot` and `mscgen` also will be detected automatically and
+# corresponding options in `Doxyfile` will be defined.
+#
+# NOTE Some options have defaults (reasonable for average project) and some of them,
+# appendable -- i.e. being defined in `CMakeLists.txt` default value will be appended
+# to the end anyway. Here is a list of "appendable" options:
+#  - DOXYGEN_EXCLUDE_PATTERNS
+#
+
+#=============================================================================
 # Copyright 2011-2013 by Alex Turbov <i.zaufi@gmail.com>
 #
-# Find `doxygen` (and `mscgen`), render a `Doxyfile` and define
-# a target 'doxygen' to build a project documentation.
+# Distributed under the OSI-approved BSD License (the "License");
+# see accompanying file LICENSE for details.
 #
+# This software is distributed WITHOUT ANY WARRANTY; without even the
+# implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+# See the License for more information.
+#=============================================================================
+# (To distribute this file outside of this repository, substitute the full
+#  License text for the above reference.)
 
 option(NO_DOXY_DOCS "Do not install Doxygen'ed documentation")
 
@@ -45,9 +70,6 @@ else()
     endif()
     if(NOT DEFINED DOXYGEN_OUTPUT_DIRECTORY)
         set(DOXYGEN_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/doc")
-    endif()
-    if(NOT DEFINED DOXYGEN_EXCLUDE_PATTERNS)
-        set(DOXYGEN_EXCLUDE_PATTERNS "*/.git/* */.svn/* */.hg/* */tests/* *_tester.cc */CMakeFiles/* */cmake/* */_CPack_Packages/*")
     endif()
     if(NOT DEFINED DOXYGEN_DOT_IMAGE_FORMAT)
         set(DOXYGEN_DOT_IMAGE_FORMAT svg)
@@ -107,6 +129,12 @@ else()
         set(DOXYGEN_SORT_BY_SCOPE_NAME YES)
     endif()
 
+    # Handle appendable options
+    set(
+        DOXYGEN_EXCLUDE_PATTERNS
+        "${DOXYGEN_EXCLUDE_PATTERNS} */.git/* */.svn/* */.hg/* */tests/* *_tester.cc */CMakeFiles/* */cmake/* */_CPack_Packages/*"
+      )
+
     # get other defaults from generated file
     include(${CMAKE_CURRENT_LIST_DIR}/DoxygenDefaults.cmake)
     # prepare doxygen configuration file
@@ -154,7 +182,7 @@ endif()
 
 # X-Chewy-RepoBase: https://raw.github.com/mutanabbi/chewy-cmake-rep/master/
 # X-Chewy-Path: DefineDoxyDocsTargetIfPossible.cmake
-# X-Chewy-Version: 2.5
+# X-Chewy-Version: 2.6
 # X-Chewy-Description: Define `make doxygen` target to build API documentation using `doxygen`
 # X-Chewy-AddonFile: Doxyfile.in
 # X-Chewy-AddonFile: DoxygenInstall.cmake.in

@@ -32,7 +32,7 @@
 
 include(CMakeParseArguments)
 
-set(DSGT_BASE_DIR "${CMAKE_CURRENT_LIST_DIR}")
+set(_DSGT_BASE_DIR "${CMAKE_CURRENT_LIST_DIR}")
 
 # Check if `autogen` and `awk` both are installed
 find_program(AUTOGEN_EXECUTABLE autogen)
@@ -116,19 +116,19 @@ function(define_skeleton_generation_targets)
 
     # render template defaults
     configure_file(
-        ${DSGT_BASE_DIR}/tpl_defaults.def.in
+        ${_DSGT_BASE_DIR}/tpl_defaults.def.in
         ${CMAKE_BINARY_DIR}/tpl_defaults.def
         @ONLY
       )
     # render files template
     configure_file(
-        ${DSGT_BASE_DIR}/class.tpl.in
+        ${_DSGT_BASE_DIR}/class.tpl.in
         ${CMAKE_BINARY_DIR}/class.tpl
         @ONLY
       )
     # prepare autogen wrapper for new class skeleton creation
     configure_file(
-        ${DSGT_BASE_DIR}/new_class_wrapper.sh.in
+        ${_DSGT_BASE_DIR}/new_class_wrapper.sh.in
         ${CMAKE_BINARY_DIR}/new_class_wrapper.sh
         @ONLY
       )
@@ -139,19 +139,19 @@ function(define_skeleton_generation_targets)
         COMMAND /bin/sh ${CMAKE_BINARY_DIR}/new_class_wrapper.sh
         DEPENDS ${CMAKE_BINARY_DIR}/new_class_wrapper.sh
                 ${CMAKE_BINARY_DIR}/class.tpl
-                ${DSGT_BASE_DIR}/class.tpl.in
+                ${_DSGT_BASE_DIR}/class.tpl.in
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
         COMMENT "Generate skeleton files"
       )
 
     if(define_skeleton_generation_targets_ENABLE_TESTS)
         configure_file(
-            ${DSGT_BASE_DIR}/class_tester.tpl.in
+            ${_DSGT_BASE_DIR}/class_tester.tpl.in
             ${CMAKE_BINARY_DIR}/class_tester.tpl
             @ONLY
           )
         configure_file(
-            ${DSGT_BASE_DIR}/new_class_tester_wrapper.sh.in
+            ${_DSGT_BASE_DIR}/new_class_tester_wrapper.sh.in
             ${CMAKE_BINARY_DIR}/new_class_tester_wrapper.sh
             @ONLY
           )
@@ -161,17 +161,16 @@ function(define_skeleton_generation_targets)
             COMMAND /bin/sh ${CMAKE_BINARY_DIR}/new_class_tester_wrapper.sh
             DEPENDS ${CMAKE_BINARY_DIR}/new_class_tester_wrapper.sh
                     ${CMAKE_BINARY_DIR}/class_tester.tpl
-                    ${DSGT_BASE_DIR}/class_tester.tpl.in
+                    ${_DSGT_BASE_DIR}/class_tester.tpl.in
             WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
             COMMENT "Generate unit-test skeleton file"
           )
     endif()
 endfunction()
 
-# kate: hl cmake;
 # X-Chewy-RepoBase: https://raw.github.com/mutanabbi/chewy-cmake-rep/master/
 # X-Chewy-Path: DefineSkeletonGenerationTargetsIfPossible.cmake
-# X-Chewy-Version: 5.8
+# X-Chewy-Version: 5.10
 # X-Chewy-Description: Add targets to generate class header/implementation and unit-tests skeleton files
 # X-Chewy-AddonFile: TestCMakeLists.txt.in
 # X-Chewy-AddonFile: class.tpl.in
