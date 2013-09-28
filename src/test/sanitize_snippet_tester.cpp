@@ -31,7 +31,7 @@
 #include <iostream>
 
 // Uncomment if u want to use boost test output streams.
-//  Then just output smth to it and valida an output by
+//  Then just output smth to it and validate an output by
 //  BOOST_CHECK(out_stream.is_equal("Test text"))
 // using boost::test_tools::output_test_stream;
 
