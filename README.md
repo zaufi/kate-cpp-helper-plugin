@@ -40,7 +40,7 @@ Installation
 
         $ cd <plugin-sources-dir>
         $ mkdir build && cd build
-        $ cmake -DBUILD_TESTING=OFF -DCMAKE_INSTALL_PREFIX=~/.kde4 .. && make && make install
+        $ cmake -DNO_DOXY_DOCS=ON -DBUILD_TESTING=OFF -DCMAKE_INSTALL_PREFIX=~/.kde4 .. && make && make install
 
 * To make a system-wide installation, set the prefix to `/usr` and become a superuser to `make install`
 * After that you have to enable it from `Settings->Configure Kate...->Plugins` and configure the include paths
@@ -200,3 +200,9 @@ TODO
 * Try to get a location for completion item and show it as suffix in a completion list
 * Add ptr/ref/const/etc to a type under cursor (by hot-key)
 * Show a real type of typedefs (as a tooltip?)
+
+See Also
+========
+
+* project [home page](http://zaufi.github.io/kate-cpp-helper-plugin.html)
+* sources [repository](https://github.com/zaufi/kate-cpp-helper-plugin)

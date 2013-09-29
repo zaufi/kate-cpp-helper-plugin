@@ -38,6 +38,28 @@ endif()
 find_package(KDE4 REQUIRED)
 include(KDE4Defaults)
 
+# Find kate developer files
+# See BUG #10
+include(CheckIncludeFileCXX)
+set(
+    KATE_INTERFACE_FILES
+    kate/application.h
+    kate/documentmanager.h
+    kate/mainwindow.h
+    kate/pluginconfigpageinterface.h
+    kate/plugin.h
+  )
+set(CMAKE_REQUIRED_INCLUDES ${KDE4_INCLUDES} ${QT_INCLUDES})
+set(_need_to_include_kate_interfaces OFF)
+foreach(_kate_iface_file ${KATE_INTERFACE_FILES})
+    get_filename_component(_file_name ${_kate_iface_file} NAME_WE)
+    string(TOUPPER "HAVE_KATE_${_file_name}_H" _have_var)
+    check_include_file_cxx(${_kate_iface_file} ${_have_var})
+    if(NOT ${_have_var})
+        set(_need_to_include_kate_interfaces ON)
+    endif()
+endforeach()
+
 find_package(LibClang 3.0 REQUIRED)
 
 # find boost
@@ -63,6 +85,15 @@ endif()
 # NOTE Order is important!
 include_directories(${PROJECT_SOURCE_DIR} ${PROJECT_BINARY_DIR})
 include_directories(${KDE4_INCLUDES} ${QT_INCLUDES} ${Boost_INCLUDE_DIRS} ${LLVM_INCLUDEDIR})
+if(_need_to_include_kate_interfaces)
+    if("${KDE_VERSION}" VERSION_LESS 4.11)
+        message(FATAL_ERROR "KDE >=4.11.x required to build this package")
+    endif()
+    include_directories(
+        ${PROJECT_SOURCE_DIR}/third_party/kde-${KDE_VERSION_MAJOR}.${KDE_VERSION_MINOR}-kate-interfaces
+      )
+    message(STATUS "Use internal kate developer interface files for KDE/kate ${KDE_VERSION}")
+endif()
 
 # Set generic compiler flags: turn ON C++11 (C++03 is suxx) and exceptions
 # set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS} ${KDE4_ENABLE_EXCEPTIONS}")

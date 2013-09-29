@@ -6,6 +6,11 @@ Version (git/master)
 
 * fix LLVM/Clang detection for Debian
 
+Version 0.9.5
+-------------
+
+* close issue #10
+
 Version 0.9.4
 -------------
 
