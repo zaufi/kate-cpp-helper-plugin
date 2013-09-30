@@ -1,0 +1,44 @@
+#
+# Copyright 2012-2013 by Alex Turbov <i.zaufi@gmail.com>
+#
+
+# Obtain settings shared among all generated packages
+include(${CMAKE_BINARY_DIR}/CPackCommonPackageOptions.cmake)
+
+set(CPACK_GENERATOR ${CPACK_GENERATOR})
+set(CPACK_SOURCE_GENERATOR ${CPACK_SOURCE_GENERATOR})
+set(CPACK_CMAKE_GENERATOR "${CMAKE_GENERATOR}")
+
+set(CPACK_INSTALL_CMAKE_PROJECTS "${CMAKE_BINARY_DIR};${add_package_NAME};${add_package_NAME};/")
+
+set(CPACK_PACKAGE_NAME ${add_package_NAME}${CPACK_BUILD_FLAVOUR})
+set(CPACK_PACKAGE_VERSION ${add_package_VERSION})
+set(CPACK_PACKAGE_FILE_NAME "${add_package_FILE_NAME}")
+set(CPACK_PACKAGE_DESCRIPTION "${add_package_DESCRIPTION}")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "${add_package_SUMMARY}")
+set(CPACK_SET_DESTDIR "ON")
+
+# Debian specifics
+set(CPACK_DEBIAN_PACKAGE_BREAKS "${add_package_BREAKS}")
+set(CPACK_DEBIAN_PACKAGE_CONFLICTS "${add_package_CONFLICTS}")
+set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA "${add_package_CONTROL_FILES}")
+set(CPACK_DEBIAN_PACKAGE_DEPENDS "${add_package_DEPENDS}")
+set(CPACK_DEBIAN_PACKAGE_ENHANCES "${add_package_ENHANCES}")
+set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "${add_package_HOMEPAGE}")
+set(CPACK_DEBIAN_PACKAGE_PREDEPENDS "${add_package_PRE_DEPENDS}")
+set(CPACK_DEBIAN_PACKAGE_PRIORITY "${add_package_PRIORITY}")
+set(CPACK_DEBIAN_PACKAGE_PROVIDES "${add_package_PROVIDES}")
+set(CPACK_DEBIAN_PACKAGE_RECOMMENDS "${add_package_RECOMMENDS}")
+set(CPACK_DEBIAN_PACKAGE_REPLACES "${add_package_REPLACES}")
+set(CPACK_DEBIAN_PACKAGE_SECTION "${add_package_SECTION}")
+set(CPACK_DEBIAN_PACKAGE_SUGGESTS "${add_package_SUGGESTS}")
+
+# configure_file(
+#     ${_ADD_PACKAGE_MODULE_BASE_DIR}/CPackProjectConfig.cmake.in
+#     ${CMAKE_BINARY_DIR}/CPackProjectConfig.cmake
+#     @ONLY
+#   )
+# # NOTE This file will be automaticaly included during CPack run
+# set(CPACK_PROJECT_CONFIG_FILE ${CMAKE_BINARY_DIR}/CPackProjectConfig.cmake)
+
+# kate: hl cmake;

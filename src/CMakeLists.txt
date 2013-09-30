@@ -3,8 +3,6 @@
 configure_file(config.h.in config.h)
 configure_file(katecpphelperplugin.desktop.in katecpphelperplugin.desktop)
 
-add_definitions(-DQT_USE_QSTRINGBUILDER)
-
 set(KATE_CPP_HELPER_PLUGIN_SOURCES
     utils.cpp
     sanitize_snippet.cpp
@@ -40,7 +38,7 @@ target_link_libraries(katecpphelperplugin
     ${KDE4_KDEUI_LIBS}
     ${KDE4_KFILE_LIBS}
     ${KDE4_KTEXTEDITOR_LIBS}
-    kateinterfaces
+    ${KATE_INTERFACES_LIB}
     ${LIBCLANG_LIBRARY}
   )
 
@@ -87,11 +85,20 @@ append_if_set(QT_QTDECLARATIVE_INCLUDE_DIR QT4_INCSET_DIRS)
 
 configure_file(data/qt4.incset.in data/qt4.incset)
 
-install(TARGETS katecpphelperplugin DESTINATION ${PLUGIN_INSTALL_DIR})
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/katecpphelperplugin.desktop DESTINATION ${SERVICES_INSTALL_DIR})
+install(
+    TARGETS katecpphelperplugin
+    DESTINATION ${PLUGIN_INSTALL_DIR}
+    COMPONENT ${KATE_CPP_HELPER_PLUGIN_PACKAGE}
+  )
+install(
+    FILES ${CMAKE_CURRENT_BINARY_DIR}/katecpphelperplugin.desktop
+    DESTINATION ${SERVICES_INSTALL_DIR}
+    COMPONENT ${KATE_CPP_HELPER_PLUGIN_PACKAGE}
+  )
 install(
     FILES ui.rc ${CMAKE_CURRENT_BINARY_DIR}/data/qt4.incset
     DESTINATION ${DATA_INSTALL_DIR}/kate/plugins/katecpphelperplugin
+    COMPONENT ${KATE_CPP_HELPER_PLUGIN_PACKAGE}
   )
 
 if (BUILD_TESTING)
