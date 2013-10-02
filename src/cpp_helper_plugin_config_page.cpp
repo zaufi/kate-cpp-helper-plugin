@@ -264,7 +264,7 @@ CppHelperPluginConfigPage::CppHelperPluginConfigPage(
 
 void CppHelperPluginConfigPage::apply()
 {
-    kDebug() << "** CONFIG-PAGE **: Applying configuration";
+    kDebug(DEBUG_AREA) << "** CONFIG-PAGE **: Applying configuration";
     // Get settings from 'System #include dirs' tab
     {
         QStringList dirs;
@@ -301,7 +301,7 @@ void CppHelperPluginConfigPage::apply()
           ->ignoreExtensions
           ->text()
           .split(QRegExp("[, :;]+"), QString::SkipEmptyParts);
-        kDebug() << "Extensions to ignore:" << extensions;
+        kDebug(DEBUG_AREA) << "Extensions to ignore:" << extensions;
         m_plugin->config().setIgnoreExtensions(extensions);
     }
 
@@ -323,7 +323,7 @@ void CppHelperPluginConfigPage::apply()
         else
             kWarning() << "Ignore sanitize rule w/ invalid regex" << find_item->text();
     }
-    kDebug() << rules.size() << " sanitize rules collected";
+    kDebug(DEBUG_AREA) << rules.size() << " sanitize rules collected";
     m_plugin->config().setSanitizeRules(std::move(rules));
 }
 
@@ -333,7 +333,7 @@ void CppHelperPluginConfigPage::apply()
  */
 void CppHelperPluginConfigPage::reset()
 {
-    kDebug() << "** CONFIG-PAGE **: Reseting configuration";
+    kDebug(DEBUG_AREA) << "** CONFIG-PAGE **: Reseting configuration";
 
     // Put dirs to the list
     m_system_list->pathsList->addItems(m_plugin->config().systemDirs());
@@ -358,7 +358,7 @@ void CppHelperPluginConfigPage::reset()
     const auto& rules = m_plugin->config().sanitizeRules();
     m_completion_settings->sanitizeRules->clear();
     m_completion_settings->sanitizeRules->setRowCount(rules.size());
-    kDebug() << "Sanitize rules count: " << rules.size();
+    kDebug(DEBUG_AREA) << "Sanitize rules count: " << rules.size();
     int row = 0;
     for (const auto& rule : rules)
     {
@@ -367,7 +367,7 @@ void CppHelperPluginConfigPage::reset()
         m_completion_settings->sanitizeRules->setItem(row, 0, find);
         m_completion_settings->sanitizeRules->setItem(row, 1, replace);
         row++;
-        kDebug() << row << ") setting find =" << find << ", replace =" << replace;
+        kDebug(DEBUG_AREA) << row << ") setting find =" << find << ", replace =" << replace;
     }
     m_completion_settings->sanitizeRules->resizeColumnsToContents();
     /// \todo Why headers text can't be taken from \c ui file?
@@ -388,7 +388,7 @@ void CppHelperPluginConfigPage::reset()
 
 void CppHelperPluginConfigPage::defaults()
 {
-    kDebug() << "** CONFIG-PAGE **: Default configuration requested";
+    kDebug(DEBUG_AREA) << "** CONFIG-PAGE **: Default configuration requested";
     /// \todo Fill configuration elements w/ default values
 }
 
@@ -467,7 +467,7 @@ void CppHelperPluginConfigPage::removeSet()
     if (it != end(m_include_sets))
     {
         QFile file(it->second.m_file);
-        kDebug() << "Going to remove file" << file.fileName();
+        kDebug(DEBUG_AREA) << "Going to remove file" << file.fileName();
         if (!file.remove())
         {
             KPassivePopup::message(
@@ -489,7 +489,7 @@ void CppHelperPluginConfigPage::removeSet()
 void CppHelperPluginConfigPage::storeSet()
 {
     auto set_name = m_favorite_sets->setsList->currentText();
-    kDebug() << "Current set name:" << set_name;
+    kDebug(DEBUG_AREA) << "Current set name:" << set_name;
 
     KSharedConfigPtr cfg;
     {
@@ -502,7 +502,7 @@ void CppHelperPluginConfigPage::storeSet()
               , QString(INCSET_FILE_TPL).arg(filename)
               , true
               );
-            kDebug() << "Going to make a new incset file for it:" << incset_file;
+            kDebug(DEBUG_AREA) << "Going to make a new incset file for it:" << incset_file;
             cfg = KSharedConfig::openConfig(incset_file, KConfig::SimpleConfig);
         }
         else cfg = it->second.m_config;
@@ -511,7 +511,7 @@ void CppHelperPluginConfigPage::storeSet()
     QStringList dirs;
     for (int i = 0, last = m_session_list->pathsList->count(); i < last; ++i)
         dirs << m_session_list->pathsList->item(i)->text();
-    kDebug() << "Collected current paths:" << dirs;
+    kDebug(DEBUG_AREA) << "Collected current paths:" << dirs;
 
     // Write Name and Dirs entries to the config
     KConfigGroup general(cfg, INCSET_GROUP_NAME);
@@ -614,7 +614,7 @@ void CppHelperPluginConfigPage::rebuildPCH()
 void CppHelperPluginConfigPage::pchHeaderChanged(const QString& filename)
 {
     const bool is_valid_pch_file = isPresentAndReadable(filename);
-    kDebug() << "Check if PCH header file present and readable: "
+    kDebug(DEBUG_AREA) << "Check if PCH header file present and readable: "
       << filename << ", result=" << is_valid_pch_file;
     m_clang_config->openPchHeader->setEnabled(is_valid_pch_file);
     m_clang_config->rebuildPch->setEnabled(is_valid_pch_file);
@@ -632,7 +632,7 @@ void CppHelperPluginConfigPage::pchHeaderChanged(const KUrl& filename)
 void CppHelperPluginConfigPage::detectPredefinedCompilerPaths()
 {
     const auto binary = getCurrentCompiler();
-    kDebug() << "Determine predefined compiler paths for" << binary;
+    kDebug(DEBUG_AREA) << "Determine predefined compiler paths for" << binary;
 
     m_output.clear();
     m_error.clear();
@@ -672,8 +672,8 @@ void CppHelperPluginConfigPage::error(QProcess::ProcessError error)
 
 void CppHelperPluginConfigPage::finished(int exit_code, QProcess::ExitStatus exit_status)
 {
-    kDebug() << "Compiler STDOUT: " << m_output;
-    kDebug() << "Compiler STDERR: " << m_error;
+    kDebug(DEBUG_AREA) << "Compiler STDOUT: " << m_output;
+    kDebug(DEBUG_AREA) << "Compiler STDERR: " << m_error;
     QApplication::setOverrideCursor(QCursor(Qt::ArrowCursor));
     m_compiler_paths->addButton->setDisabled(false);
 
@@ -797,7 +797,7 @@ void CppHelperPluginConfigPage::updateSets()
       , QString(INCSET_FILE_TPL).arg("*")
       , KStandardDirs::NoSearchOptions
       );
-    kDebug() << "sets:" << sets;
+    kDebug(DEBUG_AREA) << "sets:" << sets;
 
     // Form a map of set names to shared configs
     for (const auto& filename : sets)
@@ -806,8 +806,8 @@ void CppHelperPluginConfigPage::updateSets()
         KConfigGroup general(incset, INCSET_GROUP_NAME);
         auto set_name = general.readEntry(INCSET_NAME_KEY, QString());
         auto dirs = general.readPathEntry(INCSET_DIRS_KEY, QStringList());
-        kDebug() << "set name: " << set_name;
-        kDebug() << "dirs: " << dirs;
+        kDebug(DEBUG_AREA) << "set name: " << set_name;
+        kDebug(DEBUG_AREA) << "dirs: " << dirs;
         m_include_sets[set_name] = IncludeSetInfo{incset, filename};
     }
 
@@ -855,7 +855,7 @@ void CppHelperPluginConfigPage::updateSuggestions()
         }
     }
     qSort(dirs);
-    kDebug() << "Suggestions list:" << dirs;
+    kDebug(DEBUG_AREA) << "Suggestions list:" << dirs;
     // Update combobox w/ collected list
     m_favorite_sets->suggestionsList->clear();
     m_favorite_sets->suggestionsList->addItems(dirs);
@@ -868,8 +868,8 @@ void CppHelperPluginConfigPage::updateSuggestions()
 
 void CppHelperPluginConfigPage::addEmptySanitizeRule()
 {
-    kDebug() << "rules rows =" << m_completion_settings->sanitizeRules->rowCount();
-    kDebug() << "rules cols =" << m_completion_settings->sanitizeRules->columnCount();
+    kDebug(DEBUG_AREA) << "rules rows =" << m_completion_settings->sanitizeRules->rowCount();
+    kDebug(DEBUG_AREA) << "rules cols =" << m_completion_settings->sanitizeRules->columnCount();
 
     const auto row = m_completion_settings->sanitizeRules->rowCount();
     m_completion_settings->sanitizeRules->insertRow(row);
@@ -902,7 +902,7 @@ void CppHelperPluginConfigPage::moveSanitizeRuleUp()
     const int current = m_completion_settings->sanitizeRules->currentRow();
     if (current)
     {
-        kDebug() << "Current rule row " << current;
+        kDebug(DEBUG_AREA) << "Current rule row " << current;
         swapRuleRows(current - 1, current);
         Q_EMIT(changed());
     }
@@ -913,7 +913,7 @@ void CppHelperPluginConfigPage::moveSanitizeRuleDown()
     const int current = m_completion_settings->sanitizeRules->currentRow();
     if (current < m_completion_settings->sanitizeRules->rowCount() - 1)
     {
-        kDebug() << "Current rule row " << current;
+        kDebug(DEBUG_AREA) << "Current rule row " << current;
         swapRuleRows(current, current + 1);
         Q_EMIT(changed());
     }
@@ -928,7 +928,7 @@ std::pair<bool, QString> CppHelperPluginConfigPage::isSanitizeRuleValid(
     {
         auto* item = m_completion_settings->sanitizeRules->item(row, column);
         auto expr = QRegExp(item->text());
-        kDebug() << "Validate regex text: " << item->text() << ", pattern text:" << expr.pattern();
+        kDebug(DEBUG_AREA) << "Validate regex text: " << item->text() << ", pattern text:" << expr.pattern();
         return std::make_pair(expr.isValid(), expr.errorString());
     }
     /// \todo Make sure that \e replace part contains valid number of
@@ -938,7 +938,7 @@ std::pair<bool, QString> CppHelperPluginConfigPage::isSanitizeRuleValid(
 
 void CppHelperPluginConfigPage::validateSanitizeRule(const int row, const int column)
 {
-    kDebug() << "Sanitize rule has been changed: row =" << row << ", col =" << column;
+    kDebug(DEBUG_AREA) << "Sanitize rule has been changed: row =" << row << ", col =" << column;
     auto p = isSanitizeRuleValid(row, column);
     if (!p.first)
     {

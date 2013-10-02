@@ -61,7 +61,7 @@ const std::vector<QString> SUITABLE_HIGHLIGHT_TYPES = {
 IncludeParseResult parseIncludeDirective(const QString& line, const bool strict)
 {
 #if 0
-    kDebug() << "text2parse=" << line << ", strict=" << strict;
+    kDebug(DEBUG_AREA) << "text2parse=" << line << ", strict=" << strict;
 #endif
 
     enum State
@@ -100,7 +100,7 @@ IncludeParseResult parseIncludeDirective(const QString& line, const bool strict)
                         continue;
                     }
 #if 0
-                    kDebug() << "pase failure: smth other than '#' first char in a line";
+                    kDebug(DEBUG_AREA) << "pase failure: smth other than '#' first char in a line";
 #endif
                     return result;                          // Error: smth other than '#' first char in a line
                 }
@@ -115,7 +115,7 @@ IncludeParseResult parseIncludeDirective(const QString& line, const bool strict)
                 if (INCLUDE_STR[tmp++] != line[pos])
                 {
 #if 0
-                    kDebug() << "pase failure: is not 'include' after '#'";
+                    kDebug(DEBUG_AREA) << "pase failure: is not 'include' after '#'";
 #endif
                     return result;                          // Error: is not 'include' after '#'
                 }
@@ -129,7 +129,7 @@ IncludeParseResult parseIncludeDirective(const QString& line, const bool strict)
                     continue;
                 }
 #if 0
-                kDebug() << "pase failure: is not no space after '#include'";
+                kDebug(DEBUG_AREA) << "pase failure: is not no space after '#include'";
 #endif
                 return result;                              // Error: no space after '#include'
             case skipOptionalSpaces:
@@ -149,7 +149,7 @@ IncludeParseResult parseIncludeDirective(const QString& line, const bool strict)
                 else
                 {
 #if 0
-                    kDebug() << "pase failure: not a valid open char";
+                    kDebug(DEBUG_AREA) << "pase failure: not a valid open char";
 #endif
                     return result;
                 }
@@ -172,7 +172,7 @@ IncludeParseResult parseIncludeDirective(const QString& line, const bool strict)
                     if (strict)
                     {
 #if 0
-                        kDebug() << "pase failure: space before close char met";
+                        kDebug(DEBUG_AREA) << "pase failure: space before close char met";
 #endif
                         return result;                      // in strict mode return false for incomplete #include
                     }
@@ -192,14 +192,14 @@ IncludeParseResult parseIncludeDirective(const QString& line, const bool strict)
             if (!strict)
                 result.m_range = KTextEditor::Range(0, line.length(), 0, line.length());
 #if 0
-            kDebug() << "pase failure: EOL after open char";
+            kDebug(DEBUG_AREA) << "pase failure: EOL after open char";
 #endif
             break;
         case findCloseChar:
             if (!strict)
                 result.m_range = KTextEditor::Range(0, start, 0, line.length());
 #if 0
-            kDebug() << "pase failure: EOL before close char";
+            kDebug(DEBUG_AREA) << "pase failure: EOL before close char";
 #endif
             break;
         case stop:
@@ -215,7 +215,7 @@ IncludeParseResult parseIncludeDirective(const QString& line, const bool strict)
             assert(!"Parsing FSM broken!");
     }
 #if 0
-    kDebug() << "result-range=" << result.m_range << ", is_complete=" << result.m_is_complete;
+    kDebug(DEBUG_AREA) << "result-range=" << result.m_range << ", is_complete=" << result.m_is_complete;
 #endif
     return result;
 }
@@ -325,9 +325,9 @@ bool isSuitableDocumentAndHighlighting(const QString& mime_str, const QString& h
 QStringList findHeader(const QString& file, const QStringList& locals, const QStringList& system)
 {
     QStringList result;
-    kDebug() << "Trying locals first...";
+    kDebug(DEBUG_AREA) << "Trying locals first...";
     findFiles(file, locals, result);                        // Try locals first
-    kDebug() << "Trying system paths...";
+    kDebug(DEBUG_AREA) << "Trying system paths...";
     findFiles(file, system, result);                        // Then try system paths
     /// \todo I think it is redundant nowadays...
     removeDuplicates(result);                               // Remove possible duplicates
@@ -347,7 +347,7 @@ void updateListsFromFS(
     for (const QString& d : dirs2scan)
     {
         const QString dir = QDir::cleanPath(d + '/' + path);
-        kDebug() << "Trying " << dir;
+        kDebug(DEBUG_AREA) << "Trying " << dir;
         {
             QStringList result = QDir(dir).entryList(masks, QDir::Dirs | common_flags);
             for (const QString& r : result)
@@ -369,7 +369,7 @@ void updateListsFromFS(
                 if (!files.contains(r) && !ignore)
                     files.append(r);
                 else
-                    kDebug() << "Skip " << r;
+                    kDebug(DEBUG_AREA) << "Skip " << r;
             }
         }
     }

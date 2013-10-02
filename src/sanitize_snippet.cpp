@@ -160,14 +160,14 @@ std::pair<bool, QString> sanitize(
   , const PluginConfiguration::sanitize_rules_list_type& sanitize_rules
   )
 {
-    kDebug() << "Sanitize snippet: " << text;
+    kDebug(DEBUG_AREA) << "Sanitize snippet: " << text;
     bool result = true;
     QString output = std::move(text);
     // Try to sanitize completion items
     for (const auto& rule : sanitize_rules)
     {
         assert("A valid regex expected here!" && rule.first.isValid());
-        kDebug() << "Trying " << rule.first.pattern() << " w/ replace text " << rule.second;
+        kDebug(DEBUG_AREA) << "Trying " << rule.first.pattern() << " w/ replace text " << rule.second;
         if (rule.second.isEmpty())
         {
             // If replace text is empty, just ignore completion item if it matches...
@@ -181,7 +181,7 @@ std::pair<bool, QString> sanitize(
         else
         {
             output.replace(rule.first, rule.second);
-            kDebug() << "  output: " << output;
+            kDebug(DEBUG_AREA) << "  output: " << output;
         }
     }
     return std::make_pair(result, output);

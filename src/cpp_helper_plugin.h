@@ -101,8 +101,12 @@ public:
       );
     /// Helper function to collect unsaved files from current editor
     TranslationUnit::unsaved_files_list_type makeUnsavedFilesList(KTextEditor::Document*) const;
-    TranslationUnit& getTranslationUnitByDocument(KTextEditor::Document*, const bool = true);
+    TranslationUnit& getTranslationUnitByDocument(KTextEditor::Document*, bool = true);
     DocumentInfo& getDocumentInfo(KTextEditor::Document*);
+    void addDiagnosticMessage(DiagnosticMessagesModel::Record);
+
+Q_SIGNALS:
+    void diagnosticMessage(DiagnosticMessagesModel::Record);
 
 public Q_SLOTS:
     void updateDocumentInfo(KTextEditor::Document*);

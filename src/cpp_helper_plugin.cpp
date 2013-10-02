@@ -101,7 +101,7 @@ CppHelperPlugin::CppHelperPlugin(
 
 CppHelperPlugin::~CppHelperPlugin()
 {
-    kDebug() << "Unloading...";
+    kDebug(DEBUG_AREA) << "Unloading...";
 }
 
 //BEGIN PluginConfigPageInterface interface implementation
@@ -143,18 +143,31 @@ Kate::PluginConfigPage* CppHelperPlugin::configPage(uint number, QWidget* parent
 //BEGIN Kate::Plugin interface implementation
 void CppHelperPlugin::readSessionConfig(KConfigBase* cfg, const QString& groupPrefix)
 {
-    kDebug() << "** PLUGIN **: Reading session config: " << groupPrefix;
+    kDebug(DEBUG_AREA) << "** PLUGIN **: Reading session config: " << groupPrefix;
     config().readSessionConfig(cfg, groupPrefix);
     buildPCHIfAbsent();
 }
 void CppHelperPlugin::writeSessionConfig(KConfigBase* cfg, const QString& groupPrefix)
 {
-    kDebug() << "** PLUGIN **: Writing session config: " << groupPrefix;
+    kDebug(DEBUG_AREA) << "** PLUGIN **: Writing session config: " << groupPrefix;
     config().writeSessionConfig(cfg, groupPrefix);
 }
+/**
+ * Create a plugin view and subscribe it to \c diagnosticMessage signal
+ * of \c this plugin instance, so diagnostic messages can be viewed in
+ * a plugin's tool view.
+ */
 Kate::PluginView* CppHelperPlugin::createView(Kate::MainWindow* parent)
 {
-    return new CppHelperPluginView(parent, CppHelperPluginFactory::componentData(), this);
+    auto* view = new CppHelperPluginView(parent, CppHelperPluginFactory::componentData(), this);
+    // Connect view to diagnostic messages emit by this instance
+    connect(
+        this
+      , SIGNAL(diagnosticMessage(DiagnosticMessagesModel::Record))
+      , view
+      , SLOT(addDiagnosticMessage(DiagnosticMessagesModel::Record))
+      );
+    return view;
 }
 //END Kate::Plugin interface implementation
 
@@ -184,13 +197,13 @@ void CppHelperPlugin::updateDirWatcher()
 
     if (config().what_to_monitor() & 2)
     {
-        kDebug() << "Going to monitor system dirs for changes...";
+        kDebug(DEBUG_AREA) << "Going to monitor system dirs for changes...";
         for (const QString& path : config().systemDirs())
             updateDirWatcher(path);
     }
     if (config().what_to_monitor() & 1)
     {
-        kDebug() << "Going to monitor session dirs for changes...";
+        kDebug(DEBUG_AREA) << "Going to monitor session dirs for changes...";
         for (const QString& path : config().sessionDirs())
             updateDirWatcher(path);
     }
@@ -203,7 +216,7 @@ void CppHelperPlugin::createdPath(const QString& path)
     // No reason to call update if it is just a dir was created...
     if (QFileInfo(path).isFile() && m_last_updated != path)
     {
-        kDebug() << "DirWatcher said created: " << path;
+        kDebug(DEBUG_AREA) << "DirWatcher said created: " << path;
         updateCurrentView();
         m_last_updated = path;
     }
@@ -213,7 +226,7 @@ void CppHelperPlugin::deletedPath(const QString& path)
 {
     if (m_last_updated != path)
     {
-        kDebug() << "DirWatcher said deleted: " << path;
+        kDebug(DEBUG_AREA) << "DirWatcher said deleted: " << path;
         updateCurrentView();
         m_last_updated = path;
     }
@@ -221,7 +234,7 @@ void CppHelperPlugin::deletedPath(const QString& path)
 
 void CppHelperPlugin::invalidateTranslationUnits()
 {
-    kDebug() << "Clang options had changed, invalidating translation units...";
+    kDebug(DEBUG_AREA) << "Clang options had changed, invalidating translation units...";
     m_units.clear();
 }
 
@@ -234,13 +247,13 @@ void CppHelperPlugin::updateCurrentView()
 
 void CppHelperPlugin::updateDocumentInfo(KTextEditor::Document* doc)
 {
-    kDebug() << "(re)scan document " << doc->url() << " for #includes...";
+    kDebug(DEBUG_AREA) << "(re)scan document " << doc->url() << " for #includes...";
 
     assert("Valid document expected" && doc);
     KTextEditor::MovingInterface* mv_iface = qobject_cast<KTextEditor::MovingInterface*>(doc);
     if (!mv_iface)
     {
-        kDebug() << "No moving iface!!!!!!!!!!!";
+        kDebug(DEBUG_AREA) << "No moving iface!!!!!!!!!!!";
         return;
     }
 
@@ -254,7 +267,7 @@ void CppHelperPlugin::updateDocumentInfo(KTextEditor::Document* doc)
     // Do we really need to scan this file?
     if (!isSuitableDocument(doc->mimeType(), doc->highlightingMode()))
     {
-        kDebug() << "Document doesn't looks like C or C++: type ="
+        kDebug(DEBUG_AREA) << "Document doesn't looks like C or C++: type ="
           << doc->mimeType() << ", hl =" << doc->highlightingMode();
         return;
     }
@@ -283,7 +296,7 @@ void CppHelperPlugin::updateDocumentInfo(KTextEditor::Document* doc)
 void CppHelperPlugin::removeDocumentInfo(KTextEditor::Document* doc)
 {
     assert("Valid document expected" && doc);
-    kDebug() << "going to remove document" << doc;
+    kDebug(DEBUG_AREA) << "going to remove document" << doc;
     // Try to remove previously collected info
     {
         auto it = m_doc_info.find(doc);
@@ -320,7 +333,13 @@ void CppHelperPlugin::makePCHFile(const KUrl& filename)
     const QString pch_file_name = filename.toLocalFile() + ".kate.pch";
     try
     {
-        kDebug() << "Going to produce a PCH file" << pch_file_name
+        addDiagnosticMessage(
+            DiagnosticMessagesModel::Record(
+                QString("Rebuilding PCH file: %1").arg(pch_file_name)
+              , DiagnosticMessagesModel::Record::type::info
+              )
+          );
+        kDebug(DEBUG_AREA) << "Going to produce a PCH file" << pch_file_name
             << "from" << config().precompiledHeaderFile();
         TranslationUnit pch_unit(
             localIndex()
@@ -331,25 +350,40 @@ void CppHelperPlugin::makePCHFile(const KUrl& filename)
         pch_unit.storeTo(pch_file_name);
         config().setPrecompiledFile(pch_file_name);         // Set PCH file only if everything is Ok
     }
-    catch (const TranslationUnit::Exception::ParseFailure&)
+    catch (const TranslationUnit::Exception::ParseFailure& e)
     {
-        kError() << "PCH file failure. Code completion will be damn slow!";
+        addDiagnosticMessage(
+            DiagnosticMessagesModel::Record(
+                QString("PCH file parse failure: %1").arg(e.what())
+              , DiagnosticMessagesModel::Record::type::error
+              )
+          );
         /// \todo Add an option to disable code completion w/o PCH file?
     }
-    catch (const TranslationUnit::Exception::SaveFailure&)
+    catch (const TranslationUnit::Exception::SaveFailure& e)
     {
-        kError() << "Unable to store a PCH file";
+        addDiagnosticMessage(
+            DiagnosticMessagesModel::Record(
+                QString("Fail to store PCH file: %1").arg(e.what())
+              , DiagnosticMessagesModel::Record::type::error
+              )
+          );
     }
     catch (const TranslationUnit::Exception& e)
     {
-        kError() << "Smth wrong w/ the PCH file:" << e.what();
+        addDiagnosticMessage(
+            DiagnosticMessagesModel::Record(
+                QString("PCH file failure: %1").arg(e.what())
+              , DiagnosticMessagesModel::Record::type::error
+              )
+          );
     }
     QApplication::restoreOverrideCursor();                  // Restore mouse pointer to normal
 }
 
 /**
  * \attention Clang 3.1 has some problems (core dump) on loading a PCH file if latter
- * doesn't exists before call to \c TranslationUnit ctor. As I so in \c gdb, it has
+ * doesn't exists before call to \c TranslationUnit ctor. As I saw in \c gdb, it has
  * (seem) uninitialized counter for tokens in a \c Preprocessor class (due some kind
  * of delayed initialization or smth like that)... So it is why presence of a PCH
  * must be checked before...
@@ -359,20 +393,36 @@ void CppHelperPlugin::buildPCHIfAbsent()
 {
     if (config().precompiledHeaderFile().isEmpty())
     {
-        kDebug() << "No PCH file configured! Code completion will be slooow!";
+        addDiagnosticMessage(
+            DiagnosticMessagesModel::Record(
+                QString("No PCH file configured! Code completion maybe slooow!")
+              , DiagnosticMessagesModel::Record::type::warning
+              )
+          );
+        kDebug(DEBUG_AREA) << "No PCH file configured! Code completion maybe slooow!";
         return;
     }
 
     const QString pch_file_name = config().precompiledHeaderFile().toLocalFile() + ".kate.pch";
     QFileInfo pi(pch_file_name);
     if (!pi.exists())
+    {
         makePCHFile(config().precompiledHeaderFile());
+    }
     else
+    {
         config().setPrecompiledFile(pch_file_name);         // Ok, file exists!
+        addDiagnosticMessage(
+            DiagnosticMessagesModel::Record(
+                QString("Using PCH file: %1").arg(pch_file_name)
+              , DiagnosticMessagesModel::Record::type::info
+              )
+          );
+    }
 
     //
-    kDebug() << "PCH header: " << config().precompiledHeaderFile();
-    kDebug() << "PCH file: " << config().pchFile();
+    kDebug(DEBUG_AREA) << "PCH header: " << config().precompiledHeaderFile();
+    kDebug(DEBUG_AREA) << "PCH file: " << config().pchFile();
 }
 
 QList<KTextEditor::HighlightInterface::AttributeBlock> CppHelperPlugin::highlightSnippet(
@@ -381,7 +431,7 @@ QList<KTextEditor::HighlightInterface::AttributeBlock> CppHelperPlugin::highligh
   )
 {
 #if 0
-    kDebug() << "Highligting text " << text << "using" << mode << "mode";
+    kDebug(DEBUG_AREA) << "Highligting text " << text << "using" << mode << "mode";
 #endif
     QList<KTextEditor::HighlightInterface::AttributeBlock> result;
 
@@ -446,13 +496,19 @@ TranslationUnit& CppHelperPlugin::getTranslationUnitByDocumentImpl(
     // Check if translation unit created
     if (!unit)
     {
+        addDiagnosticMessage(
+            DiagnosticMessagesModel::Record(
+                QString("Initial parsing %1").arg(doc->url().toLocalFile())
+              , DiagnosticMessagesModel::Record::type::info
+              )
+          );
         // No! Need to create one...
         // Form command line parameters
         //  1) collect configured system and session dirs and make -I option series
         QStringList options = config().formCompilerOptions();
         //  2) append PCH options
-        kDebug() << config().precompiledHeaderFile();
-        kDebug() << config().pchFile();
+        kDebug(DEBUG_AREA) << config().precompiledHeaderFile();
+        kDebug(DEBUG_AREA) << config().pchFile();
         if (use_pch && !config().pchFile().isEmpty())
             options << /*"-Xclang" << */"-include-pch" << config().pchFile().toLocalFile();
 
@@ -467,6 +523,11 @@ TranslationUnit& CppHelperPlugin::getTranslationUnitByDocumentImpl(
     }
     unit->reparse();
     return *unit;
+}
+
+void CppHelperPlugin::addDiagnosticMessage(DiagnosticMessagesModel::Record record)
+{
+    Q_EMIT(diagnosticMessage(record));
 }
 
 //END CppHelperPlugin

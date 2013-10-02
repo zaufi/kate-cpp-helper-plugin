@@ -63,7 +63,7 @@ bool ClangCodeCompletionModel::shouldStartCompletion(
     KTextEditor::HighlightInterface* iface = qobject_cast<KTextEditor::HighlightInterface*>(doc);
     if (iface)
     {
-        kDebug() << "higlighting mode at" << pos << ':' << iface->highlightingModeAt(pos);
+        kDebug(DEBUG_AREA) << "higlighting mode at" << pos << ':' << iface->highlightingModeAt(pos);
         bool is_completion_needed = user_insertion
           && m_plugin->config().autoCompletions()
           && isSuitableDocumentAndHighlighting(doc->mimeType(), iface->highlightingModeAt(pos))
@@ -74,7 +74,7 @@ bool ClangCodeCompletionModel::shouldStartCompletion(
             result = text.endsWith(QLatin1String(".")) || text.endsWith(QLatin1String("->"));
         }
     }
-    kDebug() << "result:" << result;
+    kDebug(DEBUG_AREA) << "result:" << result;
     return result;
 }
 
@@ -93,7 +93,7 @@ void ClangCodeCompletionModel::completionInvoked(
         kWarning() << "U have to have a document on a disk before use code completion";
         return;
     }
-    kDebug() << "Comletion required at " << range << "for" << doc->text(range);
+    kDebug(DEBUG_AREA) << "Comletion requested at " << range << "for" << doc->text(range);
 
     // Remove everything collected before
     m_groups.clear();
@@ -101,6 +101,16 @@ void ClangCodeCompletionModel::completionInvoked(
     try
     {
         auto& unit = m_plugin->getTranslationUnitByDocument(doc);
+        // Show some SPAM in a tool view
+        m_diagnostic_model.append(
+            DiagnosticMessagesModel::Record(
+                doc->url().toLocalFile()
+              , range.start().line() + 1
+              , range.start().column() + 1
+              , "Completion point"
+              , DiagnosticMessagesModel::Record::type::debug
+              )
+          );
         // Obtain diagnostic if any
         {
             auto diag = unit.getLastDiagnostic();
@@ -154,7 +164,12 @@ void ClangCodeCompletionModel::completionInvoked(
     }
     catch (const TranslationUnit::Exception& e)
     {
-        kError() << "Fail to make a code completion: " << e.what();
+        m_diagnostic_model.append(
+            DiagnosticMessagesModel::Record(
+                QString("Fail to make a code completion: %1").arg(e.what())
+              , DiagnosticMessagesModel::Record::type::error
+              )
+          );
     }
 }
 
@@ -293,12 +308,12 @@ QVariant ClangCodeCompletionModel::getItemHighlightData(const QModelIndex& index
                 case KTextEditor::CodeCompletionModel::Prefix:
                 case KTextEditor::CodeCompletionModel::Arguments:
 #if 0
-                    kDebug() << "OK: HighlightingMethod(" << role << ") called for" << index;
+                    kDebug(DEBUG_AREA) << "OK: HighlightingMethod(" << role << ") called for" << index;
 #endif
                     return KTextEditor::CodeCompletionModel::CustomHighlighting;
                 default:
 #if 0
-                    kDebug() << "HighlightingMethod(" << role << ") DEFAULT called for " << index;
+                    kDebug(DEBUG_AREA) << "HighlightingMethod(" << role << ") DEFAULT called for " << index;
 #endif
                     return QVariant(QVariant::Invalid);
             }
@@ -312,7 +327,7 @@ QVariant ClangCodeCompletionModel::getItemHighlightData(const QModelIndex& index
                 case KTextEditor::CodeCompletionModel::Arguments:
                 {
 #if 0
-                    kDebug() << "OK: CustomHighlight(" << role << ") called for" << index;
+                    kDebug(DEBUG_AREA) << "OK: CustomHighlight(" << role << ") called for" << index;
 #endif
                     // Request item for text to highlight
                     auto text = m_groups[index.internalId()]
@@ -345,7 +360,7 @@ QVariant ClangCodeCompletionModel::getItemHighlightData(const QModelIndex& index
                 }
                 default:
 #if 0
-                    kDebug() << "CustomHighlight(" << role << ") DEFAULT called for" << index;
+                    kDebug(DEBUG_AREA) << "CustomHighlight(" << role << ") DEFAULT called for" << index;
 #endif
                     break;                                  // Return nothing
             }
@@ -379,23 +394,23 @@ void ClangCodeCompletionModel::executeCompletionItem2(
         qobject_cast<KTextEditor::TemplateInterface*>(m_current_view);
     if (template_iface)
     {
-        kDebug() << "TemplateInterface available for a view" << m_current_view;
+        kDebug(DEBUG_AREA) << "TemplateInterface available for a view" << m_current_view;
         ClangCodeCompletionItem::CompletionTemplateData result = m_groups[index.internalId()]
           .second.m_completions[index.row()]
           .getCompletionTemplate();
-        kDebug() << "Template:" << result.m_tpl;
-        kDebug() << "Values:" << result.m_values;
+        kDebug(DEBUG_AREA) << "Template:" << result.m_tpl;
+        kDebug(DEBUG_AREA) << "Values:" << result.m_values;
         // Check if current template is a function and there is a '()' right after cursor
         auto range = word;
         if (result.m_is_function)
         {
             auto next_word_range = DocumentProxy(doc).firstWordAfterCursor(word.end());
-            kDebug() << "OK THIS IS FUNCTION TEMPLATE: next word range" << next_word_range;
-            kDebug() << "replace range before:" << range;
+            kDebug(DEBUG_AREA) << "OK THIS IS FUNCTION TEMPLATE: next word range" << next_word_range;
+            kDebug(DEBUG_AREA) << "replace range before:" << range;
             if (next_word_range.isValid() && doc->text(next_word_range).startsWith(QLatin1String("()")))
             {
                 range.end().setColumn(next_word_range.start().column() + 2);
-                kDebug() << "replace range after:" << range;
+                kDebug(DEBUG_AREA) << "replace range after:" << range;
             }
         }
         doc->removeText(range);
@@ -403,7 +418,7 @@ void ClangCodeCompletionModel::executeCompletionItem2(
     }
     else
     {
-        kDebug() << "No TemplateInterface for a view" << m_current_view;
+        kDebug(DEBUG_AREA) << "No TemplateInterface for a view" << m_current_view;
         auto p = m_groups[index.internalId()].second.m_completions[index.row()].executeCompletion();
         doc->replaceText(word, p.first);
         // Try to reposition a cursor inside a current (hope it still is) view

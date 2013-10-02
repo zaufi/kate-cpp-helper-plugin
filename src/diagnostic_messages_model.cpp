@@ -48,11 +48,11 @@ QVariant DiagnosticMessagesModel::data(const QModelIndex& index, const int role)
     if (role == Qt::DisplayRole)
     {
 #if 0
-        kDebug() << "Getting diag data: row=" << index.row() << ", col=" << index.column();
+        kDebug(DEBUG_AREA) << "Getting diag data: row=" << index.row() << ", col=" << index.column();
 #endif
         // Check if requested item has a source code location
-        // (m_line member must not be zero)
-        if (m_records[index.row()].m_line)
+        // (m_file member must not be empty)
+        if (!m_records[index.row()].m_file.isEmpty())
             // Form a compiler-like SPAM
             return QString("%1:%2:%3: %4").arg(
                 m_records[index.row()].m_file

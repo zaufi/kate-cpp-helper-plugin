@@ -127,7 +127,7 @@ KTextEditor::Cursor DocumentProxy::handleLine(
     assert("Sanity check!" && last_column <= text.length());
 
 #if 0
-    kDebug() << "line =" << line << ", col =" << column << ", last_col =" << last_column;
+    kDebug(DEBUG_AREA) << "line =" << line << ", col =" << column << ", last_col =" << last_column;
 #endif
 
     for (; column < last_column; ++column)
@@ -166,7 +166,7 @@ inline KTextEditor::Cursor DocumentProxy::scanChars(
           );
 
 #if 0
-    kDebug() << "#BlockStart:" << result;
+    kDebug(DEBUG_AREA) << "#BlockStart:" << result;
 #endif
 
     // 1) Handle the middle of the block (i.e. only full lines from column 0 to the end of line)
@@ -182,7 +182,7 @@ inline KTextEditor::Cursor DocumentProxy::scanChars(
     }
 
 #if 0
-    kDebug() << "#BlockMiddle:" << result;
+    kDebug(DEBUG_AREA) << "#BlockMiddle:" << result;
 #endif
 
     // 2) Handle the tail of the range block
@@ -195,7 +195,7 @@ inline KTextEditor::Cursor DocumentProxy::scanChars(
           );
 
 #if 0
-    kDebug() << "#BlockEnd:" << result;
+    kDebug(DEBUG_AREA) << "#BlockEnd:" << result;
 #endif
 
     return result;
@@ -216,8 +216,8 @@ KTextEditor::Cursor DocumentProxy::handleLineReverse(
     assert("Sanity check!" && column <= text.length());
 
 #if 0
-    kDebug() << "line =" << line << ", first_col =" << first_column << ", col =" << column;
-    kDebug() << "size =" << text.size() << ", text =" << text;
+    kDebug(DEBUG_AREA) << "line =" << line << ", first_col =" << first_column << ", col =" << column;
+    kDebug(DEBUG_AREA) << "size =" << text.size() << ", text =" << text;
 #endif
 
     // Iterate over text starting from a column which is previous for a given
@@ -265,7 +265,7 @@ inline KTextEditor::Cursor DocumentProxy::scanCharsReverse(
     }
 
 #if 0
-    kDebug() << "#Range2Process:" << range;
+    kDebug(DEBUG_AREA) << "#Range2Process:" << range;
 #endif
 
     // 0) Handle block end
@@ -273,7 +273,7 @@ inline KTextEditor::Cursor DocumentProxy::scanCharsReverse(
         result = handleLineReverse(range.end().line(), 0, range.end().column(), p);
 
 #if 0
-    kDebug() << "#BlockEnd:" << result;
+    kDebug(DEBUG_AREA) << "#BlockEnd:" << result;
 #endif
 
     // 1) Handle the middle of the block (i.e. only full lines from column 0 to the end of line)
@@ -289,7 +289,7 @@ inline KTextEditor::Cursor DocumentProxy::scanCharsReverse(
     }
 
 #if 0
-    kDebug() << "#BlockMiddle:" << result;
+    kDebug(DEBUG_AREA) << "#BlockMiddle:" << result;
 #endif
 
     if (!result.isValid())
@@ -303,7 +303,7 @@ inline KTextEditor::Cursor DocumentProxy::scanCharsReverse(
     }
 
 #if 0
-    kDebug() << "#BlockStart:" << result;
+    kDebug(DEBUG_AREA) << "#BlockStart:" << result;
 #endif
 
     return result;

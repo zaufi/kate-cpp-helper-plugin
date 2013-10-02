@@ -175,12 +175,17 @@ CppHelperPluginView::~CppHelperPluginView()
 
 void CppHelperPluginView::readSessionConfig(KConfigBase*, const QString& groupPrefix)
 {
-    kDebug() << "** VIEW **: Reading session config: " << groupPrefix;
+    kDebug(DEBUG_AREA) << "** VIEW **: Reading session config: " << groupPrefix;
 }
 
 void CppHelperPluginView::writeSessionConfig(KConfigBase*, const QString& groupPrefix)
 {
-    kDebug() << "** VIEW **: Writing session config: " << groupPrefix;
+    kDebug(DEBUG_AREA) << "** VIEW **: Writing session config: " << groupPrefix;
+}
+
+void CppHelperPluginView::addDiagnosticMessage(DiagnosticMessagesModel::Record record)
+{
+    m_diagnostic_data.append(std::move(record));
 }
 
 /**
@@ -235,7 +240,7 @@ void CppHelperPluginView::switchIfaceImpl()
     QFileInfo info(url.toLocalFile());
     QString extension = info.suffix();
 
-    kDebug() << "Current file ext: " <<  extension;
+    kDebug(DEBUG_AREA) << "Current file ext: " <<  extension;
 
     const QString& active_doc_path = info.absolutePath();
     const QString& active_doc_name = info.completeBaseName();
@@ -252,7 +257,7 @@ void CppHelperPluginView::switchIfaceImpl()
     const QStringList& extensions_to_try =
         is_implementation_file ? HDR_EXTENSIONS : SRC_EXTENSIONS;
 
-    kDebug() << "open src/hrd: stage1: found candidates: " << candidates;
+    kDebug(DEBUG_AREA) << "open src/hrd: stage1: found candidates: " << candidates;
 
     if (is_implementation_file)
     {
@@ -264,10 +269,10 @@ void CppHelperPluginView::switchIfaceImpl()
                     candidates.push_back(c);
 
         // Should we consider first #include in a document?
-        kDebug() << "open src/hdr: shouldOpenFirstInclude=" << m_plugin->config().shouldOpenFirstInclude();
+        kDebug(DEBUG_AREA) << "open src/hdr: shouldOpenFirstInclude=" << m_plugin->config().shouldOpenFirstInclude();
         if (m_plugin->config().shouldOpenFirstInclude())
         {
-            kDebug() << "open src/hdr: open first #include enabled";
+            kDebug(DEBUG_AREA) << "open src/hdr: open first #include enabled";
             // Try to find first #include in this (active) document
             QString first_header_name;
             for (int i = 0; i < doc->lines() && first_header_name.isEmpty(); i++)
@@ -280,17 +285,17 @@ void CppHelperPluginView::switchIfaceImpl()
                     first_header_name = doc->text(r.m_range);
                 }
             }
-            kDebug() << "open src/hrd: first include file:" << first_header_name;
+            kDebug(DEBUG_AREA) << "open src/hrd: first include file:" << first_header_name;
             // Is active document has some #includes?
             if (!first_header_name.isEmpty())
             {
                 // Ok, try to find it among session dirs
                 QStringList files;
                 findFiles(first_header_name, m_plugin->config().sessionDirs(), files);
-                kDebug() << "* candidates: " << candidates;
+                kDebug(DEBUG_AREA) << "* candidates: " << candidates;
                 for (const QString& c : files)
                 {
-                    kDebug() << "** consider: " << c;
+                    kDebug(DEBUG_AREA) << "** consider: " << c;
                     if (!candidates.contains(c))
                         candidates.push_back(c);
                 }
@@ -316,14 +321,14 @@ void CppHelperPluginView::switchIfaceImpl()
                     src_paths.push_back(current_path);
             }
         }
-        kDebug() << "open src/hrd: stage2: sources paths: " << src_paths;
+        kDebug(DEBUG_AREA) << "open src/hrd: stage2: sources paths: " << src_paths;
         // Ok,  try to find smth in collected dirs
         for (const QString& dir : src_paths)
             for (const QString& c : findCandidatesAt(active_doc_name, dir, extensions_to_try))
                 if (!candidates.contains(c))
                     candidates.push_back(c);
 
-        kDebug() << "open src/hrd: stage1: found candidates: " << candidates;
+        kDebug(DEBUG_AREA) << "open src/hrd: stage1: found candidates: " << candidates;
 
         if (m_plugin->config().useWildcardSearch())
         {
@@ -336,7 +341,7 @@ void CppHelperPluginView::switchIfaceImpl()
             QStringList filters;
             for (const QString& ext : extensions_to_try)
                 filters << (active_doc_name + "*." + ext);
-            kDebug() << "open src/hrd: stage3: filters ready: " <<  filters;
+            kDebug(DEBUG_AREA) << "open src/hrd: stage3: filters ready: " <<  filters;
             for (const QString& dir : src_paths)
             {
                 for (
@@ -350,14 +355,14 @@ void CppHelperPluginView::switchIfaceImpl()
                 {
                     dir_it.next();
                     const QString& file = dir_it.fileInfo().absoluteFilePath();
-                    kDebug() << "open src/hrd: stage3: found " << file;
+                    kDebug(DEBUG_AREA) << "open src/hrd: stage3: found " << file;
                     if (!candidates.contains(file))
                         candidates.push_back(file);
                 }
             }
         }
     }
-    kDebug() << "open src/hrd: final candidates: " << candidates;
+    kDebug(DEBUG_AREA) << "open src/hrd: final candidates: " << candidates;
 
     /// \todo More ways to find candidates...
 
@@ -402,7 +407,7 @@ QStringList CppHelperPluginView::findCandidatesAt(
     {
         /// \todo Is there smth like \c boost::filesystem::path?
         QString filename = QDir::cleanPath(path + "/" + name + "." + ext);
-        kDebug() << "open src/hrd: trying " << filename;
+        kDebug(DEBUG_AREA) << "open src/hrd: trying " << filename;
         if (isPresentAndReadable(filename))
             result.push_back(filename);
     }
@@ -425,7 +430,7 @@ void CppHelperPluginView::openHeader()
     KTextEditor::Document* doc = mainWindow()->activeView()->document();
 
     KTextEditor::Range r = findIncludeFilenameNearCursor();
-    kDebug() << "findIncludeFilenameNearCursor() = " << r;
+    kDebug(DEBUG_AREA) << "findIncludeFilenameNearCursor() = " << r;
     if (!r.isEmpty())
     {
         filename = doc->text(r).trimmed();
@@ -433,7 +438,7 @@ void CppHelperPluginView::openHeader()
 
         // Try to find an absolute path to given filename
         candidates = findFileLocations(filename);
-        kDebug() << "Found candidates: " << candidates;
+        kDebug(DEBUG_AREA) << "Found candidates: " << candidates;
     }
 
     // If there is no ambiguity, then just emit a signal to open the file
@@ -510,12 +515,12 @@ QStringList CppHelperPluginView::findFileLocations(const QString& filename)
 inline void CppHelperPluginView::openFile(const QString& file)
 {
     if (file.isEmpty()) return;                             // Nothing to do if no file specified
-    kDebug() << "Going to open " << file;
+    kDebug(DEBUG_AREA) << "Going to open " << file;
     KTextEditor::Document* new_doc = m_plugin->application()->documentManager()->openUrl(file);
     QFileInfo fi(file);
     if (fi.isReadable())
     {
-        kDebug() << "Is file " << file << " writeable? -- " << fi.isWritable();
+        kDebug(DEBUG_AREA) << "Is file " << file << " writeable? -- " << fi.isWritable();
         new_doc->setReadWrite(fi.isWritable());
         mainWindow()->activateView(new_doc);
     }
@@ -548,7 +553,7 @@ void CppHelperPluginView::copyInclude()
     QString longest_matched;
     QChar open = m_plugin->config().useLtGt() ? '<' : '"';
     QChar close = m_plugin->config().useLtGt() ? '>' : '"';
-    kDebug() << "Got document name: " << uri << ", type: " << view->document()->mimeType();
+    kDebug(DEBUG_AREA) << "Got document name: " << uri << ", type: " << view->document()->mimeType();
     // Try to match local (per session) dirs first
     for (const QString& dir : m_plugin->config().sessionDirs())
         if (current_dir.startsWith(dir) && longest_matched.length() < dir.length())
@@ -569,11 +574,11 @@ void CppHelperPluginView::copyInclude()
     {
         if (is_suitable_document)
         {
-            kDebug() << "current_dir=" << current_dir << ", lm=" << longest_matched;
+            kDebug(DEBUG_AREA) << "current_dir=" << current_dir << ", lm=" << longest_matched;
             int count = longest_matched.size();
             for (; count < current_dir.size() && current_dir[count] == '/'; ++count) {}
             current_dir.remove(0, count);
-            kDebug() << "current_dir=" << current_dir << ", lm=" << longest_matched;
+            kDebug(DEBUG_AREA) << "current_dir=" << current_dir << ", lm=" << longest_matched;
             if (!current_dir.isEmpty() && !current_dir.endsWith('/'))
                 current_dir += '/';
             text = QString("#include %1%2%3")
@@ -589,7 +594,7 @@ void CppHelperPluginView::copyInclude()
             text = QString("#include \"%1\"").arg(uri.toLocalFile());
         else text = uri.prettyUrl();
     }
-    kDebug() << "Result:" << text;
+    kDebug(DEBUG_AREA) << "Result:" << text;
     if (!text.isEmpty())
         QApplication::clipboard()->setText(text);
 }
@@ -602,7 +607,7 @@ void CppHelperPluginView::copyInclude()
  */
 void CppHelperPluginView::viewCreated(KTextEditor::View* view)
 {
-    kDebug() << "view created";
+    kDebug(DEBUG_AREA) << "view created";
 
     // Try to execute initial completers registration and #includes scanning
     if (handleView(view))
@@ -679,7 +684,7 @@ void CppHelperPluginView::needTextHint(const KTextEditor::Cursor& pos, QString& 
       && mainWindow()->activeView()
       );
 
-    kDebug() << "Text hint requested at " << pos;
+    kDebug(DEBUG_AREA) << "Text hint requested at " << pos;
 
     auto* view = mainWindow()->activeView();                // get current view
     auto* doc = view->document();                           // get current document
@@ -716,14 +721,14 @@ void CppHelperPluginView::onDocumentClose(KTextEditor::Document* doc)
 
 void CppHelperPluginView::modeChanged(KTextEditor::Document* doc)
 {
-    kDebug() << "hl mode has been changed: " << doc->highlightingMode() << ", " << doc->mimeType();
+    kDebug(DEBUG_AREA) << "hl mode has been changed: " << doc->highlightingMode() << ", " << doc->mimeType();
     if (handleView(doc->activeView()))
         m_plugin->updateDocumentInfo(doc);
 }
 
 void CppHelperPluginView::urlChanged(KTextEditor::Document* doc)
 {
-    kDebug() << "name or URL has been changed: " << doc->url() << ", " << doc->mimeType();
+    kDebug(DEBUG_AREA) << "name or URL has been changed: " << doc->url() << ", " << doc->mimeType();
     if (handleView(doc->activeView()))
         m_plugin->updateDocumentInfo(doc);
 }
@@ -733,17 +738,17 @@ void CppHelperPluginView::urlChanged(KTextEditor::Document* doc)
  */
 void CppHelperPluginView::textInserted(KTextEditor::Document* doc, const KTextEditor::Range& range)
 {
-    kDebug() << doc << " new text: " << doc->text(range);
+    kDebug(DEBUG_AREA) << doc << " new text: " << doc->text(range);
     auto* mv_iface = qobject_cast<KTextEditor::MovingInterface*>(doc);
     if (!mv_iface)
     {
-        kDebug() << "No moving iface!!!!!!!!!!!";
+        kDebug(DEBUG_AREA) << "No moving iface!!!!!!!!!!!";
         return;
     }
     // Do we really need to scan this file?
     if (!isSuitableDocument(doc->mimeType(), doc->highlightingMode()))
     {
-        kDebug() << "Document doesn't looks like C or C++: type ="
+        kDebug(DEBUG_AREA) << "Document doesn't looks like C or C++: type ="
           << doc->mimeType() << ", hl =" << doc->highlightingMode();
         return;
     }
@@ -781,9 +786,9 @@ void CppHelperPluginView::textInserted(KTextEditor::Document* doc, const KTextEd
                       )
                   );
             }
-            else kDebug() << "range already registered";
+            else kDebug(DEBUG_AREA) << "range already registered";
         }
-        else kDebug() << "no valid #include found";
+        else kDebug(DEBUG_AREA) << "no valid #include found";
     }
 }
 
@@ -810,7 +815,7 @@ bool CppHelperPluginView::handleView(KTextEditor::View* view)
     auto* cc_iface = qobject_cast<KTextEditor::CodeCompletionInterface*>(view);
     if (!cc_iface)
     {
-        kDebug() << "Nothing to do if no completion iface present for a view";
+        kDebug(DEBUG_AREA) << "Nothing to do if no completion iface present for a view";
         return false;
     }
     bool result = false;
@@ -821,7 +826,7 @@ bool CppHelperPluginView::handleView(KTextEditor::View* view)
         // Yeah! Check if still registration required
         if (it == end(m_completers))
         {
-            kDebug() << "C/C++ source: register #include and code completers";
+            kDebug(DEBUG_AREA) << "C/C++ source: register #include and code completers";
             std::unique_ptr<IncludeHelperCompletionModel> include_completer(
                 new IncludeHelperCompletionModel(view, m_plugin)
               );
@@ -850,7 +855,7 @@ bool CppHelperPluginView::handleView(KTextEditor::View* view)
         // Check if some was registered before, and erase if it is
         if (it != end(m_completers))
         {
-            kDebug() << "Not a C/C++ source (anymore): unregister #include and code completers";
+            kDebug(DEBUG_AREA) << "Not a C/C++ source (anymore): unregister #include and code completers";
             cc_iface->unregisterCompletionModel(it->second.first);
             cc_iface->unregisterCompletionModel(it->second.second);
             /// \todo Is there any damn way to avoid explicit delete???
@@ -863,7 +868,7 @@ bool CppHelperPluginView::handleView(KTextEditor::View* view)
             m_completers.erase(it);
         }
     }
-    kDebug() << "RESULT:" << result;
+    kDebug(DEBUG_AREA) << "RESULT:" << result;
     return result;
 }
 
@@ -907,7 +912,7 @@ KTextEditor::Range CppHelperPluginView::findIncludeFilenameNearCursor() const
     if (r.m_range.isValid())
     {
         r.m_range.setBothLines(line);
-        kDebug() << "Ok, found #include directive:" << r.m_range;
+        kDebug(DEBUG_AREA) << "Ok, found #include directive:" << r.m_range;
         return r.m_range;
     }
 
@@ -922,7 +927,7 @@ KTextEditor::Range CppHelperPluginView::findIncludeFilenameNearCursor() const
     // in block selection mode for example)
     int start = qMax(qMin(col, line_str.length() - 1), 0);
     int end = start;
-    kDebug() << "Arghh... trying w/ word under cursor starting from" << start;
+    kDebug(DEBUG_AREA) << "Arghh... trying w/ word under cursor starting from" << start;
 
     // Seeking for start of current word
     for (; start > 0; --start)
@@ -953,11 +958,11 @@ void CppHelperPluginView::aboutToShow()
     {
         DocumentProxy doc = mainWindow()->activeView()->document();
         auto range = doc.getIdentifierUnderCursor(view->cursorPosition());
-        kDebug() << "current word range: " << range;
+        kDebug(DEBUG_AREA) << "current word range: " << range;
         if (range.isValid() && !range.isEmpty())
         {
             m_what_is_this->setEnabled(true);
-            kDebug() << "current word text: " << doc->text(range);
+            kDebug(DEBUG_AREA) << "current word text: " << doc->text(range);
             const QString squeezed = KStringHandler::csqueeze(doc->text(range), 30);
             m_what_is_this->setText(i18n("What is '%1'", squeezed));
             return;
@@ -1062,17 +1067,17 @@ void CppHelperPluginView::whatIsThis()
       , view->cursorPosition().column() + 1
       );
     CXCursor ctx = clang_getCursor(unit, loc);
-    kDebug() << "Cursor: " << ctx;
+    kDebug(DEBUG_AREA) << "Cursor: " << ctx;
     CXCursor spctx = clang_getCursorSemanticParent(ctx);
-    kDebug() << "Cursor of semantic parent: " << spctx;
+    kDebug(DEBUG_AREA) << "Cursor of semantic parent: " << spctx;
     CXCursor lpctx = clang_getCursorLexicalParent(ctx);
-    kDebug() << "Cursor of lexical parent: " << lpctx;
+    kDebug(DEBUG_AREA) << "Cursor of lexical parent: " << lpctx;
 
     DCXString comment = clang_Cursor_getRawCommentText(ctx);
-    kDebug() << "Associated comment:" << clang_getCString(comment);
+    kDebug(DEBUG_AREA) << "Associated comment:" << clang_getCString(comment);
 
     DCXString usr = clang_getCursorUSR(ctx);
-    kDebug() << "USR:" << clang_getCString(usr);
+    kDebug(DEBUG_AREA) << "USR:" << clang_getCString(usr);
 #endif
 
     IndexerCallbacks index_callbacks = {
@@ -1080,48 +1085,48 @@ void CppHelperPluginView::whatIsThis()
         [](CXClientData client_data, void*) -> int
         {
             auto* const self = static_cast<CppHelperPluginView*>(client_data);
-            kDebug() << "CB: abort query";
+            kDebug(DEBUG_AREA) << "CB: abort query";
             return 0;
         }
       , [](CXClientData, CXDiagnosticSet, void*)
         {
-            kDebug() << "CB: diagnostic";
+            kDebug(DEBUG_AREA) << "CB: diagnostic";
         }
       , // entered main file
         [](CXClientData client_data, CXFile file, void*) -> CXIdxClientFile
         {
             DCXString filename = clang_getFileName(file);
-            kDebug() << "CB: entering" << clang_getCString(filename);
+            kDebug(DEBUG_AREA) << "CB: entering" << clang_getCString(filename);
             return static_cast<CXIdxClientFile>(file);
         }
       , [](CXClientData client_data, const CXIdxIncludedFileInfo* info) -> CXIdxClientFile
         {
-            kDebug() << "CB: #included file:" << info->filename;
+            kDebug(DEBUG_AREA) << "CB: #included file:" << info->filename;
             return static_cast<CXIdxClientFile>(info->file);
         }
       , [](CXClientData client_data, const CXIdxImportedASTFileInfo* info) -> CXIdxClientASTFile
         {
-            kDebug() << "CB: AST file imported";
+            kDebug(DEBUG_AREA) << "CB: AST file imported";
             return static_cast<CXIdxClientFile>(info->file);
         }
       , [](CXClientData client_data, void*) -> CXIdxClientContainer
         {
-            kDebug() << "CB: TU started";
+            kDebug(DEBUG_AREA) << "CB: TU started";
             return nullptr;
         }
       , [](CXClientData client_data, const CXIdxDeclInfo* info)
         {
             const char* name = info->entityInfo->name ? info->entityInfo->name : "anonymous";
-            kDebug() << "CB: index declaration: name =" << name;
-            kDebug() << "CB: index declaration: kind =" << getEntityKindString(info->entityInfo->kind) <<
+            kDebug(DEBUG_AREA) << "CB: index declaration: name =" << name;
+            kDebug(DEBUG_AREA) << "CB: index declaration: kind =" << getEntityKindString(info->entityInfo->kind) <<
               ' ' << getEntityTemplateKindString(info->entityInfo->templateKind);
-            kDebug() << "CB: index declaration: cursor:" << info->cursor;
-            kDebug() << "CB: index declaration: semantic container:" << getCXIndexContainer(info->semanticContainer);
-            kDebug() << "CB: index declaration: lexican container:" << getCXIndexContainer(info->lexicalContainer);
+            kDebug(DEBUG_AREA) << "CB: index declaration: cursor:" << info->cursor;
+            kDebug(DEBUG_AREA) << "CB: index declaration: semantic container:" << getCXIndexContainer(info->semanticContainer);
+            kDebug(DEBUG_AREA) << "CB: index declaration: lexican container:" << getCXIndexContainer(info->lexicalContainer);
         }
       , [](CXClientData client_data, const CXIdxEntityRefInfo* info)
         {
-            kDebug() << "CB: index reference";
+            kDebug(DEBUG_AREA) << "CB: index reference";
         }
     };
 
@@ -1196,7 +1201,7 @@ void CppHelperPluginView::updateInclusionExplorer()
     m_last_explored_document = doc;                         // Remember the document last explored
 
     QApplication::restoreOverrideCursor();                  // Restore mouse pointer to normal
-    kDebug() << "headers cache now has" << m_plugin->headersCache().size() << "items!";
+    kDebug(DEBUG_AREA) << "headers cache now has" << m_plugin->headersCache().size() << "items!";
 }
 
 void CppHelperPluginView::inclusionVisitor(
@@ -1210,8 +1215,8 @@ void CppHelperPluginView::inclusionVisitor(
     const QString header_name = clang_getCString(header_name_cl);
     const int header_id = m_plugin->headersCache()[header_name];
 #if 0
-    kDebug() << "LSS:" << data->m_last_stack_size << ", CSS:" << stack_size;
-    kDebug() << "Visiting" << header_name << '[' << header_id << ']';
+    kDebug(DEBUG_AREA) << "LSS:" << data->m_last_stack_size << ", CSS:" << stack_size;
+    kDebug(DEBUG_AREA) << "Visiting" << header_name << '[' << header_id << ']';
 #endif
 
     QString included_from;
@@ -1229,7 +1234,7 @@ void CppHelperPluginView::inclusionVisitor(
         included_from_id = m_plugin->headersCache()[included_from];
         //
 #if 0
-        kDebug() << "File" << header_name << "[" << header_id <<
+        kDebug(DEBUG_AREA) << "File" << header_name << "[" << header_id <<
           "] included from" << included_from << '[' << included_from_id <<
           "] @" << line << ':' << column
           ;
@@ -1248,7 +1253,7 @@ void CppHelperPluginView::inclusionVisitor(
         data->m_parents.push(data->m_last_added_item);
         parent = data->m_last_added_item;
 #if 0
-        kDebug() << "Added new parent";
+        kDebug(DEBUG_AREA) << "Added new parent";
 #endif
     }
     else if (stack_size < data->m_last_stack_size)
@@ -1259,7 +1264,7 @@ void CppHelperPluginView::inclusionVisitor(
         assert("Stack expected to be non empty!" && !data->m_parents.empty());
         parent = data->m_parents.top();
 #if 0
-        kDebug() << "Remove some parent(s)";
+        kDebug(DEBUG_AREA) << "Remove some parent(s)";
 #endif
     }
     else
@@ -1267,7 +1272,7 @@ void CppHelperPluginView::inclusionVisitor(
         assert("Sanity check!" && stack_size == data->m_last_stack_size);
         parent = data->m_parents.top();
 #if 0
-        kDebug() << "Reuse same parent";
+        kDebug(DEBUG_AREA) << "Reuse same parent";
 #endif
     }
     assert("Sanity check!" && parent);
@@ -1310,7 +1315,7 @@ void CppHelperPluginView::includeFileActivatedFromTree(QTreeWidgetItem* item, co
     }
     else
     {
-        kDebug() << "WTF: " << filename << "NOT FOUND!?";
+        kDebug(DEBUG_AREA) << "WTF: " << filename << "NOT FOUND!?";
     }
 }
 
@@ -1347,7 +1352,7 @@ void CppHelperPluginView::diagnosticMessageActivated(const QModelIndex& index)
     int line;
     int column;
     std::tie(url, line, column) = m_diagnostic_data.getLocationByIndex(index);
-    if (line)
+    if (!url.isEmpty())
     {
         const auto& filename = url.toLocalFile();
         assert("Filename expected to be non empty!" && !filename.isEmpty());
@@ -1370,19 +1375,19 @@ void CppHelperPluginView::updateCppActionsAvailability()
     KTextEditor::View* view = mainWindow()->activeView();
     if (!view)
     {
-        kDebug() << "no active view yet -- leave `open header' action as is...";
+        kDebug(DEBUG_AREA) << "no active view yet -- leave `open header' action as is...";
         return;
     }
     const auto& mime = view->document()->mimeType();
     const auto& hl = view->document()->highlightingMode();
     const bool is_ok = isSuitableDocument(mime, hl);
-    kDebug() << "MIME:" << mime << ", HL:" << hl << " --> " << (is_ok ? "Enable" : "Disable");
+    kDebug(DEBUG_AREA) << "MIME:" << mime << ", HL:" << hl << " --> " << (is_ok ? "Enable" : "Disable");
     updateCppActionsAvailability(is_ok);
 }
 
 void CppHelperPluginView::updateCppActionsAvailability(const bool enable_cpp_specific_actions)
 {
-    kDebug() << "Enable C++ specific actions:" << enable_cpp_specific_actions;
+    kDebug(DEBUG_AREA) << "Enable C++ specific actions:" << enable_cpp_specific_actions;
     m_open_header->setEnabled(enable_cpp_specific_actions);
     m_tool_view_interior->updateButton->setEnabled(enable_cpp_specific_actions);
     if (enable_cpp_specific_actions)

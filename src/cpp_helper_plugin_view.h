@@ -78,6 +78,9 @@ public:
     void writeSessionConfig(KConfigBase*, const QString&);
     //@}
 
+public Q_SLOTS:
+    void addDiagnosticMessage(DiagnosticMessagesModel::Record);
+
 private Q_SLOTS:
     void openHeader();                                      ///< Open header file under cursor
     void switchIfaceImpl();                                 ///< Open corresponding header/implementation file

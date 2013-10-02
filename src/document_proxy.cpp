@@ -40,14 +40,14 @@ KTextEditor::Range DocumentProxy::getIdentifierUnderCursor(const KTextEditor::Cu
       , m_doc_ptr->lineLength(line)
       };
 #if 0
-    kDebug() << "range_after_cursor =" << range_after_cursor;
+    kDebug(DEBUG_AREA) << "range_after_cursor =" << range_after_cursor;
 #endif
     KTextEditor::Cursor after = scanChars(range_after_cursor, is_space);
 
     // Get range of nonspace characters before cursor position
     KTextEditor::Range range_before_cursor = {line, 0, line, pos.column()};
 #if 0
-    kDebug() << "range_before_cursor =" << range_before_cursor;
+    kDebug(DEBUG_AREA) << "range_before_cursor =" << range_before_cursor;
 #endif
     KTextEditor::Cursor before = scanCharsReverse(range_before_cursor, is_space);
 
@@ -121,7 +121,7 @@ KTextEditor::Range DocumentProxy::firstWordAfterCursor(const KTextEditor::Cursor
         }
       );
 #if 0
-    kDebug() << "skip_spaces=" << skip_spaces << ", spaces_count="<< spaces_count << ", c="<< word_start;
+    kDebug(DEBUG_AREA) << "skip_spaces=" << skip_spaces << ", spaces_count="<< spaces_count << ", c="<< word_start;
 #endif
     // did we found smth?
     if (word_start.isValid())
@@ -129,7 +129,7 @@ KTextEditor::Range DocumentProxy::firstWordAfterCursor(const KTextEditor::Cursor
     // check is there anything 'cept spaces on a line:
     // current pos + skipped spaces should be less than length of the line
 #if 0
-    kDebug() << "line_length=" << line_length<< ", column="<< column;
+    kDebug(DEBUG_AREA) << "line_length=" << line_length<< ", column="<< column;
 #endif
     if ((column + skip_spaces) < line_length)
         return {line, column + spaces_count, line, line_length};

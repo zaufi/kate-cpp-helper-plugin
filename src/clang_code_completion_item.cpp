@@ -98,7 +98,7 @@ QVariant ClangCodeCompletionItem::data(const QModelIndex& index, const int role)
             break;
         default:
 #if 0
-            kDebug() << "Role" << role << "requested for" << index;
+            kDebug(DEBUG_AREA) << "Role" << role << "requested for" << index;
 #endif
             break;
     }

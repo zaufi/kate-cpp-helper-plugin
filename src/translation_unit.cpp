@@ -52,7 +52,7 @@ void debugShowCompletionResult(
   , const CXCursorKind cursor_kind
   )
 {
-    kDebug() << ">>> Completion " << i
+    kDebug(DEBUG_AREA) << ">>> Completion " << i
         << ", priority " << priority
         << ", kind " << toString(cursor_kind).toUtf8().constData();
 
@@ -60,7 +60,7 @@ void debugShowCompletionResult(
     CXCursorKind parent_ck;
     const DCXString parent = {clang_getCompletionParent(str, &parent_ck)};
     const auto parent_str = clang_getCString(parent);
-    kDebug() << "  parent: " << (parent_str ? parent_str : "<none>")
+    kDebug(DEBUG_AREA) << "  parent: " << (parent_str ? parent_str : "<none>")
       << ',' << toString(parent_ck).toUtf8().constData();
 
     // Show individual chunks
@@ -69,13 +69,13 @@ void debugShowCompletionResult(
         auto kind = clang_getCompletionChunkKind(str, ci);
         if (kind == CXCompletionChunk_Optional)
         {
-            kDebug() << "  chunk [" << i << ':' << ci << "]: " << toString(kind).toUtf8().constData();
+            kDebug(DEBUG_AREA) << "  chunk [" << i << ':' << ci << "]: " << toString(kind).toUtf8().constData();
             auto ostr = clang_getCompletionChunkCompletionString(str, ci);
             for (unsigned oci = 0, ocn = clang_getNumCompletionChunks(ostr); oci < ocn; ++oci)
             {
                 auto okind = clang_getCompletionChunkKind(ostr, oci);
                 DCXString otext_str = {clang_getCompletionChunkText(ostr, oci)};
-                kDebug() << "  chunk [" << i << ':' << ci << ':' << oci << "]: "
+                kDebug(DEBUG_AREA) << "  chunk [" << i << ':' << ci << ':' << oci << "]: "
                   << toString(okind).toUtf8().constData()
                   << ", text=" << QString(clang_getCString(otext_str));
                   ;
@@ -84,20 +84,20 @@ void debugShowCompletionResult(
         else
         {
             DCXString text_str = {clang_getCompletionChunkText(str, ci)};
-            kDebug() << "  chunk [" << i << ':' << ci << "]: " << toString(kind).toUtf8().constData()
+            kDebug(DEBUG_AREA) << "  chunk [" << i << ':' << ci << "]: " << toString(kind).toUtf8().constData()
               << ", text=" << QString(clang_getCString(text_str));
         }
     }
 #if CLANG_VERSION >= 30200
     DCXString comment_str = {clang_getCompletionBriefComment(str)};
-    kDebug() << "  comment:" << QString(clang_getCString(comment_str));
+    kDebug(DEBUG_AREA) << "  comment:" << QString(clang_getCString(comment_str));
 #endif                                                      // CLANG_VERSION >= 30200
 
     // Show annotations
     for (unsigned ai = 0u, an = clang_getCompletionNumAnnotations(str); ai < an; ++ai)
     {
         auto ann_str = clang_getCompletionAnnotation(str, an);
-        kDebug() << "  ann. text[" << ai << "]: " << QString(clang_getCString(ann_str));
+        kDebug(DEBUG_AREA) << "  ann. text[" << ai << "]: " << QString(clang_getCString(ann_str));
     }
 
     // Show availability
@@ -117,8 +117,8 @@ void debugShowCompletionResult(
             av = "not accessible";
             break;
     }
-    kDebug() << "  availability: " <<  av;
-    kDebug() << ">>> -----------------------------------";
+    kDebug(DEBUG_AREA) << "  availability: " <<  av;
+    kDebug(DEBUG_AREA) << ">>> -----------------------------------";
 }
 
 const QString GLOBAL_NS_GROUP_STR = {"Global"};
@@ -154,8 +154,8 @@ TranslationUnit::TranslationUnit(
   )
   : m_filename(filename_url.toLocalFile().toUtf8())
 {
-    kDebug() << "Creating a translation unit: " << filename_url.toLocalFile();
-    kDebug() << "w/ the following compiler options:" << options;
+    kDebug(DEBUG_AREA) << "Creating a translation unit: " << filename_url.toLocalFile();
+    kDebug(DEBUG_AREA) << "w/ the following compiler options:" << options;
     // Transform options compatible to clang API
     // NOTE Too fraking much actions for that simple task...
     // Definitely Qt doesn't suitable for that sort of tasks...
@@ -192,8 +192,8 @@ TranslationUnit::TranslationUnit(
   )
   : m_filename(filename_url.toLocalFile().toUtf8())
 {
-    kDebug() << "Parsing a translation unit: " << filename_url.toLocalFile();
-    kDebug() << "w/ the following compiler options:" << options;
+    kDebug(DEBUG_AREA) << "Parsing a translation unit: " << filename_url.toLocalFile();
+    kDebug(DEBUG_AREA) << "w/ the following compiler options:" << options;
 
     // Transform options compatible to clang API
     // NOTE Too fraking much actions for that simple task...
@@ -316,7 +316,7 @@ QList<ClangCodeCompletionItem> TranslationUnit::completeAt(
         const auto availability = clang_getCompletionAvailability(str);
         if (availability != CXAvailability_Available && availability != CXAvailability_Deprecated)
         {
-            kDebug() << "!! Skip result" << i << "as not available";
+            kDebug(DEBUG_AREA) << "!! Skip result" << i << "as not available";
             continue;
         }
         // 1) check usefulness
@@ -531,7 +531,7 @@ void TranslationUnit::storeTo(const KUrl& filename)
       , pch_filename.constData()
       , CXSaveTranslationUnit_None /*clang_defaultSaveOptions(m_unit)*/
       );
-    kDebug() << "result=" << result;
+    kDebug(DEBUG_AREA) << "result=" << result;
     if (result != CXSaveError_None)
     {
         if (result == CXSaveError_TranslationErrors)
@@ -560,7 +560,7 @@ void TranslationUnit::appendDiagnostic(const CXDiagnostic& diag)
     const auto severity = clang_getDiagnosticSeverity(diag);
     if (severity == CXDiagnostic_Ignored)
         return;
-    kDebug() << "TU diagnostic severity level: " << severity;
+    kDebug(DEBUG_AREA) << "TU diagnostic severity level: " << severity;
 
 #if 0
     // Show some SPAM to console
@@ -571,7 +571,7 @@ void TranslationUnit::appendDiagnostic(const CXDiagnostic& diag)
         | CXDiagnostic_DisplayOption
         ;
         DCXString msg = {clang_formatDiagnostic(diag, display_opts)};
-        kDebug() << "TU diag.fmt: " << clang_getCString(msg);
+        kDebug(DEBUG_AREA) << "TU diag.fmt: " << clang_getCString(msg);
     }
 #endif
 
@@ -604,7 +604,7 @@ void TranslationUnit::appendDiagnostic(const CXDiagnostic& diag)
         clang_getSpellingLocation(clang_getDiagnosticLocation(diag), &file, &line, &column, nullptr);
         if (!file)
         {
-            kDebug() << "TU diag.fmt: Can't get diagnostic location";
+            kDebug(DEBUG_AREA) << "TU diag.fmt: Can't get diagnostic location";
         }
         else
         {

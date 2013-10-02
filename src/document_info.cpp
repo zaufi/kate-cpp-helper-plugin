@@ -46,7 +46,7 @@ DocumentInfo::DocumentInfo(CppHelperPlugin* p)
  */
 DocumentInfo::~DocumentInfo()
 {
-    kDebug() << "Removing " << m_ranges.size() << " ranges...";
+    kDebug(DEBUG_AREA) << "Removing " << m_ranges.size() << " ranges...";
     for (const State& s : m_ranges)
         s.m_range->setFeedback(0);
 }
@@ -63,7 +63,7 @@ void DocumentInfo::addRange(KTextEditor::MovingRange* range)
     // Subscribe self to range invalidate
     //
     updateStatus(m_ranges.back());
-    kDebug() << "MovingRange registered: " << range;
+    kDebug(DEBUG_AREA) << "MovingRange registered: " << range;
 }
 
 void DocumentInfo::updateStatus()
@@ -83,7 +83,7 @@ void DocumentInfo::updateStatus()
  */
 void DocumentInfo::updateStatus(State& s)
 {
-    kDebug() << "Update status for range: " << s.m_range.get();
+    kDebug(DEBUG_AREA) << "Update status for range: " << s.m_range.get();
     if (!s.m_range->isEmpty())
     {
         KTextEditor::Document* doc = s.m_range->document();
@@ -115,7 +115,7 @@ void DocumentInfo::updateStatus(State& s)
         {
             const KUrl& uri = doc->url().prettyUrl();
             const QString cur2check = uri.directory() + '/' + filename;
-            kDebug() << "check current dir 4: " << cur2check;
+            kDebug(DEBUG_AREA) << "check current dir 4: " << cur2check;
             s.m_status = (QFileInfo(cur2check).exists()) ? Status::Ok : Status::NotFound;
         }
         // 1) Try configured dirs then
@@ -130,7 +130,7 @@ void DocumentInfo::updateStatus(State& s)
             s.m_status = (s.m_status == Status::Ok) ? Status::MultipleMatches : Status::Ok;
         else
             s.m_status = Status::MultipleMatches;
-        kDebug() << "#include filename=" << filename << ", status=" << int(s.m_status) << ", r=" << s.m_range.get();
+        kDebug(DEBUG_AREA) << "#include filename=" << filename << ", status=" << int(s.m_status) << ", r=" << s.m_range.get();
 
         KTextEditor::MarkInterface* iface = qobject_cast<KTextEditor::MarkInterface*>(doc);
         const int line = s.m_range->start().line();
@@ -208,7 +208,7 @@ void DocumentInfo::rangeEmpty(KTextEditor::MovingRange* range)
     registered_ranges_type::iterator it = findRange(range);
     if (it != m_ranges.end())
     {
-        kDebug() << "MovingRange: empty range deleted: " << range;
+        kDebug(DEBUG_AREA) << "MovingRange: empty range deleted: " << range;
         it->m_range->setFeedback(0);
         m_ranges.erase(it);
     }
@@ -220,12 +220,12 @@ void DocumentInfo::rangeEmpty(KTextEditor::MovingRange* range)
  */
 void DocumentInfo::rangeInvalid(KTextEditor::MovingRange* range)
 {
-    kDebug() << "It seems document reloaded... cleanup ranges???";
+    kDebug(DEBUG_AREA) << "It seems document reloaded... cleanup ranges???";
     // Erase internal data
     registered_ranges_type::iterator it = findRange(range);
     if (it != m_ranges.end())
     {
-        kDebug() << "MovingRange: invalid range deleted: " << range;
+        kDebug(DEBUG_AREA) << "MovingRange: invalid range deleted: " << range;
         it->m_range->setFeedback(0);
         m_ranges.erase(it);
     }
@@ -249,7 +249,7 @@ std::vector<int> DocumentInfo::getListOfIncludedBy(const int id) const
           );
     }
 #if 0
-    kDebug() << "got" << result.size() << "items for header ID" << id;
+    kDebug(DEBUG_AREA) << "got" << result.size() << "items for header ID" << id;
 #endif
     return result;
 }
@@ -264,7 +264,7 @@ auto DocumentInfo::getListOfIncludedBy2(const int id) const -> std::vector<Inclu
         std::copy(p.first, p.second, std::back_inserter(result));
     }
 #if 0
-    kDebug() << "got" << result.size() << "items for header ID" << id;
+    kDebug(DEBUG_AREA) << "got" << result.size() << "items for header ID" << id;
 #endif
     return result;
 }
@@ -287,7 +287,7 @@ std::vector<int> DocumentInfo::getIncludedHeaders(const int id) const
           );
     }
 #if 0
-    kDebug() << "got" << result.size() << "items for header ID" << id;
+    kDebug(DEBUG_AREA) << "got" << result.size() << "items for header ID" << id;
 #endif
     return result;
 }

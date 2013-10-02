@@ -50,7 +50,12 @@ class DiagnosticMessagesModel : public QAbstractListModel
     Q_OBJECT
 
 public:
-    /// Structure to hold info about diagnostic message
+    /**
+     * Structure to hold info about diagnostic message
+     *
+     * \note Qt4 has a problem w/ rvalue references in signal/slots,
+     * so default copy ctor and assign operator needed :(
+     */
     struct Record
     {
         enum class type
@@ -74,10 +79,16 @@ public:
         Record() = default;
         /// Make a \c record from parts
         Record(QString&&, unsigned, unsigned, QString&&, type) noexcept;
+        /// Make a \c record w/ message and given type (and empty location)
+        Record(QString&&, type) noexcept;
         /// Move ctor
         Record(Record&&) noexcept;
         /// Move-assign operator
         Record& operator=(Record&&) noexcept;
+        /// Default copy ctor
+        Record(const Record&) = default;
+        /// Default copy-assign operator
+        Record& operator=(const Record&) = default;
     };
 
     /// Default constructor
@@ -99,6 +110,8 @@ public:
     //@{
     /// Append a diagnostic record to the model
     void append(QString&&, unsigned, unsigned, QString&&, Record::type);
+    /// Append a diagnostic record to the model
+    void append(Record&&);
     /// Append a diagnostic record to the model (bulk version)
     template <typename Iter>
     void append(Iter, Iter);
@@ -113,6 +126,14 @@ public Q_SLOTS:
 private:
     std::deque<Record> m_records;                           ///< Stored records
 };
+
+inline DiagnosticMessagesModel::Record::Record(QString&& text, Record::type type) noexcept
+  : m_line(0)
+  , m_column(0)
+  , m_type(type)
+{
+    m_text.swap(text);
+}
 
 inline DiagnosticMessagesModel::Record::Record(
     QString&& file
@@ -134,26 +155,34 @@ inline DiagnosticMessagesModel::Record::Record(Record&& other) noexcept
   , m_column(other.m_column)
   , m_type(other.m_type)
 {
-    if (&other != this)
-    {
-        m_text.swap(other.m_text);
-        m_file.swap(other.m_file);
-    }
+    m_text.swap(other.m_text);
+    m_file.swap(other.m_file);
 }
 
 inline auto DiagnosticMessagesModel::Record::operator=(Record&& other) noexcept -> Record&
 {
-    m_line = other.m_line;
-    m_column = other.m_column;
-    m_type = other.m_type;
     if (&other != this)
     {
+        m_line = other.m_line;
+        m_column = other.m_column;
+        m_type = other.m_type;
         m_text.swap(other.m_text);
         m_file.swap(other.m_file);
     }
     return *this;
 }
 
+/**
+ * \attention Qt4 has a problem w/ rvalue references in signal/slots ;(
+ */
+inline void DiagnosticMessagesModel::append(Record&& record)
+{
+    beginInsertRows(QModelIndex(), m_records.size(), m_records.size());
+    m_records.emplace_back(std::move(record));
+    endInsertRows();
+}
+
+#if 0
 inline void DiagnosticMessagesModel::append(
     QString&& file
   , const unsigned line
@@ -166,6 +195,7 @@ inline void DiagnosticMessagesModel::append(
     m_records.emplace_back(std::move(file), line, column, std::move(text), type);
     endInsertRows();
 }
+#endif
 
 template <typename Iter>
 inline void DiagnosticMessagesModel::append(Iter first, Iter last)

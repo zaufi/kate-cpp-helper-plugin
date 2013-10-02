@@ -56,10 +56,10 @@ const QString SANITIZE_RULE_SEPARATOR = "<$replace-with$>";
 void PluginConfiguration::readConfig()
 {
     // Read global config
-    kDebug() << "Reading global config: " << KGlobal::config()->name();
+    kDebug(DEBUG_AREA) << "Reading global config: " << KGlobal::config()->name();
     KConfigGroup gcg(KGlobal::config(), GLOBAL_CONFIG_GROUP_NAME);
     auto dirs = gcg.readPathEntry(CONFIGURED_DIRS_ITEM, QStringList());
-    kDebug() << "Got global configured include path list: " << dirs;
+    kDebug(DEBUG_AREA) << "Got global configured include path list: " << dirs;
     m_system_dirs = dirs;
     // Read sanitize rules from serializable form
     m_sanitize_rules.clear();
@@ -79,7 +79,7 @@ void PluginConfiguration::readConfig()
             default:
             kWarning() << "Invalid sanitize rule ignored: " << rule;
         }
-        kDebug() << "Got sanitize rule: find =" << find << ", replace =" << replace;
+        kDebug(DEBUG_AREA) << "Got sanitize rule: find =" << find << ", replace =" << replace;
         if (!find.isEmpty())
         {
             auto find_regex = QRegExp(find);
@@ -89,7 +89,7 @@ void PluginConfiguration::readConfig()
                 kWarning() << "Invalid sanitize rule ignored: " << rule;
         }
     }
-    kDebug() << "Got" << m_sanitize_rules.size() << "sanitize rules total";
+    kDebug(DEBUG_AREA) << "Got" << m_sanitize_rules.size() << "sanitize rules total";
     //
     Q_EMIT(sessionDirsChanged());
     Q_EMIT(systemDirsChanged());
@@ -98,7 +98,7 @@ void PluginConfiguration::readConfig()
 
 void PluginConfiguration::readSessionConfig(KConfigBase* config, const QString& groupPrefix)
 {
-    kDebug() << "** CONFIG-MGR **: Reading session config: " << groupPrefix;
+    kDebug(DEBUG_AREA) << "** CONFIG-MGR **: Reading session config: " << groupPrefix;
     // Read session config
     /// \todo Rename it!
     KConfigGroup scg(config, groupPrefix + SESSION_GROUP_SUFFIX);
@@ -117,14 +117,14 @@ void PluginConfiguration::readSessionConfig(KConfigBase* config, const QString& 
     m_monitor_flags = scg.readEntry(MONITOR_DIRS_ITEM, QVariant(0)).toInt();
     m_config_dirty = false;
 
-    kDebug() << "Got per session configured include path list: " << m_session_dirs;
+    kDebug(DEBUG_AREA) << "Got per session configured include path list: " << m_session_dirs;
 
     readConfig();
 }
 
 void PluginConfiguration::writeSessionConfig(KConfigBase* config, const QString& groupPrefix)
 {
-    kDebug() << "** CONFIG-MGR **: Writing session config: " << groupPrefix;
+    kDebug(DEBUG_AREA) << "** CONFIG-MGR **: Writing session config: " << groupPrefix;
     if (!m_config_dirty)
     {
         /// \todo Maybe I don't understand smth, but rally strange things r going on here:
@@ -132,13 +132,13 @@ void PluginConfiguration::writeSessionConfig(KConfigBase* config, const QString&
         /// any attempt to read configuration...
         /// The only thing came into my mind that it is attempt to initialize config w/ default
         /// values... but in that case everything stored before get lost!
-        kDebug() << "Config isn't dirty!!!";
+        kDebug(DEBUG_AREA) << "Config isn't dirty!!!";
         readSessionConfig(config, groupPrefix);
         return;
     }
 
     // Write session config
-    kDebug() << "Write per session configured include path list: " << m_session_dirs;
+    kDebug(DEBUG_AREA) << "Write per session configured include path list: " << m_session_dirs;
     KConfigGroup scg(config, groupPrefix + SESSION_GROUP_SUFFIX);
     scg.writePathEntry(CONFIGURED_DIRS_ITEM, m_session_dirs);
     scg.writeEntry(PCH_FILE_ITEM, m_pch_header);
@@ -155,7 +155,7 @@ void PluginConfiguration::writeSessionConfig(KConfigBase* config, const QString&
     scg.writeEntry(MONITOR_DIRS_ITEM, QVariant(m_monitor_flags));
     scg.sync();
     // Write global config
-    kDebug() << "Write global configured include path list: " << m_system_dirs;
+    kDebug(DEBUG_AREA) << "Write global configured include path list: " << m_system_dirs;
     KConfigGroup gcg(KGlobal::config(), GLOBAL_CONFIG_GROUP_NAME);
     gcg.writePathEntry(CONFIGURED_DIRS_ITEM, m_system_dirs);
     // Transform sanitize rules into a serializable list of strings
@@ -184,40 +184,40 @@ void PluginConfiguration::writeSessionConfig(KConfigBase* config, const QString&
 
 void PluginConfiguration::setSessionDirs(QStringList& dirs)
 {
-    kDebug() << "Got session dirs: " << m_session_dirs;
-    kDebug() << "... session dirs: " << dirs;
+    kDebug(DEBUG_AREA) << "Got session dirs: " << m_session_dirs;
+    kDebug(DEBUG_AREA) << "... session dirs: " << dirs;
     if (m_session_dirs != dirs)
     {
         m_session_dirs.swap(dirs);
         m_config_dirty = true;
         Q_EMIT(sessionDirsChanged());
         Q_EMIT(dirWatchSettingsChanged());
-        kDebug() << "** set config to `dirty' state!! **";
+        kDebug(DEBUG_AREA) << "** set config to `dirty' state!! **";
     }
 }
 
 void PluginConfiguration::setSystemDirs(QStringList& dirs)
 {
-    kDebug() << "Got system dirs: " << m_system_dirs;
-    kDebug() << "... system dirs: " << dirs;
+    kDebug(DEBUG_AREA) << "Got system dirs: " << m_system_dirs;
+    kDebug(DEBUG_AREA) << "... system dirs: " << dirs;
     if (m_system_dirs != dirs)
     {
         m_system_dirs.swap(dirs);
         m_config_dirty = true;
         Q_EMIT(systemDirsChanged());
         Q_EMIT(dirWatchSettingsChanged());
-        kDebug() << "** set config to `dirty' state!! **";
+        kDebug(DEBUG_AREA) << "** set config to `dirty' state!! **";
     }
 }
 
 void PluginConfiguration::setIgnoreExtensions(QStringList& extensions)
 {
-    kDebug() << "Got ignore extensions: " << m_ignore_ext;
+    kDebug(DEBUG_AREA) << "Got ignore extensions: " << m_ignore_ext;
     if (m_ignore_ext != extensions)
     {
         m_ignore_ext.swap(extensions);
         m_config_dirty = true;
-        kDebug() << "** set config to `dirty' state!! **";
+        kDebug(DEBUG_AREA) << "** set config to `dirty' state!! **";
     }
 }
 
@@ -227,7 +227,7 @@ void PluginConfiguration::setClangParams(const QString& params)
     {
         m_clang_params = params;
         m_config_dirty = true;
-        kDebug() << "** set config to `dirty' state!! **";
+        kDebug(DEBUG_AREA) << "** set config to `dirty' state!! **";
         Q_EMIT(clangOptionsChanged());
         Q_EMIT(precompiledHeaderFileChanged());
     }
@@ -239,7 +239,7 @@ void PluginConfiguration::setPrecompiledHeaderFile(const KUrl& filename)
     {
         m_pch_header = filename;
         m_config_dirty = true;
-        kDebug() << "** set config to `dirty' state!! **";
+        kDebug(DEBUG_AREA) << "** set config to `dirty' state!! **";
         Q_EMIT(precompiledHeaderFileChanged());
     }
 }
@@ -248,56 +248,56 @@ void PluginConfiguration::setUseLtGt(const bool state)
 {
     m_use_ltgt = state;
     m_config_dirty = true;
-    kDebug() << "** set config to `dirty' state!! **";
+    kDebug(DEBUG_AREA) << "** set config to `dirty' state!! **";
 }
 
 void PluginConfiguration::setUseCwd(const bool state)
 {
     m_use_cwd = state;
     m_config_dirty = true;
-    kDebug() << "** set config to `dirty' state!! **";
+    kDebug(DEBUG_AREA) << "** set config to `dirty' state!! **";
 }
 
 void PluginConfiguration::setOpenFirst(const bool state)
 {
     m_open_first = state;
     m_config_dirty = true;
-    kDebug() << "** set config to `dirty' state!! **";
+    kDebug(DEBUG_AREA) << "** set config to `dirty' state!! **";
 }
 
 void PluginConfiguration::setUseWildcardSearch(const bool state)
 {
     m_use_wildcard_search = state;
     m_config_dirty = true;
-    kDebug() << "** set config to `dirty' state!! **";
+    kDebug(DEBUG_AREA) << "** set config to `dirty' state!! **";
 }
 
 void PluginConfiguration::setHighlightCompletions(const bool state)
 {
     m_highlight_completions = state;
     m_config_dirty = true;
-    kDebug() << "** set config to `dirty' state!! **";
+    kDebug(DEBUG_AREA) << "** set config to `dirty' state!! **";
 }
 
 void PluginConfiguration::setSanitizeCompletions(const bool state)
 {
     m_sanitize_completions = state;
     m_config_dirty = true;
-    kDebug() << "** set config to `dirty' state!! **";
+    kDebug(DEBUG_AREA) << "** set config to `dirty' state!! **";
 }
 
 void PluginConfiguration::setAutoCompletions(const bool state)
 {
     m_auto_completions = state;
     m_config_dirty = true;
-    kDebug() << "** set config to `dirty' state!! **";
+    kDebug(DEBUG_AREA) << "** set config to `dirty' state!! **";
 }
 
 void PluginConfiguration::setIncludeMacros(const bool state)
 {
     m_include_macros = state;
     m_config_dirty = true;
-    kDebug() << "** set config to `dirty' state!! **";
+    kDebug(DEBUG_AREA) << "** set config to `dirty' state!! **";
 }
 
 /**
@@ -309,7 +309,7 @@ void PluginConfiguration::setSanitizeRules(sanitize_rules_list_type&& rules)
 {
     m_sanitize_rules = std::move(rules);
     m_config_dirty = true;
-    kDebug() << "** set config to `dirty' state!! **";
+    kDebug(DEBUG_AREA) << "** set config to `dirty' state!! **";
 }
 
 void PluginConfiguration::setWhatToMonitor(const int tgt)
@@ -321,7 +321,7 @@ void PluginConfiguration::setWhatToMonitor(const int tgt)
         m_config_dirty = true;
         Q_EMIT(dirWatchSettingsChanged());
     }
-    kDebug() << "** set config to `dirty' state!! **";
+    kDebug(DEBUG_AREA) << "** set config to `dirty' state!! **";
 }
 
 QStringList PluginConfiguration::formCompilerOptions() const
@@ -347,7 +347,7 @@ unsigned PluginConfiguration::completionFlags() const
     auto flags = static_cast<unsigned>(CXCodeComplete_IncludeBriefComments);
     if (includeMacros())
     {
-        kDebug() << "Allow preprocessor MACROS in completion results";
+        kDebug(DEBUG_AREA) << "Allow preprocessor MACROS in completion results";
         flags |= CXCodeComplete_IncludeMacros;
     }
     return flags;

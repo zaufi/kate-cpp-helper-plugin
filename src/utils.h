@@ -119,9 +119,9 @@ inline void findFiles(const QString& file, const QStringList& paths, QStringList
         if (isPresentAndReadable(full_filename))
         {
             result.push_back(full_filename);
-            kDebug() << " ... " << full_filename << " Ok";
+            kDebug(DEBUG_AREA) << " ... " << full_filename << " Ok";
         }
-        else kDebug() << " ... " << full_filename << " not exists/readable";
+        else kDebug(DEBUG_AREA) << " ... " << full_filename << " not exists/readable";
     }
 }
 

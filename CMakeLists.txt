@@ -118,7 +118,7 @@ add_definitions(-DQT_USE_QSTRINGBUILDER)
 # Add LLVM definitions
 add_definitions(${LLVM_CXXFLAGS})
 # Use Kate plugins debug area as default
-# add_definitions(-DDEBUG_AREA=13040)
+add_definitions(-DDEBUG_AREA=13040)
 
 # Keep RPATH to found libraries (particularly LLVM's) in installed .so file
 # BUG https://github.com/zaufi/kate-cpp-helper-plugin/issues/6
