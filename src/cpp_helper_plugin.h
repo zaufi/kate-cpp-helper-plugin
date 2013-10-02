@@ -148,6 +148,8 @@ private:
       , const unsigned
       , const bool
       );
+    /// Obtain a pointer to an internally used (hidden) document
+    KTextEditor::Document* getHiddenDoc();
 
     /// An instance of \c PluginConfiguration filled with configuration data
     /// read from application's config

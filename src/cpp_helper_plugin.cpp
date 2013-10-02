@@ -64,12 +64,9 @@ CppHelperPlugin::CppHelperPlugin(
   /// \todo Make parameters to \c clang_createIndex() configurable?
   , m_local_index(clang_createIndex(1, 1))
   , m_index(clang_createIndex(0, 1))
-  , m_hidden_doc(application()->editor()->createDocument(this))
+  , m_hidden_doc(nullptr)
 {
     assert("clang index expected to be valid" && m_local_index);
-
-    // Document require a view to be able to highlight text
-    m_hidden_doc->createView(nullptr);
 
     // Connect self to configuration updates
     connect(
@@ -425,6 +422,24 @@ void CppHelperPlugin::buildPCHIfAbsent()
     kDebug(DEBUG_AREA) << "PCH file: " << config().pchFile();
 }
 
+/**
+ * Get a hidden document to be used to highlight code snippets.
+ * Create a new instance if not initialized yet.
+ *
+ * \attention Caller (and other methods of this class) should never
+ * use \c m_hidden_doc member directly!
+ */
+KTextEditor::Document* CppHelperPlugin::getHiddenDoc()
+{
+    if (!m_hidden_doc)
+    {
+        m_hidden_doc = application()->editor()->createDocument(this);
+        // Document require a view to be able to highlight text
+        m_hidden_doc->createView(nullptr);
+    }
+    return m_hidden_doc;
+}
+
 QList<KTextEditor::HighlightInterface::AttributeBlock> CppHelperPlugin::highlightSnippet(
     const QString& text
   , const QString& mode
@@ -434,18 +449,20 @@ QList<KTextEditor::HighlightInterface::AttributeBlock> CppHelperPlugin::highligh
     kDebug(DEBUG_AREA) << "Highligting text " << text << "using" << mode << "mode";
 #endif
     QList<KTextEditor::HighlightInterface::AttributeBlock> result;
+    auto* doc = getHiddenDoc();
 
     /// \todo Is there any reason to cache this pointer?
     /// (to avoid casting all the time to the same (?) value)
     /// Is it constant by the way?
-    KTextEditor::HighlightInterface* iface = qobject_cast<KTextEditor::HighlightInterface*>(m_hidden_doc);
+    KTextEditor::HighlightInterface* iface = qobject_cast<KTextEditor::HighlightInterface*>(doc);
     if (iface)
     {
-        m_hidden_doc->setHighlightingMode(mode);
-        m_hidden_doc->setText(text);
-        assert("Document expected to have at least 1 line" && m_hidden_doc->lines());
+        doc->setHighlightingMode(mode);
+        doc->setText(text);
+        assert("Document expected to have at least 1 line" && doc->lines());
+        /// \todo Why the document has \b default color scheme???
         result = iface->lineAttributes(0);
-        m_hidden_doc->clear();
+        doc->clear();
     }
     return result;
 }

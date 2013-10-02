@@ -30,6 +30,7 @@
 
 // Standard includes
 #include <KDebug>
+#include <QtGui/QBrush>
 
 namespace kate {
 
@@ -45,23 +46,39 @@ int DiagnosticMessagesModel::columnCount(const QModelIndex&) const
 
 QVariant DiagnosticMessagesModel::data(const QModelIndex& index, const int role) const
 {
-    if (role == Qt::DisplayRole)
+    switch (role)
     {
+        case Qt::DisplayRole:
 #if 0
-        kDebug(DEBUG_AREA) << "Getting diag data: row=" << index.row() << ", col=" << index.column();
+            kDebug(DEBUG_AREA) << "Getting diag data: row=" << index.row() << ", col=" << index.column();
 #endif
-        // Check if requested item has a source code location
-        // (m_file member must not be empty)
-        if (!m_records[index.row()].m_file.isEmpty())
-            // Form a compiler-like SPAM
-            return QString("%1:%2:%3: %4").arg(
-                m_records[index.row()].m_file
-              , QString::number(m_records[index.row()].m_line)
-              , QString::number(m_records[index.row()].m_column)
-              , m_records[index.row()].m_text
-              );
-        // Just return a message text
-        return m_records[index.row()].m_text;
+            // Check if requested item has a source code location
+            // (m_file member must not be empty)
+            if (!m_records[index.row()].m_file.isEmpty())
+                // Form a compiler-like SPAM
+                return QString("%1:%2:%3: %4").arg(
+                    m_records[index.row()].m_file
+                , QString::number(m_records[index.row()].m_line)
+                , QString::number(m_records[index.row()].m_column)
+                , m_records[index.row()].m_text
+                );
+            // Just return a message text
+            return m_records[index.row()].m_text;
+        case Qt::ForegroundRole:
+            switch (m_records[index.row()].m_type)
+            {
+                case DiagnosticMessagesModel::Record::type::error:
+                    return QBrush(Qt::red);
+                case DiagnosticMessagesModel::Record::type::warning:
+                    return QBrush(Qt::yellow);
+                case DiagnosticMessagesModel::Record::type::info:
+                case DiagnosticMessagesModel::Record::type::debug:
+                default:
+                    break;
+            }
+            break;
+        default:
+            break;
     }
     return QVariant();
 }
