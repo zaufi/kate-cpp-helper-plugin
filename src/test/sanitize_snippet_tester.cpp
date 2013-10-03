@@ -181,6 +181,4 @@ BOOST_AUTO_TEST_CASE(sanitize_test_5)
     }
 }
 
-
-
 // kate: hl C++11/Qt4;

@@ -124,6 +124,9 @@ add_definitions(-DDEBUG_AREA=13040)
 # BUG https://github.com/zaufi/kate-cpp-helper-plugin/issues/6
 set(CMAKE_INSTALL_RPATH "${LLVM_LIBDIR}")
 
+# Render configuration file (used by unit tests)
+configure_file(config.h.in config.h @ONLY)
+
 #---------------------------------------------------------
 # Section: Configure package options
 #---------------------------------------------------------

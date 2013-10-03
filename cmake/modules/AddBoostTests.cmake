@@ -83,12 +83,13 @@ function(add_boost_tests)
     # Scan source files for well known boost test framework macros and add test by found name
     foreach(source ${add_boost_tests_SOURCES})
         #message(STATUS "scanning ${source}")
-        file(READ "${source}" contents)
-        string(REGEX REPLACE ";" "\\\\;" contents "${contents}")
-        string(REGEX REPLACE "\n" ";" contents "${contents}")
+        file(
+            STRINGS "${source}" contents
+            REGEX "^\\s*BOOST_(AUTO_TEST_(CASE|SUITE_END)|FIXTURE_TEST_(CASE|SUITE))"
+          )
         set(current_suite "<NONE>")
         set(found_tests "")
-        foreach(line ${contents})
+        foreach(line IN LISTS contents)
             # Try BOOST_AUTO_TEST_CASE
             string(REGEX MATCH "BOOST_AUTO_TEST_CASE\\([A-Za-z0-9_]+\\)" found_test "${line}")
             if(found_test)
@@ -154,6 +155,6 @@ endfunction(add_boost_tests)
 
 # X-Chewy-RepoBase: https://raw.github.com/mutanabbi/chewy-cmake-rep/master/
 # X-Chewy-Path: AddBoostTests.cmake
-# X-Chewy-Version: 3.0
+# X-Chewy-Version: 3.1
 # X-Chewy-Description: Integrate Boost unit tests into CMake infrastructure
 # X-Chewy-AddonFile: unit_tests_main_skeleton.cc
