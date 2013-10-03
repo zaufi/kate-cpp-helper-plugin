@@ -109,19 +109,14 @@ public:
     /// \name Records manipulation
     //@{
     /// Append a diagnostic record to the model
-    void append(QString&&, unsigned, unsigned, QString&&, Record::type);
-    /// Append a diagnostic record to the model
     void append(Record&&);
     /// Append a diagnostic record to the model (bulk version)
     template <typename Iter>
     void append(Iter, Iter);
+    //@}
 
 public Q_SLOTS:
-    void clear()
-    {
-        m_records.clear();
-    }
-    //@}
+    void clear();
 
 private:
     std::deque<Record> m_records;                           ///< Stored records
@@ -181,21 +176,6 @@ inline void DiagnosticMessagesModel::append(Record&& record)
     m_records.emplace_back(std::move(record));
     endInsertRows();
 }
-
-#if 0
-inline void DiagnosticMessagesModel::append(
-    QString&& file
-  , const unsigned line
-  , const unsigned column
-  , QString&& text
-  , const Record::type type
-  )
-{
-    beginInsertRows(QModelIndex(), m_records.size(), m_records.size());
-    m_records.emplace_back(std::move(file), line, column, std::move(text), type);
-    endInsertRows();
-}
-#endif
 
 template <typename Iter>
 inline void DiagnosticMessagesModel::append(Iter first, Iter last)

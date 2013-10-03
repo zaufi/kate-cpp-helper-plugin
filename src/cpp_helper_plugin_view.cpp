@@ -129,6 +129,7 @@ CppHelperPluginView::CppHelperPluginView(
     // Setup toolview
     m_tool_view_interior->setupUi(new QWidget(m_tool_view.get()));
     m_tool_view_interior->diagnosticMessages->setModel(&m_diagnostic_data);
+    m_tool_view_interior->diagnosticMessages->setContextMenuPolicy(Qt::ActionsContextMenu);
     m_tool_view_interior->includesTree->setHeaderHidden(true);
     m_tool_view_interior->includedFromList->setModel(m_includes_list_model);
     m_tool_view_interior->searchFilter->addTreeWidget(m_tool_view_interior->includesTree);
@@ -164,6 +165,20 @@ CppHelperPluginView::CppHelperPluginView(
       , this
       , SLOT(includeFileDblClickedFromList(const QModelIndex&))
       );
+    {
+        auto* clear_action = new QAction(
+            KIcon("edit-clear-list")
+          , i18n("Clear")
+          , m_tool_view_interior->diagnosticMessages
+          );
+        m_tool_view_interior->diagnosticMessages->insertAction(nullptr, clear_action);
+        connect(
+            clear_action
+          , SIGNAL(triggered(bool))
+          , &m_diagnostic_data
+          , SLOT(clear())
+          );
+    }
 
     mainWindow()->guiFactory()->addClient(this);
 }
@@ -1395,6 +1410,7 @@ void CppHelperPluginView::updateCppActionsAvailability(const bool enable_cpp_spe
     else
         m_copy_include->setText(i18n("Copy File URI to Clipboard"));
 }
+
 //END CppHelperPluginView
 
 }                                                           // namespace kate

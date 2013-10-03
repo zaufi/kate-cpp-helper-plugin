@@ -94,4 +94,11 @@ std::tuple<KUrl, unsigned, unsigned> DiagnosticMessagesModel::getLocationByIndex
       );
 }
 
+void DiagnosticMessagesModel::clear()
+{
+    beginResetModel();
+    m_records.clear();
+    endResetModel();
+}
+
 }                                                           // namespace kate
