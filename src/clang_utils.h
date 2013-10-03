@@ -90,11 +90,20 @@ typedef disposable<CXDiagnostic, &clang_disposeDiagnostic> DCXDiagnostic;
 typedef disposable<CXIndexAction, &clang_IndexAction_dispose> DCXIndexAction;
 typedef disposable<CXCodeCompleteResults*, &clang_disposeCodeCompleteResults> DCXCodeCompleteResults;
 
+inline QString toString(const DCXString& str)
+{
+    return QString(clang_getCString(str));
+}
+
 /// Get a human readable string of \c CXCursorKind
 inline QString toString(const CXCursorKind v)
 {
-    DCXString str = {clang_getCursorKindSpelling(v)};
-    return QString(clang_getCString(str));
+    return toString(DCXString{clang_getCursorKindSpelling(v)});
+}
+
+inline QString toString(const CXFile file)
+{
+    return toString(clang_getFileName(file));
 }
 
 /// Get a human readable string of \c CXCompletionChunkKind

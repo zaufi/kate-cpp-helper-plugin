@@ -308,6 +308,7 @@ void CppHelperPluginConfigPage::apply()
     // Get settings from 'Clang Completion Settings' tab
     m_plugin->config().setAutoCompletions(m_completion_settings->autoCompletions->isChecked());
     m_plugin->config().setIncludeMacros(m_completion_settings->includeMacros->isChecked());
+    m_plugin->config().setCacheCompletionResults(m_completion_settings->cacheCompletions->isChecked());
     m_plugin->config().setHighlightCompletions(m_completion_settings->highlightResults->isChecked());
     m_plugin->config().setSanitizeCompletions(m_completion_settings->sanitizeResults->isChecked());
     // Collect sanitize rules
@@ -354,6 +355,7 @@ void CppHelperPluginConfigPage::reset()
     m_completion_settings->sanitizeResults->setChecked(m_plugin->config().sanitizeCompletions());
     m_completion_settings->autoCompletions->setChecked(m_plugin->config().autoCompletions());
     m_completion_settings->includeMacros->setChecked(m_plugin->config().includeMacros());
+    m_completion_settings->cacheCompletions->setChecked(m_plugin->config().cacheCompletionResults());
 
     const auto& rules = m_plugin->config().sanitizeRules();
     m_completion_settings->sanitizeRules->clear();

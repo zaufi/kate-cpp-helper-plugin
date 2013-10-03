@@ -57,6 +57,7 @@ struct fixture
           << "-I/usr/lib/gcc/x86_64-pc-linux-gnu/4.8.1/include"
           << "-I/usr/local/include"
           << "-I/usr/lib/gcc/x86_64-pc-linux-gnu/4.8.1/include-fixed"
+          << "-I" CMAKE_SOURCE_DIR
           << "-I" CMAKE_SOURCE_DIR "/src/test/data"
           ;
     }
@@ -94,4 +95,17 @@ BOOST_FIXTURE_TEST_CASE(translation_unit_test_1, fixture)
       , TranslationUnit::defaultEditingParseOptions()
       , TranslationUnit::unsaved_files_list_type()
     };
+    CXCursorAndRangeVisitor visitor_data = {
+        nullptr
+      , [](void* context, CXCursor c, CXSourceRange r)
+        {
+            kDebug(DEBUG_AREA) << __PRETTY_FUNCTION__;
+            return CXVisit_Continue;
+        }
+    };
+    auto file = clang_getFile(unit, CMAKE_SOURCE_DIR "/src/test/data/sample.cpp");
+    BOOST_REQUIRE(file);
+    kDebug(DEBUG_AREA) << "filename: " << toString(file);
+    auto result = clang_findIncludesInFile(unit, file, visitor_data);
+    BOOST_REQUIRE_EQUAL(result, CXResult_Success);
 }

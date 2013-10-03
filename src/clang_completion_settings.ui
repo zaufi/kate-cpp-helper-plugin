@@ -54,6 +54,19 @@
         </property>
        </widget>
       </item>
+      <item>
+       <widget class="QCheckBox" name="cacheCompletions">
+        <property name="toolTip">
+         <string>Turn corresponding option of clang library. Dunno how good it is...</string>
+        </property>
+        <property name="whatsThis">
+         <string/>
+        </property>
+        <property name="text">
+         <string>Cache completion results</string>
+        </property>
+       </widget>
+      </item>
      </layout>
     </widget>
    </item>
@@ -134,7 +147,9 @@
            <string/>
           </property>
           <property name="icon">
-           <iconset theme="list-add"/>
+           <iconset theme="list-add">
+            <normaloff/>
+           </iconset>
           </property>
          </widget>
         </item>
@@ -147,7 +162,9 @@
            <string/>
           </property>
           <property name="icon">
-           <iconset theme="list-remove"/>
+           <iconset theme="list-remove">
+            <normaloff/>
+           </iconset>
           </property>
          </widget>
         </item>
@@ -157,7 +174,9 @@
            <string>Move current rule up</string>
           </property>
           <property name="icon">
-           <iconset theme="arrow-up"/>
+           <iconset theme="arrow-up">
+            <normaloff/>
+           </iconset>
           </property>
          </widget>
         </item>
@@ -167,7 +186,9 @@
            <string>Move current rule down</string>
           </property>
           <property name="icon">
-           <iconset theme="arrow-down"/>
+           <iconset theme="arrow-down">
+            <normaloff/>
+           </iconset>
           </property>
          </widget>
         </item>

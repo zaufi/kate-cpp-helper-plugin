@@ -48,6 +48,7 @@ const QString HIGHLIGHT_COMPLETIONS_ITEM = "HighlightCompletionItems";
 const QString SANITIZE_COMPLETIONS_ITEM = "SanitizeCompletionItems";
 const QString AUTO_COMPLETIONS_ITEM = "AutoCompletionItems";
 const QString INCLUDE_MACROS_ITEM = "IncludeMacrosToCompletionResults";
+const QString CACHE_COMPLETIONS_ITEM = "CacheCompletionResults";
 const QString IGNORE_EXTENSIONS_ITEM = "IgnoreExtensions";
 
 const QString SANITIZE_RULE_SEPARATOR = "<$replace-with$>";
@@ -114,6 +115,7 @@ void PluginConfiguration::readSessionConfig(KConfigBase* config, const QString& 
     m_sanitize_completions = scg.readEntry(SANITIZE_COMPLETIONS_ITEM, QVariant(true)).toBool();
     m_auto_completions = scg.readEntry(AUTO_COMPLETIONS_ITEM, QVariant(true)).toBool();
     m_include_macros = scg.readEntry(INCLUDE_MACROS_ITEM, QVariant(true)).toBool();
+    m_cache_completions = scg.readEntry(CACHE_COMPLETIONS_ITEM, QVariant(false)).toBool();
     m_monitor_flags = scg.readEntry(MONITOR_DIRS_ITEM, QVariant(0)).toInt();
     m_config_dirty = false;
 
@@ -152,6 +154,7 @@ void PluginConfiguration::writeSessionConfig(KConfigBase* config, const QString&
     scg.writeEntry(SANITIZE_COMPLETIONS_ITEM, QVariant(m_sanitize_completions));
     scg.writeEntry(AUTO_COMPLETIONS_ITEM, QVariant(m_auto_completions));
     scg.writeEntry(INCLUDE_MACROS_ITEM, QVariant(m_include_macros));
+    scg.writeEntry(CACHE_COMPLETIONS_ITEM, QVariant(m_cache_completions));
     scg.writeEntry(MONITOR_DIRS_ITEM, QVariant(m_monitor_flags));
     scg.sync();
     // Write global config
@@ -300,6 +303,13 @@ void PluginConfiguration::setIncludeMacros(const bool state)
     kDebug(DEBUG_AREA) << "** set config to `dirty' state!! **";
 }
 
+void PluginConfiguration::setCacheCompletionResults(const bool state)
+{
+    m_cache_completions = state;
+    m_config_dirty = true;
+    kDebug(DEBUG_AREA) << "** set config to `dirty' state!! **";
+}
+
 /**
  * \todo Add overload to accept a sequence of pairs of \c QString,
  * and move regex validation code here avoiding duplicates outside of
@@ -349,6 +359,11 @@ unsigned PluginConfiguration::completionFlags() const
     {
         kDebug(DEBUG_AREA) << "Allow preprocessor MACROS in completion results";
         flags |= CXCodeComplete_IncludeMacros;
+    }
+    if (cacheCompletionResults())
+    {
+        kDebug(DEBUG_AREA) << "Allow completion results cache";
+        flags |= CXTranslationUnit_CacheCompletionResults;
     }
     return flags;
 }

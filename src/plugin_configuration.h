@@ -59,6 +59,7 @@ public:
       , m_sanitize_completions(true)
       , m_auto_completions(true)
       , m_include_macros(true)
+      , m_cache_completions(false)
     {}
 
     /// \name Accessors
@@ -79,6 +80,7 @@ public:
     bool autoCompletions() const;
     const sanitize_rules_list_type& sanitizeRules() const;
     bool includeMacros() const;
+    bool cacheCompletionResults() const;
     unsigned completionFlags() const;
     //@}
 
@@ -100,6 +102,7 @@ public:
     void setAutoCompletions(bool);
     void setSanitizeRules(sanitize_rules_list_type&&);
     void setIncludeMacros(bool);
+    void setCacheCompletionResults(bool);
     //@}
 
     void readSessionConfig(KConfigBase*, const QString&);
@@ -136,6 +139,7 @@ private:
     bool m_sanitize_completions;
     bool m_auto_completions;
     bool m_include_macros;
+    bool m_cache_completions;
 };
 
 inline const QStringList& PluginConfiguration::sessionDirs() const
@@ -207,6 +211,11 @@ inline void PluginConfiguration::setPrecompiledFile(const KUrl& file)
 inline bool PluginConfiguration::includeMacros() const
 {
     return m_include_macros;
+}
+
+inline bool PluginConfiguration::cacheCompletionResults() const
+{
+    return m_cache_completions;
 }
 
 }                                                           // namespace kate
