@@ -29,12 +29,11 @@
 # define __SRC__DIAGNOSTIC_MESSAGES_MODEL_HH__
 
 // Project specific includes
+# include <src/clang_utils.h>
 
 // Standard includes
-# include <KUrl>
 # include <QAbstractListModel>
 # include <deque>
-# include <tuple>
 
 namespace kate {
 
@@ -66,19 +65,14 @@ public:
           , error
           , cutset
         };
+        location m_location;                                ///< Location in source code
         QString m_text;                                     ///< Diagnostic message text
-        /// \name Location in source code
-        //@{
-        QString m_file;                                     ///< Name of a source file
-        unsigned m_line;                                    ///< Line number
-        unsigned m_column;                                  ///< Position on the line
-        //@}
         type m_type;                                        ///< Type of the record
 
         /// \c record class must be default constructible
         Record() = default;
         /// Make a \c record from parts
-        Record(QString&&, unsigned, unsigned, QString&&, type) noexcept;
+        Record(location&&, QString&&, type) noexcept;
         /// Make a \c record w/ message and given type (and empty location)
         Record(QString&&, type) noexcept;
         /// Move ctor
@@ -94,7 +88,7 @@ public:
     /// Default constructor
     DiagnosticMessagesModel() = default;
 
-    std::tuple<KUrl, unsigned, unsigned> getLocationByIndex(const QModelIndex&) const;
+    location getLocationByIndex(const QModelIndex&) const;
 
     /// \name QAbstractTableModel interface
     //@{
@@ -123,48 +117,44 @@ private:
 };
 
 inline DiagnosticMessagesModel::Record::Record(QString&& text, Record::type type) noexcept
-  : m_line(0)
-  , m_column(0)
-  , m_type(type)
+  : m_type(type)
 {
     m_text.swap(text);
 }
 
 inline DiagnosticMessagesModel::Record::Record(
-    QString&& file
-  , const unsigned line
-  , const unsigned column
+    location&& loc
   , QString&& text
   , const Record::type type
   ) noexcept
-  : m_line(line)
-  , m_column(column)
+  : m_location(std::move(loc))
   , m_type(type)
 {
     m_text.swap(text);
-    m_file.swap(file);
 }
 
 inline DiagnosticMessagesModel::Record::Record(Record&& other) noexcept
-  : m_line(other.m_line)
-  , m_column(other.m_column)
+  : m_location(std::move(other.m_location))
   , m_type(other.m_type)
 {
     m_text.swap(other.m_text);
-    m_file.swap(other.m_file);
 }
 
 inline auto DiagnosticMessagesModel::Record::operator=(Record&& other) noexcept -> Record&
 {
     if (&other != this)
     {
-        m_line = other.m_line;
-        m_column = other.m_column;
-        m_type = other.m_type;
+        m_location = std::move(other.m_location);
         m_text.swap(other.m_text);
-        m_file.swap(other.m_file);
+        m_type = other.m_type;
     }
     return *this;
+}
+
+
+inline location DiagnosticMessagesModel::getLocationByIndex(const QModelIndex& index) const
+{
+    return m_records[index.row()].m_location;
 }
 
 /**

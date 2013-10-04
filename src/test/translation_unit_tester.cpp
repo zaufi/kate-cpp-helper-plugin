@@ -62,9 +62,15 @@ struct fixture
           ;
     }
 
-    DCXIndex m_index = {clang_createIndex(0, 1)};
+    DCXIndex m_index = {clang_createIndex(1, 1)};
     QStringList m_options;
 };
+
+struct indexer_data
+{
+    QString m_main_file;
+};
+
 }                                                           // anonymous namespace
 
 BOOST_FIXTURE_TEST_CASE(translation_unit_test_0, fixture)
@@ -95,20 +101,60 @@ BOOST_FIXTURE_TEST_CASE(translation_unit_test_1, fixture)
       , TranslationUnit::defaultEditingParseOptions()
       , TranslationUnit::unsaved_files_list_type()
     };
-#if 0
-    // NOTE clang >= 3.3 only! Not used anyway (for awhile)
-    CXCursorAndRangeVisitor visitor_data = {
-        nullptr
-      , [](void* context, CXCursor c, CXSourceRange r)
+    DCXIndexAction action = clang_IndexAction_create(m_index);
+    IndexerCallbacks index_callbacks = {
+        // abort query
+        [](CXClientData client_data, void*) -> int
         {
-            kDebug(DEBUG_AREA) << __PRETTY_FUNCTION__;
-            return CXVisit_Continue;
+            auto* const self = static_cast<CppHelperPluginView*>(client_data);
+            kDebug(DEBUG_AREA) << "CB: abort query";
+            return 0;
+        }
+      , [](CXClientData, CXDiagnosticSet, void*)
+        {
+            kDebug(DEBUG_AREA) << "CB: diagnostic";
+        }
+      , // entered main file
+        [](CXClientData client_data, CXFile file, void*) -> CXIdxClientFile
+        {
+            kDebug(DEBUG_AREA) << "CB: entering" << file;
+            auto* data = static_cast<indexer_data*>(client_data);
+            data->m_main_file = toString(file);
+            return static_cast<CXIdxClientFile>(file);
+        }
+      , [](CXClientData client_data, const CXIdxIncludedFileInfo* info) -> CXIdxClientFile
+        {
+            kDebug(DEBUG_AREA) << "CB: #included file:" << info->filename
+              << "isAngled:" << info->isAngled
+              << "isImport:" << info->isImport
+              << "isMod:" << info->isModuleImport
+              ;
+            return static_cast<CXIdxClientFile>(info->file);
+        }
+      , [](CXClientData client_data, const CXIdxImportedASTFileInfo* info) -> CXIdxClientASTFile
+        {
+            kDebug(DEBUG_AREA) << "CB: AST file imported" << info->file << ", impl: " << info->isImplicit;
+            return static_cast<CXIdxClientFile>(info->file);
+        }
+      , [](CXClientData client_data, void*) -> CXIdxClientContainer
+        {
+            kDebug(DEBUG_AREA) << "CB: TU started";
+            return nullptr;
+        }
+      , [](CXClientData client_data, const CXIdxDeclInfo* info)
+        {
+            const char* name = info->entityInfo->name ? info->entityInfo->name : "anonymous";
+            kDebug(DEBUG_AREA) << "CB: index declaration: name =" << name;
+            kDebug(DEBUG_AREA) << "CB: index declaration: kind =" << getEntityKindString(info->entityInfo->kind) <<
+              ' ' << getEntityTemplateKindString(info->entityInfo->templateKind);
+            kDebug(DEBUG_AREA) << "CB: index declaration: cursor:" << info->cursor;
+            kDebug(DEBUG_AREA) << "CB: index declaration: semantic container:" << getCXIndexContainer(info->semanticContainer);
+            kDebug(DEBUG_AREA) << "CB: index declaration: lexican container:" << getCXIndexContainer(info->lexicalContainer);
+        }
+      , [](CXClientData client_data, const CXIdxEntityRefInfo* info)
+        {
+            kDebug(DEBUG_AREA) << "CB: index reference";
         }
     };
-    auto file = clang_getFile(unit, CMAKE_SOURCE_DIR "/src/test/data/sample.cpp");
-    BOOST_REQUIRE(file);
-    kDebug(DEBUG_AREA) << "filename: " << toString(file);
-    auto result = clang_findIncludesInFile(unit, file, visitor_data);
-    BOOST_REQUIRE_EQUAL(result, CXResult_Success);
-#endif
+
 }

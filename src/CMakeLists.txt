@@ -5,13 +5,13 @@ configure_file(katecpphelperplugin.desktop.in katecpphelperplugin.desktop)
 
 set(KATE_CPP_HELPER_PLUGIN_SOURCES
     utils.cpp
+    clang_utils.cpp
     sanitize_snippet.cpp
     plugin_configuration.cpp
     document_info.cpp
     document_proxy.cpp
     diagnostic_messages_model.cpp
     translation_unit.cpp
-    clang_utils.cpp
     clang_code_completion_item.cpp
     clang_code_completion_model.cpp
     include_helper_completion_model.cpp

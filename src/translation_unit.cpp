@@ -554,6 +554,11 @@ void TranslationUnit::reparse()
     }
 }
 
+/**
+ * \attention \c clang_formatDiagnostic have a nasty BUG since clang 3.3!
+ * It fails (<em>pure virtual function call</em>) on messages w/o location attached
+ * (like notices). DO NOT USE IT! EVER!
+ */
 void TranslationUnit::appendDiagnostic(const CXDiagnostic& diag)
 {
     // Should we ignore this item?
@@ -561,19 +566,6 @@ void TranslationUnit::appendDiagnostic(const CXDiagnostic& diag)
     if (severity == CXDiagnostic_Ignored)
         return;
     kDebug(DEBUG_AREA) << "TU diagnostic severity level: " << severity;
-
-#if 0
-    // Show some SPAM to console
-    {
-        const auto display_opts = CXDiagnostic_DisplaySourceLocation
-        | CXDiagnostic_DisplayColumn
-        | CXDiagnostic_DisplaySourceRanges
-        | CXDiagnostic_DisplayOption
-        ;
-        DCXString msg = {clang_formatDiagnostic(diag, display_opts)};
-        kDebug(DEBUG_AREA) << "TU diag.fmt: " << clang_getCString(msg);
-    }
-#endif
 
     // Get record type
     DiagnosticMessagesModel::Record::type type;
@@ -594,34 +586,24 @@ void TranslationUnit::appendDiagnostic(const CXDiagnostic& diag)
     }
 
     // Get location
-    unsigned line = 0;
-    unsigned column = 0;
-    QString filename;
+    location loc;
     /// \attention \c Notes have no location attached!?
     if (severity != CXDiagnostic_Note)
     {
-        CXFile file;
-        clang_getSpellingLocation(clang_getDiagnosticLocation(diag), &file, &line, &column, nullptr);
-        if (!file)
+        try
+        {
+            loc = {clang_getDiagnosticLocation(diag)};
+        }
+        catch (std::exception& e)
         {
             kDebug(DEBUG_AREA) << "TU diag.fmt: Can't get diagnostic location";
         }
-        else
-        {
-            DCXString filename_cstr = {clang_getFileName(file)};
-            filename = clang_getCString(filename_cstr);
-        }
     }
 
-    // Get diagnostic text
-    DCXString msg = {clang_getDiagnosticSpelling(diag)};
-
-    // Form a new diagnostic record
+    // Get diagnostic text and form a new diagnostic record
     m_last_diagnostic_messages.emplace_back(
-        std::move(filename)
-      , line
-      , column
-      , clang_getCString(msg)
+        std::move(loc)
+      , toString(clang_getDiagnosticSpelling(diag))
       , type
       );
 }

@@ -526,6 +526,7 @@ QStringList CppHelperPluginView::findFileLocations(const QString& filename)
 
 /**
  * \note This function assume that given file is really exists.
+ * \todo Turn the parameter into \c KUrl
  */
 inline void CppHelperPluginView::openFile(const QString& file)
 {
@@ -1363,18 +1364,15 @@ void CppHelperPluginView::includeFileDblClickedFromList(const QModelIndex& index
 
 void CppHelperPluginView::diagnosticMessageActivated(const QModelIndex& index)
 {
-    KUrl url;
-    int line;
-    int column;
-    std::tie(url, line, column) = m_diagnostic_data.getLocationByIndex(index);
-    if (!url.isEmpty())
+    auto loc = m_diagnostic_data.getLocationByIndex(index);
+    if (!loc.empty())
     {
-        const auto& filename = url.toLocalFile();
+        const auto& filename = loc.file().toLocalFile();
         assert("Filename expected to be non empty!" && !filename.isEmpty());
         openFile(filename);
         // NOTE Kate has line/column numbers started from 0, but clang is more
         // human readable...
-        mainWindow()->activeView()->setCursorPosition({line - 1, column - 1});
+        mainWindow()->activeView()->setCursorPosition({loc.line() - 1, loc.column() - 1});
 #if 0
         /// \todo Make it configurable?
         mainWindow()->activeView()->setFocus(Qt::MouseFocusReason);

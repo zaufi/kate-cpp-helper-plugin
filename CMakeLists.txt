@@ -63,6 +63,8 @@ endforeach()
 find_library(KATE_INTERFACES_LIB NAMES libkateinterfaces.so libkateinterfaces.so.4)
 
 find_package(LibClang 3.0 REQUIRED)
+find_package(Xapian 1.2.12 REQUIRED)
+message(STATUS "Found Xapian library: ${XAPIAN_LIBRARIES}")
 
 # find boost
 # NOTE I see no way to make unit tests optional for release mode

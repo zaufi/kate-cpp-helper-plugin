@@ -104,9 +104,7 @@ void ClangCodeCompletionModel::completionInvoked(
         // Show some SPAM in a tool view
         m_diagnostic_model.append(
             DiagnosticMessagesModel::Record(
-                doc->url().toLocalFile()
-              , range.start().line() + 1
-              , range.start().column() + 1
+                location{doc->url(), range.start().line() + 1, range.start().column() + 1}
               , "Completion point"
               , DiagnosticMessagesModel::Record::type::debug
               )

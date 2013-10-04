@@ -24,6 +24,7 @@
 #include <src/clang_utils.h>
 
 // Standard includes
+#include <cassert>
 #include <map>
 
 #define MAP_ENTRY(x) {x, #x}
@@ -53,22 +54,115 @@ const std::map<CXCompletionChunkKind, QString> CHUNK_KIND_TO_STRING = {
   , MAP_ENTRY(CXCompletionChunk_HorizontalSpace)
   , MAP_ENTRY(CXCompletionChunk_VerticalSpace)
 };
+
+const std::map<CXIdxEntityKind, QString> ENTITY_KIND_TO_STRING = {
+    {CXIdxEntity_Unexposed, "<<UNEXPOSED>>"}
+  , {CXIdxEntity_Typedef, "typedef"}
+  , {CXIdxEntity_Function, "function"}
+  , {CXIdxEntity_Variable, "variable"}
+  , {CXIdxEntity_Field, "field"}
+  , {CXIdxEntity_EnumConstant, "enumerator"}
+  , {CXIdxEntity_ObjCClass, "objc-class"}
+  , {CXIdxEntity_ObjCProtocol, "objc-protocol"}
+  , {CXIdxEntity_ObjCCategory, "objc-category"}
+  , {CXIdxEntity_ObjCInstanceMethod, "objc-instance-method"}
+  , {CXIdxEntity_ObjCClassMethod, "objc-class-method"}
+  , {CXIdxEntity_ObjCProperty, "objc-property"}
+  , {CXIdxEntity_ObjCIvar, "objc-ivar"}
+  , {CXIdxEntity_Enum, "enum"}
+  , {CXIdxEntity_Struct, "struct"}
+  , {CXIdxEntity_Union, "union"}
+  , {CXIdxEntity_CXXClass, "c++-class"}
+  , {CXIdxEntity_CXXNamespace, "namespace"}
+  , {CXIdxEntity_CXXNamespaceAlias, "namespace-alias"}
+  , {CXIdxEntity_CXXStaticVariable, "c++-static-var"}
+  , {CXIdxEntity_CXXStaticMethod, "c++-static-method"}
+  , {CXIdxEntity_CXXInstanceMethod, "c++-instance-method"}
+  , {CXIdxEntity_CXXConstructor, "constructor"}
+  , {CXIdxEntity_CXXDestructor, "destructor"}
+  , {CXIdxEntity_CXXConversionFunction, "conversion-func"}
+  , {CXIdxEntity_CXXTypeAlias, "type-alias"}
+  , {CXIdxEntity_CXXInterface, "c++-__interface"}
+};
+
+const std::map<CXIdxEntityCXXTemplateKind, QString> ENTITY_CXX_TEMPLATE_KIND_TO_STRING = {
+    {CXIdxEntity_NonTemplate, QString()}
+  , {CXIdxEntity_Template, "-template"}
+  , {CXIdxEntity_TemplatePartialSpecialization, "-template-partial-spec"}
+  , {CXIdxEntity_TemplateSpecialization, "-template-spec"}
+};
+
 }                                                           // anonymous namespace
 
 /// Get a human readable string of \c CXCompletionChunkKind
-QString toString(const CXCompletionChunkKind v) try
+QString toString(const CXCompletionChunkKind kind) try
 {
 #if 0
-    /// \todo This expected to work but it doesn't due undefined function ;(
+    /// \todo This expected to work but it doesn't due an undefined function ;(
     DCXString str = clang_getCompletionChunkKindSpelling(v);
     return QString(clang_getCString(str));
 #endif
-    return CHUNK_KIND_TO_STRING.at(v);
+    return CHUNK_KIND_TO_STRING.at(kind);
 }
 catch (const std::exception&)
 {
-    return QString::number(v);
+    return QString::number(kind);
 }
+
+QString toString(const CXIdxEntityKind kind) try
+{
+    return ENTITY_KIND_TO_STRING.at(kind);
+}
+catch (const std::exception&)
+{
+    return QString::number(kind);
+}
+
+QString toString(const CXIdxEntityCXXTemplateKind kind) try
+{
+    return ENTITY_CXX_TEMPLATE_KIND_TO_STRING.at(kind);
+}
+catch (const std::exception&)
+{
+    assert(!"Garbage entity kind");
+    return QString::number(kind);
+}
+
+
+location::location(const CXIdxLoc loc)
+{
+    CXIdxClientFile file;
+    unsigned line;
+    unsigned column;
+    unsigned offset;
+    clang_indexLoc_getFileLocation(loc, &file, nullptr, &line, &column, &offset);
+    if (line == 0)
+        throw exception::invalid();
+    if (file == nullptr)
+        throw exception::invalid("No index file has attached to a source location");
+    DCXString filename = {clang_getFileName(static_cast<CXFile>(file))};
+    m_file = clang_getCString(filename);
+    m_line = line;
+    m_column = column;
+    m_offset = offset;
+}
+
+location::location(const CXSourceLocation loc)
+{
+    CXFile file;
+    unsigned line;
+    unsigned column;
+    unsigned offset;
+    clang_getSpellingLocation(loc, &file, &line, &column, &offset);
+    if (file == nullptr)
+        throw exception::invalid("No file has attached to a source location");
+    DCXString filename = {clang_getFileName(static_cast<CXFile>(file))};
+    m_file = clang_getCString(filename);
+    m_line = line;
+    m_column = column;
+    m_offset = offset;
+}
+
 }                                                           // namespace kate
 #undef MAP_ENTRY
 // kate: hl C++11/Qt4;

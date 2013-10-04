@@ -54,12 +54,12 @@ QVariant DiagnosticMessagesModel::data(const QModelIndex& index, const int role)
 #endif
             // Check if requested item has a source code location
             // (m_file member must not be empty)
-            if (!m_records[index.row()].m_file.isEmpty())
+            if (!m_records[index.row()].m_location.empty())
                 // Form a compiler-like SPAM
                 return QString("%1:%2:%3: %4").arg(
-                    m_records[index.row()].m_file
-                , QString::number(m_records[index.row()].m_line)
-                , QString::number(m_records[index.row()].m_column)
+                    m_records[index.row()].m_location.file().toLocalFile()
+                , QString::number(m_records[index.row()].m_location.line())
+                , QString::number(m_records[index.row()].m_location.column())
                 , m_records[index.row()].m_text
                 );
             // Just return a message text
@@ -81,17 +81,6 @@ QVariant DiagnosticMessagesModel::data(const QModelIndex& index, const int role)
             break;
     }
     return QVariant();
-}
-
-std::tuple<KUrl, unsigned, unsigned> DiagnosticMessagesModel::getLocationByIndex(
-    const QModelIndex& index
-  ) const
-{
-    return std::make_tuple(
-        m_records[index.row()].m_file
-      , m_records[index.row()].m_line
-      , m_records[index.row()].m_column
-      );
 }
 
 void DiagnosticMessagesModel::clear()
