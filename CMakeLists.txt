@@ -145,9 +145,9 @@ set(CPACK_SOURCE_IGNORE_FILES
   )
 
 # Include CPack support
+set(CPACK_SOURCE_GENERATOR TBZ2)
 include(CPack)
 set(CPACK_GENERATOR DEB)
-set(CPACK_SOURCE_GENERATOR TBZ2)
 include(AddPackage)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "DebugFull")
@@ -234,7 +234,7 @@ use_pch_file(
 # Section: Top level installs
 #---------------------------------------------------------
 install(
-    FILES README.md LICENSE
+    FILES README.md LICENSE Changes.md
     DESTINATION ${CMAKE_INSTALL_PREFIX}/share/doc/katecpphelperplugin
     COMPONENT ${KATE_CPP_HELPER_PLUGIN_PACKAGE}
   )

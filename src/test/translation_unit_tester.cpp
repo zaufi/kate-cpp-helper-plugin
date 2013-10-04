@@ -95,6 +95,8 @@ BOOST_FIXTURE_TEST_CASE(translation_unit_test_1, fixture)
       , TranslationUnit::defaultEditingParseOptions()
       , TranslationUnit::unsaved_files_list_type()
     };
+#if 0
+    // NOTE clang >= 3.3 only! Not used anyway (for awhile)
     CXCursorAndRangeVisitor visitor_data = {
         nullptr
       , [](void* context, CXCursor c, CXSourceRange r)
@@ -108,4 +110,5 @@ BOOST_FIXTURE_TEST_CASE(translation_unit_test_1, fixture)
     kDebug(DEBUG_AREA) << "filename: " << toString(file);
     auto result = clang_findIncludesInFile(unit, file, visitor_data);
     BOOST_REQUIRE_EQUAL(result, CXResult_Success);
+#endif
 }

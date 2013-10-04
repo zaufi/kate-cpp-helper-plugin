@@ -1,18 +1,14 @@
 Changes
 =======
 
-Version (git/master)
---------------------
-
-* fix LLVM/Clang detection for Debian
-* add target to produce a ``.deb`` package (make `make kate-cpp-helper-plugin-deb-package`)
-* add option to control (a little) completions list layout
-* translation unit and completion flags reviewed (benchmarks still needed)
-
 Version 0.9.5
 -------------
 
-* close issue #10
+* add (a little) option to control completions list layout
+* translation unit and completion flags are reviewed (benchmarks still needed)
+* fix LLVM/Clang detection for Debian
+* add target to produce a ``.deb`` package (make `make kate-cpp-helper-plugin-deb-package`)
+* close issue #10: no package w/ required headers in recent Debian/Ubuntu
 
 Version 0.9.4
 -------------
