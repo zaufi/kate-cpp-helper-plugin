@@ -22,9 +22,11 @@
 
 // Project specific includes
 #include <src/clang_code_completion_item.h>
+#include <src/clang_utils.h>
 #include <src/sanitize_snippet.h>
 
 // Standard includes
+#include <KDE/KIcon>
 #include <cassert>
 #include <map>
 
@@ -35,7 +37,11 @@ const QString DEPRECATED_STR = "DEPRECATED";
 /**
  * Produce a data siutable for view
  */
-QVariant ClangCodeCompletionItem::data(const QModelIndex& index, const int role) const
+QVariant ClangCodeCompletionItem::data(
+    const QModelIndex& index
+  , const int role
+  , const bool use_prefix_column
+  ) const
 {
     assert("Sanity check" && index.isValid());
     //
@@ -52,12 +58,21 @@ QVariant ClangCodeCompletionItem::data(const QModelIndex& index, const int role)
         case KTextEditor::CodeCompletionModel::CompletionRole:
             result = completionProperty();
             break;
+        case Qt::DecorationRole:
+            if (!use_prefix_column && index.column() == KTextEditor::CodeCompletionModel::Icon)
+                result = icon();
+            break;
         case Qt::DisplayRole:
             switch (index.column())
             {
                 case KTextEditor::CodeCompletionModel::Name:
-                    result = m_text;
-                    break;
+                    if (use_prefix_column)
+                    {
+                        result = m_text;
+                        break;
+                    }
+                    // ATTENTION Fall back to a prefix handler if don't need to use
+                    // prefix column! Spaghetti? Maybe :)
                 case KTextEditor::CodeCompletionModel::Prefix:
                 {
                     auto prefix = renderPlaceholders(m_before);
@@ -75,9 +90,10 @@ QVariant ClangCodeCompletionItem::data(const QModelIndex& index, const int role)
                             case CXCursor_MacroDefinition:  prefix = QLatin1String("macro");           break;
                             default: break;
                         }
-                        result = prefix;
                     }
-                    else result = std::move(prefix);
+                    if (!use_prefix_column)
+                        prefix += " " + m_text;
+                    result = std::move(prefix);
                     break;
                 }
                 case KTextEditor::CodeCompletionModel::Postfix:
@@ -91,7 +107,7 @@ QVariant ClangCodeCompletionItem::data(const QModelIndex& index, const int role)
                 // everything would look ugly... Anyway we have groups to join
                 // completion items by parent/scope and it looks better than this feature...
                 case KTextEditor::CodeCompletionModel::Scope:
-                case KTextEditor::CodeCompletionModel::Icon:
+                    break;
                 default:
                     break;
             }
@@ -282,6 +298,54 @@ auto ClangCodeCompletionItem::getCompletionTemplate() const -> CompletionTemplat
     tpl += QLatin1String("%{cursor}");
 #endif
     return {tpl, values, is_function};
+}
+
+namespace {
+const std::map<
+    CXCursorKind
+  , const char*
+  > ICONS_MAP = {
+    // Namespace
+    {CXCursor_Namespace, "code-context"}
+  , {CXCursor_NamespaceRef, "code-context"}
+    // Class
+  , {CXCursor_ClassDecl, "code-class"}
+  , {CXCursor_ClassTemplate, "code-class"}
+    // Struct
+  , {CXCursor_StructDecl, "code-class"}
+    // Union
+  , {CXCursor_UnionDecl, "code-class"}
+    // Enum
+  , {CXCursor_EnumDecl, "code-class"}
+    // Function
+  , {CXCursor_CXXMethod, "code-function"}
+  , {CXCursor_ConversionFunction, "code-function"}
+  , {CXCursor_Destructor, "code-function"}
+  , {CXCursor_FunctionDecl, "code-function"}
+  , {CXCursor_FunctionTemplate, "code-function"}
+  , {CXCursor_MemberRef, "code-function"}
+  , {CXCursor_OverloadedDeclRef, "code-function"}
+    // Variable
+  , {CXCursor_VarDecl, "code-variable"}
+  , {CXCursor_VariableRef, "code-variable"}
+    // Data-member
+  , {CXCursor_FieldDecl, "code-variable"}
+    // TypeAlias
+  , {CXCursor_TypedefDecl, "code-typedef"}
+  , {CXCursor_TypeAliasDecl, "code-typedef"}
+  , {CXCursor_TypeRef, "code-typedef"}
+    // Template
+  , {CXCursor_TemplateRef, "code-block"}
+};
+}                                                           // anonymous namespace
+
+QVariant ClangCodeCompletionItem::icon() const
+{
+    auto it = ICONS_MAP.find(m_kind);
+    if (it != std::end(ICONS_MAP))
+        return KIcon(it->second);
+    kDebug(DEBUG_AREA) << "Item kind has no icon defined: " << toString(m_kind);
+    return QVariant();
 }
 
 }                                                           // namespace kate

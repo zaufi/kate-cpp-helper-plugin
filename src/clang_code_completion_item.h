@@ -77,8 +77,9 @@ public:
     {
     }
 
-    QVariant data(const QModelIndex&, const int) const;
+    QVariant data(const QModelIndex&, int, bool) const;
     KTextEditor::CodeCompletionModel::CompletionProperty completionProperty() const;
+    QVariant icon() const;
     const QString& parentText() const                       ///< Return a parent (scope) text to display
     {
         return m_parent;

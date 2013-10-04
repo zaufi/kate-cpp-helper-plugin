@@ -201,15 +201,17 @@ inline TranslationUnit& CppHelperPlugin::getTranslationUnitByDocument(
   , const bool is_local_requested
   )
 {
+    auto parse_options = is_local_requested
+      ? TranslationUnit::defaultEditingParseOptions()
+      : TranslationUnit::defaultExplorerParseOptions()
+      ;
     return getTranslationUnitByDocumentImpl(
         doc
       , is_local_requested ? m_local_index : m_index
       , is_local_requested
         ? &translation_units_map_type::mapped_type::first
         : &translation_units_map_type::mapped_type::second
-      , is_local_requested
-        ? TranslationUnit::defaultEditingParseOptions()
-        : TranslationUnit::defaultExplorerParseOptions()
+      , parse_options
       , is_local_requested
       );
 }

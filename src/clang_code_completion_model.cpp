@@ -287,6 +287,7 @@ QVariant ClangCodeCompletionModel::getItemData(const QModelIndex& index, int rol
     result = m_groups[index.internalId()].second.m_completions[index.row()].data(
         index
       , role
+      , m_plugin->config().usePrefixColumn()
       );
     return result;
 }
@@ -332,7 +333,7 @@ QVariant ClangCodeCompletionModel::getItemHighlightData(const QModelIndex& index
                     // Request item for text to highlight
                     auto text = m_groups[index.internalId()]
                       .second.m_completions[index.row()]
-                      .data(index, Qt::DisplayRole)
+                      .data(index, Qt::DisplayRole, m_plugin->config().usePrefixColumn())
                       .toString()
                       ;
                     // Do not waste time if nothing to highlight

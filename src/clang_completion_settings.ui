@@ -2,6 +2,14 @@
 <ui version="4.0">
  <class>CompletionSettings</class>
  <widget class="QWidget" name="CompletionSettings">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>592</width>
+    <height>379</height>
+   </rect>
+  </property>
   <property name="sizePolicy">
    <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
     <horstretch>0</horstretch>
@@ -23,8 +31,8 @@
      <property name="title">
       <string>Code Completion Options</string>
      </property>
-     <layout class="QVBoxLayout" name="verticalLayout_4">
-      <item>
+     <layout class="QGridLayout" name="gridLayout">
+      <item row="0" column="0">
        <widget class="QCheckBox" name="autoCompletions">
         <property name="toolTip">
          <string>Enable automatic completions on member access</string>
@@ -34,7 +42,7 @@
         </property>
        </widget>
       </item>
-      <item>
+      <item row="1" column="0">
        <widget class="QCheckBox" name="includeMacros">
         <property name="toolTip">
          <string>Show defined preprocessor macros in completion results</string>
@@ -44,7 +52,7 @@
         </property>
        </widget>
       </item>
-      <item>
+      <item row="0" column="1">
        <widget class="QCheckBox" name="highlightResults">
         <property name="toolTip">
          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Colorize completion items using current document's mode&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -54,16 +62,16 @@
         </property>
        </widget>
       </item>
-      <item>
-       <widget class="QCheckBox" name="cacheCompletions">
+      <item row="1" column="1">
+       <widget class="QCheckBox" name="usePrefixColumn">
         <property name="toolTip">
-         <string>Turn corresponding option of clang library. Dunno how good it is...</string>
+         <string>Show type of variable or return type of a function in a separate column in completion results list</string>
         </property>
         <property name="whatsThis">
-         <string/>
+         <string>If checked, completion results will contain return type of functions and/or variable's type in a separate column (before name), but it may makes completion list popup slightly wider. Otherwise, it will be compact and w/ith leading icon describing a completion item type.</string>
         </property>
         <property name="text">
-         <string>Cache completion results</string>
+         <string>Display type as prefix</string>
         </property>
        </widget>
       </item>
@@ -226,8 +234,6 @@
   </customwidget>
  </customwidgets>
  <tabstops>
-  <tabstop>autoCompletions</tabstop>
-  <tabstop>highlightResults</tabstop>
   <tabstop>sanitizeResults</tabstop>
   <tabstop>sanitizeRules</tabstop>
   <tabstop>addRule</tabstop>

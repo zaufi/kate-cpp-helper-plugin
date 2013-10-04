@@ -268,7 +268,7 @@ void TranslationUnit::updateUnsavedFiles(const unsaved_files_list_type& unsaved_
 QList<ClangCodeCompletionItem> TranslationUnit::completeAt(
     const int line
   , const int column
-  , const unsigned completion_falgs
+  , const unsigned completion_flags
   , const PluginConfiguration::sanitize_rules_list_type& sanitize_rules
   )
 {
@@ -282,7 +282,7 @@ QList<ClangCodeCompletionItem> TranslationUnit::completeAt(
           , unsigned(column)
           , m_unsaved_files.data()
           , m_unsaved_files.size()
-          , completion_falgs
+          , completion_flags
           )
       };
     if (!res)
@@ -639,6 +639,11 @@ unsigned TranslationUnit::defaultPCHParseOptions()
 {
     return CXTranslationUnit_Incomplete
       | CXTranslationUnit_PrecompiledPreamble
+      | CXTranslationUnit_SkipFunctionBodies
+      | CXTranslationUnit_CacheCompletionResults
+#if 0
+      | CXTranslationUnit_DetailedPreprocessingRecord
+#endif
 #if CLANG_VERSION >= 30200
       | CXTranslationUnit_ForSerialization
 #endif                                                      // CLANG_VERSION >= 30200
@@ -649,10 +654,8 @@ unsigned TranslationUnit::defaultEditingParseOptions()
 {
     return clang_defaultEditingTranslationUnitOptions()
       | CXTranslationUnit_Incomplete
-#if 0
-        /// \todo Make it configurable
+      | CXTranslationUnit_PrecompiledPreamble
       | CXTranslationUnit_CacheCompletionResults
-#endif
 #if CLANG_VERSION >= 30200
       | CXTranslationUnit_IncludeBriefCommentsInCodeCompletion
 #endif                                                      // CLANG_VERSION >= 30200
