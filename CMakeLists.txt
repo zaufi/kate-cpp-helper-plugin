@@ -130,6 +130,7 @@ configure_file(config.h.in config.h @ONLY)
 #---------------------------------------------------------
 # Section: Configure package options
 #---------------------------------------------------------
+set(CPACK_SOURCE_GENERATOR TBZ2)
 set(
     CPACK_SOURCE_PACKAGE_FILE_NAME "${PROJECT_NAME}-${VERSION_STRING}"
     CACHE INTERNAL "tarball basename"
@@ -141,11 +142,12 @@ set(CPACK_SOURCE_IGNORE_FILES
     "\\\\.gitignore$";
     "\\\\.kate-swp$";
     "\\\\.tar\\\\.gz$";
-    "^.*/\\\\.git.*$"
+    "^.*/\\\\.git.*$";
+    "\\\\.kcrash\\\\.txt$";
+    "^~.*$"
   )
 
 # Include CPack support
-set(CPACK_SOURCE_GENERATOR TBZ2)
 include(CPack)
 set(CPACK_GENERATOR DEB)
 include(AddPackage)
