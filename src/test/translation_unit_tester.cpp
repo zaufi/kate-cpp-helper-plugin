@@ -62,7 +62,7 @@ struct fixture
           ;
     }
 
-    DCXIndex m_index = {clang_createIndex(1, 1)};
+    DCXIndex m_index = {clang_createIndex(0, 1)};
     QStringList m_options;
 };
 
@@ -70,6 +70,15 @@ struct indexer_data
 {
     QString m_main_file;
 };
+
+const char* getCXIndexContainer(const CXIdxContainerInfo *info)
+{
+    CXIdxClientContainer container;
+    container = clang_index_getClientContainer(info);
+    if (!container)
+        return "[<<NULL>>]";
+    return (const char *)container;
+}
 
 }                                                           // anonymous namespace
 
@@ -94,6 +103,7 @@ BOOST_FIXTURE_TEST_CASE(translation_unit_test_0, fixture)
 
 BOOST_FIXTURE_TEST_CASE(translation_unit_test_1, fixture)
 {
+#if 0
     TranslationUnit unit = {
         m_index
       , KUrl{CMAKE_SOURCE_DIR "/src/test/data/sample.cpp"}
@@ -101,12 +111,12 @@ BOOST_FIXTURE_TEST_CASE(translation_unit_test_1, fixture)
       , TranslationUnit::defaultEditingParseOptions()
       , TranslationUnit::unsaved_files_list_type()
     };
-    DCXIndexAction action = clang_IndexAction_create(m_index);
+#endif
     IndexerCallbacks index_callbacks = {
         // abort query
         [](CXClientData client_data, void*) -> int
         {
-            auto* const self = static_cast<CppHelperPluginView*>(client_data);
+            auto* const data = static_cast<indexer_data*>(client_data);
             kDebug(DEBUG_AREA) << "CB: abort query";
             return 0;
         }
@@ -118,7 +128,7 @@ BOOST_FIXTURE_TEST_CASE(translation_unit_test_1, fixture)
         [](CXClientData client_data, CXFile file, void*) -> CXIdxClientFile
         {
             kDebug(DEBUG_AREA) << "CB: entering" << file;
-            auto* data = static_cast<indexer_data*>(client_data);
+            auto* const data = static_cast<indexer_data*>(client_data);
             data->m_main_file = toString(file);
             return static_cast<CXIdxClientFile>(file);
         }
@@ -145,8 +155,8 @@ BOOST_FIXTURE_TEST_CASE(translation_unit_test_1, fixture)
         {
             const char* name = info->entityInfo->name ? info->entityInfo->name : "anonymous";
             kDebug(DEBUG_AREA) << "CB: index declaration: name =" << name;
-            kDebug(DEBUG_AREA) << "CB: index declaration: kind =" << getEntityKindString(info->entityInfo->kind) <<
-              ' ' << getEntityTemplateKindString(info->entityInfo->templateKind);
+            kDebug(DEBUG_AREA) << "CB: index declaration: kind =" << toString(info->entityInfo->kind) <<
+              ' ' << toString(info->entityInfo->templateKind);
             kDebug(DEBUG_AREA) << "CB: index declaration: cursor:" << info->cursor;
             kDebug(DEBUG_AREA) << "CB: index declaration: semantic container:" << getCXIndexContainer(info->semanticContainer);
             kDebug(DEBUG_AREA) << "CB: index declaration: lexican container:" << getCXIndexContainer(info->lexicalContainer);
@@ -157,4 +167,24 @@ BOOST_FIXTURE_TEST_CASE(translation_unit_test_1, fixture)
         }
     };
 
+    indexer_data data;
+    std::vector<QByteArray> utf8_options;
+    std::vector<const char*> clang_options;
+    TranslationUnit::transform_command_line_args(m_options, utf8_options, clang_options);
+    DCXIndexAction action = {clang_IndexAction_create(m_index)};
+    auto result = clang_indexSourceFile(
+        action
+      , &data
+      , &index_callbacks
+      , sizeof(index_callbacks)
+        // CXIndexOpt_SuppressRedundantRefs
+      , CXIndexOpt_IndexFunctionLocalSymbols | CXIndexOpt_SkipParsedBodiesInSession | CXIndexOpt_SuppressRedundantRefs
+      , CMAKE_SOURCE_DIR "/src/test/data/sample.cpp"
+      , clang_options.data()
+      , clang_options.size()
+      , nullptr
+      , 0
+      , nullptr
+      , clang_defaultEditingTranslationUnitOptions()
+      );
 }

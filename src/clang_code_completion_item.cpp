@@ -65,37 +65,16 @@ QVariant ClangCodeCompletionItem::data(
         case Qt::DisplayRole:
             switch (index.column())
             {
+                case KTextEditor::CodeCompletionModel::Prefix:
+                    if (use_prefix_column)
+                        result = renderPrefix();
+                    break;
                 case KTextEditor::CodeCompletionModel::Name:
                     if (use_prefix_column)
-                    {
                         result = m_text;
-                        break;
-                    }
-                    // ATTENTION Fall back to a prefix handler if don't need to use
-                    // prefix column! Spaghetti? Maybe :)
-                case KTextEditor::CodeCompletionModel::Prefix:
-                {
-                    auto prefix = renderPlaceholders(m_before);
-                    if (prefix.isEmpty())
-                    {
-                        switch (m_kind)
-                        {
-                            case CXCursor_TypedefDecl:      prefix = QLatin1String("typedef");         break;
-                            case CXCursor_ClassDecl:        prefix = QLatin1String("class");           break;
-                            case CXCursor_ClassTemplate:    prefix = QLatin1String("template class");  break;
-                            case CXCursor_StructDecl:       prefix = QLatin1String("struct");          break;
-                            case CXCursor_EnumDecl:         prefix = QLatin1String("enum");            break;
-                            case CXCursor_Namespace:        prefix = QLatin1String("namespace");       break;
-                            case CXCursor_UnionDecl:        prefix = QLatin1String("union");           break;
-                            case CXCursor_MacroDefinition:  prefix = QLatin1String("macro");           break;
-                            default: break;
-                        }
-                    }
-                    if (!use_prefix_column)
-                        prefix += " " + m_text;
-                    result = std::move(prefix);
+                    else
+                        result = QString(renderPrefix() + " " + m_text);
                     break;
-                }
                 case KTextEditor::CodeCompletionModel::Postfix:
                     if (m_deprecated)
                         result = DEPRECATED_STR;
@@ -119,6 +98,27 @@ QVariant ClangCodeCompletionItem::data(
             break;
     }
     return result;
+}
+
+QString ClangCodeCompletionItem::renderPrefix() const
+{
+    auto prefix = renderPlaceholders(m_before);
+    if (prefix.isEmpty())
+    {
+        switch (m_kind)
+        {
+            case CXCursor_TypedefDecl:      prefix = QLatin1String("typedef");        break;
+            case CXCursor_ClassDecl:        prefix = QLatin1String("class");          break;
+            case CXCursor_ClassTemplate:    prefix = QLatin1String("template class"); break;
+            case CXCursor_StructDecl:       prefix = QLatin1String("struct");         break;
+            case CXCursor_EnumDecl:         prefix = QLatin1String("enum");           break;
+            case CXCursor_Namespace:        prefix = QLatin1String("namespace");      break;
+            case CXCursor_UnionDecl:        prefix = QLatin1String("union");          break;
+            case CXCursor_MacroDefinition:  prefix = QLatin1String("macro");          break;
+            default: break;
+        }
+    }
+    return prefix;
 }
 
 /// \todo This look ugly... need to invent smth clever

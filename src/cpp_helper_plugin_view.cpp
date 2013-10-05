@@ -988,70 +988,6 @@ void CppHelperPluginView::aboutToShow()
     m_what_is_this->setText(i18n("What is ..."));
 }
 
-namespace {
-const char* getEntityKindString(CXIdxEntityKind kind)
-{
-    switch (kind)
-    {
-        case CXIdxEntity_Unexposed: return "<<UNEXPOSED>>";
-        case CXIdxEntity_Typedef: return "typedef";
-        case CXIdxEntity_Function: return "function";
-        case CXIdxEntity_Variable: return "variable";
-        case CXIdxEntity_Field: return "field";
-        case CXIdxEntity_EnumConstant: return "enumerator";
-        case CXIdxEntity_ObjCClass: return "objc-class";
-        case CXIdxEntity_ObjCProtocol: return "objc-protocol";
-        case CXIdxEntity_ObjCCategory: return "objc-category";
-        case CXIdxEntity_ObjCInstanceMethod: return "objc-instance-method";
-        case CXIdxEntity_ObjCClassMethod: return "objc-class-method";
-        case CXIdxEntity_ObjCProperty: return "objc-property";
-        case CXIdxEntity_ObjCIvar: return "objc-ivar";
-        case CXIdxEntity_Enum: return "enum";
-        case CXIdxEntity_Struct: return "struct";
-        case CXIdxEntity_Union: return "union";
-        case CXIdxEntity_CXXClass: return "c++-class";
-        case CXIdxEntity_CXXNamespace: return "namespace";
-        case CXIdxEntity_CXXNamespaceAlias: return "namespace-alias";
-        case CXIdxEntity_CXXStaticVariable: return "c++-static-var";
-        case CXIdxEntity_CXXStaticMethod: return "c++-static-method";
-        case CXIdxEntity_CXXInstanceMethod: return "c++-instance-method";
-        case CXIdxEntity_CXXConstructor: return "constructor";
-        case CXIdxEntity_CXXDestructor: return "destructor";
-        case CXIdxEntity_CXXConversionFunction: return "conversion-func";
-        case CXIdxEntity_CXXTypeAlias: return "type-alias";
-        case CXIdxEntity_CXXInterface: return "c++-__interface";
-        default: assert(!"Garbage entity kind");
-    }
-    return 0;
-}
-
-const char* getEntityTemplateKindString(CXIdxEntityCXXTemplateKind kind)
-{
-    switch (kind)
-    {
-        case CXIdxEntity_NonTemplate: return "";
-        case CXIdxEntity_Template: return "-template";
-        case CXIdxEntity_TemplatePartialSpecialization:
-            return "-template-partial-spec";
-        case CXIdxEntity_TemplateSpecialization: return "-template-spec";
-        default:
-            assert(!"Garbage entity kind");
-    }
-    return 0;
-}
-
-const char* getCXIndexContainer(const CXIdxContainerInfo *info)
-{
-    CXIdxClientContainer container;
-    container = clang_index_getClientContainer(info);
-    if (!container)
-        return "[<<NULL>>]";
-    return (const char *)container;
-}
-
-
-}                                                           // anonymous namespace
-
 void CppHelperPluginView::whatIsThis()
 {
     assert(
@@ -1095,73 +1031,8 @@ void CppHelperPluginView::whatIsThis()
     DCXString usr = clang_getCursorUSR(ctx);
     kDebug(DEBUG_AREA) << "USR:" << clang_getCString(usr);
 #endif
-
-    IndexerCallbacks index_callbacks = {
-        // abort query
-        [](CXClientData client_data, void*) -> int
-        {
-            auto* const self = static_cast<CppHelperPluginView*>(client_data);
-            kDebug(DEBUG_AREA) << "CB: abort query";
-            return 0;
-        }
-      , [](CXClientData, CXDiagnosticSet, void*)
-        {
-            kDebug(DEBUG_AREA) << "CB: diagnostic";
-        }
-      , // entered main file
-        [](CXClientData client_data, CXFile file, void*) -> CXIdxClientFile
-        {
-            DCXString filename = clang_getFileName(file);
-            kDebug(DEBUG_AREA) << "CB: entering" << clang_getCString(filename);
-            return static_cast<CXIdxClientFile>(file);
-        }
-      , [](CXClientData client_data, const CXIdxIncludedFileInfo* info) -> CXIdxClientFile
-        {
-            kDebug(DEBUG_AREA) << "CB: #included file:" << info->filename;
-            return static_cast<CXIdxClientFile>(info->file);
-        }
-      , [](CXClientData client_data, const CXIdxImportedASTFileInfo* info) -> CXIdxClientASTFile
-        {
-            kDebug(DEBUG_AREA) << "CB: AST file imported";
-            return static_cast<CXIdxClientFile>(info->file);
-        }
-      , [](CXClientData client_data, void*) -> CXIdxClientContainer
-        {
-            kDebug(DEBUG_AREA) << "CB: TU started";
-            return nullptr;
-        }
-      , [](CXClientData client_data, const CXIdxDeclInfo* info)
-        {
-            const char* name = info->entityInfo->name ? info->entityInfo->name : "anonymous";
-            kDebug(DEBUG_AREA) << "CB: index declaration: name =" << name;
-            kDebug(DEBUG_AREA) << "CB: index declaration: kind =" << getEntityKindString(info->entityInfo->kind) <<
-              ' ' << getEntityTemplateKindString(info->entityInfo->templateKind);
-            kDebug(DEBUG_AREA) << "CB: index declaration: cursor:" << info->cursor;
-            kDebug(DEBUG_AREA) << "CB: index declaration: semantic container:" << getCXIndexContainer(info->semanticContainer);
-            kDebug(DEBUG_AREA) << "CB: index declaration: lexican container:" << getCXIndexContainer(info->lexicalContainer);
-        }
-      , [](CXClientData client_data, const CXIdxEntityRefInfo* info)
-        {
-            kDebug(DEBUG_AREA) << "CB: index reference";
-        }
-    };
-
-    auto index = m_plugin->localIndex();
-    CXTranslationUnit unit = m_plugin->getTranslationUnitByDocument(
-        mainWindow()->activeView()->document()
-      , false
-      );
-    DCXIndexAction action = clang_IndexAction_create(index);
-    auto result = clang_indexTranslationUnit(
-        action
-      , nullptr
-      , &index_callbacks
-      , sizeof(index_callbacks)
-      , CXIndexOpt_IndexFunctionLocalSymbols //| CXIndexOpt_SuppressRedundantRefs
-      , unit
-      );
 }
-#endif
+#endif                                                      // 0
 
 namespace details {
 struct InclusionVisitorData
@@ -1227,39 +1098,20 @@ void CppHelperPluginView::inclusionVisitor(
   , unsigned stack_size
   )
 {
-    DCXString header_name_cl = {clang_getFileName(file)};
-    const QString header_name = clang_getCString(header_name_cl);
+    const QString header_name = toString(DCXString{clang_getFileName(file)});
+    // Obtain (or assign a new) an unique header ID
     const int header_id = m_plugin->headersCache()[header_name];
-#if 0
-    kDebug(DEBUG_AREA) << "LSS:" << data->m_last_stack_size << ", CSS:" << stack_size;
-    kDebug(DEBUG_AREA) << "Visiting" << header_name << '[' << header_id << ']';
-#endif
 
-    QString included_from;
-    unsigned line = 0;
-    unsigned column = 0;
     int included_from_id = DocumentInfo::IncludeLocationData::ROOT;
+    location loc;
     if (stack_size)                                         // Is there anything on stack
     {
-        CXFile including_file;
-        // NOTE Take filename from top of stack only!
-        clang_getSpellingLocation(stack[0], &including_file, &line, &column, 0);
+        loc = {stack[0]};                                   // NOTE Take filename from top of stack only!
         // Obtain a filename and its ID in headers cache
-        const DCXString included_from_cl = {clang_getFileName(including_file)};
-        included_from = clang_getCString(included_from_cl);
-        included_from_id = m_plugin->headersCache()[included_from];
-        //
-#if 0
-        kDebug(DEBUG_AREA) << "File" << header_name << "[" << header_id <<
-          "] included from" << included_from << '[' << included_from_id <<
-          "] @" << line << ':' << column
-          ;
-#endif
-        // Kate has zero based cursor position
-        line--;
-        column--;
+        included_from_id = m_plugin->headersCache()[loc.file().toLocalFile()];
     }
-    data->m_di->addInclusionEntry({header_id, included_from_id, int(line), int(column)});
+    // NOTE Kate has zero based cursor position, so -1 is here
+    data->m_di->addInclusionEntry({header_id, included_from_id, loc.line() - 1, loc.column() - 1});
 
     QTreeWidgetItem* parent = nullptr;
     if (data->m_last_stack_size < stack_size)               // Is current stack grew relative to the last call
@@ -1268,9 +1120,6 @@ void CppHelperPluginView::inclusionVisitor(
         // We have to add one more parent
         data->m_parents.push(data->m_last_added_item);
         parent = data->m_last_added_item;
-#if 0
-        kDebug(DEBUG_AREA) << "Added new parent";
-#endif
     }
     else if (stack_size < data->m_last_stack_size)
     {
@@ -1279,17 +1128,11 @@ void CppHelperPluginView::inclusionVisitor(
             data->m_parents.pop();
         assert("Stack expected to be non empty!" && !data->m_parents.empty());
         parent = data->m_parents.top();
-#if 0
-        kDebug(DEBUG_AREA) << "Remove some parent(s)";
-#endif
     }
     else
     {
         assert("Sanity check!" && stack_size == data->m_last_stack_size);
         parent = data->m_parents.top();
-#if 0
-        kDebug(DEBUG_AREA) << "Reuse same parent";
-#endif
     }
     assert("Sanity check!" && parent);
     data->m_last_added_item = new QTreeWidgetItem(parent);

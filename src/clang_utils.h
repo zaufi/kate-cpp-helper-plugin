@@ -244,7 +244,7 @@ inline QString toString(const CXCursorKind v)
 /// Get a human readable string of \c CXFile
 inline QString toString(const CXFile file)
 {
-    return toString(clang_getFileName(file));
+    return toString(DCXString{clang_getFileName(file)});
 }
 
 /// Get a human readable string of \c CXCompletionChunkKind

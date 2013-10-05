@@ -66,7 +66,7 @@ public:
       , const bool is_deprecated = false
       )
       : m_parent(parent)
-      , m_before(before)
+      , m_before(before.trimmed())                          // types w/ '&' may have a space: kick it!
       , m_text(text)
       , m_after(after)
       , m_placeholders(placeholders)
@@ -96,6 +96,7 @@ public:
 
 private:
 
+    QString renderPrefix() const;
     QString renderPlaceholders(const QString&) const;
 
     static const int NO_OPTIONAL_PLACEHOLDERS = -1;

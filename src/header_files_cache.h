@@ -36,10 +36,12 @@
 namespace kate {
 
 /**
- * \brief [Type brief class description here]
+ * \brief Bidirectinal mapping of \c QString to unique integer ID
  *
- * [More detailed description here]
- *
+ * To resolve a string into ID one can use \c operator[].
+ * In case of absent (yet) string an unique ID will be assigned
+ * and returned. To resolve ID into a string here is an
+ * overload of \c operator[] w/ \c int parameter.
  */
 class HeaderFilesCache
 {
@@ -104,8 +106,8 @@ private:
 inline const QString HeaderFilesCache::operator[](int id) const
 {
     QString result;
-    index_type::index<int_idx>::type::const_iterator it = m_cache.get<int_idx>().find(id);
-    if (it != m_cache.get<int_idx>().end())
+    auto it = m_cache.get<int_idx>().find(id);
+    if (it != end(m_cache.get<int_idx>()))
         result = it->m_filename;
     return result;
 }
@@ -118,9 +120,9 @@ inline const QString HeaderFilesCache::operator[](int id) const
  */
 inline int HeaderFilesCache::operator[](const QString& filename) const
 {
-    int result = NOT_FOUND;
-    index_type::index<string_idx>::type::iterator it = m_cache.get<string_idx>().find(filename);
-    if (it != m_cache.get<string_idx>().end())
+    auto result = int(NOT_FOUND);
+    auto it = m_cache.get<string_idx>().find(filename);
+    if (it != end(m_cache.get<string_idx>()))
     {
         result = it->m_id;
     }
@@ -135,9 +137,9 @@ inline int HeaderFilesCache::operator[](const QString& filename) const
  */
 inline int HeaderFilesCache::operator[](const QString& filename)
 {
-    int result = NOT_FOUND;
-    index_type::index<string_idx>::type::iterator it = m_cache.get<string_idx>().find(filename);
-    if (it == m_cache.get<string_idx>().end())
+    auto result = int(NOT_FOUND);
+    auto it = m_cache.get<string_idx>().find(filename);
+    if (it == end(m_cache.get<string_idx>()))
     {
         result = int(m_cache.size());
         m_cache.insert({filename, result});

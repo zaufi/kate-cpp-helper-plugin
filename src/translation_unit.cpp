@@ -649,5 +649,28 @@ unsigned TranslationUnit::defaultExplorerParseOptions()
     return CXTranslationUnit_Incomplete | CXTranslationUnit_SkipFunctionBodies;
 }
 
+/**
+ * Transform comman line options into a form compatible for clang API
+ *
+ * \note Too fraking much actions for that simple task...
+ * Definitely Qt doesn't suitable for that sort of tasks...
+ */
+void TranslationUnit::transform_command_line_args(
+    QStringList& input
+  , std::vector<QByteArray>& args
+  , std::vector<const char*>& pointers
+  )
+{
+    args.resize(input.size());
+    pointers.resize(input.size(), nullptr);
+    int opt_idx = 0;
+    for (const auto& o : input)
+    {
+        args[opt_idx] = o.toUtf8();
+        pointers[opt_idx] = args[opt_idx].constData();
+        opt_idx++;
+    }
+}
+
 }                                                           // namespace kate
 // kate: hl C++11/Qt4;

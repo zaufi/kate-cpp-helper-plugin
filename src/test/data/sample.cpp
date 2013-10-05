@@ -26,12 +26,64 @@
  */
 
 // Project specific includes
+#include <src/test/data/sample.h>
+#include <src/test/data/other.h>
 
 // Standard includes
-#include <iostream>
+// #include <iostream>
+
+template <typename... Args>
+long bar(Args... args)
+{
+    long sz = sizeof...(args);
+    return sz;
+}
+
+namespace details {
+int foo() {return 0;}
+}                                                           // namespace details
+
+namespace {
+struct zaq
+{
+    zaq()
+    {
+        std::cout << __PRETTY_FUNCTION__ << std::endl;
+    }
+    ~zaq()
+    {
+        std::cout << __PRETTY_FUNCTION__ << std::endl;
+    }
+    zaq(const zaq&)
+    {
+        std::cout << __PRETTY_FUNCTION__ << std::endl;
+    }
+    zaq(zaq&&)
+    {
+        std::cout << __PRETTY_FUNCTION__ << std::endl;
+    }
+    zaq& operator=(const zaq& zzz)
+    {
+        std::cout << __PRETTY_FUNCTION__ << std::endl;
+    }
+    zaq& operator=(zaq&&)
+    {
+        std::cout << __PRETTY_FUNCTION__ << std::endl;
+    }
+};
+    zaq& zaq::operator=(zaq&& qqq)
+    {
+        std::cout << __PRETTY_FUNCTION__ << std::endl;
+    }
+
+}                                                           // anonymous namespace
+
+long a = 123;
 
 int main()
 {
+#if 0
     std::cout << __PRETTY_FUNCTION__ << std::endl;
-    return 0;
+#endif
+    return bar(1, 'a', nullptr) + details::foo();
 }

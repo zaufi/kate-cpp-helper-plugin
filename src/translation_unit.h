@@ -124,6 +124,12 @@ public:
     static unsigned defaultPCHParseOptions();
     static unsigned defaultEditingParseOptions();
     static unsigned defaultExplorerParseOptions();
+    /// \todo How to beutify this ugly interface?
+    static void transform_command_line_args(
+        QStringList&
+      , std::vector<QByteArray>&
+      , std::vector<const char*>&
+      );
 
 private:
     void updateDiagnostic();
