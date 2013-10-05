@@ -178,7 +178,8 @@ BOOST_FIXTURE_TEST_CASE(translation_unit_test_1, fixture)
       , &index_callbacks
       , sizeof(index_callbacks)
         // CXIndexOpt_SuppressRedundantRefs
-      , CXIndexOpt_IndexFunctionLocalSymbols | CXIndexOpt_SkipParsedBodiesInSession | CXIndexOpt_SuppressRedundantRefs
+        // CXIndexOpt_SkipParsedBodiesInSession
+      , CXIndexOpt_IndexFunctionLocalSymbols | CXIndexOpt_SuppressRedundantRefs
       , CMAKE_SOURCE_DIR "/src/test/data/sample.cpp"
       , clang_options.data()
       , clang_options.size()
