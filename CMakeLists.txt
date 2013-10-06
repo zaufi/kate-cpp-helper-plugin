@@ -214,7 +214,6 @@ set(DOXYGEN_TAGFILES "~/.cache/doxygen/libstdc++.tag=http://gcc.gnu.org/onlinedo
 set(DOXYGEN_PROJECT_NUMBER ${VERSION_STRING})
 include(DefineDoxyDocsTargetIfPossible)
 
-set(USE_PRAGMA_ONCE ON)
 include(DefineSkeletonGenerationTargetsIfPossible)
 define_skeleton_generation_targets(
     PROJECT_LICENSE GPL
@@ -225,6 +224,7 @@ define_skeleton_generation_targets(
     IMPL_EXT "cpp"
     ENABLE_TESTS
     USE_CAMEL_STYLE
+    USE_PRAGMA_ONCE
   )
 
 include(UsePCHFile)

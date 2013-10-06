@@ -1,59 +1,62 @@
 /**
  * \file
  *
- * \brief Some helpers to deal w/ clang API
+ * \brief Class \c kate::clang::to_string (implementation)
  *
- * \date Mon Nov 19 04:31:41 MSK 2012 -- Initial design
+ * \date Sun Oct  6 23:31:48 MSK 2013 -- Initial design
  */
 /*
+ * Copyright (C) 2011-2013 Alex Turbov, all rights reserved.
+ * This is free software. It is licensed for use, modification and
+ * redistribution under the terms of the GNU General Public License,
+ * version 3 or later <http://gnu.org/licenses/gpl.html>
+ *
  * KateCppHelperPlugin is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
  * Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * KateCppHelperPlugin is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License along
  * with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 // Project specific includes
-#include <src/clang_utils.h>
+#include <src/clang/to_string.h>
 
 // Standard includes
 #include <boost/lexical_cast.hpp>
 #include <cassert>
 #include <map>
 
-#define MAP_ENTRY(x) {x, #x}
-
-namespace kate { namespace {
+namespace kate { namespace clang { namespace {
 
 const std::map<CXCompletionChunkKind, const char*> CHUNK_KIND_TO_STRING = {
-    MAP_ENTRY(CXCompletionChunk_Optional)
-  , MAP_ENTRY(CXCompletionChunk_TypedText)
-  , MAP_ENTRY(CXCompletionChunk_Text)
-  , MAP_ENTRY(CXCompletionChunk_Placeholder)
-  , MAP_ENTRY(CXCompletionChunk_Informative)
-  , MAP_ENTRY(CXCompletionChunk_CurrentParameter)
-  , MAP_ENTRY(CXCompletionChunk_LeftParen)
-  , MAP_ENTRY(CXCompletionChunk_RightParen)
-  , MAP_ENTRY(CXCompletionChunk_LeftBracket)
-  , MAP_ENTRY(CXCompletionChunk_RightBracket)
-  , MAP_ENTRY(CXCompletionChunk_LeftBrace)
-  , MAP_ENTRY(CXCompletionChunk_RightBrace)
-  , MAP_ENTRY(CXCompletionChunk_LeftAngle)
-  , MAP_ENTRY(CXCompletionChunk_RightAngle)
-  , MAP_ENTRY(CXCompletionChunk_Comma)
-  , MAP_ENTRY(CXCompletionChunk_ResultType)
-  , MAP_ENTRY(CXCompletionChunk_Colon)
-  , MAP_ENTRY(CXCompletionChunk_SemiColon)
-  , MAP_ENTRY(CXCompletionChunk_Equal)
-  , MAP_ENTRY(CXCompletionChunk_HorizontalSpace)
-  , MAP_ENTRY(CXCompletionChunk_VerticalSpace)
+    {CXCompletionChunk_Optional, "Optional"}
+  , {CXCompletionChunk_TypedText, "TypedText"}
+  , {CXCompletionChunk_Text, "Text"}
+  , {CXCompletionChunk_Placeholder, "Placeholder"}
+  , {CXCompletionChunk_Informative, "Informative"}
+  , {CXCompletionChunk_CurrentParameter, "CurrentParameter"}
+  , {CXCompletionChunk_LeftParen, "LeftParen"}
+  , {CXCompletionChunk_RightParen, "RightParen"}
+  , {CXCompletionChunk_LeftBracket, "LeftBracket"}
+  , {CXCompletionChunk_RightBracket, "RightBracket"}
+  , {CXCompletionChunk_LeftBrace, "LeftBrace"}
+  , {CXCompletionChunk_RightBrace, "RightBrace"}
+  , {CXCompletionChunk_LeftAngle, "LeftAngle"}
+  , {CXCompletionChunk_RightAngle, "RightAngle"}
+  , {CXCompletionChunk_Comma, "Comma"}
+  , {CXCompletionChunk_ResultType, "ResultType"}
+  , {CXCompletionChunk_Colon, "Colon"}
+  , {CXCompletionChunk_SemiColon, "SemiColon"}
+  , {CXCompletionChunk_Equal, "Equal"}
+  , {CXCompletionChunk_HorizontalSpace, "HorizontalSpace"}
+  , {CXCompletionChunk_VerticalSpace, "VerticalSpace"}
 };
 
 const std::map<CXIdxEntityKind, const char*> ENTITY_KIND_TO_STRING = {
@@ -94,7 +97,7 @@ const std::map<CXIdxEntityCXXTemplateKind, const char*> ENTITY_CXX_TEMPLATE_KIND
 };
 
 const std::map<CXLinkageKind, const char*> LINKAGE_KIND_TO_STRING = {
-    {CXLinkage_Invalid, "<invliad>"}
+    {CXLinkage_Invalid, "<invalid>"}
   , {CXLinkage_NoLinkage, ""}
   , {CXLinkage_Internal, "int"}
   , {CXLinkage_UniqueExternal, "uniq-ext"}
@@ -179,41 +182,4 @@ catch (const std::exception&)
     return boost::lexical_cast<std::string>(kind);
 }
 
-
-location::location(const CXIdxLoc loc)
-{
-    CXIdxClientFile file;
-    unsigned line;
-    unsigned column;
-    unsigned offset;
-    clang_indexLoc_getFileLocation(loc, &file, nullptr, &line, &column, &offset);
-    if (line == 0)
-        throw exception::invalid();
-    if (file == nullptr)
-        throw exception::invalid("No index file has attached to a source location");
-    DCXString filename = {clang_getFileName(static_cast<CXFile>(file))};
-    m_file = clang_getCString(filename);
-    m_line = line;
-    m_column = column;
-    m_offset = offset;
-}
-
-location::location(const CXSourceLocation loc)
-{
-    CXFile file;
-    unsigned line;
-    unsigned column;
-    unsigned offset;
-    clang_getSpellingLocation(loc, &file, &line, &column, &offset);
-    if (file == nullptr)
-        throw exception::invalid("No file has attached to a source location");
-    DCXString filename = {clang_getFileName(static_cast<CXFile>(file))};
-    m_file = clang_getCString(filename);
-    m_line = line;
-    m_column = column;
-    m_offset = offset;
-}
-
-}                                                           // namespace kate
-#undef MAP_ENTRY
-// kate: hl C++11/Qt4;
+}}                                                          // namespace clang, kate

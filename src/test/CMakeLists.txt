@@ -7,9 +7,9 @@ set(UNIT_TESTS_SOURCES
     utils_tester.cpp
     ${CMAKE_SOURCE_DIR}/src/utils.cpp
     header_files_cache_tester.cpp
-    ${CMAKE_SOURCE_DIR}/src/clang_utils.cpp
     ${CMAKE_SOURCE_DIR}/src/translation_unit.cpp
     translation_unit_tester.cpp
+    ${CLANG_HELPERS_SOURCES}
   )
 
 # Unit tests executable
@@ -28,8 +28,8 @@ target_link_libraries(
 # Sample indexer to play with
 add_executable(
     indexing_test
-    ${CMAKE_SOURCE_DIR}/src/clang_utils.cpp
     indexing_test.cpp
+    ${CLANG_HELPERS_SOURCES}
   )
 
 target_link_libraries(

@@ -1,11 +1,15 @@
-# kate: hl cmake;
-
 configure_file(config.h.in config.h)
 configure_file(katecpphelperplugin.desktop.in katecpphelperplugin.desktop)
 
+# TODO Make a separate library form this sources
+set(
+    CLANG_HELPERS_SOURCES
+    ${CMAKE_SOURCE_DIR}/src/clang/location.cpp
+    ${CMAKE_SOURCE_DIR}/src/clang/to_string.cpp
+  )
+
 set(KATE_CPP_HELPER_PLUGIN_SOURCES
     utils.cpp
-    clang_utils.cpp
     sanitize_snippet.cpp
     plugin_configuration.cpp
     document_info.cpp
@@ -19,6 +23,7 @@ set(KATE_CPP_HELPER_PLUGIN_SOURCES
     cpp_helper_plugin_config_page.cpp
     cpp_helper_plugin_view.cpp
     cpp_helper_plugin.cpp
+    ${CLANG_HELPERS_SOURCES}
   )
 
 kde4_add_ui_files(

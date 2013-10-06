@@ -27,7 +27,7 @@
 
 // Project specific includes
 #include <src/translation_unit.h>
-#include <src/clang_utils.h>
+#include <src/clang/disposable.h>
 #include <config.h>
 
 // Standard includes
@@ -63,7 +63,7 @@ struct fixture
           ;
     }
 
-    DCXIndex m_index = {clang_createIndex(0, 1)};
+    clang::DCXIndex m_index = {clang_createIndex(0, 1)};
     QStringList m_options;
 };
 

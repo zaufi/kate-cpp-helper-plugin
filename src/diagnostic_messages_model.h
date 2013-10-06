@@ -29,7 +29,7 @@
 # define __SRC__DIAGNOSTIC_MESSAGES_MODEL_HH__
 
 // Project specific includes
-# include <src/clang_utils.h>
+# include <src/clang/location.h>
 
 // Standard includes
 # include <QAbstractListModel>
@@ -65,14 +65,14 @@ public:
           , error
           , cutset
         };
-        location m_location;                                ///< Location in source code
+        clang::location m_location;                         ///< Location in source code
         QString m_text;                                     ///< Diagnostic message text
         type m_type;                                        ///< Type of the record
 
         /// \c record class must be default constructible
         Record() = default;
         /// Make a \c record from parts
-        Record(location&&, QString&&, type) noexcept;
+        Record(clang::location&&, QString&&, type) noexcept;
         /// Make a \c record w/ message and given type (and empty location)
         Record(QString&&, type) noexcept;
         /// Move ctor
@@ -88,7 +88,7 @@ public:
     /// Default constructor
     DiagnosticMessagesModel() = default;
 
-    location getLocationByIndex(const QModelIndex&) const;
+    clang::location getLocationByIndex(const QModelIndex&) const;
 
     /// \name QAbstractTableModel interface
     //@{
@@ -123,7 +123,7 @@ inline DiagnosticMessagesModel::Record::Record(QString&& text, Record::type type
 }
 
 inline DiagnosticMessagesModel::Record::Record(
-    location&& loc
+    clang::location&& loc
   , QString&& text
   , const Record::type type
   ) noexcept
@@ -152,7 +152,7 @@ inline auto DiagnosticMessagesModel::Record::operator=(Record&& other) noexcept 
 }
 
 
-inline location DiagnosticMessagesModel::getLocationByIndex(const QModelIndex& index) const
+inline clang::location DiagnosticMessagesModel::getLocationByIndex(const QModelIndex& index) const
 {
     return m_records[index.row()].m_location;
 }

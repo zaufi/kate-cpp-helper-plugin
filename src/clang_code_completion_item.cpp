@@ -22,7 +22,7 @@
 
 // Project specific includes
 #include <src/clang_code_completion_item.h>
-#include <src/clang_utils.h>
+#include <src/clang/to_string.h>
 #include <src/sanitize_snippet.h>
 
 // Standard includes
@@ -344,7 +344,7 @@ QVariant ClangCodeCompletionItem::icon() const
     auto it = ICONS_MAP.find(m_kind);
     if (it != std::end(ICONS_MAP))
         return KIcon(it->second);
-    kDebug(DEBUG_AREA) << "Item kind has no icon defined: " << toString(m_kind);
+    kDebug(DEBUG_AREA) << "Item kind has no icon defined: " << clang::toString(m_kind);
     return QVariant();
 }
 

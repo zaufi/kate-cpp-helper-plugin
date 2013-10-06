@@ -24,8 +24,8 @@
 # define __SRC__INCLUDE_HELPER_PLUGIN_HH__
 
 // Project specific includes
-# include <src/clang_utils.h>
 # include <src/plugin_configuration.h>
+# include <src/clang/disposable.h>
 # include <src/translation_unit.h>
 # include <src/header_files_cache.h>
 
@@ -143,7 +143,7 @@ private:
     void updateDirWatcher(const QString&);
     TranslationUnit& getTranslationUnitByDocumentImpl(
         KTextEditor::Document*
-      , DCXIndex&
+      , clang::DCXIndex&
       , std::unique_ptr<TranslationUnit> translation_units_map_type::mapped_type::*
       , const unsigned
       , const bool
@@ -155,9 +155,9 @@ private:
     /// read from application's config
     PluginConfiguration m_config;
     /// Clang-C index instance used by code completer
-    DCXIndex m_local_index;
+    clang::DCXIndex m_local_index;
     /// Clang-C index instance used by \c #include explorer
-    DCXIndex m_index;
+    clang::DCXIndex m_index;
     /// A map of \c KTextEditor::Document pointer to \c DocumentInfo
     doc_info_type m_doc_info;
     /// Directory watcher to monitor configured directories

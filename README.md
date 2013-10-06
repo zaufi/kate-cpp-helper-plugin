@@ -178,7 +178,7 @@ TODO
 * <del>Clean `std::enable_if` and `boost::enable_if` from return value and parameters</del> [use sanitizers]
 * Use compilation database if possible. [what to do w/ headers which are not in there?]
 * Auto generate doxygen documentation for functions from definition -- just skeleton
-  w/ parameters and return type.
+  w/ parameters and return type. (maybe better to implement as Python plugin for kate?)
 * Enable code autocompletion (configurable by checkbox)... but how to deal w/ really heavy project?
   Nowadays for one of my current project it took ~8sec to show completions (even with PCH) :-(
   <del>So, definitely there should be possible to turn code autocompleter off</del> [done]
@@ -193,13 +193,15 @@ TODO
 * Add a bunch of default sanitizer rules
 * Add import/export sanitizer rules
 * Show some diagnostic from sanitizer
-* Colorize and group diagnostic messages
-* Add icons to completion types
+* Colorize and group diagnostic messages [partially done]
+* <del>Add icons to completion types</del> [done for prefix-less layout]
 * Get/show list of possible exceptions in particular function call
 * Highlight interior of user specified `#ifdefs` (like `__linux__`, `__WIN32__`, etc) w/ a user specified color
 * Try to get a location for completion item and show it as suffix in a completion list
-* Add ptr/ref/const/etc to a type under cursor (by hot-key)
+* Add ptr/ref/const/etc to a type under cursor (by a hot-key). maybe better to implement as Python plugin for kate?
 * Show a real type of typedefs (as a tooltip?)
+* Render class layout according sizeof/align of of all bases and members
+* Provide Python bindings to indexing and C++ parsing, so they can be used from kate/pate plugins
 
 See Also
 ========

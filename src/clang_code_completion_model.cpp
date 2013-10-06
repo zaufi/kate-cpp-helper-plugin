@@ -22,7 +22,6 @@
 
 // Project specific includes
 #include <src/clang_code_completion_model.h>
-#include <src/clang_utils.h>
 #include <src/cpp_helper_plugin.h>
 #include <src/document_proxy.h>
 #include <src/diagnostic_messages_model.h>
@@ -104,7 +103,7 @@ void ClangCodeCompletionModel::completionInvoked(
         // Show some SPAM in a tool view
         m_diagnostic_model.append(
             DiagnosticMessagesModel::Record(
-                location{doc->url(), range.start().line() + 1, range.start().column() + 1}
+                clang::location{doc->url(), range.start().line() + 1, range.start().column() + 1}
               , "Completion point"
               , DiagnosticMessagesModel::Record::type::debug
               )

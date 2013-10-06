@@ -498,7 +498,7 @@ DocumentInfo& CppHelperPlugin::getDocumentInfo(KTextEditor::Document* doc)
  */
 TranslationUnit& CppHelperPlugin::getTranslationUnitByDocumentImpl(
     KTextEditor::Document* doc
-  , DCXIndex& index
+  , clang::DCXIndex& index
   , std::unique_ptr<TranslationUnit> translation_units_map_type::mapped_type::* unit_offset
   , const unsigned parse_options
   , const bool use_pch

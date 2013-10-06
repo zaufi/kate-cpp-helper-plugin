@@ -26,7 +26,10 @@
  */
 
 // Project specific includes
-#include <src/clang_utils.h>
+#include <src/clang/disposable.h>
+#include <src/clang/kind_of.h>
+#include <src/clang/location.h>
+#include <src/clang/to_string.h>
 #include <config.h>
 
 // Standard includes
@@ -38,6 +41,7 @@
 #include <string>
 
 using namespace kate;
+using namespace kate::clang;
 
 std::vector<const char*> PARSE_OPTIONS = {
     "-x", "c++"
@@ -116,13 +120,18 @@ struct indexer_data
           << "     USR: " << (info->USR ? info->USR : "<no-USR>") << std::endl
           ;
         out_cursor(info->cursor);
+        //
+        auto type = clang_getCursorType(info->cursor);
+        std::cout << "    type: " << to_string(DCXString{clang_getTypeSpelling(type)}) << std::endl;
         /// \todo Show attributes
     }
 
     void out_base_class(const int n, const CXIdxEntityInfo* info)
     {
         auto kind = kind_of(*info);
-        std::cout << "     base " << n << ": " << to_string(kind) << (info->name ? info->name : "<null>") << std::endl;
+        std::cout << "     base " << n << ": " << to_string(kind) << ' '
+          << (info->name ? info->name : "<null>")
+          << std::endl;
     }
 };
 
@@ -170,7 +179,8 @@ CXIdxClientFile on_include_file(CXClientData client_data, const CXIdxIncludedFil
 CXIdxClientASTFile on_include_ast_file(CXClientData client_data, const CXIdxImportedASTFileInfo* info)
 {
     auto* const data = static_cast<indexer_data*>(client_data);
-    data->out(info->file) << "Importing AST file at line " << location(info->loc).line() << std::endl;
+    data->out(info->file) << "Importing AST file at line "
+      << location(info->loc).line() << std::endl;
     return static_cast<CXIdxClientFile>(info->file);
 }
 

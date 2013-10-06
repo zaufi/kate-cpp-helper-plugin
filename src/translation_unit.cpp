@@ -24,7 +24,8 @@
 
 // Project specific includes
 #include <src/translation_unit.h>
-#include <src/clang_utils.h>
+#include <src/clang/disposable.h>
+#include <src/clang/to_string.h>
 #include <src/sanitize_snippet.h>
 
 // Standard includes
@@ -54,14 +55,14 @@ void debugShowCompletionResult(
 {
     kDebug(DEBUG_AREA) << ">>> Completion " << i
         << ", priority " << priority
-        << ", kind " << toString(cursor_kind).toUtf8().constData();
+        << ", kind " << clang::toString(cursor_kind).toUtf8().constData();
 
     // Show info about parent context
     CXCursorKind parent_ck;
-    const DCXString parent = {clang_getCompletionParent(str, &parent_ck)};
+    const clang::DCXString parent = {clang_getCompletionParent(str, &parent_ck)};
     const auto parent_str = clang_getCString(parent);
     kDebug(DEBUG_AREA) << "  parent: " << (parent_str ? parent_str : "<none>")
-      << ',' << toString(parent_ck).toUtf8().constData();
+      << ',' << clang::toString(parent_ck).toUtf8().constData();
 
     // Show individual chunks
     for (unsigned ci = 0, cn = clang_getNumCompletionChunks(str); ci < cn; ++ci)
@@ -69,27 +70,29 @@ void debugShowCompletionResult(
         auto kind = clang_getCompletionChunkKind(str, ci);
         if (kind == CXCompletionChunk_Optional)
         {
-            kDebug(DEBUG_AREA) << "  chunk [" << i << ':' << ci << "]: " << toString(kind).toUtf8().constData();
+            kDebug(DEBUG_AREA) << "  chunk [" << i << ':' << ci << "]: "
+              << clang::toString(kind).toUtf8().constData();
             auto ostr = clang_getCompletionChunkCompletionString(str, ci);
             for (unsigned oci = 0, ocn = clang_getNumCompletionChunks(ostr); oci < ocn; ++oci)
             {
                 auto okind = clang_getCompletionChunkKind(ostr, oci);
-                DCXString otext_str = {clang_getCompletionChunkText(ostr, oci)};
+                clang::DCXString otext_str = {clang_getCompletionChunkText(ostr, oci)};
                 kDebug(DEBUG_AREA) << "  chunk [" << i << ':' << ci << ':' << oci << "]: "
-                  << toString(okind).toUtf8().constData()
+                  << clang::toString(okind).toUtf8().constData()
                   << ", text=" << QString(clang_getCString(otext_str));
                   ;
             }
         }
         else
         {
-            DCXString text_str = {clang_getCompletionChunkText(str, ci)};
-            kDebug(DEBUG_AREA) << "  chunk [" << i << ':' << ci << "]: " << toString(kind).toUtf8().constData()
+            clang::DCXString text_str = {clang_getCompletionChunkText(str, ci)};
+            kDebug(DEBUG_AREA) << "  chunk [" << i << ':' << ci << "]: "
+              << clang::toString(kind).toUtf8().constData()
               << ", text=" << QString(clang_getCString(text_str));
         }
     }
 #if CLANG_VERSION >= 30200
-    DCXString comment_str = {clang_getCompletionBriefComment(str)};
+    clang::DCXString comment_str = {clang_getCompletionBriefComment(str)};
     kDebug(DEBUG_AREA) << "  comment:" << QString(clang_getCString(comment_str));
 #endif                                                      // CLANG_VERSION >= 30200
 
@@ -239,11 +242,14 @@ TranslationUnit::TranslationUnit(TranslationUnit&& other) noexcept
 
 TranslationUnit& TranslationUnit::operator=(TranslationUnit&& other) noexcept
 {
-    m_unsaved_files_utf8 = std::move(other.m_unsaved_files_utf8);
-    m_unsaved_files = std::move(other.m_unsaved_files);
-    m_filename.swap(other.m_filename);
-    m_unit = other.m_unit;
-    other.m_unit = nullptr;
+    if (&other != this)
+    {
+        m_unsaved_files_utf8 = std::move(other.m_unsaved_files_utf8);
+        m_unsaved_files = std::move(other.m_unsaved_files);
+        m_filename.swap(other.m_filename);
+        m_unit = other.m_unit;
+        other.m_unit = nullptr;
+    }
     return *this;
 }
 
@@ -274,7 +280,7 @@ QList<ClangCodeCompletionItem> TranslationUnit::completeAt(
 {
     QList<ClangCodeCompletionItem> completions;
 
-    DCXCodeCompleteResults res = {
+    clang::DCXCodeCompleteResults res = {
         clang_codeCompleteAt(
             m_unit
           , m_filename.constData()
@@ -297,7 +303,7 @@ QList<ClangCodeCompletionItem> TranslationUnit::completeAt(
     // Collect some diagnostic SPAM
     for (unsigned i = 0; i < clang_codeCompleteGetNumDiagnostics(res); ++i)
     {
-        DCXDiagnostic diag = {clang_codeCompleteGetDiagnostic(res, i)};
+        clang::DCXDiagnostic diag = {clang_codeCompleteGetDiagnostic(res, i)};
         appendDiagnostic(diag);
     }
 
@@ -348,7 +354,7 @@ QList<ClangCodeCompletionItem> TranslationUnit::completeAt(
           )
         {
             auto kind = clang_getCompletionChunkKind(str, j);
-            DCXString text_str = {clang_getCompletionChunkText(str, j)};
+            clang::DCXString text_str = {clang_getCompletionChunkText(str, j)};
             QString text = clang_getCString(text_str);
             switch (kind)
             {
@@ -389,7 +395,7 @@ QList<ClangCodeCompletionItem> TranslationUnit::completeAt(
                       ; ++oci
                       )
                     {
-                        DCXString otext_str = {clang_getCompletionChunkText(ostr, oci)};
+                        clang::DCXString otext_str = {clang_getCompletionChunkText(ostr, oci)};
                         QString otext{clang_getCString(otext_str)};
                         // Pipe given piece of text through sanitizer
                         auto p = sanitize(otext, sanitize_rules);
@@ -485,7 +491,7 @@ QList<ClangCodeCompletionItem> TranslationUnit::completeAt(
 QString TranslationUnit::makeParentText(CXCompletionString str, const CXCursorKind cur_kind)
 {
     CXCursorKind parent_ck;
-    const DCXString parent_clstr = {clang_getCompletionParent(str, &parent_ck)};
+    const clang::DCXString parent_clstr = {clang_getCompletionParent(str, &parent_ck)};
     const auto parent_cstr = clang_getCString(parent_clstr);
     if (parent_cstr)
     {
@@ -586,7 +592,7 @@ void TranslationUnit::appendDiagnostic(const CXDiagnostic& diag)
     }
 
     // Get location
-    location loc;
+    clang::location loc;
     /// \attention \c Notes have no location attached!?
     if (severity != CXDiagnostic_Note)
     {
@@ -603,7 +609,7 @@ void TranslationUnit::appendDiagnostic(const CXDiagnostic& diag)
     // Get diagnostic text and form a new diagnostic record
     m_last_diagnostic_messages.emplace_back(
         std::move(loc)
-      , toString(clang_getDiagnosticSpelling(diag))
+      , clang::toString(clang_getDiagnosticSpelling(diag))
       , type
       );
 }
@@ -612,7 +618,7 @@ void TranslationUnit::updateDiagnostic()
 {
     for (unsigned i = 0, last = clang_getNumDiagnostics(m_unit); i < last; ++i)
     {
-        DCXDiagnostic diag = {clang_getDiagnostic(m_unit, i)};
+        clang::DCXDiagnostic diag = {clang_getDiagnostic(m_unit, i)};
         appendDiagnostic(diag);
     }
 }

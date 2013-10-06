@@ -22,6 +22,8 @@
 
 // Project specific includes
 #include <src/cpp_helper_plugin_view.h>
+#include <src/clang/location.h>
+#include <src/clang/to_string.h>
 #include <src/cpp_helper_plugin.h>
 #include <src/choose_from_list_dialog.h>
 #include <src/clang_code_completion_model.h>
@@ -1025,10 +1027,10 @@ void CppHelperPluginView::whatIsThis()
     CXCursor lpctx = clang_getCursorLexicalParent(ctx);
     kDebug(DEBUG_AREA) << "Cursor of lexical parent: " << lpctx;
 
-    DCXString comment = clang_Cursor_getRawCommentText(ctx);
+    clang::DCXString comment = clang_Cursor_getRawCommentText(ctx);
     kDebug(DEBUG_AREA) << "Associated comment:" << clang_getCString(comment);
 
-    DCXString usr = clang_getCursorUSR(ctx);
+    clang::DCXString usr = clang_getCursorUSR(ctx);
     kDebug(DEBUG_AREA) << "USR:" << clang_getCString(usr);
 #endif
 }
@@ -1098,12 +1100,12 @@ void CppHelperPluginView::inclusionVisitor(
   , unsigned stack_size
   )
 {
-    const QString header_name = toString(DCXString{clang_getFileName(file)});
+    const QString header_name = clang::toString(clang::DCXString{clang_getFileName(file)});
     // Obtain (or assign a new) an unique header ID
     const int header_id = m_plugin->headersCache()[header_name];
 
     int included_from_id = DocumentInfo::IncludeLocationData::ROOT;
-    location loc;
+    clang::location loc;
     if (stack_size)                                         // Is there anything on stack
     {
         loc = {stack[0]};                                   // NOTE Take filename from top of stack only!
