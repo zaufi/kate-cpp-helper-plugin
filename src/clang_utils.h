@@ -30,7 +30,9 @@
 # include <KDE/KUrl>
 # include <QtCore/QString>
 # include <QtCore/QDebug>
+# include <ostream>
 # include <stdexcept>
+# include <string>
 
 namespace kate {
 /// RAII helper to release various clang resources
@@ -112,6 +114,7 @@ public:
     location(KUrl&&, int, int);                             ///< Build a location instance from components
     location(const CXIdxLoc);                               ///< Construct from \c CXIdxLoc
     location(const CXSourceLocation);                       ///< Construct from \c CXSourceLocation
+    explicit location(const CXCursor&);                     ///< Construct from \c CXCursor
     location(location&&) noexcept;                          ///< Move ctor
     location& operator=(location&&) noexcept;               ///< Move-assign operator
     location(const location&) = default;                    ///< Default copy ctor
@@ -168,6 +171,13 @@ inline location::location(KUrl&& file, const int line, const int column)
     m_file.swap(file);
 }
 
+/// \note Delegating constructors require gcc >= 4.7
+/// \todo Need workaround for gcc < 4.7. Really?
+inline location::location(const CXCursor& cursor)
+  : location{clang_getCursorLocation(cursor)}
+{
+}
+
 inline location::location(location&& other) noexcept
   : m_line(other.m_line)
   , m_column(other.m_column)
@@ -188,11 +198,85 @@ inline location& location::operator=(location&& other) noexcept
     return *this;
 }
 
+/// Make \c location printable to Qt debug streams
 inline QDebug operator<<(QDebug dbg, const location& l)
 {
     dbg.nospace() << l.file() << ':' << l.line() << ':' << l.column();
     return dbg.space();
 }
+
+/// Make \c location printable to C++ streams
+inline std::ostream& operator<<(std::ostream& os, const location& l)
+{
+    os << l.file().toLocalFile().toUtf8().constData() << ':' << l.line() << ':' << l.column();
+    return os;
+}
+
+/// \name Functions to get kind of various clang entities
+//@{
+
+inline CXCursorKind kind_of(const CXCursor& c)
+{
+    return clang_getCursorKind(c);
+}
+
+inline CXIdxEntityKind kind_of(const CXIdxEntityInfo& e)
+{
+    return e.kind;
+}
+
+//@}
+
+/// \name Convert various clang types to \c QString and \c std::string
+//@{
+
+/// Get a human readable string of \c CXString
+inline QString toString(const DCXString& str)
+{
+    return QString(clang_getCString(str));
+}
+inline std::string to_string(const DCXString& str)
+{
+    return std::string(clang_getCString(str));
+}
+
+/// Get a human readable string of \c CXFile
+inline QString toString(const CXFile file)
+{
+    return toString(DCXString{clang_getFileName(file)});
+}
+inline std::string to_string(const CXFile file)
+{
+    return to_string(DCXString{clang_getFileName(file)});
+}
+
+/// Get a human readable string of \c CXCursorKind
+inline QString toString(const CXCursorKind v)
+{
+    return toString(DCXString{clang_getCursorKindSpelling(v)});
+}
+inline std::string to_string(const CXCursorKind v)
+{
+    return to_string(DCXString{clang_getCursorKindSpelling(v)});
+}
+
+/// Get a human readable string of \c CXCompletionChunkKind
+QString toString(CXCompletionChunkKind);
+std::string to_string(CXCompletionChunkKind);
+
+/// Get a human readable string of \c CXIdxEntityKind
+QString toString(CXIdxEntityKind);
+std::string to_string(CXIdxEntityKind);
+
+/// Get a human readable string of \c CXIdxEntityCXXTemplateKind
+QString toString(CXIdxEntityCXXTemplateKind);
+std::string to_string(CXIdxEntityCXXTemplateKind);
+
+/// Get a human readable string of \c CXLinkageKind
+QString toString(CXLinkageKind);
+std::string to_string(CXLinkageKind);
+
+//@}
 
 /// \name Debug streaming support for various clang types
 //@{
@@ -203,60 +287,43 @@ inline QDebug operator<<(QDebug dbg, const CXFile file)
     return dbg.space();
 }
 
-#if 0
-inline QDebug operator<<(QDebug dbg, const CXSourceLocation l)
+inline QDebug operator<<(QDebug dbg, const DCXString& c)
 {
-    CXFile file;
-    unsigned line;
-    unsigned column;
-    clang_getSpellingLocation(l, &file, &line, &column, nullptr);
-    dbg.nospace() << file << ':' << line << ':' << column;
+    dbg.nospace() << clang_getCString(c);
     return dbg.space();
 }
-#endif
 
-inline QDebug operator<<(QDebug dbg, const CXCursor c)
+inline QDebug operator<<(QDebug dbg, const CXCursor& c)
 {
-    auto kind = clang_getCursorKind(c);
-    DCXString kind_str = {clang_getCursorKindSpelling(kind)};
+    auto kind = kind_of(c);
     DCXString csp_str = {clang_getCursorDisplayName(c)};
-    dbg.nospace() << clang_getCursorLocation(c) << ": entity:" << clang_getCString(csp_str)
-      << ", kind:" << clang_getCString(kind_str);
+    dbg.nospace() << location(c) << ": entity:" << csp_str << ", kind:" << toString(kind);
     return dbg.space();
 }
 //@}
 
-/// \name Convert various clang types to \c QString
-//@{
-
-/// Get a human readable string of \c CXString
-inline QString toString(const DCXString& str)
+/**
+ * \c CXIdxEntityCXXTemplateKind has meaning only for a limited set of \c CXIdxEntityKind value.
+ * This function return \c true if \c CXIdxEntityInfo::templateKind member can be accessed,
+ * \c false otherwise.
+ */
+inline bool may_apply_template_kind(const CXIdxEntityKind kind)
 {
-    return QString(clang_getCString(str));
+    switch (kind)
+    {
+        case CXIdxEntity_Function:
+        case CXIdxEntity_CXXClass:
+        case CXIdxEntity_CXXStaticMethod:
+        case CXIdxEntity_CXXInstanceMethod:
+        case CXIdxEntity_CXXConstructor:
+        case CXIdxEntity_CXXConversionFunction:
+        case CXIdxEntity_CXXTypeAlias:
+            return true;
+        default:
+            break;
+    }
+    return false;
 }
-
-/// Get a human readable string of \c CXCursorKind
-inline QString toString(const CXCursorKind v)
-{
-    return toString(DCXString{clang_getCursorKindSpelling(v)});
-}
-
-/// Get a human readable string of \c CXFile
-inline QString toString(const CXFile file)
-{
-    return toString(DCXString{clang_getFileName(file)});
-}
-
-/// Get a human readable string of \c CXCompletionChunkKind
-QString toString(CXCompletionChunkKind);
-
-/// Get a human readable string of \c CXIdxEntityKind
-QString toString(CXIdxEntityKind);
-
-/// Get a human readable string of \c CXIdxEntityCXXTemplateKind
-QString toString(CXIdxEntityCXXTemplateKind);
-
-//@}
 }                                                           // namespace kate
 #endif                                                      // __SRC__CLANG_UTILS_H__
 // kate: hl C++11/Qt4;

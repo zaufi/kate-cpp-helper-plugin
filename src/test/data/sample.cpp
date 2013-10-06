@@ -26,56 +26,47 @@
  */
 
 // Project specific includes
+#if 0
 #include <src/test/data/sample.h>
 #include <src/test/data/other.h>
+#endif
 
 // Standard includes
 // #include <iostream>
 
+#if 0
 template <typename... Args>
 long bar(Args... args)
 {
     long sz = sizeof...(args);
     return sz;
 }
+#endif
 
 namespace details {
 int foo() {return 0;}
 }                                                           // namespace details
 
-namespace {
+namespace anonymous {
 struct zaq
 {
-    zaq()
-    {
-        std::cout << __PRETTY_FUNCTION__ << std::endl;
-    }
-    ~zaq()
-    {
-        std::cout << __PRETTY_FUNCTION__ << std::endl;
-    }
-    zaq(const zaq&)
-    {
-        std::cout << __PRETTY_FUNCTION__ << std::endl;
-    }
-    zaq(zaq&&)
-    {
-        std::cout << __PRETTY_FUNCTION__ << std::endl;
-    }
-    zaq& operator=(const zaq& zzz)
-    {
-        std::cout << __PRETTY_FUNCTION__ << std::endl;
-    }
-    zaq& operator=(zaq&&)
-    {
-        std::cout << __PRETTY_FUNCTION__ << std::endl;
-    }
+    zaq() { }
+    ~zaq() { }
+    zaq(const zaq&) { }
+    zaq(zaq&&) { }
+    zaq& operator=(const zaq& zzz) { return *this; }
+    zaq& operator=(zaq&&);
 };
-    zaq& zaq::operator=(zaq&& qqq)
-    {
-        std::cout << __PRETTY_FUNCTION__ << std::endl;
-    }
 
+inline zaq& zaq::operator=(zaq&& qqq)
+{
+#if 0
+    std::cout << __PRETTY_FUNCTION__ << std::endl;
+#endif
+    return *this;
+}
+
+struct qaz : public zaq {};
 }                                                           // anonymous namespace
 
 long a = 123;

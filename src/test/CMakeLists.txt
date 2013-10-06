@@ -24,3 +24,27 @@ target_link_libraries(
     ${KDE4_KTEXTEDITOR_LIBS}
     ${LIBCLANG_LIBRARY}
   )
+
+# Sample indexer to play with
+add_executable(
+    indexing_test
+    ${CMAKE_SOURCE_DIR}/src/clang_utils.cpp
+    indexing_test.cpp
+  )
+
+target_link_libraries(
+    indexing_test
+    ${KDE4_KDECORE_LIBRARY}
+    ${LIBCLANG_LIBRARY}
+  )
+
+# Make a symbolic link to data directory
+# (convinient for testing purposes)
+if(NOT EXISTS ${CMAKE_BINARY_DIR}/src/test/data)
+    file(RELATIVE_PATH _dst_data_link "${CMAKE_BINARY_DIR}/src/test" "${CMAKE_SOURCE_DIR}/src/test/data" )
+    execute_process(
+        COMMAND ${CMAKE_COMMAND} -E create_symlink "${_dst_data_link}" data
+        WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/src/test"
+      )
+endif()
+

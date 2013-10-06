@@ -24,6 +24,7 @@
 #include <src/clang_utils.h>
 
 // Standard includes
+#include <boost/lexical_cast.hpp>
 #include <cassert>
 #include <map>
 
@@ -31,7 +32,7 @@
 
 namespace kate { namespace {
 
-const std::map<CXCompletionChunkKind, QString> CHUNK_KIND_TO_STRING = {
+const std::map<CXCompletionChunkKind, const char*> CHUNK_KIND_TO_STRING = {
     MAP_ENTRY(CXCompletionChunk_Optional)
   , MAP_ENTRY(CXCompletionChunk_TypedText)
   , MAP_ENTRY(CXCompletionChunk_Text)
@@ -55,13 +56,13 @@ const std::map<CXCompletionChunkKind, QString> CHUNK_KIND_TO_STRING = {
   , MAP_ENTRY(CXCompletionChunk_VerticalSpace)
 };
 
-const std::map<CXIdxEntityKind, QString> ENTITY_KIND_TO_STRING = {
+const std::map<CXIdxEntityKind, const char*> ENTITY_KIND_TO_STRING = {
     {CXIdxEntity_Unexposed, "<<UNEXPOSED>>"}
   , {CXIdxEntity_Typedef, "typedef"}
   , {CXIdxEntity_Function, "function"}
   , {CXIdxEntity_Variable, "variable"}
   , {CXIdxEntity_Field, "field"}
-  , {CXIdxEntity_EnumConstant, "enumerator"}
+  , {CXIdxEntity_EnumConstant, "enum-const"}
   , {CXIdxEntity_ObjCClass, "objc-class"}
   , {CXIdxEntity_ObjCProtocol, "objc-protocol"}
   , {CXIdxEntity_ObjCCategory, "objc-category"}
@@ -82,31 +83,42 @@ const std::map<CXIdxEntityKind, QString> ENTITY_KIND_TO_STRING = {
   , {CXIdxEntity_CXXDestructor, "destructor"}
   , {CXIdxEntity_CXXConversionFunction, "conversion-func"}
   , {CXIdxEntity_CXXTypeAlias, "type-alias"}
-  , {CXIdxEntity_CXXInterface, "c++-__interface"}
+  , {CXIdxEntity_CXXInterface, "c++-interface"}
 };
 
-const std::map<CXIdxEntityCXXTemplateKind, QString> ENTITY_CXX_TEMPLATE_KIND_TO_STRING = {
-    {CXIdxEntity_NonTemplate, QString()}
+const std::map<CXIdxEntityCXXTemplateKind, const char*> ENTITY_CXX_TEMPLATE_KIND_TO_STRING = {
+    {CXIdxEntity_NonTemplate, ""}
   , {CXIdxEntity_Template, "-template"}
   , {CXIdxEntity_TemplatePartialSpecialization, "-template-partial-spec"}
   , {CXIdxEntity_TemplateSpecialization, "-template-spec"}
 };
 
+const std::map<CXLinkageKind, const char*> LINKAGE_KIND_TO_STRING = {
+    {CXLinkage_Invalid, "<invliad>"}
+  , {CXLinkage_NoLinkage, ""}
+  , {CXLinkage_Internal, "int"}
+  , {CXLinkage_UniqueExternal, "uniq-ext"}
+  , {CXLinkage_External, "ext"}
+};
 }                                                           // anonymous namespace
 
 /// Get a human readable string of \c CXCompletionChunkKind
 QString toString(const CXCompletionChunkKind kind) try
 {
-#if 0
-    /// \todo This expected to work but it doesn't due an undefined function ;(
-    DCXString str = clang_getCompletionChunkKindSpelling(v);
-    return QString(clang_getCString(str));
-#endif
     return CHUNK_KIND_TO_STRING.at(kind);
 }
 catch (const std::exception&)
 {
     return QString::number(kind);
+}
+
+std::string to_string(const CXCompletionChunkKind kind) try
+{
+    return CHUNK_KIND_TO_STRING.at(kind);
+}
+catch (const std::exception&)
+{
+    return boost::lexical_cast<std::string>(kind);
 }
 
 QString toString(const CXIdxEntityKind kind) try
@@ -118,6 +130,15 @@ catch (const std::exception&)
     return QString::number(kind);
 }
 
+std::string to_string(const CXIdxEntityKind kind) try
+{
+    return ENTITY_KIND_TO_STRING.at(kind);
+}
+catch (const std::exception&)
+{
+    return boost::lexical_cast<std::string>(kind);
+}
+
 QString toString(const CXIdxEntityCXXTemplateKind kind) try
 {
     return ENTITY_CXX_TEMPLATE_KIND_TO_STRING.at(kind);
@@ -126,6 +147,36 @@ catch (const std::exception&)
 {
     assert(!"Garbage entity kind");
     return QString::number(kind);
+}
+
+std::string to_string(const CXIdxEntityCXXTemplateKind kind) try
+{
+    return ENTITY_CXX_TEMPLATE_KIND_TO_STRING.at(kind);
+}
+catch (const std::exception&)
+{
+    assert(!"Garbage entity kind");
+    return boost::lexical_cast<std::string>(kind);
+}
+
+QString toString(const CXLinkageKind kind) try
+{
+    return LINKAGE_KIND_TO_STRING.at(kind);
+}
+catch (const std::exception&)
+{
+    assert(!"Garbage entity kind");
+    return QString::number(kind);
+}
+
+std::string to_string(const CXLinkageKind kind) try
+{
+    return LINKAGE_KIND_TO_STRING.at(kind);
+}
+catch (const std::exception&)
+{
+    assert(!"Garbage entity kind");
+    return boost::lexical_cast<std::string>(kind);
 }
 
 
