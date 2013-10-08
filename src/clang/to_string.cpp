@@ -29,7 +29,6 @@
 #include <src/clang/to_string.h>
 
 // Standard includes
-#include <boost/lexical_cast.hpp>
 #include <cassert>
 #include <map>
 
@@ -121,7 +120,7 @@ std::string to_string(const CXCompletionChunkKind kind) try
 }
 catch (const std::exception&)
 {
-    return boost::lexical_cast<std::string>(kind);
+    return std::to_string(unsigned(kind));
 }
 
 QString toString(const CXIdxEntityKind kind) try
@@ -139,7 +138,7 @@ std::string to_string(const CXIdxEntityKind kind) try
 }
 catch (const std::exception&)
 {
-    return boost::lexical_cast<std::string>(kind);
+    return std::to_string(unsigned(kind));
 }
 
 QString toString(const CXIdxEntityCXXTemplateKind kind) try
@@ -159,7 +158,7 @@ std::string to_string(const CXIdxEntityCXXTemplateKind kind) try
 catch (const std::exception&)
 {
     assert(!"Garbage entity kind");
-    return boost::lexical_cast<std::string>(kind);
+    return std::to_string(unsigned(kind));
 }
 
 QString toString(const CXLinkageKind kind) try
@@ -179,7 +178,7 @@ std::string to_string(const CXLinkageKind kind) try
 catch (const std::exception&)
 {
     assert(!"Garbage entity kind");
-    return boost::lexical_cast<std::string>(kind);
+    return std::to_string(unsigned(kind));
 }
 
 }}                                                          // namespace clang, kate

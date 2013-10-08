@@ -2,8 +2,7 @@ configure_file(config.h.in config.h)
 configure_file(katecpphelperplugin.desktop.in katecpphelperplugin.desktop)
 
 # TODO Make a separate library form this sources
-set(
-    CLANG_HELPERS_SOURCES
+set(CLANG_HELPERS_SOURCES
     ${CMAKE_SOURCE_DIR}/src/clang/location.cpp
     ${CMAKE_SOURCE_DIR}/src/clang/to_string.cpp
   )

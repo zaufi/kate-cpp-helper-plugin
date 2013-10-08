@@ -3,12 +3,12 @@ add_definitions(-UQT_NO_STL)
 set(UNIT_TESTS unit_tests)
 set(UNIT_TESTS_SOURCES
     sanitize_snippet_tester.cpp
-    ${CMAKE_SOURCE_DIR}/src/sanitize_snippet.cpp
     utils_tester.cpp
-    ${CMAKE_SOURCE_DIR}/src/utils.cpp
     header_files_cache_tester.cpp
-    ${CMAKE_SOURCE_DIR}/src/translation_unit.cpp
     translation_unit_tester.cpp
+    ${CMAKE_SOURCE_DIR}/src/sanitize_snippet.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils.cpp
+    ${CMAKE_SOURCE_DIR}/src/translation_unit.cpp
     ${CLANG_HELPERS_SOURCES}
   )
 

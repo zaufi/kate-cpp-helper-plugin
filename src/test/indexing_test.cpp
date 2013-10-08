@@ -38,6 +38,7 @@
 #include <iostream>
 #include <iomanip>
 #include <fstream>
+#include <memory>
 #include <string>
 
 using namespace kate;
@@ -76,6 +77,7 @@ void print_file(const char* const file)
 struct indexer_data
 {
     std::string m_main_file;
+    std::vector<std::unique_ptr<std::string>> m_containers;
 
     std::ostream& out()
     {
@@ -133,16 +135,36 @@ struct indexer_data
           << (info->name ? info->name : "<null>")
           << std::endl;
     }
-};
 
-const char* getCXIndexContainer(const CXIdxContainerInfo *info)
-{
-    CXIdxClientContainer container;
-    container = clang_index_getClientContainer(info);
-    if (!container)
-        return "[<<NULL>>]";
-    return (const char *)container;
-}
+    void out_container(const char* const cntr, const CXIdxContainerInfo* info)
+    {
+        CXIdxClientContainer container = clang_index_getClientContainer(info);
+        std::cout << "  " << cntr << ".cntr: ";
+        if (!container)
+            std::cout << "<NULL>";
+        else
+            std::cout << *(const std::string*)container;
+        std::cout << std::endl;
+    }
+
+    CXIdxClientContainer updateClientContainer(const CXIdxEntityInfo* info, const CXIdxLoc l)
+    {
+        std::string container;
+        if (info->name)
+            container = info->name;
+        else
+            container = "<anonymous-tag>";
+        //
+        location loc = {l};
+        auto result = std::string{loc.file().toLocalFile().toUtf8().constData()} + ":"
+          + std::to_string(loc.line()) + ":"
+          + std::to_string(loc.column()) + ": "
+          + container
+          ;
+        auto& ptr = *m_containers.emplace(end(m_containers), new std::string(std::move(result)));
+        return CXIdxClientContainer(ptr.get());
+    }
+};
 
 int on_abort_cb(CXClientData client_data, void*)
 {
@@ -188,8 +210,10 @@ CXIdxClientContainer on_translation_unit(CXClientData client_data, void*)
 {
     auto* const data = static_cast<indexer_data*>(client_data);
     data->out() << "Translation unit has started" << std::endl;
+    assert(data->m_containers.empty());
+    data->m_containers.emplace_back(new std::string("TU"));
     /// \todo ALERT DIRTY HACK
-    return CXIdxClientContainer("TU");
+    return CXIdxClientContainer(data->m_containers.begin()->get());
 }
 
 void on_declaration(CXClientData client_data, const CXIdxDeclInfo* info)
@@ -220,6 +244,14 @@ void on_declaration(CXClientData client_data, const CXIdxDeclInfo* info)
             data->out_base_class(i, class_info->bases[i]->base);
         }
     }
+    data->out_container("sem", info->semanticContainer);
+    data->out_container("lex", info->lexicalContainer);
+
+    if (info->declAsContainer)
+        clang_index_setClientContainer(
+            info->declAsContainer
+          , data->updateClientContainer(info->entityInfo, info->loc)
+          );
 }
 
 void on_declaration_reference(CXClientData client_data, const CXIdxEntityRefInfo* info)
