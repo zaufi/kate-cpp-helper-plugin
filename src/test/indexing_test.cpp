@@ -139,7 +139,7 @@ struct indexer_data
     void out_container(const char* const cntr, const CXIdxContainerInfo* info)
     {
         CXIdxClientContainer container = clang_index_getClientContainer(info);
-        std::cout << "  " << cntr << ".cntr: ";
+        std::cout << cntr << ".cntr: ";
         if (!container)
             std::cout << "<NULL>";
         else
@@ -256,12 +256,17 @@ void on_declaration(CXClientData client_data, const CXIdxDeclInfo* info)
 
 void on_declaration_reference(CXClientData client_data, const CXIdxEntityRefInfo* info)
 {
+    std::cout << __PRETTY_FUNCTION__ << std::endl;
+    auto* const data = static_cast<indexer_data*>(client_data);
+    data->out_location(info->loc);
+    data->out_entity_info("ref", info->referencedEntity);
+    data->out_entity_info("parent", info->parentEntity);
 }
 
 
 void index_source_file(const char* const file)
 {
-    DCXIndex index = {clang_createIndex(0, 1)};
+    DCXIndex index = {clang_createIndex(1, 1)};
     DCXIndexAction action = {clang_IndexAction_create(index)};
     IndexerCallbacks index_callbacks = {
         &on_abort_cb
@@ -281,7 +286,7 @@ void index_source_file(const char* const file)
       , sizeof(index_callbacks)
         // CXIndexOpt_SuppressRedundantRefs
         // CXIndexOpt_SkipParsedBodiesInSession
-      , CXIndexOpt_IndexFunctionLocalSymbols | CXIndexOpt_SuppressRedundantRefs
+      , CXIndexOpt_IndexFunctionLocalSymbols
       , file
       , PARSE_OPTIONS.data()
       , PARSE_OPTIONS.size()
@@ -290,6 +295,7 @@ void index_source_file(const char* const file)
       , nullptr
       , clang_defaultEditingTranslationUnitOptions()
       );
+
 }
 
 int main(int argc, const char* const argv[])
