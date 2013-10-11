@@ -247,6 +247,12 @@ void on_declaration(CXClientData client_data, const CXIdxDeclInfo* info)
     data->out_container("sem", info->semanticContainer);
     data->out_container("lex", info->lexicalContainer);
 
+    auto brief = to_string(DCXString{clang_Cursor_getBriefCommentText(info->cursor)});
+    if (!brief.empty())
+    {
+        std::cout << "comment: '" << brief << "'" << std::endl;
+    }
+
     if (info->declAsContainer)
         clang_index_setClientContainer(
             info->declAsContainer
@@ -261,6 +267,9 @@ void on_declaration_reference(CXClientData client_data, const CXIdxEntityRefInfo
     data->out_location(info->loc);
     data->out_entity_info("ref", info->referencedEntity);
     data->out_entity_info("parent", info->parentEntity);
+#if 0
+    clang_getCursorReferenceNameRange(info->cursor);
+#endif
 }
 
 

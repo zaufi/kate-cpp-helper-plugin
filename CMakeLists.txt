@@ -81,12 +81,22 @@ else()
     include(AddBoostTests)
 endif()
 
+find_package(Xapian REQUIRED)
+message(STATUS "Found Xapian library: ${XAPIAN_LIBRARIES}")
+
 #---------------------------------------------------------
 # Section: Configure building process
 #---------------------------------------------------------
 # NOTE Order is important!
-include_directories(${PROJECT_SOURCE_DIR} ${PROJECT_BINARY_DIR})
-include_directories(${KDE4_INCLUDES} ${QT_INCLUDES} ${Boost_INCLUDE_DIRS} ${LLVM_INCLUDEDIR})
+include_directories(
+    ${PROJECT_SOURCE_DIR}
+    ${PROJECT_BINARY_DIR}
+    ${KDE4_INCLUDES}
+    ${QT_INCLUDES}
+    ${Boost_INCLUDE_DIRS}
+    ${LLVM_INCLUDEDIR}
+    ${XAPIAN_INCLUDE_DIR}
+  )
 if(_need_to_include_kate_interfaces)
     if("${KDE_VERSION}" VERSION_LESS 4.10)
         message(FATAL_ERROR "KDE >=4.10.x required to build this package")

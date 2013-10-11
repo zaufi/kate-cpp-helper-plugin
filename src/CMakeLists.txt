@@ -6,6 +6,11 @@ set(CLANG_HELPERS_SOURCES
     ${CMAKE_SOURCE_DIR}/src/clang/location.cpp
     ${CMAKE_SOURCE_DIR}/src/clang/to_string.cpp
   )
+set(INDEXER_HEADERS ${CMAKE_SOURCE_DIR}/src/index/indexer.h)
+set(INDEXER_SOURCES
+    ${CMAKE_SOURCE_DIR}/src/index/database.cpp
+    ${CMAKE_SOURCE_DIR}/src/index/indexer.cpp
+  )
 
 set(KATE_CPP_HELPER_PLUGIN_SOURCES
     utils.cpp
@@ -23,6 +28,7 @@ set(KATE_CPP_HELPER_PLUGIN_SOURCES
     cpp_helper_plugin_view.cpp
     cpp_helper_plugin.cpp
     ${CLANG_HELPERS_SOURCES}
+    ${INDEXER_SOURCES}
   )
 
 kde4_add_ui_files(
@@ -44,6 +50,7 @@ target_link_libraries(katecpphelperplugin
     ${KDE4_KTEXTEDITOR_LIBS}
     ${KATE_INTERFACES_LIB}
     ${LIBCLANG_LIBRARY}
+    ${XAPIAN_LIBRARIES}
   )
 
 #

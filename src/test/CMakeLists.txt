@@ -23,6 +23,28 @@ target_link_libraries(
     ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}
     ${KDE4_KTEXTEDITOR_LIBS}
     ${LIBCLANG_LIBRARY}
+    ${XAPIAN_LIBRARIES}
+  )
+
+# QTest based indexer unit-tests
+qt4_wrap_cpp(INDEXER_HEADERS_MOC ${INDEXER_HEADERS} indexer_tester.h)
+set(INDEXER_UNIT_TEST_SOURCES
+    indexer_tester.cpp
+    ${INDEXER_SOURCES}
+    ${INDEXER_HEADERS_MOC}
+  )
+
+add_executable(
+    indexer_unit_tests
+    ${INDEXER_UNIT_TEST_SOURCES}
+  )
+
+target_link_libraries(
+    indexer_unit_tests
+    ${LIBCLANG_LIBRARY}
+    ${KDE4_KDECORE_LIBRARY}
+    ${QT_QTTEST_LIBRARY_RELEASE}
+    ${XAPIAN_LIBRARIES}
   )
 
 # Sample indexer to play with
@@ -47,4 +69,3 @@ if(NOT EXISTS ${CMAKE_BINARY_DIR}/src/test/data)
         WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/src/test"
       )
 endif()
-

@@ -1,9 +1,9 @@
 /**
  * \file
  *
- * \brief Compile-time configuration data
+ * \brief Class \c kate::indexer_tester (interface)
  *
- * \attention DO NOT EDIT!
+ * \date Fri Oct 11 02:29:31 MSK 2013 -- Initial design
  */
 /*
  * Copyright (C) 2011-2013 Alex Turbov, all rights reserved.
@@ -28,10 +28,48 @@
 #pragma once
 
 // Project specific includes
+#include <src/index/indexer.h>
 
 // Standard includes
+#include <QtCore/QObject>
+#include <atomic>
 
-#define CMAKE_SOURCE_DIR "@CMAKE_SOURCE_DIR@"
-#define CMAKE_BINARY_DIR "@CMAKE_BINARY_DIR@"
+namespace kate {
 
-// kate: hl C++11;
+/**
+* \brief Class \c result_waiter
+*/
+class result_waiter : public QObject
+{
+    Q_OBJECT
+
+public Q_SLOTS:
+    void finished();
+
+public:
+    std::atomic<bool> m_done;
+};
+
+
+/**
+ * \brief [Type brief class description here]
+ *
+ * [More detailed description here]
+ *
+ */
+class indexer_tester : public QObject
+{
+    Q_OBJECT
+
+public:
+    indexer_tester();
+
+private Q_SLOTS:
+    void index_sample_file();
+
+private:
+    index::indexer m_indexer;
+    result_waiter m_res;
+};
+
+}                                                           // namespace kate

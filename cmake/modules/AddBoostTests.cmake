@@ -82,79 +82,90 @@ function(add_boost_tests)
 
     # Scan source files for well known boost test framework macros and add test by found name
     foreach(source ${add_boost_tests_SOURCES})
-        #message(STATUS "scanning ${source}")
-        file(
-            STRINGS "${source}" contents
-            REGEX "^\\s*BOOST_(AUTO_TEST_(CASE|SUITE_END)|FIXTURE_TEST_(CASE|SUITE))"
-          )
-        set(current_suite "<NONE>")
-        set(found_tests "")
-        foreach(line IN LISTS contents)
-            # Try BOOST_AUTO_TEST_CASE
-            string(REGEX MATCH "BOOST_AUTO_TEST_CASE\\([A-Za-z0-9_]+\\)" found_test "${line}")
-            if(found_test)
-                string(REGEX REPLACE "BOOST_AUTO_TEST_CASE\\(([A-Za-z0-9_]+)\\)" "\\1" found_test "${line}")
-                if(current_suite STREQUAL "<NONE>")
-                    list(APPEND found_tests ${found_test})
-                else()
-                    list(APPEND found_tests "${current_suite}/${found_test}")
-                endif()
-            else()
-                # Try BOOST_FIXTURE_TEST_CASE
-                string(
-                    REGEX MATCH
-                        "BOOST_FIXTURE_TEST_CASE\\([A-Za-z_0-9]+, [A-Za-z_0-9]+\\)"
-                    found_test
-                    "${line}"
-                  )
+        # ATTENTION Do not scan not-existed (probably generated) and Qt/MOC sources
+        get_source_file_property(full_source "${source}" LOCATION)
+        if(source MATCHES "/moc_.*$")
+            set(_skip_scan ON)
+        elseif (NOT EXISTS "${full_source}")
+            set(_skip_scan ON)
+        else()
+            set(_skip_scan OFF)
+        endif()
+        if(NOT _skip_scan)
+            #message(STATUS "scanning ${source}")
+            file(
+                STRINGS "${source}" contents
+                REGEX "^\\s*BOOST_(AUTO_TEST_(CASE|SUITE_END)|FIXTURE_TEST_(CASE|SUITE))"
+              )
+            set(current_suite "<NONE>")
+            set(found_tests "")
+            foreach(line IN LISTS contents)
+                # Try BOOST_AUTO_TEST_CASE
+                string(REGEX MATCH "BOOST_AUTO_TEST_CASE\\([A-Za-z0-9_]+\\)" found_test "${line}")
                 if(found_test)
-                    string(
-                        REGEX REPLACE
-                            "BOOST_FIXTURE_TEST_CASE\\(([A-Za-z_0-9]+), [A-Za-z_0-9]+\\)"
-                            "\\1"
-                        found_test
-                        "${line}"
-                      )
+                    string(REGEX REPLACE "BOOST_AUTO_TEST_CASE\\(([A-Za-z0-9_]+)\\)" "\\1" found_test "${line}")
                     if(current_suite STREQUAL "<NONE>")
                         list(APPEND found_tests ${found_test})
                     else()
                         list(APPEND found_tests "${current_suite}/${found_test}")
                     endif()
                 else()
+                    # Try BOOST_FIXTURE_TEST_CASE
                     string(
                         REGEX MATCH
-                            "BOOST_FIXTURE_TEST_SUITE\\([A-Za-z_0-9]+, [A-Za-z_0-9]+\\)"
+                            "BOOST_FIXTURE_TEST_CASE\\([A-Za-z_0-9]+, [A-Za-z_0-9]+\\)"
                         found_test
                         "${line}"
-                        )
+                      )
                     if(found_test)
                         string(
                             REGEX REPLACE
-                                "BOOST_FIXTURE_TEST_SUITE\\(([A-Za-z_0-9]+), [A-Za-z_0-9]+\\)"
+                                "BOOST_FIXTURE_TEST_CASE\\(([A-Za-z_0-9]+), [A-Za-z_0-9]+\\)"
                                 "\\1"
-                            current_suite
+                            found_test
                             "${line}"
                           )
-                    elseif(line MATCHES "BOOST_AUTO_TEST_SUITE_END\\(\\)")
-                        set(current_suite "<NONE>")
+                        if(current_suite STREQUAL "<NONE>")
+                            list(APPEND found_tests ${found_test})
+                        else()
+                            list(APPEND found_tests "${current_suite}/${found_test}")
+                        endif()
+                    else()
+                        string(
+                            REGEX MATCH
+                                "BOOST_FIXTURE_TEST_SUITE\\([A-Za-z_0-9]+, [A-Za-z_0-9]+\\)"
+                            found_test
+                            "${line}"
+                            )
+                        if(found_test)
+                            string(
+                                REGEX REPLACE
+                                    "BOOST_FIXTURE_TEST_SUITE\\(([A-Za-z_0-9]+), [A-Za-z_0-9]+\\)"
+                                    "\\1"
+                                current_suite
+                                "${line}"
+                              )
+                        elseif(line MATCHES "BOOST_AUTO_TEST_SUITE_END\\(\\)")
+                            set(current_suite "<NONE>")
+                        endif()
                     endif()
                 endif()
-            endif()
-        endforeach()
-        #message(STATUS "  found tests: ${found_tests}")
-        # Register found tests
-        foreach(test_name ${found_tests})
-            add_test(
-                NAME ${test_name}
-                COMMAND ${add_boost_tests_TARGET} --run_test=${test_name} ${extra_args}
-                WORKING_DIRECTORY ${add_boost_tests_WORKING_DIRECTORY}
-              )
-        endforeach()
+            endforeach()
+            #message(STATUS "  found tests: ${found_tests}")
+            # Register found tests
+            foreach(test_name ${found_tests})
+                add_test(
+                    NAME ${test_name}
+                    COMMAND ${add_boost_tests_TARGET} --run_test=${test_name} ${extra_args}
+                    WORKING_DIRECTORY ${add_boost_tests_WORKING_DIRECTORY}
+                  )
+            endforeach()
+        endif()
     endforeach()
 endfunction(add_boost_tests)
 
 # X-Chewy-RepoBase: https://raw.github.com/mutanabbi/chewy-cmake-rep/master/
 # X-Chewy-Path: AddBoostTests.cmake
-# X-Chewy-Version: 3.1
+# X-Chewy-Version: 3.2
 # X-Chewy-Description: Integrate Boost unit tests into CMake infrastructure
 # X-Chewy-AddonFile: unit_tests_main_skeleton.cc
