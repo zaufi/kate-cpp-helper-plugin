@@ -51,6 +51,10 @@ inline CXTypeKind kind_of(const CXType& t)
     return t.kind;
 }
 
+inline CXCompletionChunkKind kind_of(CXCompletionString completion_string, unsigned chunk_number)
+{
+    return clang_getCompletionChunkKind(completion_string, chunk_number);
+}
 //@}
 
 /**

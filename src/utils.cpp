@@ -344,13 +344,13 @@ void updateListsFromFS(
   )
 {
     const QDir::Filters common_flags = QDir::NoDotAndDotDot | QDir::CaseSensitive | QDir::Readable;
-    for (const QString& d : dirs2scan)
+    for (const auto& d : dirs2scan)
     {
-        const QString dir = QDir::cleanPath(d + '/' + path);
+        const auto dir = QDir::cleanPath(d + '/' + path);
         kDebug(DEBUG_AREA) << "Trying " << dir;
         {
             QStringList result = QDir(dir).entryList(masks, QDir::Dirs | common_flags);
-            for (const QString& r : result)
+            for (const auto& r : result)
             {
                 const QString d = r + '/';
                 if (!dirs.contains(d)) dirs.append(d);
@@ -358,9 +358,9 @@ void updateListsFromFS(
         }
         {
             QStringList result = QDir(dir).entryList(masks, QDir::Files | common_flags);
-            for (const QString& r : result)
+            for (const auto& r : result)
             {
-                const bool ignore = std::any_of(
+                const auto ignore = std::any_of(
                     std::begin(ignore_extensions)
                   , std::end(ignore_extensions)
                   , [r](const QString& ext) { return r.endsWith(ext); }

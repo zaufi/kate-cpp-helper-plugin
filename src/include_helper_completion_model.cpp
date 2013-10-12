@@ -58,7 +58,7 @@ QModelIndex IncludeHelperCompletionModel::index(int row, int column, const QMode
         return QModelIndex();
 
     // Check bounds
-    const int count = m_dir_completions.size() + m_file_completions.size();
+    const auto count = m_dir_completions.size() + m_file_completions.size();
     if (row < count && row >= 0 && column >= 0)
         return createIndex(row, column, 1);                 // make leaf node
     return QModelIndex();
@@ -81,14 +81,14 @@ bool IncludeHelperCompletionModel::shouldStartCompletion(
     m_should_complete = false;
     auto* doc = view->document();                           // get current document
     auto line = doc->line(position.line());                 // get current line
-    KTextEditor::HighlightInterface* iface = qobject_cast<KTextEditor::HighlightInterface*>(doc);
+    auto* iface = qobject_cast<KTextEditor::HighlightInterface*>(doc);
     // Do nothing if no highlighting interface or not suitable document or
     // a place within it... (we won't to complete smth in non C++ files or comments for example)
     if (!iface || !isSuitableDocumentAndHighlighting(doc->mimeType(), iface->highlightingModeAt(position)))
         return m_should_complete;
 
     // Try to parse it...
-    IncludeParseResult r = parseIncludeDirective(line, false);
+    auto r = parseIncludeDirective(line, false);
     m_should_complete = r.m_range.isValid();
     if (m_should_complete)
     {
@@ -103,7 +103,7 @@ bool IncludeHelperCompletionModel::shouldStartCompletion(
     }
     else if (position.column() == line.length())
     {
-        QString text = tryToCompleteIncludeDirective(line.mid(0, position.column()).trimmed());
+        auto text = tryToCompleteIncludeDirective(line.mid(0, position.column()).trimmed());
         m_should_complete = !text.isEmpty();
         if (m_should_complete)
         {
@@ -112,7 +112,7 @@ bool IncludeHelperCompletionModel::shouldStartCompletion(
             text += QLatin1String(" <");
             auto start = position;
             start.setColumn(0);
-            KTextEditor::Range range = {start, position};
+            auto range = KTextEditor::Range{start, position};
             view->document()->replaceText(range, text);
         }
     }
@@ -133,11 +133,11 @@ bool IncludeHelperCompletionModel::shouldAbortCompletion(
     kDebug(DEBUG_AREA) << "m_should_complete=" << m_should_complete << ", closer=" << m_closer;
 
     // Get current line
-    QString line = view->document()->line(range.end().line());
+    const auto line = view->document()->line(range.end().line());
     // Try to parse it...
-    IncludeParseResult r = parseIncludeDirective(line, false);
+    auto r = parseIncludeDirective(line, false);
     // nothing to complete for lines w/o #include
-    const bool need_abort = !r.m_range.isValid()
+    const auto need_abort = !r.m_range.isValid()
       || range.end().column() < r.m_range.start().column()
       || range.end().column() > (r.m_range.end().column() + 1)
       ;
@@ -151,11 +151,11 @@ void IncludeHelperCompletionModel::completionInvoked(
   , InvocationType
   )
 {
-    KTextEditor::Document* doc = view->document();
+    auto* doc = view->document();
     kDebug(DEBUG_AREA) << range << ", " << doc->text(range);
-    const QString& t = doc->line(range.start().line()).left(range.start().column());
+    const auto& t = doc->line(range.start().line()).left(range.start().column());
     kDebug(DEBUG_AREA) << "text to parse: " << t;
-    IncludeParseResult r = parseIncludeDirective(t, false);
+    auto r = parseIncludeDirective(t, false);
     if (r.m_range.isValid())
     {
         m_should_complete = range.start().column() >= r.m_range.start().column()
@@ -176,9 +176,9 @@ void IncludeHelperCompletionModel::updateCompletionList(const QString& start, co
     beginResetModel();
     m_file_completions.clear();
     m_dir_completions.clear();
-    const int slash = start.lastIndexOf('/');
-    const QString path = slash != -1 ? start.left(slash) : QString();
-    const QString name = slash != -1 ? start.mid(slash + 1) + "*" : QString("*");
+    const auto slash = start.lastIndexOf('/');
+    const auto path = slash != -1 ? start.left(slash) : QString();
+    const auto name = slash != -1 ? start.mid(slash + 1) + "*" : QString("*");
     QStringList mask;
     mask.append(name);
     kDebug(DEBUG_AREA) << "mask=" << mask;
@@ -286,7 +286,7 @@ void IncludeHelperCompletionModel::executeCompletionItem2(
   ) const
 {
     kDebug(DEBUG_AREA) << "rword=" << word;
-    QString p = index.row() < m_dir_completions.size()
+    auto p = index.row() < m_dir_completions.size()
       ? m_dir_completions[index.row()]
       : m_file_completions[index.row() - m_dir_completions.size()]
       ;
@@ -294,8 +294,8 @@ void IncludeHelperCompletionModel::executeCompletionItem2(
     if (!p.endsWith("/"))                                   // Is that dir or file completion?
     {
         // Get line to be replaced and check if #include hase close char...
-        QString line = document->line(word.start().line());
-        IncludeParseResult r = parseIncludeDirective(line, false);
+        auto line = document->line(word.start().line());
+        auto r = parseIncludeDirective(line, false);
         if (r.m_range.isValid() && !r.m_is_complete)
             p += r.close_char();
     }
@@ -308,11 +308,11 @@ KTextEditor::Range IncludeHelperCompletionModel::completionRange(
   )
 {
     kDebug(DEBUG_AREA) << "cursor: " << position;
-    QString line = view->document()->line(position.line());
-    IncludeParseResult r = parseIncludeDirective(line, false);
+    auto line = view->document()->line(position.line());
+    auto r = parseIncludeDirective(line, false);
     if (r.m_range.isValid())
     {
-        int start = line.lastIndexOf('/', r.m_range.end().column() - 1);
+        auto start = line.lastIndexOf('/', r.m_range.end().column() - 1);
         kDebug(DEBUG_AREA) << "init start=" << start;
         start = start == -1 ? r.m_range.start().column() : start + 1;
         kDebug(DEBUG_AREA) << "fixed start=" << start;

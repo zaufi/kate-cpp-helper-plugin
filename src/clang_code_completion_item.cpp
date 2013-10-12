@@ -45,7 +45,7 @@ QVariant ClangCodeCompletionItem::data(
 {
     assert("Sanity check" && index.isValid());
     //
-    QVariant result;
+    auto result = QVariant{};
     switch (role)
     {
 #if 0
@@ -124,14 +124,14 @@ QString ClangCodeCompletionItem::renderPrefix() const
 /// \todo This look ugly... need to invent smth clever
 QString ClangCodeCompletionItem::renderPlaceholders(const QString& source) const
 {
-    QString result = source;
-    unsigned i = 0;
+    auto result = source;
+    auto i = 0u;
     if (m_optional_placeholders_pos != NO_OPTIONAL_PLACEHOLDERS)
     {
         // Ok be ready for optional parameters
         for (const auto& p : m_placeholders)
         {
-            const QString fmt = '%' + QString::number(++i) + '%';
+            const auto fmt = QString{'%' + QString::number(++i) + '%'};
             auto pos = result.indexOf(fmt);
             auto text = p;
             if (i == unsigned(m_optional_placeholders_pos))
@@ -147,7 +147,7 @@ QString ClangCodeCompletionItem::renderPlaceholders(const QString& source) const
         // No optional parameters
         for (const auto& p : m_placeholders)
         {
-            const QString fmt = '%' + QString::number(++i) + '%';
+            const auto fmt = QString{'%' + QString::number(++i) + '%'};
             auto pos = result.indexOf(fmt);
             if (pos != -1)
                 result = result.replace(pos, fmt.length(), p);
@@ -230,7 +230,7 @@ KTextEditor::CodeCompletionModel::CompletionProperty ClangCodeCompletionItem::co
 QPair<QString, int> ClangCodeCompletionItem::executeCompletion() const
 {
     auto result = m_text;
-    int pos = -1;
+    auto pos = -1;
     switch (m_kind)
     {
         case CXCursor_ClassTemplate:
@@ -255,8 +255,8 @@ QPair<QString, int> ClangCodeCompletionItem::executeCompletion() const
 
 auto ClangCodeCompletionItem::getCompletionTemplate() const -> CompletionTemplateData
 {
-    QString tpl = m_text + m_after;
-    bool is_function = false;
+    auto tpl = QString{m_text + m_after};
+    auto is_function = false;
     switch (m_kind)
     {
         case CXCursor_CXXMethod:
@@ -277,15 +277,15 @@ auto ClangCodeCompletionItem::getCompletionTemplate() const -> CompletionTemplat
             break;
     }
     QMap<QString, QString> values;
-    unsigned i = 0;
+    auto i = 0u;
     for (const auto& p : m_placeholders)
     {
-        const QString fmt = '%' + QString::number(++i) + '%';
+        const auto fmt = QString{'%' + QString::number(++i) + '%'};
         auto pos = tpl.indexOf(fmt);
         if (pos != -1)
         {
-            QString arg = QLatin1String("arg") + QString::number(i);
-            QString placeholder = QLatin1String("${") + arg + '}';
+            auto arg = QLatin1String("arg") + QString::number(i);
+            auto placeholder = QLatin1String("${") + arg + '}';
             tpl = tpl.replace(
                 pos
               , fmt.length()
@@ -345,7 +345,7 @@ QVariant ClangCodeCompletionItem::icon() const
     if (it != std::end(ICONS_MAP))
         return KIcon(it->second);
     kDebug(DEBUG_AREA) << "Item kind has no icon defined: " << clang::toString(m_kind);
-    return QVariant();
+    return {};
 }
 
 }                                                           // namespace kate

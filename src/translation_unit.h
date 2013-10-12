@@ -126,7 +126,7 @@ public:
     static unsigned defaultExplorerParseOptions();
     /// \todo How to beautify this ugly interface?
     static void transform_command_line_args(
-        QStringList&
+        const QStringList&
       , std::vector<QByteArray>&
       , std::vector<const char*>&
       );

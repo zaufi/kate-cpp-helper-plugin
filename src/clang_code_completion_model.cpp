@@ -58,12 +58,12 @@ bool ClangCodeCompletionModel::shouldStartCompletion(
   )
 {
     auto* doc = view->document();                           // get current document
-    bool result = false;
-    KTextEditor::HighlightInterface* iface = qobject_cast<KTextEditor::HighlightInterface*>(doc);
+    auto result = false;
+    auto* iface = qobject_cast<KTextEditor::HighlightInterface*>(doc);
     if (iface)
     {
         kDebug(DEBUG_AREA) << "higlighting mode at" << pos << ':' << iface->highlightingModeAt(pos);
-        bool is_completion_needed = user_insertion
+        auto is_completion_needed = user_insertion
           && m_plugin->config().autoCompletions()
           && isSuitableDocumentAndHighlighting(doc->mimeType(), iface->highlightingModeAt(pos))
           ;
@@ -84,8 +84,8 @@ void ClangCodeCompletionModel::completionInvoked(
   )
 {
     m_current_view = view;
-    KTextEditor::Document* doc = view->document();
-    KUrl url = doc->url();
+    auto* doc = view->document();
+    auto url = doc->url();
     if (!url.isValid() || url.isEmpty())
     {
         /// \todo Turn into a popup
@@ -388,12 +388,11 @@ void ClangCodeCompletionModel::executeCompletionItem2(
       && unsigned(index.row()) < m_groups[index.internalId()].second.m_completions.size()
       );
 
-    KTextEditor::TemplateInterface* template_iface =
-        qobject_cast<KTextEditor::TemplateInterface*>(m_current_view);
+    auto* template_iface = qobject_cast<KTextEditor::TemplateInterface*>(m_current_view);
     if (template_iface)
     {
         kDebug(DEBUG_AREA) << "TemplateInterface available for a view" << m_current_view;
-        ClangCodeCompletionItem::CompletionTemplateData result = m_groups[index.internalId()]
+        auto result = m_groups[index.internalId()]
           .second.m_completions[index.row()]
           .getCompletionTemplate();
         kDebug(DEBUG_AREA) << "Template:" << result.m_tpl;

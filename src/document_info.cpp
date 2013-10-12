@@ -47,7 +47,7 @@ DocumentInfo::DocumentInfo(CppHelperPlugin* p)
 DocumentInfo::~DocumentInfo()
 {
     kDebug(DEBUG_AREA) << "Removing " << m_ranges.size() << " ranges...";
-    for (const State& s : m_ranges)
+    for (const auto& s : m_ranges)
         s.m_range->setFeedback(0);
 }
 
@@ -69,8 +69,8 @@ void DocumentInfo::addRange(KTextEditor::MovingRange* range)
 void DocumentInfo::updateStatus()
 {
     for (
-        registered_ranges_type::iterator it = m_ranges.begin()
-      , last = m_ranges.end()
+        auto it = begin(m_ranges)
+      , last = end(m_ranges)
       ; it != last
       ; updateStatus(*it++)
       );
@@ -86,14 +86,14 @@ void DocumentInfo::updateStatus(State& s)
     kDebug(DEBUG_AREA) << "Update status for range: " << s.m_range.get();
     if (!s.m_range->isEmpty())
     {
-        KTextEditor::Document* doc = s.m_range->document();
-        QString filename = doc->text(s.m_range->toRange());
+        auto* doc = s.m_range->document();
+        auto filename = doc->text(s.m_range->toRange());
         // NOTE After editing it is possible that opening '<' or '"' could
         // appear as a start symbol of the range... just try to exclude it!
         if (filename.startsWith('>') || filename.startsWith('"'))
         {
             filename.remove(0, 1);
-            KTextEditor::Range shrinked = s.m_range->toRange();
+            auto shrinked = s.m_range->toRange();
             shrinked.end().setColumn(shrinked.start().column() + 1);
             s.m_range->setRange(shrinked);
         }
@@ -102,7 +102,7 @@ void DocumentInfo::updateStatus(State& s)
         if (filename.endsWith('>') || filename.endsWith('"'))
         {
             filename.resize(filename.size() - 1);
-            KTextEditor::Range shrinked = s.m_range->toRange();
+            auto shrinked = s.m_range->toRange();
             shrinked.end().setColumn(shrinked.end().column() - 1);
             s.m_range->setRange(shrinked);
         }
@@ -113,13 +113,13 @@ void DocumentInfo::updateStatus(State& s)
         // 0) check CWD first if allowed
         if (m_plugin->config().useCwd())
         {
-            const KUrl& uri = doc->url().prettyUrl();
-            const QString cur2check = uri.directory() + '/' + filename;
+            const auto& uri = doc->url();
+            const auto cur2check = QString{uri.directory() + '/' + filename};
             kDebug(DEBUG_AREA) << "check current dir 4: " << cur2check;
-            s.m_status = (QFileInfo(cur2check).exists()) ? Status::Ok : Status::NotFound;
+            s.m_status = (QFileInfo{cur2check}.exists()) ? Status::Ok : Status::NotFound;
         }
         // 1) Try configured dirs then
-        QStringList paths = findHeader(
+        auto paths = findHeader(
             filename
           , m_plugin->config().sessionDirs()
           , m_plugin->config().systemDirs()
@@ -132,8 +132,8 @@ void DocumentInfo::updateStatus(State& s)
             s.m_status = Status::MultipleMatches;
         kDebug(DEBUG_AREA) << "#include filename=" << filename << ", status=" << int(s.m_status) << ", r=" << s.m_range.get();
 
-        KTextEditor::MarkInterface* iface = qobject_cast<KTextEditor::MarkInterface*>(doc);
-        const int line = s.m_range->start().line();
+        auto* iface = qobject_cast<KTextEditor::MarkInterface*>(doc);
+        const auto line = s.m_range->start().line();
         switch (s.m_status)
         {
             case Status::Ok:
@@ -178,9 +178,9 @@ void DocumentInfo::updateStatus(State& s)
 DocumentInfo::registered_ranges_type::iterator DocumentInfo::findRange(KTextEditor::MovingRange* range)
 {
     // std::find_if + lambda!
-    const registered_ranges_type::iterator last = m_ranges.end();
+    const auto last = end(m_ranges);
     for (
-        registered_ranges_type::iterator it = m_ranges.begin()
+        auto it = begin(m_ranges)
       ; it != last
       ; ++it
       ) if (range == it->m_range.get()) return it;
@@ -189,8 +189,8 @@ DocumentInfo::registered_ranges_type::iterator DocumentInfo::findRange(KTextEdit
 
 void DocumentInfo::caretExitedRange(KTextEditor::MovingRange* range, KTextEditor::View*)
 {
-    registered_ranges_type::iterator it = findRange(range);
-    if (it != m_ranges.end())
+    auto it = findRange(range);
+    if (it != end(m_ranges))
         updateStatus(*it);
 }
 
@@ -202,10 +202,10 @@ void DocumentInfo::rangeEmpty(KTextEditor::MovingRange* range)
       && range->start().column() != -1 && range->end().column() != -1
       );
     // Remove possible mark on a line
-    KTextEditor::MarkInterface* iface = qobject_cast<KTextEditor::MarkInterface*>(range->document());
+    auto* iface = qobject_cast<KTextEditor::MarkInterface*>(range->document());
     iface->clearMark(range->start().line());
     // Erase internal data
-    registered_ranges_type::iterator it = findRange(range);
+    auto it = findRange(range);
     if (it != m_ranges.end())
     {
         kDebug(DEBUG_AREA) << "MovingRange: empty range deleted: " << range;
@@ -222,7 +222,7 @@ void DocumentInfo::rangeInvalid(KTextEditor::MovingRange* range)
 {
     kDebug(DEBUG_AREA) << "It seems document reloaded... cleanup ranges???";
     // Erase internal data
-    registered_ranges_type::iterator it = findRange(range);
+    auto it = findRange(range);
     if (it != m_ranges.end())
     {
         kDebug(DEBUG_AREA) << "MovingRange: invalid range deleted: " << range;

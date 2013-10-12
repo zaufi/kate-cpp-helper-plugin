@@ -25,6 +25,7 @@
 // Project specific includes
 #include <src/translation_unit.h>
 #include <src/clang/disposable.h>
+#include <src/clang/kind_of.h>
 #include <src/clang/to_string.h>
 #include <src/sanitize_snippet.h>
 
@@ -59,13 +60,12 @@ void debugShowCompletionResult(
 
     // Show info about parent context
     CXCursorKind parent_ck;
-    const clang::DCXString parent = {clang_getCompletionParent(str, &parent_ck)};
-    const auto parent_str = clang_getCString(parent);
-    kDebug(DEBUG_AREA) << "  parent: " << (parent_str ? parent_str : "<none>")
+    const auto parent_str = toString(clang::DCXString{clang_getCompletionParent(str, &parent_ck)});
+    kDebug(DEBUG_AREA) << "  parent: " << (parent_str.isEmpty() ? "<none>" : parent_str)
       << ',' << clang::toString(parent_ck).toUtf8().constData();
 
     // Show individual chunks
-    for (unsigned ci = 0, cn = clang_getNumCompletionChunks(str); ci < cn; ++ci)
+    for (auto ci = 0u, cn = clang_getNumCompletionChunks(str); ci < cn; ++ci)
     {
         auto kind = clang_getCompletionChunkKind(str, ci);
         if (kind == CXCompletionChunk_Optional)
@@ -73,38 +73,39 @@ void debugShowCompletionResult(
             kDebug(DEBUG_AREA) << "  chunk [" << i << ':' << ci << "]: "
               << clang::toString(kind).toUtf8().constData();
             auto ostr = clang_getCompletionChunkCompletionString(str, ci);
-            for (unsigned oci = 0, ocn = clang_getNumCompletionChunks(ostr); oci < ocn; ++oci)
+            for (auto oci = 0u, ocn = clang_getNumCompletionChunks(ostr); oci < ocn; ++oci)
             {
                 auto okind = clang_getCompletionChunkKind(ostr, oci);
-                clang::DCXString otext_str = {clang_getCompletionChunkText(ostr, oci)};
+                auto otext = toString(clang::DCXString{clang_getCompletionChunkText(ostr, oci)});
                 kDebug(DEBUG_AREA) << "  chunk [" << i << ':' << ci << ':' << oci << "]: "
                   << clang::toString(okind).toUtf8().constData()
-                  << ", text=" << QString(clang_getCString(otext_str));
+                  << ", text=" << otext;
                   ;
             }
         }
         else
         {
-            clang::DCXString text_str = {clang_getCompletionChunkText(str, ci)};
+            auto text = toString(clang::DCXString{clang_getCompletionChunkText(str, ci)});
             kDebug(DEBUG_AREA) << "  chunk [" << i << ':' << ci << "]: "
               << clang::toString(kind).toUtf8().constData()
-              << ", text=" << QString(clang_getCString(text_str));
+              << ", text=" << text;
         }
     }
 #if CLANG_VERSION >= 30200
-    clang::DCXString comment_str = {clang_getCompletionBriefComment(str)};
-    kDebug(DEBUG_AREA) << "  comment:" << QString(clang_getCString(comment_str));
+    auto comment = toString(clang::DCXString{clang_getCompletionBriefComment(str)});
+    kDebug(DEBUG_AREA) << "  comment:" << comment;
 #endif                                                      // CLANG_VERSION >= 30200
 
     // Show annotations
-    for (unsigned ai = 0u, an = clang_getCompletionNumAnnotations(str); ai < an; ++ai)
+    for (auto ai = 0u, an = clang_getCompletionNumAnnotations(str); ai < an; ++ai)
     {
+        /// \todo Make sure a string shouldn't be disposed
         auto ann_str = clang_getCompletionAnnotation(str, an);
         kDebug(DEBUG_AREA) << "  ann. text[" << ai << "]: " << QString(clang_getCString(ann_str));
     }
 
     // Show availability
-    const char* av = "unknown";
+    const auto* av = "unknown";
     switch (clang_getCompletionAvailability(str))
     {
         case CXAvailability_Available:
@@ -162,17 +163,9 @@ TranslationUnit::TranslationUnit(
     // Transform options compatible to clang API
     // NOTE Too fraking much actions for that simple task...
     // Definitely Qt doesn't suitable for that sort of tasks...
-    std::vector<QByteArray> utf8_options(options.size());
-    std::vector<const char*> clang_options(options.size(), nullptr);
-    {
-        int opt_idx = 0;
-        for (const auto& o : options)
-        {
-            utf8_options[opt_idx] = o.toUtf8();
-            clang_options[opt_idx] = utf8_options[opt_idx].constData();
-            opt_idx++;
-        }
-    }
+    auto utf8_options = std::vector<QByteArray>{};
+    auto clang_options = std::vector<const char*>{};
+    transform_command_line_args(options, utf8_options, clang_options);
     // Ok, ready to go
     m_unit = clang_createTranslationUnitFromSourceFile(
         index
@@ -201,17 +194,9 @@ TranslationUnit::TranslationUnit(
     // Transform options compatible to clang API
     // NOTE Too fraking much actions for that simple task...
     // Definitely Qt doesn't suitable for that sort of tasks...
-    std::vector<QByteArray> utf8_options(options.size());
-    std::vector<const char*> clang_options(options.size(), nullptr);
-    {
-        int opt_idx = 0;
-        for (const auto& o : options)
-        {
-            utf8_options[opt_idx] = o.toUtf8();
-            clang_options[opt_idx] = utf8_options[opt_idx].constData();
-            opt_idx++;
-        }
-    }
+    auto utf8_options = std::vector<QByteArray>{};
+    auto clang_options = std::vector<const char*>{};
+    transform_command_line_args(options, utf8_options, clang_options);
 
     // Setup internal structures w/ unsaved files
     updateUnsavedFiles(unsaved_files);
@@ -259,7 +244,7 @@ void TranslationUnit::updateUnsavedFiles(const unsaved_files_list_type& unsaved_
     m_unsaved_files_utf8.resize(unsaved_files.size());
     m_unsaved_files.resize(unsaved_files.size());
     // Transform unsaved files compatible to clang API
-    int uf_idx = 0;
+    auto uf_idx = 0;
     for (const auto& p : unsaved_files)
     {
         m_unsaved_files_utf8[uf_idx] = {p.first.toUtf8(), p.second.toUtf8()};
@@ -301,7 +286,7 @@ QList<ClangCodeCompletionItem> TranslationUnit::completeAt(
 #endif
 
     // Collect some diagnostic SPAM
-    for (unsigned i = 0; i < clang_codeCompleteGetNumDiagnostics(res); ++i)
+    for (auto i = 0u; i < clang_codeCompleteGetNumDiagnostics(res); ++i)
     {
         clang::DCXDiagnostic diag = {clang_codeCompleteGetDiagnostic(res, i)};
         appendDiagnostic(diag);
@@ -310,7 +295,7 @@ QList<ClangCodeCompletionItem> TranslationUnit::completeAt(
     completions.reserve(res->NumResults);                   // Peallocate enough space for completion results
 
     // Lets look what we've got...
-    for (unsigned i = 0; i < res->NumResults; ++i)
+    for (auto i = 0u; i < res->NumResults; ++i)
     {
         const auto str = res->Results[i].CompletionString;
         const auto priority = clang_getCompletionPriority(str);
@@ -347,15 +332,14 @@ QList<ClangCodeCompletionItem> TranslationUnit::completeAt(
         };
         bool skip_this_item = false;
         for (
-            unsigned j = 0
+            auto j = 0u
           , chunks = clang_getNumCompletionChunks(str)
           ; j < chunks && !skip_this_item
           ; ++j
           )
         {
             auto kind = clang_getCompletionChunkKind(str, j);
-            clang::DCXString text_str = {clang_getCompletionChunkText(str, j)};
-            QString text = clang_getCString(text_str);
+            auto text = toString(clang::DCXString{clang_getCompletionChunkText(str, j)});
             switch (kind)
             {
                 // Text that a user would be expected to type to get this code-completion result
@@ -395,13 +379,12 @@ QList<ClangCodeCompletionItem> TranslationUnit::completeAt(
                       ; ++oci
                       )
                     {
-                        clang::DCXString otext_str = {clang_getCompletionChunkText(ostr, oci)};
-                        QString otext{clang_getCString(otext_str)};
+                        auto otext = toString(clang::DCXString{clang_getCompletionChunkText(ostr, oci)});
                         // Pipe given piece of text through sanitizer
                         auto p = sanitize(otext, sanitize_rules);
                         if (p.first)
                         {
-                            auto okind = clang_getCompletionChunkKind(ostr, oci);
+                            auto okind = clang::kind_of(ostr, oci);
                             if (okind == CXCompletionChunk_Placeholder)
                             {
                                 appender("%" + QString::number(placeholders.size() + 1) + "%");
@@ -531,7 +514,7 @@ QString TranslationUnit::makeParentText(CXCompletionString str, const CXCursorKi
 
 void TranslationUnit::storeTo(const KUrl& filename)
 {
-    QByteArray pch_filename = filename.toLocalFile().toUtf8();
+    auto pch_filename = filename.toLocalFile().toUtf8();
     auto result = clang_saveTranslationUnit(
         m_unit
       , pch_filename.constData()
@@ -616,7 +599,7 @@ void TranslationUnit::appendDiagnostic(const CXDiagnostic& diag)
 
 void TranslationUnit::updateDiagnostic()
 {
-    for (unsigned i = 0, last = clang_getNumDiagnostics(m_unit); i < last; ++i)
+    for (auto i = 0u, last = clang_getNumDiagnostics(m_unit); i < last; ++i)
     {
         clang::DCXDiagnostic diag = {clang_getDiagnostic(m_unit, i)};
         appendDiagnostic(diag);
@@ -656,20 +639,20 @@ unsigned TranslationUnit::defaultExplorerParseOptions()
 }
 
 /**
- * Transform comman line options into a form compatible for clang API
+ * Transform command line options into a form compatible for clang API
  *
  * \note Too fraking much actions for that simple task...
  * Definitely Qt doesn't suitable for that sort of tasks...
  */
 void TranslationUnit::transform_command_line_args(
-    QStringList& input
+    const QStringList& input
   , std::vector<QByteArray>& args
   , std::vector<const char*>& pointers
   )
 {
     args.resize(input.size());
     pointers.resize(input.size(), nullptr);
-    int opt_idx = 0;
+    auto opt_idx = 0;
     for (const auto& o : input)
     {
         args[opt_idx] = o.toUtf8();

@@ -249,18 +249,18 @@ void CppHelperPluginView::switchIfaceImpl()
       && mainWindow()->activeView()
       );
     // Ok, trying case 1
-    KTextEditor::Document* doc = mainWindow()->activeView()->document();
-    KUrl url = doc->url();
+    auto* doc = mainWindow()->activeView()->document();
+    auto url = doc->url();
     if (!url.isValid() || url.isEmpty())
         return;
 
-    QFileInfo info(url.toLocalFile());
-    QString extension = info.suffix();
+    auto info = QFileInfo{url.toLocalFile()};
+    auto extension = info.suffix();
 
     kDebug(DEBUG_AREA) << "Current file ext: " <<  extension;
 
-    const QString& active_doc_path = info.absolutePath();
-    const QString& active_doc_name = info.completeBaseName();
+    const auto& active_doc_path = info.absolutePath();
+    const auto& active_doc_name = info.completeBaseName();
     QStringList candidates;
     bool is_implementation_file;
     if ( (is_implementation_file = SRC_EXTENSIONS.contains(extension)) )
@@ -271,7 +271,7 @@ void CppHelperPluginView::switchIfaceImpl()
         /// \todo Show some SPAM?
         return;                                             // ... just leave!
 
-    const QStringList& extensions_to_try =
+    const auto& extensions_to_try =
         is_implementation_file ? HDR_EXTENSIONS : SRC_EXTENSIONS;
 
     kDebug(DEBUG_AREA) << "open src/hrd: stage1: found candidates: " << candidates;
@@ -280,8 +280,8 @@ void CppHelperPluginView::switchIfaceImpl()
     {
         // Lets try to find smth in configured sessions dirs
         // NOTE This way useful only if the current file is a source one!
-        for (const QString& dir : m_plugin->config().sessionDirs())
-            for (const QString& c : findCandidatesAt(active_doc_name, dir, extensions_to_try))
+        for (const auto& dir : m_plugin->config().sessionDirs())
+            for (const auto& c : findCandidatesAt(active_doc_name, dir, extensions_to_try))
                 if (!candidates.contains(c))
                     candidates.push_back(c);
 
@@ -292,9 +292,9 @@ void CppHelperPluginView::switchIfaceImpl()
             kDebug(DEBUG_AREA) << "open src/hdr: open first #include enabled";
             // Try to find first #include in this (active) document
             QString first_header_name;
-            for (int i = 0; i < doc->lines() && first_header_name.isEmpty(); i++)
+            for (auto i = 0; i < doc->lines() && first_header_name.isEmpty(); i++)
             {
-                const QString& line_str = doc->line(i);
+                const auto& line_str = doc->line(i);
                 kate::IncludeParseResult r = parseIncludeDirective(line_str, false);
                 if (r.m_range.isValid())
                 {
@@ -310,7 +310,7 @@ void CppHelperPluginView::switchIfaceImpl()
                 QStringList files;
                 findFiles(first_header_name, m_plugin->config().sessionDirs(), files);
                 kDebug(DEBUG_AREA) << "* candidates: " << candidates;
-                for (const QString& c : files)
+                for (const auto& c : files)
                 {
                     kDebug(DEBUG_AREA) << "** consider: " << c;
                     if (!candidates.contains(c))
@@ -325,13 +325,13 @@ void CppHelperPluginView::switchIfaceImpl()
         // NOTE This way useful only if the current file is a header one!
         // 0) Collect paths of already opened surce files
         QStringList src_paths;
-        for (KTextEditor::Document* current_doc : m_plugin->application()->documentManager()->documents())
+        for (auto* current_doc : m_plugin->application()->documentManager()->documents())
         {
-            KUrl current_doc_uri = current_doc->url();
+            auto current_doc_uri = current_doc->url();
             if (current_doc_uri.isValid() && !current_doc_uri.isEmpty())
             {
-                QFileInfo doc_file_info(current_doc_uri.toLocalFile());
-                const QString& current_path = doc_file_info.absolutePath();
+                auto doc_file_info = QFileInfo{current_doc_uri.toLocalFile()};
+                const auto& current_path = doc_file_info.absolutePath();
                 // Append current path only if the document is a source and no such path
                 // collected yet...
                 if (SRC_EXTENSIONS.contains(doc_file_info.suffix()) && !src_paths.contains(current_path))
@@ -340,8 +340,8 @@ void CppHelperPluginView::switchIfaceImpl()
         }
         kDebug(DEBUG_AREA) << "open src/hrd: stage2: sources paths: " << src_paths;
         // Ok,  try to find smth in collected dirs
-        for (const QString& dir : src_paths)
-            for (const QString& c : findCandidatesAt(active_doc_name, dir, extensions_to_try))
+        for (const auto& dir : src_paths)
+            for (const auto& c : findCandidatesAt(active_doc_name, dir, extensions_to_try))
                 if (!candidates.contains(c))
                     candidates.push_back(c);
 
@@ -356,17 +356,17 @@ void CppHelperPluginView::switchIfaceImpl()
             src_paths.push_front(active_doc_path);      // Do not forget about the current document's dir
             // Form filters list
             QStringList filters;
-            for (const QString& ext : extensions_to_try)
+            for (const auto& ext : extensions_to_try)
                 filters << (active_doc_name + "*." + ext);
             kDebug(DEBUG_AREA) << "open src/hrd: stage3: filters ready: " <<  filters;
-            for (const QString& dir : src_paths)
+            for (const auto& dir : src_paths)
             {
                 for (
-                    QDirIterator dir_it(
+                    QDirIterator dir_it {
                         dir
                       , filters
                       , QDir::Files | QDir::NoDotAndDotDot | QDir::Readable | QDir::CaseSensitive
-                      )
+                      }
                   ; dir_it.hasNext()
                   ;)
                 {
@@ -420,10 +420,10 @@ QStringList CppHelperPluginView::findCandidatesAt(
   )
 {
     QStringList result;
-    for (const QString& ext : extensions)
+    for (const auto& ext : extensions)
     {
         /// \todo Is there smth like \c boost::filesystem::path?
-        QString filename = QDir::cleanPath(path + "/" + name + "." + ext);
+        auto filename = QDir::cleanPath(path + "/" + name + "." + ext);
         kDebug(DEBUG_AREA) << "open src/hrd: trying " << filename;
         if (isPresentAndReadable(filename))
             result.push_back(filename);
@@ -444,9 +444,9 @@ void CppHelperPluginView::openHeader()
 
     QStringList candidates;
     QString filename;
-    KTextEditor::Document* doc = mainWindow()->activeView()->document();
+    auto* doc = mainWindow()->activeView()->document();
 
-    KTextEditor::Range r = findIncludeFilenameNearCursor();
+    auto r = findIncludeFilenameNearCursor();
     kDebug(DEBUG_AREA) << "findIncludeFilenameNearCursor() = " << r;
     if (!r.isEmpty())
     {
@@ -469,8 +469,8 @@ void CppHelperPluginView::openHeader()
         // Scan current document for #include files
         for (int i = 0; i < doc->lines(); i++)
         {
-            const QString& line_str = doc->line(i);
-            kate::IncludeParseResult r = parseIncludeDirective(line_str, false);
+            const auto& line_str = doc->line(i);
+            auto r = parseIncludeDirective(line_str, false);
             if (r.m_range.isValid())
             {
                 r.m_range.setBothLines(i);
@@ -479,14 +479,14 @@ void CppHelperPluginView::openHeader()
         }
         // Resolve relative filenames to absolute
         QStringList all;
-        for (const QString& file : candidates)
+        for (const auto& file : candidates)
         {
-            QStringList cfpl = findFileLocations(file);     // fill `Current File Paths List' ;-)
+            auto cfpl = findFileLocations(file);            // fill `Current File Paths List' ;-)
             /// \todo WTF! List doesn't have a \c merge() ???
             all.append(cfpl);
         }
         candidates.swap(all);
-        QString error_text = filename.isEmpty()
+        auto error_text = filename.isEmpty()
           ? QString()
           : i18n("Unable to find the file: `<tt>%1</tt>'.", filename)
           + (candidates.isEmpty()
@@ -512,13 +512,13 @@ QStringList CppHelperPluginView::findFileLocations(const QString& filename)
       && mainWindow()->activeView()
       );
 
-    KTextEditor::Document* doc = mainWindow()->activeView()->document();
+    auto* doc = mainWindow()->activeView()->document();
     // Try to find full filename to open
-    QStringList candidates = findHeader(filename, m_plugin->config().sessionDirs(), m_plugin->config().systemDirs());
+    auto candidates = findHeader(filename, m_plugin->config().sessionDirs(), m_plugin->config().systemDirs());
     // Check CWD as well, if allowed
     if (m_plugin->config().useCwd())
     {
-        const QString uri = doc->url().prettyUrl() + '/' + filename;
+        const auto uri = doc->url().prettyUrl() + '/' + filename;
         if (isPresentAndReadable(uri))
             candidates.push_front(uri);                     // Push to front cuz more likely that user wants it
     }
@@ -534,8 +534,8 @@ inline void CppHelperPluginView::openFile(const QString& file)
 {
     if (file.isEmpty()) return;                             // Nothing to do if no file specified
     kDebug(DEBUG_AREA) << "Going to open " << file;
-    KTextEditor::Document* new_doc = m_plugin->application()->documentManager()->openUrl(file);
-    QFileInfo fi(file);
+    auto* new_doc = m_plugin->application()->documentManager()->openUrl(file);
+    auto fi = QFileInfo{file};
     if (fi.isReadable())
     {
         kDebug(DEBUG_AREA) << "Is file " << file << " writeable? -- " << fi.isWritable();
@@ -554,7 +554,7 @@ inline void CppHelperPluginView::openFile(const QString& file)
 
 inline void CppHelperPluginView::openFiles(const QStringList& files)
 {
-    for (const QString& file : files)
+    for (const auto& file : files)
         openFile(file);
 }
 
@@ -566,14 +566,14 @@ void CppHelperPluginView::copyInclude()
       );
 
     const auto* view = mainWindow()->activeView();
-    const KUrl& uri = view->document()->url().prettyUrl();
-    QString current_dir = uri.directory();
+    const auto& uri = view->document()->url();
+    auto current_dir = uri.directory();
     QString longest_matched;
-    QChar open = m_plugin->config().useLtGt() ? '<' : '"';
-    QChar close = m_plugin->config().useLtGt() ? '>' : '"';
+    auto open = QChar{m_plugin->config().useLtGt() ? '<' : '"'};
+    auto close = QChar{m_plugin->config().useLtGt() ? '>' : '"'};
     kDebug(DEBUG_AREA) << "Got document name: " << uri << ", type: " << view->document()->mimeType();
     // Try to match local (per session) dirs first
-    for (const QString& dir : m_plugin->config().sessionDirs())
+    for (const auto& dir : m_plugin->config().sessionDirs())
         if (current_dir.startsWith(dir) && longest_matched.length() < dir.length())
             longest_matched = dir;
     if (longest_matched.isEmpty())
@@ -585,7 +585,7 @@ void CppHelperPluginView::copyInclude()
             if (current_dir.startsWith(dir) && longest_matched.length() < dir.length())
                 longest_matched = dir;
     }
-    const bool is_suitable_document =
+    const auto is_suitable_document =
         isSuitableDocument(view->document()->mimeType(), view->document()->highlightingMode());
     QString text;
     if (!longest_matched.isEmpty())
@@ -788,9 +788,9 @@ void CppHelperPluginView::textInserted(KTextEditor::Document* doc, const KTextEd
      *  QString line_str = dv[line_no];
      * \endcode
      */
-    for (int i = range.start().line(); i < range.end().line() + 1; i++)
+    for (auto i = range.start().line(); i < range.end().line() + 1; i++)
     {
-        const QString& line_str = doc->line(i);
+        const auto& line_str = doc->line(i);
         kate::IncludeParseResult r = parseIncludeDirective(line_str, true);
         if (r.m_range.isValid())
         {
@@ -825,7 +825,7 @@ bool CppHelperPluginView::handleView(KTextEditor::View* view)
     if (!view)                                              // Null view is quite possible...
         return false;                                       // do nothing in this case.
 
-    const bool is_suitable_document =
+    const auto is_suitable_document =
         isSuitableDocument(view->document()->mimeType(), view->document()->highlightingMode());
 
     updateCppActionsAvailability(is_suitable_document);
@@ -836,7 +836,7 @@ bool CppHelperPluginView::handleView(KTextEditor::View* view)
         kDebug(DEBUG_AREA) << "Nothing to do if no completion iface present for a view";
         return false;
     }
-    bool result = false;
+    auto result = false;
     auto it = m_completers.find(view);
     // Is current document has suitable type (or highlighting)
     if (is_suitable_document)
@@ -894,7 +894,7 @@ bool CppHelperPluginView::eventFilter(QObject* obj, QEvent* event)
 {
     if (event->type() == QEvent::KeyPress)
     {
-        QKeyEvent* ke = static_cast<QKeyEvent*>(event);
+        auto* ke = static_cast<QKeyEvent*>(event);
         if ((obj == m_tool_view.get()) && (ke->key() == Qt::Key_Escape))
         {
             mainWindow()->hideToolView(m_tool_view.get());
@@ -913,7 +913,7 @@ KTextEditor::Range CppHelperPluginView::findIncludeFilenameNearCursor() const
       );
 
     KTextEditor::Range result;                              // default range is empty
-    KTextEditor::View* view = mainWindow()->activeView();
+    auto* view = mainWindow()->activeView();
     if (!view || !view->cursorPosition().isValid())
         return result;                                      // do nothing if no view or valid cursor
 
@@ -922,8 +922,8 @@ KTextEditor::Range CppHelperPluginView::findIncludeFilenameNearCursor() const
         return view->selectionRange();
 
     // Obtain a line under cursor
-    const int line = view->cursorPosition().line();
-    const QString line_str = view->document()->line(line);
+    const auto line = view->cursorPosition().line();
+    const auto line_str = view->document()->line(line);
 
     // Check if current line starts w/ #include
     kate::IncludeParseResult r = parseIncludeDirective(line_str, false);
@@ -938,13 +938,13 @@ KTextEditor::Range CppHelperPluginView::findIncludeFilenameNearCursor() const
     // just search a word under cursor...
 
     // Get cursor line/column
-    int col = view->cursorPosition().column();
+    auto col = view->cursorPosition().column();
 
     // NOTE Make sure cursor withing a line 
     // (dunno is it possible to have a cursor far than a line length... 
     // in block selection mode for example)
-    int start = qMax(qMin(col, line_str.length() - 1), 0);
-    int end = start;
+    auto start = qMax(qMin(col, line_str.length() - 1), 0);
+    auto end = start;
     kDebug(DEBUG_AREA) << "Arghh... trying w/ word under cursor starting from" << start;
 
     // Seeking for start of current word
@@ -1100,11 +1100,11 @@ void CppHelperPluginView::inclusionVisitor(
   , unsigned stack_size
   )
 {
-    const QString header_name = clang::toString(clang::DCXString{clang_getFileName(file)});
+    const auto header_name = clang::toString(clang::DCXString{clang_getFileName(file)});
     // Obtain (or assign a new) an unique header ID
-    const int header_id = m_plugin->headersCache()[header_name];
+    const auto header_id = m_plugin->headersCache()[header_name];
 
-    int included_from_id = DocumentInfo::IncludeLocationData::ROOT;
+    auto included_from_id = DocumentInfo::IncludeLocationData::ROOT;
     clang::location loc;
     if (stack_size)                                         // Is there anything on stack
     {
@@ -1153,18 +1153,18 @@ void CppHelperPluginView::includeFileActivatedFromTree(QTreeWidgetItem* item, co
 
     m_includes_list_model->clear();
 
-    const HeaderFilesCache& cache = const_cast<const CppHelperPlugin* const>(m_plugin)->headersCache();
-    QString filename = item->data(column, Qt::DisplayRole).toString();
-    int id = cache[filename];
+    const auto& cache = const_cast<const CppHelperPlugin* const>(m_plugin)->headersCache();
+    auto filename = item->data(column, Qt::DisplayRole).toString();
+    auto id = cache[filename];
     if (id != HeaderFilesCache::NOT_FOUND)
     {
-        const DocumentInfo& di = m_plugin->getDocumentInfo(m_last_explored_document);
-        std::vector<DocumentInfo::IncludeLocationData> included_from = di.getListOfIncludedBy2(id);
+        const auto& di = m_plugin->getDocumentInfo(m_last_explored_document);
+        auto included_from = di.getListOfIncludedBy2(id);
         for (const auto& entry : included_from)
         {
             if (entry.m_included_by_id != DocumentInfo::IncludeLocationData::ROOT)
             {
-                QStandardItem* item = new QStandardItem(
+                auto* item = new QStandardItem(
                     QString("%1[%2]").arg(
                         cache[entry.m_included_by_id]
                       , QString::number(entry.m_line)
@@ -1230,7 +1230,7 @@ void CppHelperPluginView::diagnosticMessageActivated(const QModelIndex& index)
  */
 void CppHelperPluginView::updateCppActionsAvailability()
 {
-    KTextEditor::View* view = mainWindow()->activeView();
+    auto* view = mainWindow()->activeView();
     if (!view)
     {
         kDebug(DEBUG_AREA) << "no active view yet -- leave `open header' action as is...";

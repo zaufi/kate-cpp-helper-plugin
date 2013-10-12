@@ -88,13 +88,7 @@ bool isSuitableDocumentAndHighlighting(const QString&, const QString&);
 inline void removeDuplicates(QStringList& list)
 {
     list.sort();
-    for (
-        QStringList::iterator it = list.begin()
-      , prev = list.end()
-      , last = list.end()
-      ; it != last
-      ;
-      )
+    for (auto it = list.begin(), prev = list.end(), last = list.end(); it != last;)
     {
         if (prev != last && *it == *prev) list.erase(it++);
         else prev = it++;
@@ -107,15 +101,15 @@ inline void removeDuplicates(QStringList& list)
  */
 inline bool isPresentAndReadable(const QString& uri)
 {
-    const QFileInfo fi = QFileInfo(uri);
+    const auto fi = QFileInfo{uri};
     return fi.exists() && fi.isFile() && fi.isReadable();
 }
 
 inline void findFiles(const QString& file, const QStringList& paths, QStringList& result)
 {
-    for (const QString& path : paths)
+    for (const auto& path : paths)
     {
-        const QString full_filename = QDir::cleanPath(path + '/' + file);
+        const auto full_filename = QDir::cleanPath(path + '/' + file);
         if (isPresentAndReadable(full_filename))
         {
             result.push_back(full_filename);

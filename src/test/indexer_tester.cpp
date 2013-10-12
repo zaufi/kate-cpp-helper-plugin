@@ -34,6 +34,7 @@
 #include <QtTest/QtTest>
 // Include the following file if u need to validate some text results
 // #include <boost/test/output_test_stream.hpp>
+#include <chrono>
 #include <iostream>
 #include <vector>
 
@@ -84,8 +85,22 @@ void indexer_tester::index_sample_file()
       .add_target(QString{SAMPLE_FILE})
       .start()
       ;
+    auto start_time = std::chrono::system_clock::now();
+    auto stop_requested = false;
     while (!m_res.m_done)
+    {
         QCoreApplication::processEvents();
+        if (!stop_requested)
+        {
+            auto now = std::chrono::system_clock::now();
+            if ((now - start_time) > std::chrono::seconds(2))
+            {
+                kDebug() << "Requesting indexer to stop!";
+                m_indexer.stop();
+                stop_requested = true;
+            }
+        }
+    }
     kDebug() << "Done";
 }
 

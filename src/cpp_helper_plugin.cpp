@@ -195,13 +195,13 @@ void CppHelperPlugin::updateDirWatcher()
     if (config().what_to_monitor() & 2)
     {
         kDebug(DEBUG_AREA) << "Going to monitor system dirs for changes...";
-        for (const QString& path : config().systemDirs())
+        for (const auto& path : config().systemDirs())
             updateDirWatcher(path);
     }
     if (config().what_to_monitor() & 1)
     {
         kDebug(DEBUG_AREA) << "Going to monitor session dirs for changes...";
-        for (const QString& path : config().sessionDirs())
+        for (const auto& path : config().sessionDirs())
             updateDirWatcher(path);
     }
 
@@ -211,7 +211,7 @@ void CppHelperPlugin::updateDirWatcher()
 void CppHelperPlugin::createdPath(const QString& path)
 {
     // No reason to call update if it is just a dir was created...
-    if (QFileInfo(path).isFile() && m_last_updated != path)
+    if (QFileInfo{path}.isFile() && m_last_updated != path)
     {
         kDebug(DEBUG_AREA) << "DirWatcher said created: " << path;
         updateCurrentView();
@@ -237,7 +237,7 @@ void CppHelperPlugin::invalidateTranslationUnits()
 
 void CppHelperPlugin::updateCurrentView()
 {
-    KTextEditor::View* view = application()->activeMainWindow()->activeView();
+    auto* view = application()->activeMainWindow()->activeView();
     if (view)
         updateDocumentInfo(view->document());
 }
@@ -247,7 +247,7 @@ void CppHelperPlugin::updateDocumentInfo(KTextEditor::Document* doc)
     kDebug(DEBUG_AREA) << "(re)scan document " << doc->url() << " for #includes...";
 
     assert("Valid document expected" && doc);
-    KTextEditor::MovingInterface* mv_iface = qobject_cast<KTextEditor::MovingInterface*>(doc);
+    auto* mv_iface = qobject_cast<KTextEditor::MovingInterface*>(doc);
     if (!mv_iface)
     {
         kDebug(DEBUG_AREA) << "No moving iface!!!!!!!!!!!";
@@ -256,7 +256,7 @@ void CppHelperPlugin::updateDocumentInfo(KTextEditor::Document* doc)
 
     // Try to remove prev collected info
     {
-        CppHelperPlugin::doc_info_type::iterator it = m_doc_info.find(doc);
+        auto it = m_doc_info.find(doc);
         if (it != m_doc_info.end())
             m_doc_info.erase(it);
     }
@@ -269,12 +269,12 @@ void CppHelperPlugin::updateDocumentInfo(KTextEditor::Document* doc)
         return;
     }
 
-    std::unique_ptr<DocumentInfo> di(new DocumentInfo(this));
+    auto di = std::unique_ptr<DocumentInfo>{new DocumentInfo(this)};
 
     // Search lines and filenames #include'd in this document
-    for (int i = 0, end_line = doc->lines(); i < end_line; i++)
+    for (auto i = 0, end_line = doc->lines(); i < end_line; i++)
     {
-        const QString& line_str = doc->line(i);
+        const auto& line_str = doc->line(i);
         kate::IncludeParseResult r = parseIncludeDirective(line_str, false);
         if (r.m_range.isValid())
         {
@@ -327,7 +327,7 @@ void CppHelperPlugin::makePCHFile(const KUrl& filename)
     // Show busy mouse pointer
     QApplication::setOverrideCursor(QCursor(Qt::BusyCursor));
 
-    const QString pch_file_name = filename.toLocalFile() + ".kate.pch";
+    const auto pch_file_name = QString{filename.toLocalFile() + ".kate.pch"};
     try
     {
         addDiagnosticMessage(
@@ -338,12 +338,12 @@ void CppHelperPlugin::makePCHFile(const KUrl& filename)
           );
         kDebug(DEBUG_AREA) << "Going to produce a PCH file" << pch_file_name
             << "from" << config().precompiledHeaderFile();
-        TranslationUnit pch_unit(
+        auto pch_unit = TranslationUnit{
             localIndex()
           , filename
           , config().formCompilerOptions()
           , TranslationUnit::defaultPCHParseOptions()
-          );
+          };
         pch_unit.storeTo(pch_file_name);
         config().setPrecompiledFile(pch_file_name);         // Set PCH file only if everything is Ok
     }
@@ -400,8 +400,8 @@ void CppHelperPlugin::buildPCHIfAbsent()
         return;
     }
 
-    const QString pch_file_name = config().precompiledHeaderFile().toLocalFile() + ".kate.pch";
-    QFileInfo pi(pch_file_name);
+    const auto pch_file_name = QString{config().precompiledHeaderFile().toLocalFile() + ".kate.pch"};
+    auto pi = QFileInfo{pch_file_name};
     if (!pi.exists())
     {
         makePCHFile(config().precompiledHeaderFile());
@@ -454,7 +454,7 @@ QList<KTextEditor::HighlightInterface::AttributeBlock> CppHelperPlugin::highligh
     /// \todo Is there any reason to cache this pointer?
     /// (to avoid casting all the time to the same (?) value)
     /// Is it constant by the way?
-    KTextEditor::HighlightInterface* iface = qobject_cast<KTextEditor::HighlightInterface*>(doc);
+    auto* iface = qobject_cast<KTextEditor::HighlightInterface*>(doc);
     if (iface)
     {
         doc->setHighlightingMode(mode);
@@ -474,7 +474,7 @@ TranslationUnit::unsaved_files_list_type CppHelperPlugin::makeUnsavedFilesList(
     // Form unsaved files list
     TranslationUnit::unsaved_files_list_type unsaved_files;
     //  1) append this document to the list of unsaved files
-    const QString this_filename = doc->url().toLocalFile();
+    const auto this_filename = doc->url().toLocalFile();
     unsaved_files.push_back(qMakePair(this_filename, doc->text()));
     /// \todo Collect other unsaved files
     return unsaved_files;
@@ -505,7 +505,7 @@ TranslationUnit& CppHelperPlugin::getTranslationUnitByDocumentImpl(
   )
 {
     // Make sure an entry for document exists
-    std::unique_ptr<TranslationUnit>& unit = m_units[doc].*unit_offset;
+    auto& unit = m_units[doc].*unit_offset;
     // Form unsaved files list
     /// \todo It would be better to monitor if code has changed before
     /// \c updateUnsavedFiles() and \c reparse()
@@ -522,7 +522,7 @@ TranslationUnit& CppHelperPlugin::getTranslationUnitByDocumentImpl(
         // No! Need to create one...
         // Form command line parameters
         //  1) collect configured system and session dirs and make -I option series
-        QStringList options = config().formCompilerOptions();
+        auto options = config().formCompilerOptions();
         //  2) append PCH options
         kDebug(DEBUG_AREA) << config().precompiledHeaderFile();
         kDebug(DEBUG_AREA) << config().pchFile();

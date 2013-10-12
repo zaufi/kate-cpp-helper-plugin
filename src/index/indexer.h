@@ -54,7 +54,7 @@ public:
 
 public Q_SLOTS:
     void process();
-    void cancel_request();
+    void request_cancel();
 
 Q_SIGNALS:
     void indexing_uri(const KUrl&);
@@ -62,6 +62,10 @@ Q_SIGNALS:
     void finished();
 
 private:
+    bool dispatch_target(const KUrl&);
+    void handle_file(const QString&);
+    void handle_directory(const QString&);
+
     indexer* const m_indexer;
     std::atomic<bool> m_is_cancelled;
 };
@@ -101,8 +105,10 @@ Q_SIGNALS:
     void indexing_uri(KUrl);
     void finished();
     void error(clang::location, QString);
+    void stopping();
 
 private:
+    friend class worker;
 
     clang::DCXIndex m_index = {clang_createIndex(1, 1)};
     std::vector<const char*> m_options;
