@@ -21,6 +21,7 @@ add_boost_tests(
 target_link_libraries(
     ${UNIT_TESTS}
     ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}
+    ${Boost_SERIALIZATION_LIBRARY}
     ${KDE4_KTEXTEDITOR_LIBS}
     ${LIBCLANG_LIBRARY}
     ${XAPIAN_LIBRARIES}
@@ -37,6 +38,7 @@ set(INDEXER_UNIT_TEST_SOURCES
 add_executable(
     indexer_unit_tests
     ${INDEXER_UNIT_TEST_SOURCES}
+    ${CLANG_HELPERS_SOURCES}
   )
 
 target_link_libraries(

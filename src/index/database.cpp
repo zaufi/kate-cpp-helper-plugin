@@ -1,7 +1,7 @@
 /**
  * \file
  *
- * \brief Class \c kate::index::database (interface)
+ * \brief Class \c kate::index::database (implementation)
  *
  * \date Wed Oct  9 11:16:43 MSK 2013 -- Initial design
  */
@@ -25,55 +25,14 @@
  * with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
-
 // Project specific includes
+#include <src/index/database.h>
 
 // Standard includes
-#include <xapian/database.h>
-#include <xapian/error.h>
-#include <stdexcept>
-#include <string>
 
 namespace kate { namespace index { namespace term {
-extern const std::string XDECL;
-extern const std::string XREF;
+const std::string XDECL = "XDECL";
+const std::string XREF = "XREF";
 }                                                           // namespace term
-
-
-/**
- * \brief [Type brief class description here]
- *
- * [More detailed description here]
- *
- */
-class database : public Xapian::WritableDatabase
-{
-public:
-    struct exception : public std::runtime_error
-    {
-        struct failure;
-        explicit exception(const std::string&);
-    };
-    /// Construct from a database path
-    explicit database(const std::string&);
-};
-
-struct database::exception::failure : public database::exception
-{
-    failure(const std::string& str) : database::exception(str) {}
-};
-
-inline database::exception::exception(const std::string& str)
-  : std::runtime_error(str) {}
-
-inline database::database(const std::string& path) try
-  : Xapian::WritableDatabase(path, Xapian::DB_CREATE_OR_OPEN)
-{
-}
-catch (const Xapian::DatabaseError& e)
-{
-    throw database::exception::failure("Index database [" + path + "] failure: " + e.get_msg());
-}
 
 }}                                                          // namespace index, kate

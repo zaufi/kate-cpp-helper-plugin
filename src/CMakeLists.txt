@@ -45,10 +45,11 @@ kde4_add_ui_files(
 kde4_add_plugin(katecpphelperplugin ${KATE_CPP_HELPER_PLUGIN_SOURCES})
 
 target_link_libraries(katecpphelperplugin
+    ${Boost_SERIALIZATION_LIBRARY}
+    ${KATE_INTERFACES_LIB}
     ${KDE4_KDEUI_LIBS}
     ${KDE4_KFILE_LIBS}
     ${KDE4_KTEXTEDITOR_LIBS}
-    ${KATE_INTERFACES_LIB}
     ${LIBCLANG_LIBRARY}
     ${XAPIAN_LIBRARIES}
   )

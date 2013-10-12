@@ -1,7 +1,6 @@
 #
-# Copyright 2012 by Alex Turbov <i.zaufi@gmail.com>
+# Copyright 2012-2013 by Alex Turbov <i.zaufi@gmail.com>
 #
-# kate: hl cmake;
 
 cmake_minimum_required(VERSION 2.6)
 
@@ -65,11 +64,12 @@ find_library(KATE_INTERFACES_LIB NAMES libkateinterfaces.so libkateinterfaces.so
 find_package(LibClang 3.0 REQUIRED)
 
 # find boost
+set(NEEDED_BOOST_COMPONENTS serialization)
 # NOTE I see no way to make unit tests optional for release mode
 # BUILD_TESTING will always turned ON... so caller have to disable
 # it explicitly if required.
 if (BUILD_TESTING)
-    set(NEEDED_BOOST_COMPONENTS unit_test_framework)
+    set(NEEDED_BOOST_COMPONENTS ${NEEDED_BOOST_COMPONENTS} unit_test_framework)
 else()
     message(STATUS "Unit tests disabled")
 endif()
@@ -107,8 +107,7 @@ if(_need_to_include_kate_interfaces)
     message(STATUS "Use internal kate developer interface files for KDE/kate ${KDE_VERSION}")
 endif()
 
-# Set generic compiler flags: turn ON C++11 (C++03 is suxx) and exceptions
-# set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS} ${KDE4_ENABLE_EXCEPTIONS}")
+# Set generic compiler flags: turn ON C++11 (C++03 is suxx)...
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS "4.7.0")
         set(CXX11_FLAG "-std=c++0x")
@@ -116,6 +115,7 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
         set(CXX11_FLAG "-std=c++11")
     endif()
 endif()
+# ... and allow to use exceptions w/ Qt code
 add_definitions(${CXX11_FLAG} ${KDE4_ENABLE_EXCEPTIONS})
 
 # Tell to boost::result_of to use decltype to decay return type of callable.
@@ -128,6 +128,7 @@ add_definitions(-DQT_USE_QSTRINGBUILDER)
 # Add LLVM definitions
 add_definitions(${LLVM_CXXFLAGS})
 # Use Kate plugins debug area as default
+# TODO Register private debug area?
 add_definitions(-DDEBUG_AREA=13040)
 
 # Keep RPATH to found libraries (particularly LLVM's) in installed .so file

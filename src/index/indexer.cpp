@@ -27,11 +27,16 @@
 
 // Project specific includes
 #include <src/index/indexer.h>
+#include <src/clang/disposable.h>
+#include <src/clang/kind_of.h>
+#include <src/clang/location.h>
+#include <src/clang/to_string.h>
 
 // Standard includes
 #include <KDE/KDebug>
 #include <KDE/KMimeType>
 #include <QtCore/QDirIterator>
+#include <xapian/document.h>
 #include <set>
 
 namespace kate { namespace index {
@@ -72,10 +77,69 @@ std::set<QString> CPP_SOURCE_MIME_TYPES = {
   , "text/x-chdr"
   , "text/x-c++hdr"
 };
+
+struct indexer_data
+{
+    std::string m_main_file;
+};
+
+inline Xapian::termpos make_term_position(const clang::location& loc)
+{
+    return loc.line() * 1000 + loc.column();
+}
+
 }                                                           // anonymous namespace
 
-
 //BEGIN worker members
+int worker::on_abort_cb(CXClientData client_data, void*)
+{
+    auto* const wrkr = static_cast<worker*>(client_data);
+    return 0;
+}
+
+void worker::on_diagnostic_cb(CXClientData, CXDiagnosticSet, void*)
+{
+}
+
+CXIdxClientFile worker::on_entering_main_file(CXClientData client_data, CXFile file, void*)
+{
+    auto* const wrkr = static_cast<worker*>(client_data);
+    kDebug(DEBUG_AREA) << "Main file:" << clang::toString(file);
+    return static_cast<CXIdxClientFile>(file);
+}
+
+CXIdxClientFile worker::on_include_file(CXClientData client_data, const CXIdxIncludedFileInfo* info)
+{
+    auto* const wrkr = static_cast<worker*>(client_data);
+    return static_cast<CXIdxClientFile>(info->file);
+}
+
+CXIdxClientASTFile worker::on_include_ast_file(CXClientData client_data, const CXIdxImportedASTFileInfo* info)
+{
+    auto* const wrkr = static_cast<worker*>(client_data);
+    return static_cast<CXIdxClientFile>(info->file);
+}
+
+CXIdxClientContainer worker::on_translation_unit(CXClientData client_data, void*)
+{
+    auto* const wrkr = static_cast<worker*>(client_data);
+    return CXIdxClientContainer("TU");
+}
+
+void worker::on_declaration(CXClientData client_data, const CXIdxDeclInfo* info)
+{
+    auto* const wrkr = static_cast<worker*>(client_data);
+    auto loc = clang::location{info->loc};
+    auto doc = Xapian::Document{};
+    doc.add_posting(info->entityInfo->name, make_term_position(loc));
+    doc.add_boolean_term(term::XDECL);
+    wrkr->m_indexer->m_db.add_document(doc);
+}
+
+void worker::on_declaration_reference(CXClientData client_data, const CXIdxEntityRefInfo* info)
+{
+}
+
 worker::worker(indexer* const parent)
   : m_indexer(parent)
 {
@@ -110,6 +174,35 @@ bool worker::is_look_like_cpp_source(const QFileInfo& fi)
 void worker::handle_file(const QString& filename)
 {
     kDebug(DEBUG_AREA) << "Indexing" << filename;
+    clang::DCXIndexAction action = {clang_IndexAction_create(m_indexer->m_index)};
+    IndexerCallbacks index_callbacks = {
+        &worker::on_abort_cb
+      , &worker::on_diagnostic_cb
+      , &worker::on_entering_main_file
+      , &worker::on_include_file
+      , &worker::on_include_ast_file
+      , &worker::on_translation_unit
+      , &worker::on_declaration
+      , &worker::on_declaration_reference
+    };
+    auto result = clang_indexSourceFile(
+        action
+      , this
+      , &index_callbacks
+      , sizeof(index_callbacks)
+        // CXIndexOpt_SuppressRedundantRefs
+        // CXIndexOpt_SkipParsedBodiesInSession
+      , CXIndexOpt_IndexFunctionLocalSymbols
+      , filename.toUtf8().constData()
+      , m_indexer->m_options.data()
+      , m_indexer->m_options.size()
+      , nullptr
+      , 0
+      , nullptr
+      , clang_defaultEditingTranslationUnitOptions()        /// \todo Use TranslationUnit class
+      );
+    if (result)
+        Q_EMIT(error(clang::location{}, "Indexer finished with errors"));
 }
 
 void worker::handle_directory(const QString& directory)

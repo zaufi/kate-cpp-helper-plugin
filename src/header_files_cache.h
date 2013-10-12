@@ -20,18 +20,22 @@
  * with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __SRC__HEADER_FILES_CACHE_H__
-# define __SRC__HEADER_FILES_CACHE_H__
+#pragma once
 
 // Project specific includes
 
 // Standard includes
-# include <boost/multi_index_container.hpp>
-# include <boost/multi_index/member.hpp>
-# include <boost/multi_index/ordered_index.hpp>
-# include <boost/multi_index/tag.hpp>
-# include <boost/multi_index/indexed_by.hpp>
-# include <QtCore/QString>
+#include <boost/archive/binary_iarchive.hpp>
+#include <boost/archive/binary_oarchive.hpp>
+#include <boost/multi_index_container.hpp>
+#include <boost/multi_index/member.hpp>
+#include <boost/multi_index/ordered_index.hpp>
+#include <boost/multi_index/tag.hpp>
+#include <boost/multi_index/indexed_by.hpp>
+#include <boost/serialization/split_member.hpp>
+#include <QtCore/QString>
+#include <sstream>
+#include <string>
 
 namespace kate {
 
@@ -61,6 +65,22 @@ public:
     bool isEmpty() const;
     size_t size() const;
 
+    std::string store_to_string() const
+    {
+        std::string result;
+        std::stringstream ofs{result, std::ios_base::out | std::ios_base::binary};
+        boost::archive::binary_oarchive oa{ofs};
+        oa << *this;
+        return result;
+    }
+
+    void load_from_string(const std::string& raw_data)
+    {
+        std::stringstream ifs{raw_data, std::ios_base::in | std::ios_base::binary};
+        boost::archive::binary_iarchive ia{ifs};
+        ia >> *this;
+    }
+
 private:
     /**
      * \brief Structure to associate a filename with an index
@@ -70,6 +90,23 @@ private:
     {
         QString m_filename;
         int m_id;
+
+        template <typename Archive>
+        void save(Archive& ar, const unsigned int) const
+        {
+            std::string filename = m_filename.toUtf8().constData();
+            ar & m_id & filename;
+        }
+
+        template <typename Archive>
+        void load(Archive& ar, const unsigned int)
+        {
+            std::string filename;
+            ar & m_id & filename;
+            m_filename = QString(filename.c_str());
+        }
+
+        BOOST_SERIALIZATION_SPLIT_MEMBER()
     };
     struct int_idx;
     struct string_idx;
@@ -95,6 +132,15 @@ private:
               >
           >
       > index_type;
+
+
+    friend class boost::serialization::access;
+
+    template <typename Archive>
+    void serialize(Archive& ar, const unsigned int)
+    {
+        ar & m_cache;
+    }
 
     index_type m_cache;
 };
@@ -158,5 +204,4 @@ inline size_t HeaderFilesCache::size() const
 }
 
 }                                                           // namespace kate
-#endif                                                      // __SRC__HEADER_FILES_CACHE_H__
 // kate: hl C++11/Qt4;

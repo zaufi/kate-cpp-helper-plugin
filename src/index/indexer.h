@@ -69,6 +69,15 @@ private:
     void handle_directory(const QString&);
     bool is_look_like_cpp_source(const QFileInfo&);
 
+    static int on_abort_cb(CXClientData, void*);
+    static void on_diagnostic_cb(CXClientData, CXDiagnosticSet, void*);
+    static CXIdxClientFile on_entering_main_file(CXClientData, CXFile, void*);
+    static CXIdxClientFile on_include_file(CXClientData, const CXIdxIncludedFileInfo*);
+    static CXIdxClientASTFile on_include_ast_file(CXClientData, const CXIdxImportedASTFileInfo*);
+    static CXIdxClientContainer on_translation_unit(CXClientData, void*);
+    static void on_declaration(CXClientData, const CXIdxDeclInfo*);
+    static void on_declaration_reference(CXClientData, const CXIdxEntityRefInfo*);
+
     indexer* const m_indexer;
     std::atomic<bool> m_is_cancelled;
 };
