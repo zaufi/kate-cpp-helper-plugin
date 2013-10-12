@@ -63,7 +63,7 @@ std::vector<const char*> PARSE_OPTIONS = {
 };
 
 const std::string SAMPLE_DB_PATH = CMAKE_BINARY_DIR "/src/test/data/test.db";
-const char* const SAMPLE_FILE = CMAKE_SOURCE_DIR "/src/test/data/sample.cpp";
+const char* const SAMPLE_DIR = CMAKE_SOURCE_DIR "/src/test/data";
 
 }                                                           // anonymous namespace
 
@@ -81,8 +81,9 @@ indexer_tester::indexer_tester()
 
 void indexer_tester::index_sample_file()
 {
+    kDebug() << "DB path:" << SAMPLE_DB_PATH.c_str();
     m_indexer.set_compiler_options(decltype(PARSE_OPTIONS){PARSE_OPTIONS})
-      .add_target(QString{SAMPLE_FILE})
+      .add_target(QString{SAMPLE_DIR})
       .start()
       ;
     auto start_time = std::chrono::system_clock::now();

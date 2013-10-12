@@ -370,8 +370,7 @@ void CppHelperPluginView::switchIfaceImpl()
                   ; dir_it.hasNext()
                   ;)
                 {
-                    dir_it.next();
-                    const QString& file = dir_it.fileInfo().absoluteFilePath();
+                    const auto& file = dir_it.next();
                     kDebug(DEBUG_AREA) << "open src/hrd: stage3: found " << file;
                     if (!candidates.contains(file))
                         candidates.push_back(file);

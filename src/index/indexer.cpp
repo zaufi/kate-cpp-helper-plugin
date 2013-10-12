@@ -30,9 +30,9 @@
 
 // Standard includes
 #include <KDE/KDebug>
+#include <KDE/KMimeType>
 #include <QtCore/QDirIterator>
-#include <QtCore/QFileInfo>
-#include <unistd.h>
+#include <set>
 
 namespace kate { namespace index {
 /**
@@ -61,6 +61,20 @@ namespace kate { namespace index {
  * - \c FILE -- filename
  */
 
+namespace {
+std::set<QString> TYPICAL_CPP_EXTENSIONS = {
+    "h", "hh", "hpp", "hxx", "inl", "tcc"
+  , "c", "cc", "cpp", "cxx"
+};
+std::set<QString> CPP_SOURCE_MIME_TYPES = {
+    "text/x-csrc"
+  , "text/x-c++src"
+  , "text/x-chdr"
+  , "text/x-c++hdr"
+};
+}                                                           // anonymous namespace
+
+
 //BEGIN worker members
 worker::worker(indexer* const parent)
   : m_indexer(parent)
@@ -77,6 +91,22 @@ bool worker::is_cancelled() const
     return m_is_cancelled;
 }
 
+bool worker::is_look_like_cpp_source(const QFileInfo& fi)
+{
+    auto result = true;
+    if (TYPICAL_CPP_EXTENSIONS.find(fi.suffix()) == end(TYPICAL_CPP_EXTENSIONS))
+    {
+        // Try to use Mime database to detect by file content
+        auto mime = KMimeType::findByFileContent(fi.canonicalFilePath());
+        result = (
+            mime->name() != KMimeType::defaultMimeType()
+          && CPP_SOURCE_MIME_TYPES.find(mime->name()) != end(CPP_SOURCE_MIME_TYPES)
+          ) || false
+          ;
+    }
+    return result;
+}
+
 void worker::handle_file(const QString& filename)
 {
     kDebug(DEBUG_AREA) << "Indexing" << filename;
@@ -87,34 +117,42 @@ void worker::handle_directory(const QString& directory)
     for (
         QDirIterator dir_it = {
             directory
-          , QStringList()
-          , QDir::Files | QDir::NoDotAndDotDot | QDir::Readable | QDir::CaseSensitive
-          , QDirIterator::Subdirectories | QDirIterator::FollowSymlinks
+          , QDir::Files | QDir::Dirs | QDir::NoDotAndDotDot | QDir::CaseSensitive
+          , QDirIterator::FollowSymlinks
           }
       ; dir_it.hasNext()
       ;
       )
     {
-        kDebug(DEBUG_AREA) << "Dir scanner: found:" <<  dir_it.filePath();
+        dir_it.next();
+        if (dispatch_target(dir_it.fileInfo()))
+            break;
     }
 }
 
-bool worker::dispatch_target(const KUrl& url)
+inline bool worker::dispatch_target(const KUrl& url)
 {
-    kDebug(DEBUG_AREA) << "Indexing" << url;
+    return dispatch_target(QFileInfo{url.toLocalFile()});
+}
+
+bool worker::dispatch_target(const QFileInfo& fi)
+{
     if (is_cancelled())
     {
         kDebug(DEBUG_AREA) << "Cancel requested: exiting indexer thread...";
         return true;
     }
-    auto target = url.toLocalFile();
-    QFileInfo fi{};
+
+    const auto& filename = fi.canonicalFilePath();
+#if 0
+    kDebug(DEBUG_AREA) << "Dispatch" << filename;
+#endif
     if (fi.isDir())
-        handle_directory(target);
-    else if (fi.isFile() && fi.isReadable())
-        handle_file(target);
+        handle_directory(filename);
+    else if (fi.isFile() && is_look_like_cpp_source(fi))
+        handle_file(filename);
     else
-        kDebug(DEBUG_AREA) << target << "is not a file or directory?";
+        kDebug(DEBUG_AREA) << filename << "is not a suitable file or directory!";
     return false;
 }
 
@@ -122,7 +160,8 @@ void worker::process()
 {
     kDebug(DEBUG_AREA) << "Indexer thread has started";
     for (const auto& target : m_indexer->m_targets)
-        dispatch_target(target);
+        if (dispatch_target(target))
+            break;
     kDebug(DEBUG_AREA) << "Indexer thread has finished";
     Q_EMIT(finished());
 }
@@ -134,7 +173,7 @@ void indexer::start()
     QThread* t = new QThread{};
     worker* w = new worker{this};
     connect(w, SIGNAL(error(clang::location, QString)), this, SLOT(error_slot(clang::location, QString)));
-    connect(w, SIGNAL(indexing_uri(KUrl)), this, SLOT(indexing_uri_slot(KUrl)));
+    connect(w, SIGNAL(indexing_uri(QString)), this, SLOT(indexing_uri_slot(QString)));
     connect(w, SIGNAL(finished()), this, SLOT(finished_slot()));
     connect(this, SIGNAL(stopping()), w, SLOT(request_cancel()));
 
@@ -163,7 +202,7 @@ void indexer::finished_slot()
     Q_EMIT(finished());
 }
 
-void indexer::indexing_uri_slot(KUrl file)
+void indexer::indexing_uri_slot(QString file)
 {
     Q_EMIT(indexing_uri(file));
 }

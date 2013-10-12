@@ -35,6 +35,7 @@
 // Standard includes
 #include <KDE/KUrl>
 #include <QtCore/QThread>
+#include <QtCore/QFileInfo>
 #include <atomic>
 #include <vector>
 
@@ -57,14 +58,16 @@ public Q_SLOTS:
     void request_cancel();
 
 Q_SIGNALS:
-    void indexing_uri(const KUrl&);
+    void indexing_uri(QString);
     void error(clang::location, QString);
     void finished();
 
 private:
     bool dispatch_target(const KUrl&);
+    bool dispatch_target(const QFileInfo&);
     void handle_file(const QString&);
     void handle_directory(const QString&);
+    bool is_look_like_cpp_source(const QFileInfo&);
 
     indexer* const m_indexer;
     std::atomic<bool> m_is_cancelled;
@@ -97,12 +100,12 @@ public Q_SLOTS:
     void stop();
 
 private Q_SLOTS:
-    void indexing_uri_slot(KUrl);
+    void indexing_uri_slot(QString);
     void finished_slot();
     void error_slot(clang::location, QString);
 
 Q_SIGNALS:
-    void indexing_uri(KUrl);
+    void indexing_uri(QString);
     void finished();
     void error(clang::location, QString);
     void stopping();
