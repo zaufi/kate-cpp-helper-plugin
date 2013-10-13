@@ -20,25 +20,24 @@
  * with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __SRC__CLANG_CODE_COMPLETION_MODEL_H__
-# define __SRC__CLANG_CODE_COMPLETION_MODEL_H__
+#pragma once
 
 // Project specific includes
-# include <src/clang_code_completion_item.h>
+#include <src/clang_code_completion_item.h>
 
 // Standard includes
-# include <clang-c/Index.h>
-# if (__GNUC__ >=4 && __GNUC_MINOR__ >= 5)
-#   pragma GCC push_options
-#   pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-# endif                                                     // (__GNUC__ >=4 && __GNUC_MINOR__ >= 5)
-# include <KTextEditor/CodeCompletionModel>
-# include <KTextEditor/CodeCompletionModelControllerInterface>
-# if (__GNUC__ >=4 && __GNUC_MINOR__ >= 5)
-#   pragma GCC pop_options
-# endif                                                     // (__GNUC__ >=4 && __GNUC_MINOR__ >= 5)
-# include <KTextEdit>
-# include <vector>
+#include <clang-c/Index.h>
+#if (__GNUC__ >=4 && __GNUC_MINOR__ >= 5)
+# pragma GCC push_options
+# pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif                                                      // (__GNUC__ >=4 && __GNUC_MINOR__ >= 5)
+#include <KTextEditor/CodeCompletionModel>
+#include <KTextEditor/CodeCompletionModelControllerInterface>
+#if (__GNUC__ >=4 && __GNUC_MINOR__ >= 5)
+# pragma GCC pop_options
+#endif                                                      // (__GNUC__ >=4 && __GNUC_MINOR__ >= 5)
+#include <KTextEdit>
+#include <vector>
 
 namespace kate {
 // forward declarations
@@ -108,5 +107,4 @@ private:
 
 
 }                                                           // namespace kate
-#endif                                                      // __SRC__CLANG_CODE_COMPLETION_MODEL_H__
 // kate: hl C++11/Qt4;

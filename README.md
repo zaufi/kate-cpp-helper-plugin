@@ -203,6 +203,7 @@ TODO
 * Render class layout according sizeof/align of of all bases and members
 * Provide Python bindings to indexing and C++ parsing, so they can be used from kate/pate plugins
 * Group #include items by directory
+* Sort #include directives according configurable rules
 
 See Also
 ========

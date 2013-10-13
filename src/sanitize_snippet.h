@@ -20,14 +20,13 @@
  * with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __SRC__SANITIZE_SNIPPET_H__
-# define __SRC__SANITIZE_SNIPPET_H__
+#pragma once
 
 // Project specific includes
-# include <src/plugin_configuration.h>
+#include <src/plugin_configuration.h>
 
 // Standard includes
-# include <QtCore/QString>
+#include <QtCore/QString>
 
 namespace kate {
 #if 0
@@ -45,5 +44,4 @@ std::pair<bool, QString> sanitize(
   );
 
 }                                                           // kate
-#endif                                                      // __SRC__SANITIZE_SNIPPET_H__
 // kate: hl C++11/Qt4;

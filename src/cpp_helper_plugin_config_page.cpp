@@ -48,6 +48,8 @@ namespace kate { namespace {
 const char* const INCSET_GROUP_NAME = "SessionIncludeSet";
 const char* const INCSET_NAME_KEY = "Name";
 const char* const INCSET_DIRS_KEY = "Dirs";
+/// \attention Make sure this path replaced everywhre in case of changes
+/// \todo Make a constant w/ single declaration place for this path
 const char* const INCSET_FILE_TPL = "plugins/katecpphelperplugin/%1.incset";
 const QString DEFAULT_GCC_BINARY = "g++";
 const QString DEFAULT_CLANG_BINARY = "clang++";

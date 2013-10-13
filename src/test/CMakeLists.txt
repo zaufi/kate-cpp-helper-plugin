@@ -6,9 +6,11 @@ set(UNIT_TESTS_SOURCES
     utils_tester.cpp
     header_files_cache_tester.cpp
     translation_unit_tester.cpp
+    database_manager_tester.cpp
     ${CMAKE_SOURCE_DIR}/src/sanitize_snippet.cpp
     ${CMAKE_SOURCE_DIR}/src/utils.cpp
     ${CMAKE_SOURCE_DIR}/src/translation_unit.cpp
+    ${CMAKE_SOURCE_DIR}/src/database_manager.cpp
     ${CLANG_HELPERS_SOURCES}
   )
 

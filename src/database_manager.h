@@ -1,21 +1,26 @@
 /**
  * \file
  *
- * \brief Class \c kate::ChooseFromListDialog (interface)
+ * \brief Class \c kate::database_manager (interface)
  *
- * \date Tue Dec 25 05:49:02 MSK 2012 -- Initial design
+ * \date Sun Oct 13 08:47:24 MSK 2013 -- Initial design
  */
 /*
+ * Copyright (C) 2011-2013 Alex Turbov, all rights reserved.
+ * This is free software. It is licensed for use, modification and
+ * redistribution under the terms of the GNU General Public License,
+ * version 3 or later <http://gnu.org/licenses/gpl.html>
+ *
  * KateCppHelperPlugin is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
  * Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * KateCppHelperPlugin is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License along
  * with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
@@ -25,28 +30,31 @@
 // Project specific includes
 
 // Standard includes
-#include <KDialog>
-#include <KListWidget>
+#include <KDE/KUrl>
 
 namespace kate {
 
 /**
- * \brief [Type brief class description here]
+ * \brief Manage databases used by current session
  *
  * [More detailed description here]
  *
  */
-class ChooseFromListDialog : public KDialog
+class database_manager
 {
-    Q_OBJECT
-
 public:
-    ChooseFromListDialog(QWidget*);
-    static QString selectHeaderToOpen(QWidget*, const QStringList&);
+    database_manager();                                     ///< Construct from default base directory
+    explicit database_manager(const KUrl&);                 ///< Construct w/ base path specified
+    ~database_manager();                                    ///< Destructor
 
 private:
-    KListWidget* m_list;
+    static KUrl get_default_base_dir();
 };
+
+inline database_manager::database_manager()
+  : database_manager(database_manager::get_default_base_dir())
+{
+}
 
 }                                                           // namespace kate
 // kate: hl C++11/Qt4;

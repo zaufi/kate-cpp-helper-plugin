@@ -20,24 +20,24 @@
  * with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __SRC__INCLUDE_HELPER_PLUGIN_HH__
-# define __SRC__INCLUDE_HELPER_PLUGIN_HH__
+#pragma once
 
 // Project specific includes
-# include <src/plugin_configuration.h>
-# include <src/clang/disposable.h>
-# include <src/translation_unit.h>
-# include <src/header_files_cache.h>
+#include <src/clang/disposable.h>
+#include <src/database_manager.h>
+#include <src/header_files_cache.h>
+#include <src/plugin_configuration.h>
+#include <src/translation_unit.h>
 
 // Standard includes
-# include <kate/plugin.h>
-# include <kate/pluginconfigpageinterface.h>
-# include <KTextEditor/Document>
-# include <KTextEditor/HighlightInterface>
-# include <KDirWatch>
-# include <cassert>
-# include <map>
-# include <memory>
+#include <kate/plugin.h>
+#include <kate/pluginconfigpageinterface.h>
+#include <KTextEditor/Document>
+#include <KTextEditor/HighlightInterface>
+#include <KDirWatch>
+#include <cassert>
+#include <map>
+#include <memory>
 
 namespace kate {
 class DocumentInfo;                                         // forward declaration
@@ -169,6 +169,7 @@ private:
     KTextEditor::Document* m_hidden_doc;
     translation_units_map_type m_units;
     HeaderFilesCache m_headers_cache;
+    database_manager m_db_mgr;
 };
 
 inline PluginConfiguration& CppHelperPlugin::config()
@@ -217,5 +218,4 @@ inline TranslationUnit& CppHelperPlugin::getTranslationUnitByDocument(
 }
 
 }                                                           // namespace kate
-#endif                                                      // __SRC__INCLUDE_HELPER_PLUGIN_HH__
 // kate: hl C++11/Qt4;

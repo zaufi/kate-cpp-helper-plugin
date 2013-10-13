@@ -20,22 +20,21 @@
  * with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __SRC__DOCUMENTINFO_H__
-# define __SRC__DOCUMENTINFO_H__
+#pragma once
 
 // Project specific includes
 
 // Standard includes
-# include <boost/multi_index_container.hpp>
-# include <boost/multi_index/member.hpp>
-# include <boost/multi_index/ordered_index.hpp>
-# include <boost/multi_index/tag.hpp>
-# include <boost/multi_index/indexed_by.hpp>
-# include <KTextEditor/MovingRange>
-# include <ktexteditor/movingrangefeedback.h>
-# include <cassert>
-# include <memory>
-# include <vector>
+#include <boost/multi_index_container.hpp>
+#include <boost/multi_index/member.hpp>
+#include <boost/multi_index/ordered_index.hpp>
+#include <boost/multi_index/tag.hpp>
+#include <boost/multi_index/indexed_by.hpp>
+#include <KTextEditor/MovingRange>
+#include <ktexteditor/movingrangefeedback.h>
+#include <cassert>
+#include <memory>
+#include <vector>
 
 namespace kate {
 class CppHelperPlugin;                                  // forward declaration
@@ -177,5 +176,4 @@ inline void DocumentInfo::clearInclusionTree()
 }
 
 }                                                           // namespace kate
-#endif                                                      // __SRC__DOCUMENTINFO_H__
 // kate: hl C++11/Qt4;

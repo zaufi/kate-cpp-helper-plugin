@@ -20,22 +20,21 @@
  * with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __SRC__TRANSLATION_UNIT_H__
-# define __SRC__TRANSLATION_UNIT_H__
+#pragma once
 
 // Project specific includes
-# include <src/clang_code_completion_item.h>
-# include <src/diagnostic_messages_model.h>
-# include <src/plugin_configuration.h>
+#include <src/clang_code_completion_item.h>
+#include <src/diagnostic_messages_model.h>
+#include <src/plugin_configuration.h>
 
 // Standard includes
-# include <KUrl>
-# include <QtCore/QPair>
-# include <QtCore/QStringList>
-# include <QtCore/QVector>
-# include <stdexcept>
-# include <vector>
-# include <utility>
+#include <KUrl>
+#include <QtCore/QPair>
+#include <QtCore/QStringList>
+#include <QtCore/QVector>
+#include <stdexcept>
+#include <vector>
+#include <utility>
 
 namespace kate {
 
@@ -167,5 +166,4 @@ struct TranslationUnit::Exception::SaveFailure : public TranslationUnit::Excepti
 inline TranslationUnit::Exception::Exception(const std::string& str) : std::runtime_error(str) {}
 
 }                                                           // namespace kate
-#endif                                                      // __SRC__TRANSLATION_UNIT_H__
 // kate: hl C++11/Qt4;

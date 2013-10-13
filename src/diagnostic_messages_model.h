@@ -25,15 +25,14 @@
  * with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __SRC__DIAGNOSTIC_MESSAGES_MODEL_HH__
-# define __SRC__DIAGNOSTIC_MESSAGES_MODEL_HH__
+#pragma once
 
 // Project specific includes
-# include <src/clang/location.h>
+#include <src/clang/location.h>
 
 // Standard includes
-# include <QAbstractListModel>
-# include <deque>
+#include <QAbstractListModel>
+#include <deque>
 
 namespace kate {
 
@@ -180,4 +179,4 @@ inline void DiagnosticMessagesModel::append(Iter first, Iter last)
 }
 
 }                                                           // namespace kate
-#endif                                                      // __SRC__DIAGNOSTIC_MESSAGES_MODEL_HH__
+// kate: hl C++11/Qt4;

@@ -20,17 +20,16 @@
  * with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __SRC__CLANG_CODE_COMPLETION_ITEM_H__
-# define __SRC__CLANG_CODE_COMPLETION_ITEM_H__
+#pragma once
 
 // Project specific includes
 
 // Standard includes
-# include <clang-c/Index.h>
-# include <KTextEditor/CodeCompletionModel>
-# include <QtCore/QMap>
-# include <QtCore/QPair>
-# include <QtCore/QStringList>
+#include <clang-c/Index.h>
+#include <KTextEditor/CodeCompletionModel>
+#include <QtCore/QMap>
+#include <QtCore/QPair>
+#include <QtCore/QStringList>
 
 namespace kate {
 
@@ -113,5 +112,4 @@ private:
 };
 
 }                                                           // namespace kate
-#endif                                                      // __SRC__CLANG_CODE_COMPLETION_ITEM_H__
 // kate: hl C++11/Qt4;

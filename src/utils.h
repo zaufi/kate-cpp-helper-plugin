@@ -20,16 +20,15 @@
  * with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __SRC__UTILS_H__
-# define __SRC__UTILS_H__
+#pragma once
 
 // Project specific includes
 
 // Standard includes
-# include <KTextEditor/Range>
-# include <QtCore/QDir>
-# include <QtCore/QFileInfo>
-# include <QtCore/QStringList>
+#include <KTextEditor/Range>
+#include <QtCore/QDir>
+#include <QtCore/QFileInfo>
+#include <QtCore/QStringList>
 
 namespace kate {
 struct IncludeStyle
@@ -132,5 +131,4 @@ void updateListsFromFS(
 /// Find given header withing list of paths
 QStringList findHeader(const QString&, const QStringList&, const QStringList&);
 }                                                           // namespace kate
-#endif                                                      // __SRC__UTILS_H__
 // kate: hl C++11/Qt4;

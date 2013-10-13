@@ -20,24 +20,23 @@
  * with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __SRC__INCLUDE_HELPER_PLUGIN_COMPLETION_MODEL_H__
-#  define __SRC__INCLUDE_HELPER_PLUGIN_COMPLETION_MODEL_H__
+#pragma once
 
 // Project specific includes
 
 // Standard includes
-#  if (__GNUC__ >=4 && __GNUC_MINOR__ >= 5)
-#    pragma GCC push_options
-#    pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-#  endif                                                    // (__GNUC__ >=4 && __GNUC_MINOR__ >= 5)
-#  include <KTextEditor/CodeCompletionModel>
-#  include <KTextEditor/CodeCompletionModelControllerInterface>
-#  if (__GNUC__ >=4 && __GNUC_MINOR__ >= 5)
-#    pragma GCC pop_options
-#  endif                                                    // (__GNUC__ >=4 && __GNUC_MINOR__ >= 5)
+#if (__GNUC__ >=4 && __GNUC_MINOR__ >= 5)
+# pragma GCC push_options
+# pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif                                                      // (__GNUC__ >=4 && __GNUC_MINOR__ >= 5)
+#include <KTextEditor/CodeCompletionModel>
+#include <KTextEditor/CodeCompletionModelControllerInterface>
+#if (__GNUC__ >=4 && __GNUC_MINOR__ >= 5)
+# pragma GCC pop_options
+#endif                                                      // (__GNUC__ >=4 && __GNUC_MINOR__ >= 5)
 
 namespace kate {
-class CppHelperPlugin;                                  // forward declaration
+class CppHelperPlugin;                                      // forward declaration
 
 /**
  * \brief [Type brief class description here]
@@ -101,5 +100,4 @@ private:
 };
 
 }                                                           // namespace kate
-#endif                                                      // __SRC__INCLUDE_HELPER_PLUGIN_COMPLETION_MODEL_H__
 // kate: hl C++11/Qt4;

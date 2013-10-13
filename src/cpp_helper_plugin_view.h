@@ -20,24 +20,23 @@
  * with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __SRC__INCLUDE_HELPER_PLUGIN_VIEW_H__
-# define __SRC__INCLUDE_HELPER_PLUGIN_VIEW_H__
+#pragma once
 
 // Project specific includes
-# include <src/ui_plugin_tool_view.h>
-# include <src/diagnostic_messages_model.h>
-# include <src/document_info.h>
+#include <src/ui_plugin_tool_view.h>
+#include <src/diagnostic_messages_model.h>
+#include <src/document_info.h>
 
 // Standard includes
-# include <kate/plugin.h>
-# include <KTextEditor/View>
-# include <KAction>
-# include <KActionMenu>
-# include <QtGui/QStandardItemModel>
-# include <QtGui/QStandardItem>
-# include <clang-c/Index.h>
-# include <map>
-# include <memory>
+#include <kate/plugin.h>
+#include <KTextEditor/View>
+#include <KAction>
+#include <KActionMenu>
+#include <QtGui/QStandardItemModel>
+#include <QtGui/QStandardItem>
+#include <clang-c/Index.h>
+#include <map>
+#include <memory>
 
 namespace kate { namespace details {
 struct InclusionVisitorData;
@@ -145,5 +144,4 @@ private:
 };
 
 }                                                           // namespace kate
-#endif                                                      // __SRC__INCLUDE_HELPER_PLUGIN_VIEW_H__
 // kate: hl C++11/Qt4;

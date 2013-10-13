@@ -20,18 +20,17 @@
  * with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __SRC__PLUGIN_CONFIGURATION_H__
-# define __SRC__PLUGIN_CONFIGURATION_H__
+#pragma once
 
 // Project specific includes
 
 // Standard includes
-# include <KConfigBase>
-# include <KUrl>
-# include <QtCore/QStringList>
-# include <QtCore/QRegExp>
-# include <vector>
-# include <utility>
+#include <KConfigBase>
+#include <KUrl>
+#include <QtCore/QStringList>
+#include <QtCore/QRegExp>
+#include <vector>
+#include <utility>
 
 namespace kate {
 
@@ -219,5 +218,4 @@ inline bool PluginConfiguration::usePrefixColumn() const
 }
 
 }                                                           // namespace kate
-#endif                                                      // __SRC__PLUGIN_CONFIGURATION_H__
 // kate: hl C++11/Qt4;

@@ -20,18 +20,17 @@
  * with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __SRC__INCLUDE_HELPER_PLUGIN_CONFIG_PAGE_H__
-# define __SRC__INCLUDE_HELPER_PLUGIN_CONFIG_PAGE_H__
+#pragma once
 
 // Project specific includes
 
 // Standard includes
-# include <kate/plugin.h>
-# include <kate/pluginconfigpageinterface.h>
-# include <KProcess>
-# include <KListWidget>
-# include <KSharedConfig>
-# include <map>
+#include <kate/plugin.h>
+#include <kate/pluginconfigpageinterface.h>
+#include <KProcess>
+#include <KListWidget>
+#include <KSharedConfig>
+#include <map>
 
 namespace Ui {
 class CLangOptionsWidget;
@@ -128,5 +127,4 @@ private:
 };
 
 }                                                           // namespace kate
-#endif                                                      // __SRC__INCLUDE_HELPER_PLUGIN_CONFIG_PAGE_H__
 // kate: hl C++11/Qt4;

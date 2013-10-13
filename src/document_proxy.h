@@ -23,18 +23,17 @@
  * with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __SRC__DOCUMENT_PROXY_H__
-# define __SRC__DOCUMENT_PROXY_H__
+#pragma once
 
 // Project specific includes
 
 // Standard includes
-# include <KTextEditor/Cursor>
-# include <KTextEditor/Document>
-# include <KTextEditor/Range>
-# include <algorithm>
-# include <cassert>
-# include <limits>
+#include <KTextEditor/Cursor>
+#include <KTextEditor/Document>
+#include <KTextEditor/Range>
+#include <algorithm>
+#include <cassert>
+#include <limits>
 
 namespace kate {
 
@@ -310,5 +309,4 @@ inline KTextEditor::Cursor DocumentProxy::scanCharsReverse(
 }
 
 }                                                           // namespace kate
-#endif                                                      // __SRC__DOCUMENT_PROXY_H__
 // kate: hl C++11/Qt4;
