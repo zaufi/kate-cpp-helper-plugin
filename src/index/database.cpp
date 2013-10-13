@@ -29,10 +29,49 @@
 #include <src/index/database.h>
 
 // Standard includes
+#include <KDE/KDebug>
 
 namespace kate { namespace index { namespace term {
-const std::string XDECL = "XDECL";
-const std::string XREF = "XREF";
+const std::string XDECL = "XDCL";
+const std::string XREF = "XRF";
+const std::string XCONTAINER = "XCNT";
+const std::string XREDECLARATION = "XRDL";
 }                                                           // namespace term
+
+namespace {
+const std::string FILES_MAPPING = "HDRMAPCACHE";
+}                                                           // anonymous namespace
+
+database::database(const std::string& path) try
+  : Xapian::WritableDatabase(path, Xapian::DB_CREATE_OR_OPEN)
+{
+    auto hdr_cache = get_metadata(FILES_MAPPING);
+    if (!hdr_cache.empty())
+        m_files_cache.loadFromString(hdr_cache);
+}
+catch (const Xapian::DatabaseError& e)
+{
+    throw database::exception::failure("Index database [" + path + "] failure: " + e.get_msg());
+}
+
+database::~database()
+{
+    commit();
+}
+
+void database::commit()
+{
+    try
+    {
+        kDebug(DEBUG_AREA) << "Commiting DB changes...";
+        if (m_files_cache.isDirty())
+            set_metadata(FILES_MAPPING, m_files_cache.storeToString());
+        Xapian::WritableDatabase::commit();
+    }
+    catch (...)
+    {
+        kDebug(DEBUG_AREA) << "Fail to store headers mapping cache";
+    }
+}
 
 }}                                                          // namespace index, kate

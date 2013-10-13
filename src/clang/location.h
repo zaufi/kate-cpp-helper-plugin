@@ -154,7 +154,10 @@ inline bool location::empty() const
 /// Make \c location printable to Qt debug streams
 inline QDebug operator<<(QDebug dbg, const location& l)
 {
-    dbg.nospace() << l.file() << ':' << l.line() << ':' << l.column();
+    if (!l.empty())
+        dbg.nospace() << l.file().toLocalFile() << ':' << l.line() << ':' << l.column();
+    else
+        dbg.nospace() << "<empty-location>";
     return dbg.space();
 }
 

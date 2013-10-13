@@ -28,6 +28,7 @@
 #pragma once
 
 // Project specific includes
+#include <src/header_files_cache.h>
 
 // Standard includes
 #include <xapian/database.h>
@@ -38,8 +39,18 @@
 namespace kate { namespace index { namespace term {
 extern const std::string XDECL;
 extern const std::string XREF;
+extern const std::string XCONTAINER;
+extern const std::string XREDECLARATION;
 }                                                           // namespace term
-
+namespace value_slot {
+constexpr Xapian::valueno LINE = 1;
+constexpr Xapian::valueno COLUMN = 2;
+constexpr Xapian::valueno FILE = 3;
+constexpr Xapian::valueno SEMANTIC_CONTAINER = 4;
+constexpr Xapian::valueno LEXICAL_CONTAINER = 5;
+constexpr Xapian::valueno KIND = 6;
+constexpr Xapian::valueno TYPE = 7;
+}                                                           // namespace value_slot
 
 /**
  * \brief [Type brief class description here]
@@ -55,8 +66,18 @@ public:
         struct failure;
         explicit exception(const std::string&);
     };
-    /// Construct from a database path
-    explicit database(const std::string&);
+
+    explicit database(const std::string&);                  ///< Construct from a database path
+    virtual ~database();
+
+    HeaderFilesCache& headers_map();                        ///< Access header files mapping cache (mutable)
+    const HeaderFilesCache& headers_map() const;            ///< Access header files mapping cache (immutable)
+    void commit();                                          ///< Commit recent changes to the DB
+
+    static constexpr Xapian::docid IVALID_DOCUMENT_ID = 0u; ///< Value to indecate invalid document
+
+private:
+    HeaderFilesCache m_files_cache;
 };
 
 struct database::exception::failure : public database::exception
@@ -67,13 +88,14 @@ struct database::exception::failure : public database::exception
 inline database::exception::exception(const std::string& str)
   : std::runtime_error(str) {}
 
-inline database::database(const std::string& path) try
-  : Xapian::WritableDatabase(path, Xapian::DB_CREATE_OR_OPEN)
+inline HeaderFilesCache& database::headers_map()
 {
+    return m_files_cache;
 }
-catch (const Xapian::DatabaseError& e)
+
+inline const HeaderFilesCache& database::headers_map() const
 {
-    throw database::exception::failure("Index database [" + path + "] failure: " + e.get_msg());
+    return m_files_cache;
 }
 
 }}                                                          // namespace index, kate

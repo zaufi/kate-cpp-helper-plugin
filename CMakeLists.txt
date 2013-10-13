@@ -64,7 +64,11 @@ find_library(KATE_INTERFACES_LIB NAMES libkateinterfaces.so libkateinterfaces.so
 find_package(LibClang 3.0 REQUIRED)
 
 # find boost
-set(NEEDED_BOOST_COMPONENTS serialization)
+set(NEEDED_BOOST_COMPONENTS
+    filesystem
+    serialization
+    system
+  )
 # NOTE I see no way to make unit tests optional for release mode
 # BUILD_TESTING will always turned ON... so caller have to disable
 # it explicitly if required.
@@ -73,7 +77,9 @@ if (BUILD_TESTING)
 else()
     message(STATUS "Unit tests disabled")
 endif()
+
 find_package(Boost 1.42 REQUIRED COMPONENTS ${NEEDED_BOOST_COMPONENTS})
+
 if (NOT Boost_UNIT_TEST_FRAMEWORK_LIBRARY)
     message(STATUS "Unit tests disabled")
     set(BUILD_TESTING OFF)

@@ -48,7 +48,7 @@
           <enum>Qt::Horizontal</enum>
          </property>
          <widget class="QWidget" name="layoutWidget1">
-          <layout class="QVBoxLayout" name="ivl2">
+          <layout class="QVBoxLayout" name="vl_1_2">
            <item>
             <widget class="QLabel" name="treeLabel">
              <property name="text">
@@ -80,7 +80,7 @@
           </layout>
          </widget>
          <widget class="QWidget" name="layoutWidget2">
-          <layout class="QVBoxLayout" name="ivl1">
+          <layout class="QVBoxLayout" name="vl_1_3">
            <item>
             <widget class="QLabel" name="includedByLabel">
              <property name="text">
@@ -106,7 +106,7 @@
         </widget>
        </item>
        <item>
-        <layout class="QHBoxLayout" name="horizontalLayout">
+        <layout class="QHBoxLayout" name="hl_1_1">
          <item>
           <widget class="KTreeWidgetSearchLine" name="searchFilter">
            <property name="toolTip">
@@ -128,6 +128,120 @@
           </widget>
          </item>
         </layout>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="indexerSettings">
+      <attribute name="title">
+       <string>Indexer Settings</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="verticalLayout_6">
+       <item>
+        <widget class="QSplitter" name="splitter">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="childrenCollapsible">
+          <bool>false</bool>
+         </property>
+         <widget class="QWidget" name="layoutWidget">
+          <layout class="QVBoxLayout" name="vl_2_1">
+           <item>
+            <widget class="QLabel" name="databasesLabel">
+             <property name="text">
+              <string>Databases:</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QTableWidget" name="databases"/>
+           </item>
+           <item>
+            <layout class="QHBoxLayout" name="hl_2_2">
+             <item>
+              <widget class="QPushButton" name="newDatabase">
+               <property name="text">
+                <string>New</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="deleteDatabase">
+               <property name="text">
+                <string>Delete</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="reindexDatabase">
+               <property name="text">
+                <string>Reindex</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <spacer name="spacer_1">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>40</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+            </layout>
+           </item>
+          </layout>
+         </widget>
+         <widget class="QWidget" name="layoutWidget_2">
+          <layout class="QVBoxLayout" name="vl_2_3">
+           <item>
+            <widget class="QLabel" name="targetsLabel">
+             <property name="text">
+              <string>Index Targets:</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QListWidget" name="targets"/>
+           </item>
+           <item>
+            <layout class="QHBoxLayout" name="hl_2_4">
+             <item>
+              <widget class="QPushButton" name="addTarget">
+               <property name="text">
+                <string>Add</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="removeTarget">
+               <property name="text">
+                <string>Remove</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <spacer name="spacer_2">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>40</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+            </layout>
+           </item>
+          </layout>
+         </widget>
+        </widget>
        </item>
       </layout>
      </widget>

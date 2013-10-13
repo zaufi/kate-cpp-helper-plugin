@@ -43,8 +43,11 @@ add_executable(
 
 target_link_libraries(
     indexer_unit_tests
-    ${LIBCLANG_LIBRARY}
+    ${Boost_FILESYSTEM_LIBRARY}
+    ${Boost_SERIALIZATION_LIBRARY}
+    ${Boost_SYSTEM_LIBRARY}
     ${KDE4_KDECORE_LIBRARY}
+    ${LIBCLANG_LIBRARY}
     ${QT_QTTEST_LIBRARY_RELEASE}
     ${XAPIAN_LIBRARIES}
   )

@@ -47,7 +47,7 @@ public Q_SLOTS:
     void finished();
 
 public:
-    std::atomic<bool> m_done;
+    std::atomic<bool> m_done = {false};
 };
 
 

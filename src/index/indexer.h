@@ -37,6 +37,7 @@
 #include <QtCore/QThread>
 #include <QtCore/QFileInfo>
 #include <atomic>
+#include <memory>
 #include <vector>
 
 namespace kate { namespace index {
@@ -50,6 +51,7 @@ class worker : public QObject
 
 public:
     explicit worker(indexer* const);
+    ~worker();
 
     bool is_cancelled() const;
 
@@ -63,11 +65,14 @@ Q_SIGNALS:
     void finished();
 
 private:
+    struct container_info;
+
     bool dispatch_target(const KUrl&);
     bool dispatch_target(const QFileInfo&);
     void handle_file(const QString&);
     void handle_directory(const QString&);
     bool is_look_like_cpp_source(const QFileInfo&);
+    CXIdxClientContainer update_client_container(Xapian::docid);
 
     static int on_abort_cb(CXClientData, void*);
     static void on_diagnostic_cb(CXClientData, CXDiagnosticSet, void*);
@@ -79,6 +84,7 @@ private:
     static void on_declaration_reference(CXClientData, const CXIdxEntityRefInfo*);
 
     indexer* const m_indexer;
+    std::vector<std::unique_ptr<container_info>> m_containers;
     std::atomic<bool> m_is_cancelled;
 };
 

@@ -37,6 +37,7 @@
 #include <KDE/KMimeType>
 #include <QtCore/QDirIterator>
 #include <xapian/document.h>
+#include <xapian/queryparser.h>
 #include <set>
 
 namespace kate { namespace index {
@@ -59,8 +60,8 @@ namespace kate { namespace index {
  * Possible values:
  * - \c REF_TO -- document ID of a declaration for a reference
  * - \c KIND -- cursor kind (function, typedef, class/struct, etc...)
- * - \c SEMANTIC_PARENT -- ID of the semantic parent document
- * - \c LEXICAL_PARENT -- ID of the lexical parent document
+ * - \c SEMANTIC_CONTAINER -- ID of the semantic parent document
+ * - \c LEXICAL_CONTAINER -- ID of the lexical parent document
  * - \c LINE -- line number
  * - \c COLUMN -- column
  * - \c FILE -- filename
@@ -78,11 +79,6 @@ std::set<QString> CPP_SOURCE_MIME_TYPES = {
   , "text/x-c++hdr"
 };
 
-struct indexer_data
-{
-    std::string m_main_file;
-};
-
 inline Xapian::termpos make_term_position(const clang::location& loc)
 {
     return loc.line() * 1000 + loc.column();
@@ -91,57 +87,17 @@ inline Xapian::termpos make_term_position(const clang::location& loc)
 }                                                           // anonymous namespace
 
 //BEGIN worker members
-int worker::on_abort_cb(CXClientData client_data, void*)
+struct worker::container_info
 {
-    auto* const wrkr = static_cast<worker*>(client_data);
-    return 0;
-}
-
-void worker::on_diagnostic_cb(CXClientData, CXDiagnosticSet, void*)
-{
-}
-
-CXIdxClientFile worker::on_entering_main_file(CXClientData client_data, CXFile file, void*)
-{
-    auto* const wrkr = static_cast<worker*>(client_data);
-    kDebug(DEBUG_AREA) << "Main file:" << clang::toString(file);
-    return static_cast<CXIdxClientFile>(file);
-}
-
-CXIdxClientFile worker::on_include_file(CXClientData client_data, const CXIdxIncludedFileInfo* info)
-{
-    auto* const wrkr = static_cast<worker*>(client_data);
-    return static_cast<CXIdxClientFile>(info->file);
-}
-
-CXIdxClientASTFile worker::on_include_ast_file(CXClientData client_data, const CXIdxImportedASTFileInfo* info)
-{
-    auto* const wrkr = static_cast<worker*>(client_data);
-    return static_cast<CXIdxClientFile>(info->file);
-}
-
-CXIdxClientContainer worker::on_translation_unit(CXClientData client_data, void*)
-{
-    auto* const wrkr = static_cast<worker*>(client_data);
-    return CXIdxClientContainer("TU");
-}
-
-void worker::on_declaration(CXClientData client_data, const CXIdxDeclInfo* info)
-{
-    auto* const wrkr = static_cast<worker*>(client_data);
-    auto loc = clang::location{info->loc};
-    auto doc = Xapian::Document{};
-    doc.add_posting(info->entityInfo->name, make_term_position(loc));
-    doc.add_boolean_term(term::XDECL);
-    wrkr->m_indexer->m_db.add_document(doc);
-}
-
-void worker::on_declaration_reference(CXClientData client_data, const CXIdxEntityRefInfo* info)
-{
-}
+    Xapian::docid m_id;                                     ///< ID of the container in DB
+};
 
 worker::worker(indexer* const parent)
   : m_indexer(parent)
+{
+}
+
+worker::~worker()
 {
 }
 
@@ -155,20 +111,15 @@ bool worker::is_cancelled() const
     return m_is_cancelled;
 }
 
-bool worker::is_look_like_cpp_source(const QFileInfo& fi)
+void worker::process()
 {
-    auto result = true;
-    if (TYPICAL_CPP_EXTENSIONS.find(fi.suffix()) == end(TYPICAL_CPP_EXTENSIONS))
-    {
-        // Try to use Mime database to detect by file content
-        auto mime = KMimeType::findByFileContent(fi.canonicalFilePath());
-        result = (
-            mime->name() != KMimeType::defaultMimeType()
-          && CPP_SOURCE_MIME_TYPES.find(mime->name()) != end(CPP_SOURCE_MIME_TYPES)
-          ) || false
-          ;
-    }
-    return result;
+    kDebug(DEBUG_AREA) << "Indexer thread has started";
+    for (const auto& target : m_indexer->m_targets)
+        if (dispatch_target(target))
+            break;
+    kDebug(DEBUG_AREA) << "Indexer thread has finished";
+    m_indexer->m_db.commit();
+    Q_EMIT(finished());
 }
 
 void worker::handle_file(const QString& filename)
@@ -202,7 +153,7 @@ void worker::handle_file(const QString& filename)
       , clang_defaultEditingTranslationUnitOptions()        /// \todo Use TranslationUnit class
       );
     if (result)
-        Q_EMIT(error(clang::location{}, "Indexer finished with errors"));
+        Q_EMIT(error(clang::location{}, QString("Errors on indexing %1").arg(filename)));
 }
 
 void worker::handle_directory(const QString& directory)
@@ -237,9 +188,6 @@ bool worker::dispatch_target(const QFileInfo& fi)
     }
 
     const auto& filename = fi.canonicalFilePath();
-#if 0
-    kDebug(DEBUG_AREA) << "Dispatch" << filename;
-#endif
     if (fi.isDir())
         handle_directory(filename);
     else if (fi.isFile() && is_look_like_cpp_source(fi))
@@ -249,14 +197,110 @@ bool worker::dispatch_target(const QFileInfo& fi)
     return false;
 }
 
-void worker::process()
+bool worker::is_look_like_cpp_source(const QFileInfo& fi)
 {
-    kDebug(DEBUG_AREA) << "Indexer thread has started";
-    for (const auto& target : m_indexer->m_targets)
-        if (dispatch_target(target))
-            break;
-    kDebug(DEBUG_AREA) << "Indexer thread has finished";
-    Q_EMIT(finished());
+    auto result = true;
+    if (TYPICAL_CPP_EXTENSIONS.find(fi.suffix()) == end(TYPICAL_CPP_EXTENSIONS))
+    {
+        // Try to use Mime database to detect by file content
+        auto mime = KMimeType::findByFileContent(fi.canonicalFilePath());
+        result = (
+            mime->name() != KMimeType::defaultMimeType()
+          && CPP_SOURCE_MIME_TYPES.find(mime->name()) != end(CPP_SOURCE_MIME_TYPES)
+          ) || false
+          ;
+    }
+    return result;
+}
+
+CXIdxClientContainer worker::update_client_container(const Xapian::docid id)
+{
+    auto& ptr = *m_containers.emplace(end(m_containers), new container_info{id});
+    return CXIdxClientContainer(ptr.get());
+}
+
+int worker::on_abort_cb(CXClientData client_data, void*)
+{
+    auto* const wrkr = static_cast<worker*>(client_data);
+    return 0;
+}
+
+void worker::on_diagnostic_cb(CXClientData, CXDiagnosticSet, void*)
+{
+}
+
+CXIdxClientFile worker::on_entering_main_file(CXClientData client_data, CXFile file, void*)
+{
+    auto* const wrkr = static_cast<worker*>(client_data);
+    kDebug(DEBUG_AREA) << "Main file:" << clang::toString(file);
+    return static_cast<CXIdxClientFile>(file);
+}
+
+CXIdxClientFile worker::on_include_file(CXClientData client_data, const CXIdxIncludedFileInfo* info)
+{
+    auto* const wrkr = static_cast<worker*>(client_data);
+    return static_cast<CXIdxClientFile>(info->file);
+}
+
+CXIdxClientASTFile worker::on_include_ast_file(CXClientData client_data, const CXIdxImportedASTFileInfo* info)
+{
+    auto* const wrkr = static_cast<worker*>(client_data);
+    return static_cast<CXIdxClientFile>(info->file);
+}
+
+CXIdxClientContainer worker::on_translation_unit(CXClientData client_data, void*)
+{
+    auto* const wrkr = static_cast<worker*>(client_data);
+    return CXIdxClientContainer(wrkr->update_client_container(database::IVALID_DOCUMENT_ID));
+}
+
+void worker::on_declaration(CXClientData client_data, const CXIdxDeclInfo* info)
+{
+    auto* const wrkr = static_cast<worker*>(client_data);
+    auto loc = clang::location{info->loc};
+    if (!info->entityInfo->name)
+    {
+        kDebug(DEBUG_AREA) << loc << ": it seems here is anonymous declaration";
+        return;
+    }
+    kDebug() << loc << "declaration of" << QString(info->entityInfo->name);
+
+    // Create a new document for declaration and attach all required value slots and terms
+    auto doc = Xapian::Document{};
+    doc.add_posting(info->entityInfo->name, make_term_position(loc));
+    doc.add_boolean_term(term::XDECL);
+    doc.add_value(value_slot::LINE, Xapian::sortable_serialise(loc.line()));
+    doc.add_value(value_slot::COLUMN, Xapian::sortable_serialise(loc.column()));
+    {
+        auto id = wrkr->m_indexer->m_db.headers_map()[loc.file().toLocalFile()];
+        doc.add_value(value_slot::COLUMN, Xapian::sortable_serialise(id));
+    }
+    if (info->semanticContainer)
+    {
+        const auto* const container = reinterpret_cast<const container_info* const>(info->semanticContainer);
+        doc.add_value(value_slot::SEMANTIC_CONTAINER, Xapian::sortable_serialise(container->m_id));
+    }
+    if (info->lexicalContainer)
+    {
+        const auto* const container = reinterpret_cast<const container_info* const>(info->lexicalContainer);
+        doc.add_value(value_slot::LEXICAL_CONTAINER, Xapian::sortable_serialise(container->m_id));
+    }
+    if (info->declAsContainer)
+        doc.add_boolean_term(term::XCONTAINER);
+
+    // Add the document to the DB finally
+    auto docid = wrkr->m_indexer->m_db.add_document(doc);
+
+    // Make a new container if necessary
+    if (info->declAsContainer)
+        clang_index_setClientContainer(
+            info->declAsContainer
+          , wrkr->update_client_container(docid)
+          );
+}
+
+void worker::on_declaration_reference(CXClientData client_data, const CXIdxEntityRefInfo* info)
+{
 }
 //END worker members
 

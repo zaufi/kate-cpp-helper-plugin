@@ -42,11 +42,17 @@ namespace kate { namespace clang {
 /// Get a human readable string of \c CXString
 inline QString toString(const DCXString& str)
 {
-    return QString(clang_getCString(str));
+    auto* cstr = clang_getCString(str);
+    if (cstr)
+        return QString{cstr};
+    return QString{};
 }
 inline std::string to_string(const DCXString& str)
 {
-    return std::string(clang_getCString(str));
+    auto* cstr = clang_getCString(str);
+    if (cstr)
+        return std::string{cstr};
+    return std::string{};
 }
 
 /// Get a human readable string of \c CXFile

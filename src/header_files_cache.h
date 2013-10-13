@@ -64,22 +64,10 @@ public:
 
     bool isEmpty() const;
     size_t size() const;
+    bool isDirty() const;
 
-    std::string store_to_string() const
-    {
-        std::string result;
-        std::stringstream ofs{result, std::ios_base::out | std::ios_base::binary};
-        boost::archive::binary_oarchive oa{ofs};
-        oa << *this;
-        return result;
-    }
-
-    void load_from_string(const std::string& raw_data)
-    {
-        std::stringstream ifs{raw_data, std::ios_base::in | std::ios_base::binary};
-        boost::archive::binary_iarchive ia{ifs};
-        ia >> *this;
-    }
+    std::string storeToString() const;
+    void loadFromString(const std::string&);
 
 private:
     /**
@@ -92,19 +80,10 @@ private:
         int m_id;
 
         template <typename Archive>
-        void save(Archive& ar, const unsigned int) const
-        {
-            std::string filename = m_filename.toUtf8().constData();
-            ar & m_id & filename;
-        }
+        void save(Archive&, const unsigned int) const;
 
         template <typename Archive>
-        void load(Archive& ar, const unsigned int)
-        {
-            std::string filename;
-            ar & m_id & filename;
-            m_filename = QString(filename.c_str());
-        }
+        void load(Archive&, const unsigned int);
 
         BOOST_SERIALIZATION_SPLIT_MEMBER()
     };
@@ -133,7 +112,6 @@ private:
           >
       > index_type;
 
-
     friend class boost::serialization::access;
 
     template <typename Archive>
@@ -143,6 +121,7 @@ private:
     }
 
     index_type m_cache;
+    bool m_cache_is_dirty;
 };
 
 /**
@@ -189,6 +168,7 @@ inline int HeaderFilesCache::operator[](const QString& filename)
     {
         result = int(m_cache.size());
         m_cache.insert({filename, result});
+        m_cache_is_dirty = true;
     }
     else result = it->m_id;
     return result;
@@ -198,9 +178,46 @@ inline bool HeaderFilesCache::isEmpty() const
 {
     return m_cache.empty();
 }
+
 inline size_t HeaderFilesCache::size() const
 {
     return m_cache.size();
+}
+
+inline bool HeaderFilesCache::isDirty() const
+{
+    return m_cache_is_dirty;
+}
+
+inline std::string HeaderFilesCache::storeToString() const
+{
+    std::string result;
+    std::stringstream ofs{result, std::ios_base::out | std::ios_base::binary};
+    boost::archive::binary_oarchive oa{ofs};
+    oa << *this;
+    return result;
+}
+
+inline void HeaderFilesCache::loadFromString(const std::string& raw_data)
+{
+    std::stringstream ifs{raw_data, std::ios_base::in | std::ios_base::binary};
+    boost::archive::binary_iarchive ia{ifs};
+    ia >> *this;
+}
+
+template <typename Archive>
+inline void HeaderFilesCache::value_type::save(Archive& ar, const unsigned int) const
+{
+    std::string filename = m_filename.toUtf8().constData();
+    ar & m_id & filename;
+}
+
+template <typename Archive>
+inline void HeaderFilesCache::value_type::load(Archive& ar, const unsigned int)
+{
+    std::string filename;
+    ar & m_id & filename;
+    m_filename = QString(filename.c_str());
 }
 
 }                                                           // namespace kate

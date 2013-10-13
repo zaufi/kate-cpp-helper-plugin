@@ -30,10 +30,11 @@
 #include <config.h>
 
 // Standard includes
-#include <KDE/KDebug>
-#include <QtTest/QtTest>
+#include <boost/filesystem/operations.hpp>
 // Include the following file if u need to validate some text results
 // #include <boost/test/output_test_stream.hpp>
+#include <KDE/KDebug>
+#include <QtTest/QtTest>
 #include <chrono>
 #include <iostream>
 #include <vector>
@@ -64,7 +65,15 @@ std::vector<const char*> PARSE_OPTIONS = {
 
 const std::string SAMPLE_DB_PATH = CMAKE_BINARY_DIR "/src/test/data/test.db";
 const char* const SAMPLE_DIR = CMAKE_SOURCE_DIR "/src/test/data";
+const char* const VAR_TEST_09 = CMAKE_SOURCE_DIR "/src/test/data/variables/test_009.cc";
 
+bool make_sure_database_not_exists(const boost::filesystem::path& path)
+{
+    boost::system::error_code error;
+    boost::filesystem::remove_all(path, error);
+    return bool(!error);
+}
+bool s_db_rm_flag = make_sure_database_not_exists(SAMPLE_DB_PATH);
 }                                                           // anonymous namespace
 
 void result_waiter::finished()
@@ -76,6 +85,7 @@ void result_waiter::finished()
 indexer_tester::indexer_tester()
   : m_indexer{SAMPLE_DB_PATH}
 {
+    QVERIFY(s_db_rm_flag);
     connect(&m_indexer, SIGNAL(finished()), &m_res, SLOT(finished()));
 }
 
@@ -83,7 +93,7 @@ void indexer_tester::index_sample_file()
 {
     kDebug() << "DB path:" << SAMPLE_DB_PATH.c_str();
     m_indexer.set_compiler_options(decltype(PARSE_OPTIONS){PARSE_OPTIONS})
-      .add_target(QString{SAMPLE_DIR})
+      .add_target(QString{VAR_TEST_09})
       .start()
       ;
     auto start_time = std::chrono::system_clock::now();
@@ -104,6 +114,5 @@ void indexer_tester::index_sample_file()
     }
     kDebug() << "Done";
 }
-
 
 QTEST_MAIN(indexer_tester)
