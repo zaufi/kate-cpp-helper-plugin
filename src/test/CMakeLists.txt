@@ -22,8 +22,10 @@ add_boost_tests(
 
 target_link_libraries(
     ${UNIT_TESTS}
-    ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}
+    ${Boost_FILESYSTEM_LIBRARY}
     ${Boost_SERIALIZATION_LIBRARY}
+    ${Boost_SYSTEM_LIBRARY}
+    ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}
     ${KDE4_KTEXTEDITOR_LIBS}
     ${LIBCLANG_LIBRARY}
     ${XAPIAN_LIBRARIES}

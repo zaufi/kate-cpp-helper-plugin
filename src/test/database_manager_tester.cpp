@@ -27,8 +27,10 @@
 
 // Project specific includes
 #include <src/database_manager.h>
+#include <config.h>
 
 // Standard includes
+#include <boost/filesystem/operations.hpp>
 #include <boost/test/auto_unit_test.hpp>
 // Include the following file if u need to validate some text results
 // #include <boost/test/output_test_stream.hpp>
@@ -41,8 +43,15 @@
 
 using namespace kate;
 
+namespace {
+const char* const SAMPLE_DB_PATH_CSTR = CMAKE_BINARY_DIR "/src/test/data/";
+const KUrl SAMPLE_DB_PATH = QString{SAMPLE_DB_PATH_CSTR};
+}                                                           // anonymous namespace
+
 BOOST_AUTO_TEST_CASE(database_manager_test)
 {
-    database_manager mgr;
+    BOOST_REQUIRE(boost::filesystem::exists(SAMPLE_DB_PATH_CSTR));
+    QStringList enabled_dbs;
+    enabled_dbs << "test";
+    database_manager mgr(SAMPLE_DB_PATH, enabled_dbs);
 }
-

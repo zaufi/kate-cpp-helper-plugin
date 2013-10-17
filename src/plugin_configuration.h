@@ -66,6 +66,7 @@ public:
     const QStringList& sessionDirs() const;
     const QStringList& systemDirs() const;
     const QStringList& ignoreExtensions() const;
+    const QStringList& enabledIndices() const;
     const KUrl& precompiledHeaderFile() const;
     const KUrl& pchFile() const;
     const QString& clangParams() const;
@@ -118,11 +119,11 @@ Q_SIGNALS:
     void clangOptionsChanged();
 
 private:
-
     sanitize_rules_list_type m_sanitize_rules;
     QStringList m_system_dirs;
     QStringList m_session_dirs;
     QStringList m_ignore_ext;
+    QStringList m_enabled_indices;
     KUrl m_pch_header;
     KUrl m_pch_file;
     QString m_clang_params;
@@ -152,6 +153,10 @@ inline const QStringList& PluginConfiguration::systemDirs() const
 inline const QStringList& PluginConfiguration::ignoreExtensions() const
 {
     return m_ignore_ext;
+}
+inline const QStringList& PluginConfiguration::enabledIndices() const
+{
+    return m_enabled_indices;
 }
 inline const KUrl& PluginConfiguration::precompiledHeaderFile() const
 {

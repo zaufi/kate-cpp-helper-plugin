@@ -268,7 +268,7 @@ void worker::on_declaration(CXClientData client_data, const CXIdxDeclInfo* info)
     // Create a new document for declaration and attach all required value slots and terms
     auto doc = Xapian::Document{};
     doc.add_posting(info->entityInfo->name, make_term_position(loc));
-    doc.add_boolean_term(term::XDECL);
+    doc.add_boolean_term(term::XDECL);                      // Mark document w/ XDECL term
     doc.add_value(value_slot::LINE, Xapian::sortable_serialise(loc.line()));
     doc.add_value(value_slot::COLUMN, Xapian::sortable_serialise(loc.column()));
     {
@@ -287,6 +287,9 @@ void worker::on_declaration(CXClientData client_data, const CXIdxDeclInfo* info)
     }
     if (info->declAsContainer)
         doc.add_boolean_term(term::XCONTAINER);
+#if 0
+    if (info->isRedeclaration)
+#endif
 
     // Add the document to the DB finally
     auto docid = wrkr->m_indexer->m_db.add_document(doc);

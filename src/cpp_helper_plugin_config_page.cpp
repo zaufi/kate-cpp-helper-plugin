@@ -214,6 +214,9 @@ CppHelperPluginConfigPage::CppHelperPluginConfigPage(
           , SLOT(pchHeaderChanged(const KUrl&))
           );
         // Connect open and rebuild PCH file button
+        /// \todo Monitor PCH header file for changes:
+        /// it could be absent at this moment, but may appear later,
+        /// while configuration dialog still opened...
         connect(m_clang_config->openPchHeader, SIGNAL(clicked()), this, SLOT(openPCHHeaderFile()));
         connect(m_clang_config->rebuildPch, SIGNAL(clicked()), this, SLOT(rebuildPCH()));
     }
@@ -502,7 +505,7 @@ void CppHelperPluginConfigPage::storeSet()
         {
             auto filename = QString(QUrl::toPercentEncoding(set_name));
             auto incset_file = KStandardDirs::locateLocal(
-                "appdata"
+                "data"
               , QString(INCSET_FILE_TPL).arg(filename)
               , true
               );
@@ -797,7 +800,7 @@ void CppHelperPluginConfigPage::updateSets()
 
     // Find *.incset files
     auto sets = KGlobal::dirs()->findAllResources(
-        "appdata"
+        "data"
       , QString(INCSET_FILE_TPL).arg("*")
       , KStandardDirs::NoSearchOptions
       );

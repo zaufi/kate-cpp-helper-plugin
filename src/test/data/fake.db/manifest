@@ -1,0 +1,3 @@
+[options]
+name=Test
+db-path=/tmp

@@ -162,6 +162,8 @@ private:
     doc_info_type m_doc_info;
     /// Directory watcher to monitor configured directories
     std::unique_ptr<KDirWatch> m_dir_watcher;
+    /// Index databases manager
+    std::unique_ptr<database_manager> m_db_mgr;
     /// \note Directory watcher reports about 4 times just for one event,
     /// so to avoid doing stupid job, lets remember what we've done the last time.
     QString m_last_updated;
@@ -169,7 +171,6 @@ private:
     KTextEditor::Document* m_hidden_doc;
     translation_units_map_type m_units;
     HeaderFilesCache m_headers_cache;
-    database_manager m_db_mgr;
 };
 
 inline PluginConfiguration& CppHelperPlugin::config()

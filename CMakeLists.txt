@@ -156,11 +156,11 @@ set(
 # in absolute path + filename to find files or directories to be excluded
 # from source tarball.
 set(CPACK_SOURCE_IGNORE_FILES
-    "\\\\.gitignore$";
-    "\\\\.kate-swp$";
-    "\\\\.tar\\\\.gz$";
-    "^.*/\\\\.git.*$";
-    "\\\\.kcrash\\\\.txt$";
+    "\\\\.gitignore$"
+    "\\\\.kate-swp$"
+    "\\\\.tar\\\\.gz$"
+    "^.*/\\\\.git.*$"
+    "\\\\.kcrash\\\\.txt$"
     "^~.*$"
   )
 
