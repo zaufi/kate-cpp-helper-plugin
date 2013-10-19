@@ -1,7 +1,7 @@
 /**
  * \file
  *
- * \brief Class \c kate::database_manager (interface)
+ * \brief Class \c kate::DatabaseManager (interface)
  *
  * \date Sun Oct 13 08:47:24 MSK 2013 -- Initial design
  */
@@ -29,10 +29,12 @@
 
 // Project specific includes
 #include <src/index/database.h>
+#include <src/database_options.h>
 
 // Standard includes
 #include <boost/filesystem/path.hpp>
 #include <KDE/KUrl>
+#include <QtCore/QObject>
 #include <QtCore/QStringList>
 #include <memory>
 #include <stdexcept>
@@ -47,15 +49,17 @@ namespace kate {
  * [More detailed description here]
  *
  */
-class database_manager
+class DatabaseManager : public QObject
 {
+    Q_OBJECT
+
 public:
     /// Construct from default base directory and list of enabled colelctions
-    explicit database_manager(const QStringList&);
+    explicit DatabaseManager(const QStringList&);
     /// Construct w/ base path specified and list of enabled collections
-    explicit database_manager(const KUrl&, const QStringList&);
+    explicit DatabaseManager(const KUrl&, const QStringList&);
     /// Destructor
-    ~database_manager();
+    ~DatabaseManager();
 
     struct exception : public std::runtime_error
     {
@@ -67,7 +71,7 @@ public Q_SLOTS:
     void enable(const QStringList&);
 
 private:
-    struct database_options
+    struct database_state
     {
         enum class status
         {
@@ -76,34 +80,27 @@ private:
           , disabled
           , reindexing
         };
-        KUrl m_path;
-        QStringList m_targets;
-        QString m_name;
-        QString m_comment;
         status m_status = {status::invalid};
-
-        database_options() = default;
-        database_options(database_options&&) noexcept;
-        database_options& operator=(database_options&&) noexcept;
+        std::unique_ptr<DatabaseOptions> m_options;
     };
     static KUrl get_default_base_dir();
-    database_options try_load_database_meta(const boost::filesystem::path&);
+    database_state try_load_database_meta(const boost::filesystem::path&);
 
-    typedef std::vector<std::pair<database_options, std::unique_ptr<index::database>>> collections_type;
+    typedef std::vector<std::pair<database_state, std::unique_ptr<index::database>>> collections_type;
     collections_type m_collections;
     QStringList m_enabled_list;
 };
 
-struct database_manager::exception::invalid_manifest : public database_manager::exception
+struct DatabaseManager::exception::invalid_manifest : public DatabaseManager::exception
 {
-    invalid_manifest(const std::string& str) : database_manager::exception(str) {}
+    invalid_manifest(const std::string& str) : DatabaseManager::exception(str) {}
 };
 
-inline database_manager::exception::exception(const std::string& str)
+inline DatabaseManager::exception::exception(const std::string& str)
   : std::runtime_error(str) {}
 
-inline database_manager::database_manager(const QStringList& enabled_list)
-  : database_manager(database_manager::get_default_base_dir(), enabled_list)
+inline DatabaseManager::DatabaseManager(const QStringList& enabled_list)
+  : DatabaseManager(DatabaseManager::get_default_base_dir(), enabled_list)
 {
 }
 

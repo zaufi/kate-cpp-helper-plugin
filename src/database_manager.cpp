@@ -1,7 +1,7 @@
 /**
  * \file
  *
- * \brief Class \c kate::database_manager (implementation)
+ * \brief Class \c kate::DatabaseManager (implementation)
  *
  * \date Sun Oct 13 08:47:24 MSK 2013 -- Initial design
  */
@@ -35,6 +35,7 @@
 #include <KDE/KSharedConfig>
 #include <KDE/KSharedConfigPtr>
 #include <KDE/KStandardDirs>
+#include <QtCore/QFileInfo>
 
 namespace kate { namespace {
 /// \attention Make sure this path replaced everywhre in case of changes
@@ -50,7 +51,8 @@ const QString COMMENT = "comment";
 const QString TARGETS = "targets";
 }}}                                                         // namespace key, meta, anonymous namespace
 
-database_manager::database_options::database_options(database_options&& other) noexcept
+#if 0
+DatabaseManager::database_options::database_options(database_options&& other) noexcept
   : m_status(other.m_status)
 {
     m_path.swap(other.m_path);
@@ -59,7 +61,7 @@ database_manager::database_options::database_options(database_options&& other) n
     m_comment.swap(other.m_comment);
 }
 
-auto database_manager::database_options::operator=(database_options&& other) noexcept -> database_options&
+auto DatabaseManager::database_options::operator=(database_options&& other) noexcept -> database_options&
 {
     if (this != &other)
     {
@@ -70,13 +72,14 @@ auto database_manager::database_options::operator=(database_options&& other) noe
     }
     return *this;
 }
+#endif
 
 /**
  * \brief Search for stored indexer databases
  *
  * \todo Handle the case when \c base_dir is not a directory actually
  */
-database_manager::database_manager(const KUrl& base_dir, const QStringList& enabled_list)
+DatabaseManager::DatabaseManager(const KUrl& base_dir, const QStringList& enabled_list)
   : m_enabled_list(enabled_list)
 {
     kDebug(DEBUG_AREA) << "Use indexer DB path:" << base_dir.toLocalFile();
@@ -100,38 +103,39 @@ database_manager::database_manager(const KUrl& base_dir, const QStringList& enab
     }
 }
 
-database_manager::~database_manager()
+DatabaseManager::~DatabaseManager()
 {
 }
 
-KUrl database_manager::get_default_base_dir()
+KUrl DatabaseManager::get_default_base_dir()
 {
     auto base_dir = KGlobal::dirs()->locateLocal("appdata", DATABASES_DIR, true);
     return base_dir;
 }
 
-auto database_manager::try_load_database_meta(const boost::filesystem::path& manifest) -> database_options
+auto DatabaseManager::try_load_database_meta(const boost::filesystem::path& manifest) -> database_state
 {
     auto filename = QString{manifest.c_str()};
     auto db_meta = KSharedConfig::openConfig(filename, KConfig::SimpleConfig);
-    auto meta_group = KConfigGroup{db_meta, meta::GROUP_NAME};
 
-    database_options result;
-    result.m_path = meta_group.readPathEntry(meta::key::PATH, QString());
-    /// \todo Check that path is a direectory?
-    auto db_path = boost::filesystem::path{result.m_path.toLocalFile().toUtf8().constData()};
-    if (!exists(db_path))
-        throw exception::invalid_manifest(std::string{"DB path doesn't exists: "} + db_path.string());
-    result.m_name = meta_group.readEntry(meta::key::NAME, QString());
-    if (result.m_name.isEmpty())
+    database_state result;
+    result.m_options.reset(new DatabaseOptions(db_meta));
+
+    auto db_info = QFileInfo{result.m_options->path()};
+    if (!db_info.exists() || !db_info.isDir())
+    {
+        throw exception::invalid_manifest(
+            std::string{"DB path doesn't exists or not a dir: "} + result.m_options->path().toUtf8().constData()
+          );
+    }
+    if (result.m_options->name().isEmpty())
         throw exception::invalid_manifest("Index name is not given");
-    result.m_comment = meta_group.readEntry(meta::key::COMMENT, QString());
-    result.m_targets = meta_group.readPathEntry(meta::key::TARGETS, QStringList());
-    kDebug(DEBUG_AREA) << "Found DB: name:" << result.m_name << ", path:" << result.m_path;
+
+    kDebug(DEBUG_AREA) << "Found DB: name:" << result.m_options->name() << ", path:" << result.m_options->path();
     return result;
 }
 
-void database_manager::enable(const QStringList&)
+void DatabaseManager::enable(const QStringList&)
 {
 }
 

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kcfg xmlns="http://www.kde.org/standards/kcfg/1.0"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://www.kde.org/standards/kcfg/1.0
+                          http://www.kde.org/standards/kcfg/1.0/kcfg.xsd" >
+    <include>kglobalsettings.h</include>
+    <kcfgfile arg="true" />
+    <group name="options">
+        <entry name="name" type="String">
+            <label>Index collection name.</label>
+        </entry>
+        <entry name="comment" type="String">
+            <label>Comment.</label>
+        </entry>
+        <entry name="path" type="Path">
+            <label>Path to an indexer database.</label>
+        </entry>
+        <entry name="targets" type="PathList">
+            <label>Targets to be indexed.</label>
+        </entry>
+    </group>
+</kcfg>

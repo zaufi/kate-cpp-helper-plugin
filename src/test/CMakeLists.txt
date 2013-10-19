@@ -1,6 +1,5 @@
 add_definitions(-UQT_NO_STL)
 
-set(UNIT_TESTS unit_tests)
 set(UNIT_TESTS_SOURCES
     sanitize_snippet_tester.cpp
     utils_tester.cpp
@@ -10,18 +9,19 @@ set(UNIT_TESTS_SOURCES
     ${CMAKE_SOURCE_DIR}/src/sanitize_snippet.cpp
     ${CMAKE_SOURCE_DIR}/src/utils.cpp
     ${CMAKE_SOURCE_DIR}/src/translation_unit.cpp
-    ${CMAKE_SOURCE_DIR}/src/database_manager.cpp
     ${CLANG_HELPERS_SOURCES}
+    ${INDEXER_SOURCES}
   )
+qt4_wrap_cpp(UNIT_TESTS_SOURCES ${INDEXER_HEADERS})
 
 # Unit tests executable
 add_boost_tests(
-    TARGET ${UNIT_TESTS}
+    TARGET unit_tests
     SOURCES ${UNIT_TESTS_SOURCES}
   )
 
 target_link_libraries(
-    ${UNIT_TESTS}
+    unit_tests
     ${Boost_FILESYSTEM_LIBRARY}
     ${Boost_SERIALIZATION_LIBRARY}
     ${Boost_SYSTEM_LIBRARY}
@@ -33,7 +33,8 @@ target_link_libraries(
 
 # QTest based indexer unit-tests
 qt4_wrap_cpp(INDEXER_HEADERS_MOC ${INDEXER_HEADERS} indexer_tester.h)
-set(INDEXER_UNIT_TEST_SOURCES
+set(
+    INDEXER_UNIT_TEST_SOURCES
     indexer_tester.cpp
     ${INDEXER_SOURCES}
     ${INDEXER_HEADERS_MOC}
@@ -50,7 +51,7 @@ target_link_libraries(
     ${Boost_FILESYSTEM_LIBRARY}
     ${Boost_SERIALIZATION_LIBRARY}
     ${Boost_SYSTEM_LIBRARY}
-    ${KDE4_KDECORE_LIBRARY}
+    ${KDE4_KDEUI_LIBRARY}
     ${LIBCLANG_LIBRARY}
     ${QT_QTTEST_LIBRARY_RELEASE}
     ${XAPIAN_LIBRARIES}

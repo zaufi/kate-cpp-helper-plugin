@@ -1,7 +1,7 @@
 /**
  * \file
  *
- * \brief Class tester for \c database_manager
+ * \brief Class tester for \c DatabaseManager
  *
  * \date Sun Oct 13 09:17:11 MSK 2013 -- Initial design
  */
@@ -53,5 +53,5 @@ BOOST_AUTO_TEST_CASE(database_manager_test)
     BOOST_REQUIRE(boost::filesystem::exists(SAMPLE_DB_PATH_CSTR));
     QStringList enabled_dbs;
     enabled_dbs << "test";
-    database_manager mgr(SAMPLE_DB_PATH, enabled_dbs);
+    DatabaseManager mgr(SAMPLE_DB_PATH, enabled_dbs);
 }

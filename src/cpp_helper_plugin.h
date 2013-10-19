@@ -163,7 +163,7 @@ private:
     /// Directory watcher to monitor configured directories
     std::unique_ptr<KDirWatch> m_dir_watcher;
     /// Index databases manager
-    std::unique_ptr<database_manager> m_db_mgr;
+    std::unique_ptr<DatabaseManager> m_db_mgr;
     /// \note Directory watcher reports about 4 times just for one event,
     /// so to avoid doing stupid job, lets remember what we've done the last time.
     QString m_last_updated;

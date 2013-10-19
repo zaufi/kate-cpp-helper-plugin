@@ -6,11 +6,17 @@ set(CLANG_HELPERS_SOURCES
     ${CMAKE_SOURCE_DIR}/src/clang/location.cpp
     ${CMAKE_SOURCE_DIR}/src/clang/to_string.cpp
   )
-set(INDEXER_HEADERS ${CMAKE_SOURCE_DIR}/src/index/indexer.h)
+set(INDEXER_HEADERS
+    ${CMAKE_SOURCE_DIR}/src/index/indexer.h
+    ${CMAKE_SOURCE_DIR}/src/database_manager.h
+  )
 set(INDEXER_SOURCES
     ${CMAKE_SOURCE_DIR}/src/index/database.cpp
     ${CMAKE_SOURCE_DIR}/src/index/indexer.cpp
+    ${CMAKE_SOURCE_DIR}/src/database_manager.cpp
   )
+
+kde4_add_kcfg_files(INDEXER_SOURCES database_options.kcfgc)
 
 set(KATE_CPP_HELPER_PLUGIN_SOURCES
     utils.cpp
@@ -24,13 +30,13 @@ set(KATE_CPP_HELPER_PLUGIN_SOURCES
     clang_code_completion_model.cpp
     include_helper_completion_model.cpp
     choose_from_list_dialog.cpp
-    database_manager.cpp
     cpp_helper_plugin_config_page.cpp
     cpp_helper_plugin_view.cpp
     cpp_helper_plugin.cpp
     ${CLANG_HELPERS_SOURCES}
     ${INDEXER_SOURCES}
   )
+
 
 kde4_add_ui_files(
     KATE_CPP_HELPER_PLUGIN_SOURCES
@@ -42,6 +48,7 @@ kde4_add_ui_files(
     plugin_tool_view.ui
     clang_completion_settings.ui
   )
+
 
 kde4_add_plugin(katecpphelperplugin ${KATE_CPP_HELPER_PLUGIN_SOURCES})
 
@@ -99,6 +106,8 @@ append_if_set(QT_QTSCRIPTTOOLS_INCLUDE_DIR QT4_INCSET_DIRS)
 append_if_set(QT_QTDECLARATIVE_INCLUDE_DIR QT4_INCSET_DIRS)
 
 configure_file(data/qt4.incset.in data/qt4.incset)
+
+install(FILES database_options.kcfg DESTINATION ${KCFG_INSTALL_DIR})
 
 install(
     TARGETS katecpphelperplugin

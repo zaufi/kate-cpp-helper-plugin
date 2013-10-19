@@ -1,0 +1,4 @@
+File=database_options.kcfg
+ClassName=DatabaseOptions
+NameSpace=kate
+Mutators=true
