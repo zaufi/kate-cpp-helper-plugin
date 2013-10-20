@@ -131,7 +131,7 @@ private:
     clang::DCXIndex m_index = {clang_createIndex(1, 1)};
     std::vector<const char*> m_options;
     std::vector<KUrl> m_targets;
-    database m_db;
+    rw::database m_db;
 };
 
 inline indexer::indexer(const std::string& path)

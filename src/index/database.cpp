@@ -42,16 +42,27 @@ namespace {
 const std::string FILES_MAPPING = "HDRMAPCACHE";
 }                                                           // anonymous namespace
 
-database::database(const std::string& path) try
-  : Xapian::WritableDatabase(path, Xapian::DB_CREATE_OR_OPEN)
+namespace details {
+template <typename Database>
+inline database<Database>::database()
 {
-    auto hdr_cache = get_metadata(FILES_MAPPING);
+    auto hdr_cache = static_cast<Database* const>(this)->get_metadata(FILES_MAPPING);
     if (!hdr_cache.empty())
         m_files_cache.loadFromString(hdr_cache);
 }
+}                                                           // namespace details
+
+
+namespace rw {
+
+database::database(const std::string& path) try
+  : Xapian::WritableDatabase(path, Xapian::DB_CREATE_OR_OPEN)
+  , details::database<database>()
+{
+}
 catch (const Xapian::DatabaseError& e)
 {
-    throw database::exception::failure("Index database [" + path + "] failure: " + e.get_msg());
+    throw exception::database_failure("Index database [" + path + "] failure: " + e.get_msg());
 }
 
 database::~database()
@@ -64,8 +75,8 @@ void database::commit()
     try
     {
         kDebug(DEBUG_AREA) << "Commiting DB changes...";
-        if (m_files_cache.isDirty())
-            set_metadata(FILES_MAPPING, m_files_cache.storeToString());
+        if (headers_map().isDirty())
+            set_metadata(FILES_MAPPING, headers_map().storeToString());
         Xapian::WritableDatabase::commit();
     }
     catch (...)
@@ -74,4 +85,22 @@ void database::commit()
     }
 }
 
-}}                                                          // namespace index, kate
+}                                                           // namespace rw
+
+namespace ro {
+
+database::database(const std::string& path) try
+  : Xapian::Database(path)
+  , details::database<database>()
+{
+}
+catch (const Xapian::DatabaseError& e)
+{
+    throw exception::database_failure("Index database [" + path + "] failure: " + e.get_msg());
+}
+
+database::~database()
+{
+}
+
+}}}                                                         // namespace ro, index, kate

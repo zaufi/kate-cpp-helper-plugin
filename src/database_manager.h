@@ -82,11 +82,20 @@ private:
         };
         status m_status = {status::invalid};
         std::unique_ptr<DatabaseOptions> m_options;
+        std::unique_ptr<index::ro::database> m_db;
+
+        /// Defaulted default constructor
+        database_state() = default;
+        /// Default move constructor
+        database_state(database_state&&) = default;
+        /// Default move-assign operator
+        database_state& operator=(database_state&&) = default;
     };
+
     static KUrl get_default_base_dir();
     database_state try_load_database_meta(const boost::filesystem::path&);
 
-    typedef std::vector<std::pair<database_state, std::unique_ptr<index::database>>> collections_type;
+    typedef std::vector<database_state> collections_type;
     collections_type m_collections;
     QStringList m_enabled_list;
 };

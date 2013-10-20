@@ -251,7 +251,7 @@ CXIdxClientASTFile worker::on_include_ast_file(CXClientData client_data, const C
 CXIdxClientContainer worker::on_translation_unit(CXClientData client_data, void*)
 {
     auto* const wrkr = static_cast<worker*>(client_data);
-    return CXIdxClientContainer(wrkr->update_client_container(database::IVALID_DOCUMENT_ID));
+    return CXIdxClientContainer(wrkr->update_client_container(IVALID_DOCUMENT_ID));
 }
 
 void worker::on_declaration(CXClientData client_data, const CXIdxDeclInfo* info)

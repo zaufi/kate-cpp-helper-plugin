@@ -1,3 +1,5 @@
 [options]
 name=Test
-path=/tmp
+path=/work/GitHub/build/kate-cpp-helper-plugin/src/test/data/fake.db
+comment=Sample database for unit tests
+targets[$e]=/work/GitHub/kate-cpp-helper-plugin/src/test/data/sample_files

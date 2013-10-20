@@ -97,8 +97,15 @@ DatabaseManager::DatabaseManager(const KUrl& base_dir, const QStringList& enable
         {
             kDebug(DEBUG_AREA) << "found manifest:" << it->path().c_str();
             /// \todo Handle errors
-            auto options = try_load_database_meta(it->path());
-            
+            auto state = try_load_database_meta(it->path());
+            assert("Sanity check" && state.m_options);
+            if (enabled_list.indexOf(state.m_options->name()))
+            {
+                const auto& db_path = state.m_options->path().toUtf8().constData();
+                state.m_db.reset(new index::ro::database(db_path));
+                state.m_status = database_state::status::enabled;
+                m_collections.emplace_back(std::move(state));
+            }
         }
     }
 }

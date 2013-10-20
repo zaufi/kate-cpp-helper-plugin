@@ -52,50 +52,81 @@ constexpr Xapian::valueno KIND = 6;
 constexpr Xapian::valueno TYPE = 7;
 }                                                           // namespace value_slot
 
+/// Exceptions group for database classes
+struct exception : public std::runtime_error
+{
+    struct database_failure;
+    explicit exception(const std::string&);
+};
+
+constexpr Xapian::docid IVALID_DOCUMENT_ID = 0u;            ///< Value to indecate invalid document
+
+struct exception::database_failure : public exception
+{
+    database_failure(const std::string& str) : exception(str) {}
+};
+
+inline exception::exception(const std::string& str)
+  : std::runtime_error(str) {}
+
+namespace details {
 /**
- * \brief [Type brief class description here]
+ * \brief Base class for indexer databases
  *
- * [More detailed description here]
- *
+ * This class have some common members and provide some basic methods to access them.
  */
-class database : public Xapian::WritableDatabase
+template <typename Database>
+class database
 {
 public:
-    struct exception : public std::runtime_error
-    {
-        struct failure;
-        explicit exception(const std::string&);
-    };
-
-    explicit database(const std::string&);                  ///< Construct from a database path
-    virtual ~database();
-
+    database();
     HeaderFilesCache& headers_map();                        ///< Access header files mapping cache (mutable)
     const HeaderFilesCache& headers_map() const;            ///< Access header files mapping cache (immutable)
-    void commit();                                          ///< Commit recent changes to the DB
-
-    static constexpr Xapian::docid IVALID_DOCUMENT_ID = 0u; ///< Value to indecate invalid document
 
 private:
     HeaderFilesCache m_files_cache;
 };
 
-struct database::exception::failure : public database::exception
+template <typename Database>
+inline HeaderFilesCache& database<Database>::headers_map()
 {
-    failure(const std::string& str) : database::exception(str) {}
+    return m_files_cache;
+}
+
+template <typename Database>
+inline const HeaderFilesCache& database<Database>::headers_map() const
+{
+    return m_files_cache;
+}
+}                                                           // namespace details
+
+/// Read/write access to the indexer database
+namespace rw {
+/**
+ * \brief Class \c database w/ read/write access
+ */
+class database : public Xapian::WritableDatabase, public details::database<database>
+{
+public:
+    explicit database(const std::string&);                  ///< Construct from a database path
+    virtual ~database();
+
+    void commit();                                          ///< Commit recent changes to the DB
+};
+}                                                           // namespace rw
+
+/// Read-only access to the indexer database
+namespace ro {
+/**
+ * \brief Class \c database w/ read-only access
+ */
+class database : public Xapian::Database, public details::database<database>
+{
+public:
+    /// Default constructor
+    explicit database(const std::string&);
+    /// Destructor
+    ~database();
 };
 
-inline database::exception::exception(const std::string& str)
-  : std::runtime_error(str) {}
-
-inline HeaderFilesCache& database::headers_map()
-{
-    return m_files_cache;
-}
-
-inline const HeaderFilesCache& database::headers_map() const
-{
-    return m_files_cache;
-}
-
-}}                                                          // namespace index, kate
+}}}                                                         // namespace ro, index, kate

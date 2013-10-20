@@ -79,3 +79,5 @@ if(NOT EXISTS ${CMAKE_BINARY_DIR}/src/test/data)
         WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/src/test"
       )
 endif()
+
+configure_file(data/test_manifest.in data/fake.db/manifest)

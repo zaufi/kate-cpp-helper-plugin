@@ -1,0 +1,5 @@
+[options]
+name=Test
+path=@CMAKE_CURRENT_BINARY_DIR@/data/fake.db
+comment=Sample database for unit tests
+targets[$e]=@CMAKE_SOURCE_DIR@/src/test/data/sample_files
