@@ -16,6 +16,7 @@ add_boost_tests(
 target_link_libraries(
     unit_tests
     sharedcode4tests
+    sharedcode4testsmoc
     ${Boost_FILESYSTEM_LIBRARY}
     ${Boost_SERIALIZATION_LIBRARY}
     ${Boost_SYSTEM_LIBRARY}
@@ -43,6 +44,7 @@ add_executable(
 target_link_libraries(
     indexer_unit_tests
     sharedcode4tests
+    sharedcode4testsmoc
     ${Boost_FILESYSTEM_LIBRARY}
     ${Boost_SERIALIZATION_LIBRARY}
     ${Boost_SYSTEM_LIBRARY}

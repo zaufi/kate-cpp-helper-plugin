@@ -15,12 +15,13 @@ set(LIBTEST_SOURCES
     translation_unit.cpp
   )
 
-qt4_wrap_cpp(LIBTEST_SOURCES index/indexer.h database_manager.h)
+qt4_wrap_cpp(LIBTEST_SOURCES_MOC index/indexer.h database_manager.h)
 
 kde4_add_kcfg_files(LIBTEST_SOURCES database_options.kcfgc)
 
 if (BUILD_TESTING)
     add_library(sharedcode4tests STATIC ${LIBTEST_SOURCES})
+    add_library(sharedcode4testsmoc STATIC ${LIBTEST_SOURCES_MOC})
 endif()
 
 

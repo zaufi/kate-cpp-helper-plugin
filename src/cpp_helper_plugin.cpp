@@ -143,7 +143,7 @@ void CppHelperPlugin::readSessionConfig(KConfigBase* cfg, const QString& groupPr
     kDebug(DEBUG_AREA) << "** PLUGIN **: Reading session config: " << groupPrefix;
     config().readSessionConfig(cfg, groupPrefix);
     buildPCHIfAbsent();
-    
+    m_db_mgr.reset(new DatabaseManager(config().enabledIndices()));
 }
 void CppHelperPlugin::writeSessionConfig(KConfigBase* cfg, const QString& groupPrefix)
 {
