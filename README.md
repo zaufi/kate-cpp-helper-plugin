@@ -185,6 +185,7 @@ TODO
 * Need to introduce index database to lookup for declarations/definitions/references. It
   also can be used for code refactorings (like rename smth & etc.)
 * Give a context hint to code completer
+* Give a priority boost for code completion items depending on lexical/semantic context
 * <del>Not quite related to C++, but it would be nice to have a CMake autocompleter.
   It can complete variables, functions, properties, `include()` or `find_package()` files.
   Also it can retrieve `help` screen for particular module.</del> [done in kate.git and KDE SC 4.11]
@@ -202,8 +203,8 @@ TODO
 * Show a real type of typedefs (as a tooltip?)
 * Render class layout according sizeof/align of of all bases and members
 * Provide Python bindings to indexing and C++ parsing, so they can be used from kate/pate plugins
-* Group #include items by directory
-* Sort #include directives according configurable rules
+* Group #include completion items by directory
+* Sort #include directives according configurable rules and type (project specific, third party libs or system)
 
 See Also
 ========

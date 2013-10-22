@@ -1,31 +1,38 @@
 configure_file(config.h.in config.h)
 configure_file(katecpphelperplugin.desktop.in katecpphelperplugin.desktop)
 
-# TODO Make a separate library form this sources
-set(CLANG_HELPERS_SOURCES
-    ${CMAKE_SOURCE_DIR}/src/clang/location.cpp
-    ${CMAKE_SOURCE_DIR}/src/clang/to_string.cpp
-  )
-set(INDEXER_HEADERS
-    ${CMAKE_SOURCE_DIR}/src/index/indexer.h
-    ${CMAKE_SOURCE_DIR}/src/database_manager.h
-  )
-set(INDEXER_SOURCES
-    ${CMAKE_SOURCE_DIR}/src/index/database.cpp
-    ${CMAKE_SOURCE_DIR}/src/index/indexer.cpp
-    ${CMAKE_SOURCE_DIR}/src/database_manager.cpp
-  )
-
-kde4_add_kcfg_files(INDEXER_SOURCES database_options.kcfgc)
-
-set(KATE_CPP_HELPER_PLUGIN_SOURCES
-    utils.cpp
+#
+# Make a library for unit tests
+#
+set(LIBTEST_SOURCES
+    clang/location.cpp
+    clang/to_string.cpp
+    index/database.cpp
+    index/indexer.cpp
+    database_manager.cpp
     sanitize_snippet.cpp
-    plugin_configuration.cpp
+    utils.cpp
+    translation_unit.cpp
+  )
+
+qt4_wrap_cpp(LIBTEST_SOURCES index/indexer.h database_manager.h)
+
+kde4_add_kcfg_files(LIBTEST_SOURCES database_options.kcfgc)
+
+if (BUILD_TESTING)
+    add_library(sharedcode4tests STATIC ${LIBTEST_SOURCES})
+endif()
+
+
+#
+# Make a plugin DSO
+#
+set(KATE_CPP_HELPER_PLUGIN_SOURCES
+    ${LIBTEST_SOURCES}
     document_info.cpp
     document_proxy.cpp
+    plugin_configuration.cpp
     diagnostic_messages_model.cpp
-    translation_unit.cpp
     clang_code_completion_item.cpp
     clang_code_completion_model.cpp
     include_helper_completion_model.cpp
@@ -33,10 +40,7 @@ set(KATE_CPP_HELPER_PLUGIN_SOURCES
     cpp_helper_plugin_config_page.cpp
     cpp_helper_plugin_view.cpp
     cpp_helper_plugin.cpp
-    ${CLANG_HELPERS_SOURCES}
-    ${INDEXER_SOURCES}
   )
-
 
 kde4_add_ui_files(
     KATE_CPP_HELPER_PLUGIN_SOURCES
@@ -48,7 +52,6 @@ kde4_add_ui_files(
     plugin_tool_view.ui
     clang_completion_settings.ui
   )
-
 
 kde4_add_plugin(katecpphelperplugin ${KATE_CPP_HELPER_PLUGIN_SOURCES})
 
@@ -107,6 +110,9 @@ append_if_set(QT_QTDECLARATIVE_INCLUDE_DIR QT4_INCSET_DIRS)
 
 configure_file(data/qt4.incset.in data/qt4.incset)
 
+#
+# Install targets
+#
 install(FILES database_options.kcfg DESTINATION ${KCFG_INSTALL_DIR})
 
 install(

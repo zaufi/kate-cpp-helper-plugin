@@ -1,27 +1,21 @@
 add_definitions(-UQT_NO_STL)
 
-set(UNIT_TESTS_SOURCES
-    sanitize_snippet_tester.cpp
-    utils_tester.cpp
-    header_files_cache_tester.cpp
-    translation_unit_tester.cpp
-    database_manager_tester.cpp
-    ${CMAKE_SOURCE_DIR}/src/sanitize_snippet.cpp
-    ${CMAKE_SOURCE_DIR}/src/utils.cpp
-    ${CMAKE_SOURCE_DIR}/src/translation_unit.cpp
-    ${CLANG_HELPERS_SOURCES}
-    ${INDEXER_SOURCES}
-  )
-qt4_wrap_cpp(UNIT_TESTS_SOURCES ${INDEXER_HEADERS})
-
+#
 # Unit tests executable
+#
 add_boost_tests(
     TARGET unit_tests
-    SOURCES ${UNIT_TESTS_SOURCES}
+    SOURCES
+        sanitize_snippet_tester.cpp
+        utils_tester.cpp
+        header_files_cache_tester.cpp
+        translation_unit_tester.cpp
+        database_manager_tester.cpp
   )
 
 target_link_libraries(
     unit_tests
+    sharedcode4tests
     ${Boost_FILESYSTEM_LIBRARY}
     ${Boost_SERIALIZATION_LIBRARY}
     ${Boost_SYSTEM_LIBRARY}
@@ -31,23 +25,24 @@ target_link_libraries(
     ${XAPIAN_LIBRARIES}
   )
 
+#
 # QTest based indexer unit-tests
-qt4_wrap_cpp(INDEXER_HEADERS_MOC ${INDEXER_HEADERS} indexer_tester.h)
+#
+qt4_wrap_cpp(INDEXER_TESTER_HEADERS_MOC indexer_tester.h)
 set(
     INDEXER_UNIT_TEST_SOURCES
     indexer_tester.cpp
-    ${INDEXER_SOURCES}
-    ${INDEXER_HEADERS_MOC}
+    ${INDEXER_TESTER_HEADERS_MOC}
   )
 
 add_executable(
     indexer_unit_tests
     ${INDEXER_UNIT_TEST_SOURCES}
-    ${CLANG_HELPERS_SOURCES}
   )
 
 target_link_libraries(
     indexer_unit_tests
+    sharedcode4tests
     ${Boost_FILESYSTEM_LIBRARY}
     ${Boost_SERIALIZATION_LIBRARY}
     ${Boost_SYSTEM_LIBRARY}
@@ -57,18 +52,21 @@ target_link_libraries(
     ${XAPIAN_LIBRARIES}
   )
 
-# Sample indexer to play with
+#
+# Sample indexer to play w/ it
+#
 add_executable(
     indexing_test
     indexing_test.cpp
-    ${CLANG_HELPERS_SOURCES}
   )
 
 target_link_libraries(
     indexing_test
+    sharedcode4tests
     ${KDE4_KDECORE_LIBRARY}
     ${LIBCLANG_LIBRARY}
   )
+
 
 # Make a symbolic link to data directory
 # (convinient for testing purposes)
