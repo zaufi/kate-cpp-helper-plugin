@@ -517,7 +517,7 @@ QStringList CppHelperPluginView::findFileLocations(const QString& filename)
     // Check CWD as well, if allowed
     if (m_plugin->config().useCwd())
     {
-        const auto uri = doc->url().prettyUrl() + '/' + filename;
+        const auto uri = QString{doc->url().prettyUrl() + '/' + filename};
         if (isPresentAndReadable(uri))
             candidates.push_front(uri);                     // Push to front cuz more likely that user wants it
     }
