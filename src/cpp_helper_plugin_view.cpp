@@ -135,6 +135,7 @@ CppHelperPluginView::CppHelperPluginView(
     m_tool_view_interior->includesTree->setHeaderHidden(true);
     m_tool_view_interior->includedFromList->setModel(m_includes_list_model);
     m_tool_view_interior->searchFilter->addTreeWidget(m_tool_view_interior->includesTree);
+    m_tool_view_interior->databases->setModel(m_plugin->databaseManager().getDatabasesTableModel());
     m_tool_view->installEventFilter(this);
 
     connect(
@@ -181,6 +182,7 @@ CppHelperPluginView::CppHelperPluginView(
           , SLOT(clear())
           );
     }
+
 
     mainWindow()->guiFactory()->addClient(this);
 }

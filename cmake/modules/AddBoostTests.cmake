@@ -156,7 +156,7 @@ function(add_boost_tests)
             foreach(test_name ${found_tests})
                 add_test(
                     NAME ${test_name}
-                    COMMAND ${add_boost_tests_TARGET} --run_test=${test_name} ${extra_args}
+                    COMMAND $<TARGET_FILE:${add_boost_tests_TARGET}> --run_test=${test_name} ${extra_args}
                     WORKING_DIRECTORY ${add_boost_tests_WORKING_DIRECTORY}
                   )
             endforeach()
@@ -166,6 +166,6 @@ endfunction(add_boost_tests)
 
 # X-Chewy-RepoBase: https://raw.github.com/mutanabbi/chewy-cmake-rep/master/
 # X-Chewy-Path: AddBoostTests.cmake
-# X-Chewy-Version: 3.2
+# X-Chewy-Version: 3.3
 # X-Chewy-Description: Integrate Boost unit tests into CMake infrastructure
 # X-Chewy-AddonFile: unit_tests_main_skeleton.cc

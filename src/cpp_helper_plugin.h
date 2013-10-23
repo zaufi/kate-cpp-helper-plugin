@@ -72,6 +72,8 @@ public:
     CXIndex index() const;
     HeaderFilesCache& headersCache();
     const HeaderFilesCache& headersCache() const;
+    DatabaseManager& databaseManager();
+    const DatabaseManager& databaseManager() const;
     //@}
 
     /// \name \c Kate::PluginConfigPageInterface interface implementation
@@ -163,7 +165,7 @@ private:
     /// Directory watcher to monitor configured directories
     std::unique_ptr<KDirWatch> m_dir_watcher;
     /// Index databases manager
-    std::unique_ptr<DatabaseManager> m_db_mgr;
+    std::shared_ptr<DatabaseManager> m_db_mgr;
     /// \note Directory watcher reports about 4 times just for one event,
     /// so to avoid doing stupid job, lets remember what we've done the last time.
     QString m_last_updated;
@@ -196,6 +198,16 @@ inline HeaderFilesCache& CppHelperPlugin::headersCache()
 inline const HeaderFilesCache& CppHelperPlugin::headersCache() const
 {
     return m_headers_cache;
+}
+inline DatabaseManager& CppHelperPlugin::databaseManager()
+{
+    assert("DatabaseManager is not initialized. Review your code!" && m_db_mgr);
+    return *m_db_mgr.get();
+}
+inline const DatabaseManager& CppHelperPlugin::databaseManager() const
+{
+    assert("DatabaseManager is not initialized. Review your code!" && m_db_mgr);
+    return *m_db_mgr.get();
 }
 
 inline TranslationUnit& CppHelperPlugin::getTranslationUnitByDocument(

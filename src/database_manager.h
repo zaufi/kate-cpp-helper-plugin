@@ -34,6 +34,7 @@
 // Standard includes
 #include <boost/filesystem/path.hpp>
 #include <KDE/KUrl>
+#include <QtCore/QAbstractTableModel>
 #include <QtCore/QObject>
 #include <QtCore/QStringList>
 #include <memory>
@@ -42,6 +43,7 @@
 #include <vector>
 
 namespace kate {
+class IndicesTableModel;                                    // fwd decl
 
 /**
  * \brief Manage databases used by current session
@@ -49,7 +51,9 @@ namespace kate {
  * [More detailed description here]
  *
  */
-class DatabaseManager : public QObject
+class DatabaseManager
+  : public QObject
+  , public std::enable_shared_from_this<DatabaseManager>
 {
     Q_OBJECT
 
@@ -67,10 +71,14 @@ public:
         explicit exception(const std::string&);
     };
 
+    /// Obtain a table model for currently configured indices
+    QAbstractTableModel* getDatabasesTableModel();
+
 public Q_SLOTS:
-    void enable(const QStringList&);
+    void enable(const QString&, bool);
 
 private:
+    friend class IndicesTableModel;
     struct database_state
     {
         enum class status
@@ -80,9 +88,9 @@ private:
           , disabled
           , reindexing
         };
-        status m_status = {status::invalid};
         std::unique_ptr<DatabaseOptions> m_options;
         std::unique_ptr<index::ro::database> m_db;
+        status m_status = {status::invalid};
 
         /// Defaulted default constructor
         database_state() = default;
@@ -90,14 +98,19 @@ private:
         database_state(database_state&&) = default;
         /// Default move-assign operator
         database_state& operator=(database_state&&) = default;
+
+        QString statusAsString() const;
     };
 
     static KUrl get_default_base_dir();
     database_state try_load_database_meta(const boost::filesystem::path&);
+    void enable(int, bool);
+    bool isEnabled(int) const;
 
     typedef std::vector<database_state> collections_type;
     collections_type m_collections;
     QStringList m_enabled_list;
+    std::unique_ptr<QAbstractTableModel> m_indices_model;
 };
 
 struct DatabaseManager::exception::invalid_manifest : public DatabaseManager::exception

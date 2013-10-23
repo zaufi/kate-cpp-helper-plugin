@@ -27,6 +27,7 @@
 
 // Project specific includes
 #include <src/database_manager.h>
+#include <src/indices_table_model.h>
 
 // Standard includes
 #include <boost/filesystem/operations.hpp>
@@ -104,14 +105,21 @@ DatabaseManager::DatabaseManager(const KUrl& base_dir, const QStringList& enable
                 const auto& db_path = state.m_options->path().toUtf8().constData();
                 state.m_db.reset(new index::ro::database(db_path));
                 state.m_status = database_state::status::enabled;
-                m_collections.emplace_back(std::move(state));
             }
+            else
+            {
+                state.m_status = database_state::status::disabled;
+            }
+            m_collections.emplace_back(std::move(state));
         }
     }
 }
 
 DatabaseManager::~DatabaseManager()
 {
+    // Write possible modified manifests for all collections
+    for (const auto& index : m_collections)
+        index.m_options->writeConfig();
 }
 
 KUrl DatabaseManager::get_default_base_dir()
@@ -142,8 +150,36 @@ auto DatabaseManager::try_load_database_meta(const boost::filesystem::path& mani
     return result;
 }
 
-void DatabaseManager::enable(const QStringList&)
+void DatabaseManager::enable(const QString& name, const bool flag)
 {
+    for (auto& index : m_collections)
+    {
+        if (index.m_options->name() == name)
+        {
+            index.m_status = flag
+              ? database_state::status::enabled
+              : database_state::status::disabled
+              ;
+        }
+    }
+}
+
+void DatabaseManager::enable(const int idx, const bool flag)
+{
+    assert("Sanity check" && 0 <= idx && std::size_t(idx) < m_collections.size());
+    m_collections[idx].m_status = flag
+      ? database_state::status::enabled
+      : database_state::status::disabled
+      ;
+    /// \todo Emit a signal (to update config)
+    /// \todo Add DB
+}
+
+QAbstractTableModel* DatabaseManager::getDatabasesTableModel()
+{
+    if (!m_indices_model)
+        m_indices_model.reset(new IndicesTableModel{std::weak_ptr<DatabaseManager>{shared_from_this()}});
+    return m_indices_model.get();
 }
 
 }                                                           // namespace kate
