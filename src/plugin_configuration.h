@@ -111,6 +111,9 @@ public:
 
     QStringList formCompilerOptions() const;
 
+public Q_SLOTS:
+    void setIndexState(const QString&, bool);
+
 Q_SIGNALS:
     void dirWatchSettingsChanged();
     void sessionDirsChanged();

@@ -77,6 +77,9 @@ public:
 public Q_SLOTS:
     void enable(const QString&, bool);
 
+Q_SIGNALS:
+    void indexChanged(const QString&, bool);
+
 private:
     friend class IndicesTableModel;
     struct database_state
@@ -98,8 +101,6 @@ private:
         database_state(database_state&&) = default;
         /// Default move-assign operator
         database_state& operator=(database_state&&) = default;
-
-        QString statusAsString() const;
     };
 
     static KUrl get_default_base_dir();

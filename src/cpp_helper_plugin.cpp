@@ -144,6 +144,12 @@ void CppHelperPlugin::readSessionConfig(KConfigBase* cfg, const QString& groupPr
     config().readSessionConfig(cfg, groupPrefix);
     buildPCHIfAbsent();
     m_db_mgr.reset(new DatabaseManager(config().enabledIndices()));
+    connect(
+        m_db_mgr.get()
+      , SIGNAL(indexChanged(const QString&, bool))
+      , &m_config
+      , SLOT(setIndexState(const QString&, bool))
+      );
 }
 void CppHelperPlugin::writeSessionConfig(KConfigBase* cfg, const QString& groupPrefix)
 {

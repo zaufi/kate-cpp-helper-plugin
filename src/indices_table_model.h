@@ -55,18 +55,15 @@ public:
     virtual int rowCount(const QModelIndex&) const final override;
     virtual int columnCount(const QModelIndex&) const final override;
     virtual QVariant data(const QModelIndex&, int) const final override;
-#if 0
     virtual QVariant headerData(int, Qt::Orientation, int) const final override;
-#endif
     virtual Qt::ItemFlags flags(const QModelIndex&) const final override;
     virtual bool setData(const QModelIndex&, const QVariant&, int) final override;
     //END QAbstractItemModel interface
 
 private:
-    enum class column
+    enum column
     {
-        STATUS
-      , NAME
+        NAME
       , last__
     };
     std::weak_ptr<DatabaseManager> m_db_mgr;

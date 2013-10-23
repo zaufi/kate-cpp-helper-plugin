@@ -50,6 +50,7 @@ const QString AUTO_COMPLETIONS_ITEM = "AutoCompletionItems";
 const QString INCLUDE_MACROS_ITEM = "IncludeMacrosToCompletionResults";
 const QString USE_PREFIX_COLUMN_ITEM = "UsePrefixColumn";
 const QString IGNORE_EXTENSIONS_ITEM = "IgnoreExtensions";
+const QString ENABLED_INDICES_ITEM = "EnabledIndices";
 
 const QString SANITIZE_RULE_SEPARATOR = "<$replace-with$>";
 }                                                           // anonymous namespace
@@ -104,6 +105,7 @@ void PluginConfiguration::readSessionConfig(KConfigBase* config, const QString& 
     /// \todo Rename it!
     KConfigGroup scg(config, groupPrefix + SESSION_GROUP_SUFFIX);
     m_session_dirs = scg.readPathEntry(CONFIGURED_DIRS_ITEM, QStringList());
+    m_enabled_indices = scg.readEntry(ENABLED_INDICES_ITEM, QStringList());
     m_pch_header= scg.readPathEntry(PCH_FILE_ITEM, QString());
     m_clang_params = scg.readPathEntry(CLANG_CMDLINE_PARAMS_ITEM, QString());
     m_use_ltgt = scg.readEntry(USE_LT_GT_ITEM, QVariant(false)).toBool();
@@ -140,9 +142,9 @@ void PluginConfiguration::writeSessionConfig(KConfigBase* config, const QString&
     }
 
     // Write session config
-    kDebug(DEBUG_AREA) << "Write per session configured include path list: " << m_session_dirs;
     KConfigGroup scg(config, groupPrefix + SESSION_GROUP_SUFFIX);
     scg.writePathEntry(CONFIGURED_DIRS_ITEM, m_session_dirs);
+    scg.writeEntry(ENABLED_INDICES_ITEM, m_enabled_indices);
     scg.writeEntry(PCH_FILE_ITEM, m_pch_header);
     scg.writeEntry(CLANG_CMDLINE_PARAMS_ITEM, m_clang_params);
     scg.writeEntry(USE_LT_GT_ITEM, QVariant(m_use_ltgt));
@@ -158,7 +160,6 @@ void PluginConfiguration::writeSessionConfig(KConfigBase* config, const QString&
     scg.writeEntry(MONITOR_DIRS_ITEM, QVariant(m_monitor_flags));
     scg.sync();
     // Write global config
-    kDebug(DEBUG_AREA) << "Write global configured include path list: " << m_system_dirs;
     KConfigGroup gcg(KGlobal::config(), GLOBAL_CONFIG_GROUP_NAME);
     gcg.writePathEntry(CONFIGURED_DIRS_ITEM, m_system_dirs);
     // Transform sanitize rules into a serializable list of strings
@@ -195,7 +196,6 @@ void PluginConfiguration::setSessionDirs(QStringList& dirs)
         m_config_dirty = true;
         Q_EMIT(sessionDirsChanged());
         Q_EMIT(dirWatchSettingsChanged());
-        kDebug(DEBUG_AREA) << "** set config to `dirty' state!! **";
     }
 }
 
@@ -209,7 +209,6 @@ void PluginConfiguration::setSystemDirs(QStringList& dirs)
         m_config_dirty = true;
         Q_EMIT(systemDirsChanged());
         Q_EMIT(dirWatchSettingsChanged());
-        kDebug(DEBUG_AREA) << "** set config to `dirty' state!! **";
     }
 }
 
@@ -220,7 +219,6 @@ void PluginConfiguration::setIgnoreExtensions(QStringList& extensions)
     {
         m_ignore_ext.swap(extensions);
         m_config_dirty = true;
-        kDebug(DEBUG_AREA) << "** set config to `dirty' state!! **";
     }
 }
 
@@ -230,7 +228,6 @@ void PluginConfiguration::setClangParams(const QString& params)
     {
         m_clang_params = params;
         m_config_dirty = true;
-        kDebug(DEBUG_AREA) << "** set config to `dirty' state!! **";
         Q_EMIT(clangOptionsChanged());
         Q_EMIT(precompiledHeaderFileChanged());
     }
@@ -242,7 +239,6 @@ void PluginConfiguration::setPrecompiledHeaderFile(const KUrl& filename)
     {
         m_pch_header = filename;
         m_config_dirty = true;
-        kDebug(DEBUG_AREA) << "** set config to `dirty' state!! **";
         Q_EMIT(precompiledHeaderFileChanged());
     }
 }
@@ -251,63 +247,69 @@ void PluginConfiguration::setUseLtGt(const bool state)
 {
     m_use_ltgt = state;
     m_config_dirty = true;
-    kDebug(DEBUG_AREA) << "** set config to `dirty' state!! **";
 }
 
 void PluginConfiguration::setUseCwd(const bool state)
 {
     m_use_cwd = state;
     m_config_dirty = true;
-    kDebug(DEBUG_AREA) << "** set config to `dirty' state!! **";
 }
 
 void PluginConfiguration::setOpenFirst(const bool state)
 {
     m_open_first = state;
     m_config_dirty = true;
-    kDebug(DEBUG_AREA) << "** set config to `dirty' state!! **";
 }
 
 void PluginConfiguration::setUseWildcardSearch(const bool state)
 {
     m_use_wildcard_search = state;
     m_config_dirty = true;
-    kDebug(DEBUG_AREA) << "** set config to `dirty' state!! **";
 }
 
 void PluginConfiguration::setHighlightCompletions(const bool state)
 {
     m_highlight_completions = state;
     m_config_dirty = true;
-    kDebug(DEBUG_AREA) << "** set config to `dirty' state!! **";
 }
 
 void PluginConfiguration::setSanitizeCompletions(const bool state)
 {
     m_sanitize_completions = state;
     m_config_dirty = true;
-    kDebug(DEBUG_AREA) << "** set config to `dirty' state!! **";
 }
 
 void PluginConfiguration::setAutoCompletions(const bool state)
 {
     m_auto_completions = state;
     m_config_dirty = true;
-    kDebug(DEBUG_AREA) << "** set config to `dirty' state!! **";
 }
 
 void PluginConfiguration::setIncludeMacros(const bool state)
 {
     m_include_macros = state;
     m_config_dirty = true;
-    kDebug(DEBUG_AREA) << "** set config to `dirty' state!! **";
 }
 
 void PluginConfiguration::setUsePrefixColumn(const bool state)
 {
     m_use_prefix_column = state;
     m_config_dirty = true;
-    kDebug(DEBUG_AREA) << "** set config to `dirty' state!! **";
+}
+
+void PluginConfiguration::setIndexState(const QString& index_name, const bool flag)
+{
+    auto idx = m_enabled_indices.indexOf(index_name);
+    if (idx == -1 && flag)
+    {
+        m_enabled_indices << index_name;
+        m_config_dirty = true;
+    }
+    else if (idx != -1 && !flag)
+    {
+        m_enabled_indices.takeAt(idx);
+        m_config_dirty = true;
+    }
 }
 
 /**

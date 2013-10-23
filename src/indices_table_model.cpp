@@ -64,17 +64,18 @@ QVariant IndicesTableModel::data(const QModelIndex& index, const int role) const
             {
                 case column::NAME:
                     return dm->m_collections[index.row()].m_options->name();
-                case column::STATUS:
-                    return dm->m_collections[index.row()].statusAsString();
                 default:
                     break;
             }
         case Qt::CheckStateRole:
-            if (!index.column())
-                return dm->isEnabled(index.row())
-                  ? Qt::Checked
-                  : Qt::Unchecked
-                  ;
+            switch (index.column())
+            {
+                case column::NAME:
+                    kDebug(DEBUG_AREA) << "status: " << dm->isEnabled(index.row());
+                    return dm->isEnabled(index.row()) ? Qt::Checked : Qt::Unchecked;
+                default:
+                    break;
+            }
         default:
             break;
     }
@@ -94,18 +95,19 @@ QVariant IndicesTableModel::headerData(
             switch (section)
             {
                 case column::NAME:
-                    return QString(i18n("Name"));
-                case column::STATUS:
-                    return QString(i18n("Status"));
+                    return QString{i18n("Name")};
             }
         }
     }
-    return QVariant();
+    return QVariant{};
 }
 
-Qt::ItemFlags IndicesTableModel::flags(const QModelIndex& /*index*/) const
+Qt::ItemFlags IndicesTableModel::flags(const QModelIndex& index) const
 {
-    return Qt::ItemIsSelectable |  Qt::ItemIsEditable | Qt::ItemIsEnabled | Qt::ItemIsUserCheckable;
+    auto result = Qt::ItemIsSelectable | Qt::ItemIsEnabled;
+    if (index.column() == column::NAME)
+        result |= Qt::ItemIsEditable | Qt::ItemIsUserCheckable;
+    return result;
 }
 
 bool IndicesTableModel::setData(const QModelIndex& index, const QVariant& value, const int role)

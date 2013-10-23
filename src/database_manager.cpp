@@ -53,7 +53,7 @@ const QString TARGETS = "targets";
 }}}                                                         // namespace key, meta, anonymous namespace
 
 #if 0
-DatabaseManager::database_options::database_options(database_options&& other) noexcept
+DatabaseManager::database_state::database_state(database_state&& other) noexcept
   : m_status(other.m_status)
 {
     m_path.swap(other.m_path);
@@ -62,7 +62,7 @@ DatabaseManager::database_options::database_options(database_options&& other) no
     m_comment.swap(other.m_comment);
 }
 
-auto DatabaseManager::database_options::operator=(database_options&& other) noexcept -> database_options&
+auto DatabaseManager::database_state::operator=(database_state&& other) noexcept -> database_state&
 {
     if (this != &other)
     {
@@ -152,16 +152,19 @@ auto DatabaseManager::try_load_database_meta(const boost::filesystem::path& mani
 
 void DatabaseManager::enable(const QString& name, const bool flag)
 {
+    auto idx = 0;
     for (auto& index : m_collections)
     {
         if (index.m_options->name() == name)
-        {
-            index.m_status = flag
-              ? database_state::status::enabled
-              : database_state::status::disabled
-              ;
-        }
+            enable(idx, flag);
+        idx++;
     }
+}
+
+bool DatabaseManager::isEnabled(const int idx) const
+{
+    assert("Index is out of range" && std::size_t(idx) < m_collections.size());
+    return m_enabled_list.indexOf(m_collections[idx].m_options->name()) != -1;
 }
 
 void DatabaseManager::enable(const int idx, const bool flag)
@@ -171,7 +174,9 @@ void DatabaseManager::enable(const int idx, const bool flag)
       ? database_state::status::enabled
       : database_state::status::disabled
       ;
-    /// \todo Emit a signal (to update config)
+    const auto& name = m_collections[idx].m_options->name();
+    Q_EMIT(indexChanged(name, flag));
+    m_enabled_list << name;
     /// \todo Add DB
 }
 

@@ -205,6 +205,7 @@ TODO
 * Provide Python bindings to indexing and C++ parsing, so they can be used from kate/pate plugins
 * Group #include completion items by directory
 * Sort #include directives according configurable rules and type (project specific, third party libs or system)
+* Upgrade plugin configuration (at least internal struct) to .kcfg
 
 See Also
 ========
