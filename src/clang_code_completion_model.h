@@ -31,12 +31,12 @@
 # pragma GCC push_options
 # pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif                                                      // (__GNUC__ >=4 && __GNUC_MINOR__ >= 5)
-#include <KTextEditor/CodeCompletionModel>
-#include <KTextEditor/CodeCompletionModelControllerInterface>
+#include <KDE/KTextEditor/CodeCompletionModel>
+#include <KDE/KTextEditor/CodeCompletionModelControllerInterface>
 #if (__GNUC__ >=4 && __GNUC_MINOR__ >= 5)
 # pragma GCC pop_options
 #endif                                                      // (__GNUC__ >=4 && __GNUC_MINOR__ >= 5)
-#include <KTextEdit>
+#include <KDE/KTextEdit>
 #include <vector>
 
 namespace kate {
@@ -63,16 +63,33 @@ public:
 
     //BEGIN KTextEditor::CodeCompletionModel overrides
     /// Generate completions for given range
-    void completionInvoked(KTextEditor::View*, const KTextEditor::Range&, InvocationType);
+    virtual void completionInvoked(
+        KTextEditor::View*
+      , const KTextEditor::Range&
+      , InvocationType
+      ) override;
     /// Respond w/ data for particular completion entry
-    QVariant data(const QModelIndex&, int) const;
-    int columnCount(const QModelIndex&) const;
-    int rowCount(const QModelIndex& parent) const;
+    virtual QVariant data(const QModelIndex&, int) const override;
+    virtual int columnCount(const QModelIndex&) const override;
+    virtual int rowCount(const QModelIndex& parent) const override;
     /// Make an index of a parent node
-    QModelIndex parent(const QModelIndex& index) const;
-    QModelIndex index(int row, int column, const QModelIndex& parent) const;
-    bool shouldStartCompletion(KTextEditor::View*, const QString&, bool, const KTextEditor::Cursor&);
-    void executeCompletionItem2(KTextEditor::Document*, const KTextEditor::Range&, const QModelIndex&) const;
+    virtual QModelIndex parent(const QModelIndex& index) const override;
+    virtual QModelIndex index(
+        int row
+      , int column
+      , const QModelIndex& parent
+      ) const override;
+    virtual bool shouldStartCompletion(
+        KTextEditor::View*
+      , const QString&
+      , bool
+      , const KTextEditor::Cursor&
+      ) override;
+    virtual void executeCompletionItem2(
+        KTextEditor::Document*
+      , const KTextEditor::Range&
+      , const QModelIndex&
+      ) const override;
     //END KTextEditor::CodeCompletionModel overrides
 
 private:
@@ -104,7 +121,6 @@ private:
     KTextEditor::View* m_current_view;
     groups_list_type m_groups;                              ///< Level one nodes
 };
-
 
 }                                                           // namespace kate
 // kate: hl C++11/Qt4;

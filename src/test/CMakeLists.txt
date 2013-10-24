@@ -25,6 +25,7 @@ target_link_libraries(
     ${Boost_SYSTEM_LIBRARY}
     ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}
     ${KDE4_KTEXTEDITOR_LIBS}
+    ${KDE4_KFILE_LIBS}
     ${LIBCLANG_LIBRARY}
     ${XAPIAN_LIBRARIES}
   )

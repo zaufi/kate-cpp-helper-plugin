@@ -32,9 +32,10 @@
 // Standard includes
 #include <kate/plugin.h>
 #include <kate/pluginconfigpageinterface.h>
-#include <KTextEditor/Document>
-#include <KTextEditor/HighlightInterface>
-#include <KDirWatch>
+#include <KDE/KTextEditor/Document>
+#include <KDE/KTextEditor/HighlightInterface>
+#include <KDE/KDirWatch>
+
 #include <cassert>
 #include <map>
 #include <memory>
@@ -79,21 +80,21 @@ public:
     /// \name \c Kate::PluginConfigPageInterface interface implementation
     //@{
     /// Get number of configuration pages for this plugin
-    uint configPages() const;
+    virtual uint configPages() const override;
     /// Create a config page w/ given number and parent
-    Kate::PluginConfigPage* configPage(uint = 0, QWidget* = 0, const char* = 0);
+    virtual Kate::PluginConfigPage* configPage(uint = 0, QWidget* = 0, const char* = 0) override;
     /// Get short name of a config page by number
-    QString configPageName(uint = 0) const;
-    QString configPageFullName(uint = 0) const;
-    KIcon configPageIcon(uint = 0) const;
+    virtual QString configPageName(uint = 0) const override;
+    virtual QString configPageFullName(uint = 0) const override;
+    virtual KIcon configPageIcon(uint = 0) const override;
     //@}
 
     /// \name \c Kate::Plugin interface implementation
     //@{
-    void readSessionConfig(KConfigBase*, const QString&);
-    void writeSessionConfig(KConfigBase*, const QString&);
+    virtual void readSessionConfig(KConfigBase*, const QString&) override;
+    virtual void writeSessionConfig(KConfigBase*, const QString&) override;
     /// Create a new view of this plugin for the given main window
-    Kate::PluginView* createView(Kate::MainWindow*);
+    virtual Kate::PluginView* createView(Kate::MainWindow*) override;
     //@}
 
     /// Highlight given snippet using internal (hidden) \c KTextEditor::Document

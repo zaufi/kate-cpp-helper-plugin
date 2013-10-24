@@ -29,7 +29,7 @@
 #include <src/diagnostic_messages_model.h>
 
 // Standard includes
-#include <KDebug>
+#include <KDE/KDebug>
 #include <QtGui/QBrush>
 
 namespace kate {

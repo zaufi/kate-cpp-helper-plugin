@@ -24,8 +24,9 @@
 #include <src/choose_from_list_dialog.h>
 
 // Standard includes
-#include <KLocalizedString>                                 /// \todo Where is \c i18n() defiend?
-#include <KSharedConfig>
+#include <KDE/KListWidget>
+#include <KDE/KLocalizedString>
+#include <KDE/KSharedConfig>
 #include <cassert>
 
 namespace kate {

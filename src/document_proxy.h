@@ -28,9 +28,9 @@
 // Project specific includes
 
 // Standard includes
-#include <KTextEditor/Cursor>
-#include <KTextEditor/Document>
-#include <KTextEditor/Range>
+#include <KDE/KTextEditor/Cursor>
+#include <KDE/KTextEditor/Document>
+#include <KDE/KTextEditor/Range>
 #include <algorithm>
 #include <cassert>
 #include <limits>

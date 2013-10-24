@@ -29,8 +29,8 @@
 # pragma GCC push_options
 # pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif                                                      // (__GNUC__ >=4 && __GNUC_MINOR__ >= 5)
-#include <KTextEditor/CodeCompletionModel>
-#include <KTextEditor/CodeCompletionModelControllerInterface>
+#include <KDE/KTextEditor/CodeCompletionModel>
+#include <KDE/KTextEditor/CodeCompletionModelControllerInterface>
 #if (__GNUC__ >=4 && __GNUC_MINOR__ >= 5)
 # pragma GCC pop_options
 #endif                                                      // (__GNUC__ >=4 && __GNUC_MINOR__ >= 5)
@@ -57,17 +57,39 @@ public:
     //BEGIN KTextEditor::CodeCompletionModel overrides
 
     /// Generate completions for given range
-    void completionInvoked(KTextEditor::View*, const KTextEditor::Range&, InvocationType);
-    void executeCompletionItem2(KTextEditor::Document*, const KTextEditor::Range&, const QModelIndex&) const;
-    KTextEditor::Range completionRange(KTextEditor::View*, const KTextEditor::Cursor&);
+    virtual void completionInvoked(
+        KTextEditor::View*
+      , const KTextEditor::Range&
+      , InvocationType
+      ) override;
+    /// Insert a current completion item into a document
+    virtual void executeCompletionItem2(
+        KTextEditor::Document*
+      , const KTextEditor::Range&
+      , const QModelIndex&
+      ) const override;
+    virtual KTextEditor::Range completionRange(
+        KTextEditor::View*
+      , const KTextEditor::Cursor&
+      ) override;
     /// Respond w/ data for particular completion entry
-    QVariant data(const QModelIndex&, int) const;
+    virtual QVariant data(const QModelIndex&, int) const override;
     /// Check if line starts w/ \c #include and \c '"' or \c '<' just pressed
-    bool shouldStartCompletion(KTextEditor::View*, const QString&, bool, const KTextEditor::Cursor&);
+    virtual bool shouldStartCompletion(
+        KTextEditor::View*
+      , const QString&
+      , bool
+      , const KTextEditor::Cursor&
+      ) override;
     /// Check if we've done w/ \c #include filename completion
-    bool shouldAbortCompletion(KTextEditor::View*, const KTextEditor::Range&, const QString&);
-    QModelIndex index(int, int, const QModelIndex&) const;
-    int rowCount(const QModelIndex& parent) const
+    virtual bool shouldAbortCompletion(
+        KTextEditor::View*
+      , const KTextEditor::Range&
+      , const QString&
+      ) override;
+    virtual QModelIndex index(int, int, const QModelIndex&) const override;
+    /// Get rows count
+    virtual int rowCount(const QModelIndex& parent) const override
     {
         if (parent.parent().isValid())
             return 0;
@@ -76,11 +98,13 @@ public:
           : 1                                               // No parent -- root node...
           ;
     }
-    int columnCount(const QModelIndex&) const
+    /// Get columns count (the only one)
+    virtual int columnCount(const QModelIndex&) const override
     {
         return 1;
     }
-    QModelIndex parent(const QModelIndex& index) const
+    /// Get parent's index
+    virtual QModelIndex parent(const QModelIndex& index) const override
     {
         // make a ref to root node from level 1 nodes,
         // otherwise return an invalid node.

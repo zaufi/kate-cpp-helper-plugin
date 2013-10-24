@@ -28,7 +28,7 @@
 #include <src/plugin_configuration.h>
 
 // Standard includes
-#include <KUrl>
+#include <KDE/KUrl>
 #include <QtCore/QPair>
 #include <QtCore/QStringList>
 #include <QtCore/QVector>

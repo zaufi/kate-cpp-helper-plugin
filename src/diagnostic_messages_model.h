@@ -31,7 +31,7 @@
 #include <src/clang/location.h>
 
 // Standard includes
-#include <QAbstractListModel>
+#include <QtCore/QAbstractListModel>
 #include <deque>
 
 namespace kate {
@@ -92,11 +92,11 @@ public:
     /// \name QAbstractTableModel interface
     //@{
     /// Get rows count
-    int rowCount(const QModelIndex& = QModelIndex()) const;
+    virtual int rowCount(const QModelIndex& = QModelIndex()) const override;
     /// Get columns count
-    int columnCount(const QModelIndex& = QModelIndex()) const;
+    virtual int columnCount(const QModelIndex& = QModelIndex()) const override;
     /// Get data for given index and role
-    QVariant data(const QModelIndex&, int = Qt::DisplayRole) const;
+    virtual QVariant data(const QModelIndex&, int = Qt::DisplayRole) const override;
     //@}
 
     /// \name Records manipulation

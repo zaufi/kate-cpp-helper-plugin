@@ -24,12 +24,12 @@
 #include <src/plugin_configuration.h>
 
 // Standard includes
+#include <KDE/KConfigGroup>
+#include <KDE/KDebug>
+#include <KDE/KGlobal>
+#include <KDE/KSharedConfig>
+#include <KDE/KSharedConfigPtr>
 #include <clang-c/Index.h>
-#include <KConfigGroup>
-#include <KDebug>
-#include <KGlobal>
-#include <KSharedConfig>
-#include <KSharedConfigPtr>
 #include <cassert>
 
 namespace kate { namespace {
@@ -307,7 +307,18 @@ void PluginConfiguration::setIndexState(const QString& index_name, const bool fl
     }
     else if (idx != -1 && !flag)
     {
-        m_enabled_indices.takeAt(idx);
+        m_enabled_indices.removeAt(idx);
+        m_config_dirty = true;
+    }
+}
+
+void PluginConfiguration::renameIndex(const QString& old_name, const QString& new_name)
+{
+    auto idx = m_enabled_indices.indexOf(old_name);
+    if (idx != -1)
+    {
+        m_enabled_indices.removeAt(idx);
+        m_enabled_indices << new_name;
         m_config_dirty = true;
     }
 }

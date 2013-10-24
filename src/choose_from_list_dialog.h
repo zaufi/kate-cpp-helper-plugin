@@ -25,8 +25,9 @@
 // Project specific includes
 
 // Standard includes
-#include <KDialog>
-#include <KListWidget>
+#include <KDE/KDialog>
+
+class KListWidget;
 
 namespace kate {
 

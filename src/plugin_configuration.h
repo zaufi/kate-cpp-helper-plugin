@@ -25,8 +25,8 @@
 // Project specific includes
 
 // Standard includes
-#include <KConfigBase>
-#include <KUrl>
+#include <KDE/KConfigBase>
+#include <KDE/KUrl>
 #include <QtCore/QStringList>
 #include <QtCore/QRegExp>
 #include <vector>
@@ -113,6 +113,7 @@ public:
 
 public Q_SLOTS:
     void setIndexState(const QString&, bool);
+    void renameIndex(const QString&, const QString&);
 
 Q_SIGNALS:
     void dirWatchSettingsChanged();

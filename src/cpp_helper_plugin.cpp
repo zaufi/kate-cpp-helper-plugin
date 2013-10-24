@@ -32,12 +32,12 @@
 #include <kate/application.h>
 #include <kate/documentmanager.h>
 #include <kate/mainwindow.h>
-#include <KAboutData>
-#include <KDebug>
-#include <KPluginFactory>
-#include <KPluginLoader>
-#include <KTextEditor/Editor>
-#include <KTextEditor/MovingInterface>
+#include <KDE/KAboutData>
+#include <KDE/KDebug>
+#include <KDE/KPluginFactory>
+#include <KDE/KPluginLoader>
+#include <KDE/KTextEditor/Editor>
+#include <KDE/KTextEditor/MovingInterface>
 #include <QtCore/QFileInfo>
 
 K_PLUGIN_FACTORY(CppHelperPluginFactory, registerPlugin<kate::CppHelperPlugin>();)
@@ -146,9 +146,15 @@ void CppHelperPlugin::readSessionConfig(KConfigBase* cfg, const QString& groupPr
     m_db_mgr.reset(new DatabaseManager(config().enabledIndices()));
     connect(
         m_db_mgr.get()
-      , SIGNAL(indexChanged(const QString&, bool))
+      , SIGNAL(indexStatusChanged(const QString&, bool))
       , &m_config
       , SLOT(setIndexState(const QString&, bool))
+      );
+    connect(
+        m_db_mgr.get()
+      , SIGNAL(indexNameChanged(const QString&, const QString&))
+      , &m_config
+      , SLOT(renameIndex(const QString&, const QString&))
       );
 }
 void CppHelperPlugin::writeSessionConfig(KConfigBase* cfg, const QString& groupPrefix)

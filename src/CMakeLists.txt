@@ -9,6 +9,7 @@ set(LIBTEST_SOURCES
     clang/to_string.cpp
     index/database.cpp
     index/indexer.cpp
+    indexing_targets_list_model.cpp
     indices_table_model.cpp
     database_manager.cpp
     sanitize_snippet.cpp
@@ -16,7 +17,13 @@ set(LIBTEST_SOURCES
     translation_unit.cpp
   )
 
-qt4_wrap_cpp(LIBTEST_SOURCES_MOC index/indexer.h indices_table_model.h database_manager.h)
+qt4_wrap_cpp(
+    LIBTEST_SOURCES_MOC
+        index/indexer.h
+        indexing_targets_list_model.h
+        indices_table_model.h
+        database_manager.h
+  )
 
 kde4_add_kcfg_files(LIBTEST_SOURCES database_options.kcfgc)
 

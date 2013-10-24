@@ -30,7 +30,7 @@
 #include <src/database_manager.h>
 
 // Standard includes
-#include <KDE/KLocale>
+#include <KDE/KLocalizedString>
 #include <cassert>
 
 namespace kate {
@@ -71,7 +71,6 @@ QVariant IndicesTableModel::data(const QModelIndex& index, const int role) const
             switch (index.column())
             {
                 case column::NAME:
-                    kDebug(DEBUG_AREA) << "status: " << dm->isEnabled(index.row());
                     return dm->isEnabled(index.row()) ? Qt::Checked : Qt::Unchecked;
                 default:
                     break;
@@ -82,6 +81,7 @@ QVariant IndicesTableModel::data(const QModelIndex& index, const int role) const
     return QVariant{};
 }
 
+#if 0
 QVariant IndicesTableModel::headerData(
     const int section
   , const Qt::Orientation orientation
@@ -96,11 +96,14 @@ QVariant IndicesTableModel::headerData(
             {
                 case column::NAME:
                     return QString{i18n("Name")};
+                default:
+                    break;
             }
         }
     }
     return QVariant{};
 }
+#endif
 
 Qt::ItemFlags IndicesTableModel::flags(const QModelIndex& index) const
 {
@@ -117,14 +120,17 @@ bool IndicesTableModel::setData(const QModelIndex& index, const QVariant& value,
     if (role == Qt::EditRole)
     {
         // Save value from editor
-        dm->m_collections[index.row()].m_options->setName(value.toString());
+        auto name = value.toString();
+        if (name.isEmpty())
+            name = "<No name>";
+        dm->m_collections[index.row()].m_options->setName(name);
     }
     else if (role == Qt::CheckStateRole)
     {
-        kDebug(DEBUG_AREA) << "EDIT COMPLETE: value=" << value;
         auto flag = value.toBool();
         dm->enable(index.row(), flag);
     }
     return true;
 }
+
 }                                                           // namespace kate

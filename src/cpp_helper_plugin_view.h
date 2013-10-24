@@ -29,9 +29,9 @@
 
 // Standard includes
 #include <kate/plugin.h>
-#include <KTextEditor/View>
-#include <KAction>
-#include <KActionMenu>
+#include <KDE/KAction>
+#include <KDE/KActionMenu>
+#include <KDE/KTextEditor/View>
 #include <QtGui/QStandardItemModel>
 #include <QtGui/QStandardItem>
 #include <clang-c/Index.h>
@@ -73,8 +73,8 @@ public:
 
     /// \name PluginView interface implementation
     //@{
-    void readSessionConfig(KConfigBase*, const QString&);
-    void writeSessionConfig(KConfigBase*, const QString&);
+    virtual void readSessionConfig(KConfigBase*, const QString&) override;
+    virtual void writeSessionConfig(KConfigBase*, const QString&) override;
     //@}
 
 public Q_SLOTS:

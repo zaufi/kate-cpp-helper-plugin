@@ -24,7 +24,7 @@
 #include <src/sanitize_snippet.h>
 
 // Standard includes
-#include <KDebug>
+#include <KDE/KDebug>
 #include <cassert>
 #include <map>
 #include <vector>

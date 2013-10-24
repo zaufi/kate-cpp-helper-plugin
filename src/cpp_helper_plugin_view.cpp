@@ -36,14 +36,14 @@
 #include <kate/application.h>
 #include <kate/documentmanager.h>
 #include <kate/mainwindow.h>
-#include <KStringHandler>
-#include <KTextEditor/CodeCompletionInterface>
-#include <KTextEditor/MovingInterface>
-#include <KTextEditor/TextHintInterface>
-#include <KActionCollection>
-#include <KLocalizedString>                                 /// \todo Where is \c i18n() defiend?
-#include <KMenu>
-#include <KPassivePopup>
+#include <KDE/KActionCollection>
+#include <KDE/KLocalizedString>
+#include <KDE/KMenu>
+#include <KDE/KPassivePopup>
+#include <KDE/KStringHandler>
+#include <KDE/KTextEditor/CodeCompletionInterface>
+#include <KDE/KTextEditor/MovingInterface>
+#include <KDE/KTextEditor/TextHintInterface>
 #include <QtGui/QApplication>
 #include <QtGui/QClipboard>
 #include <QtGui/QKeyEvent>
@@ -128,22 +128,38 @@ CppHelperPluginView::CppHelperPluginView(
     // to view changes...
     connect(mainWindow(), SIGNAL(viewChanged()), this, SLOT(updateCppActionsAvailability()));
 
-    // Setup toolview
+    //BEGIN Setup toolview
     m_tool_view_interior->setupUi(new QWidget(m_tool_view.get()));
-    m_tool_view_interior->diagnosticMessages->setModel(&m_diagnostic_data);
-    m_tool_view_interior->diagnosticMessages->setContextMenuPolicy(Qt::ActionsContextMenu);
-    m_tool_view_interior->includesTree->setHeaderHidden(true);
-    m_tool_view_interior->includedFromList->setModel(m_includes_list_model);
-    m_tool_view_interior->searchFilter->addTreeWidget(m_tool_view_interior->includesTree);
-    m_tool_view_interior->databases->setModel(m_plugin->databaseManager().getDatabasesTableModel());
     m_tool_view->installEventFilter(this);
 
+    // Diagnostic messages tab
+    m_tool_view_interior->diagnosticMessages->setModel(&m_diagnostic_data);
+    m_tool_view_interior->diagnosticMessages->setContextMenuPolicy(Qt::ActionsContextMenu);
     connect(
         m_tool_view_interior->diagnosticMessages
       , SIGNAL(activated(const QModelIndex&))
       , this
       , SLOT(diagnosticMessageActivated(const QModelIndex&))
       );
+    {
+        auto* clear_action = new QAction(
+            KIcon("edit-clear-list")
+          , i18n("Clear")
+          , m_tool_view_interior->diagnosticMessages
+          );
+        m_tool_view_interior->diagnosticMessages->insertAction(nullptr, clear_action);
+        connect(
+            clear_action
+          , SIGNAL(triggered(bool))
+          , &m_diagnostic_data
+          , SLOT(clear())
+          );
+    }
+
+    // #include explorer tab
+    m_tool_view_interior->includesTree->setHeaderHidden(true);
+    m_tool_view_interior->includedFromList->setModel(m_includes_list_model);
+    m_tool_view_interior->searchFilter->addTreeWidget(m_tool_view_interior->includesTree);
     connect(
         m_tool_view_interior->updateButton
       , SIGNAL(clicked())
@@ -168,21 +184,52 @@ CppHelperPluginView::CppHelperPluginView(
       , this
       , SLOT(includeFileDblClickedFromList(const QModelIndex&))
       );
-    {
-        auto* clear_action = new QAction(
-            KIcon("edit-clear-list")
-          , i18n("Clear")
-          , m_tool_view_interior->diagnosticMessages
-          );
-        m_tool_view_interior->diagnosticMessages->insertAction(nullptr, clear_action);
-        connect(
-            clear_action
-          , SIGNAL(triggered(bool))
-          , &m_diagnostic_data
-          , SLOT(clear())
-          );
-    }
 
+    // Indexer settings tab
+    m_tool_view_interior->databases->setModel(m_plugin->databaseManager().getDatabasesTableModel());
+    m_tool_view_interior->targets->setModel(m_plugin->databaseManager().getTargetsListModel());
+    connect(
+        m_tool_view_interior->newDatabase
+      , SIGNAL(clicked())
+      , &m_plugin->databaseManager()
+      , SLOT(createNewIndex())
+      );
+    connect(
+        m_tool_view_interior->deleteDatabase
+      , SIGNAL(clicked())
+      , &m_plugin->databaseManager()
+      , SLOT(removeCurrentIndex())
+      );
+    connect(
+        m_tool_view_interior->reindexDatabase
+      , SIGNAL(clicked())
+      , &m_plugin->databaseManager()
+      , SLOT(rebuildCurrentIndex())
+      );
+    connect(
+        m_tool_view_interior->databases
+      , SIGNAL(activated(const QModelIndex&))
+      , &m_plugin->databaseManager()
+      , SLOT(refreshCurrentTargets(const QModelIndex&))
+      );
+    connect(
+        m_tool_view_interior->targets
+      , SIGNAL(activated(const QModelIndex&))
+      , &m_plugin->databaseManager()
+      , SLOT(selectCurrentTarget(const QModelIndex&))
+      );
+    connect(
+        m_tool_view_interior->addTarget
+      , SIGNAL(clicked())
+      , &m_plugin->databaseManager()
+      , SLOT(addNewTarget())
+      );
+    connect(
+        m_tool_view_interior->removeTarget
+      , SIGNAL(clicked())
+      , &m_plugin->databaseManager()
+      , SLOT(removeCurrentTarget())
+      );
 
     mainWindow()->guiFactory()->addClient(this);
 }

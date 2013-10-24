@@ -27,7 +27,7 @@
 #include <boost/test/auto_unit_test.hpp>
 // Include the following file if u need to validate some text results
 // #include <boost/test/output_test_stream.hpp>
-#include <KDebug>
+#include <KDE/KDebug>
 #include <iostream>
 
 // Uncomment if u want to use boost test output streams.

@@ -25,7 +25,7 @@
 // Project specific includes
 
 // Standard includes
-#include <KTextEditor/Range>
+#include <KDE/KTextEditor/Range>
 #include <QtCore/QDir>
 #include <QtCore/QFileInfo>
 #include <QtCore/QStringList>

@@ -26,10 +26,10 @@
 #include <src/utils.h>
 
 // Standard includes
-#include <KTextEditor/Document>
-#include <KTextEditor/HighlightInterface>
-#include <KTextEditor/View>
-#include <KLocalizedString>                                 /// \todo Where is \c i18n() defiend?
+#include <KDE/KTextEditor/Document>
+#include <KDE/KTextEditor/HighlightInterface>
+#include <KDE/KTextEditor/View>
+#include <KDE/KLocalizedString>
 
 namespace kate {
 //BEGIN IncludeHelperCompletionModel

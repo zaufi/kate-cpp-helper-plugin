@@ -1,9 +1,9 @@
 /**
  * \file
  *
- * \brief Class \c kate::IndicesTableModel (interface)
+ * \brief Class \c kate::IndexingTargetsListModel (interface)
  *
- * \date Tue Oct 22 16:08:11 MSK 2013 -- Initial design
+ * \date Thu Oct 24 01:13:50 MSK 2013 -- Initial design
  */
 /*
  * Copyright (C) 2011-2013 Alex Turbov, all rights reserved.
@@ -30,57 +30,70 @@
 // Project specific includes
 
 // Standard includes
-#include <QtCore/QAbstractTableModel>
-#include <memory>
+#include <QtCore/QAbstractListModel>
+#include <src/database_manager.h>
 
 namespace kate {
 class DatabaseManager;                                      // fwd decl
 
 /**
- * \brief A model class to represent a table w/ configured indices
- * used in a current session
+ * \brief A model class to prepresent a list of configured
+ * targets to be indexed.
  *
- * Only \c DatabaseManager can make a new instances of this class
+ * Only \c DatabaseManager can make a new instances of this class.
  *
  */
-class IndicesTableModel : public QAbstractTableModel
+class IndexingTargetsListModel : public QAbstractListModel
 {
     Q_OBJECT
 
 public:
     /// Construct from a weak pointer to \c DatabaseManager
-    explicit IndicesTableModel(const std::weak_ptr<DatabaseManager>&);
+    explicit IndexingTargetsListModel(const std::weak_ptr<DatabaseManager>&);
 
-    //BEGIN QAbstractItemModel interface
-    virtual int columnCount(const QModelIndex&) const override;
+    //BEGIN QAbstractListModel interface
     virtual int rowCount(const QModelIndex&) const override;
     virtual QVariant data(const QModelIndex&, int) const override;
-#if 0
-    virtual QVariant headerData(int, Qt::Orientation, int) const override;
-#endif
-    virtual Qt::ItemFlags flags(const QModelIndex&) const override;
-    virtual bool setData(const QModelIndex&, const QVariant&, int) override;
-    //END QAbstractItemModel interface
+    //END QAbstractListModel interface
 
+    /// Add a new empty row
     template <typename AppendFunctor>
-    void appendNewRow(int, AppendFunctor);                  ///< Add a new empty row
+    void appendNewRow(int, AppendFunctor);
+
+    /// Remove given row
+    template <typename RemoveFunctor>
+    void removeRow(const int, RemoveFunctor);
+
+    /// Reset the model
+    template <typename RefreshFunctor>
+    void refresAll(RefreshFunctor);
 
 private:
-    enum column
-    {
-        NAME
-      , last__
-    };
-
     std::weak_ptr<DatabaseManager> m_db_mgr;
 };
 
 template <typename AppendFunctor>
-inline void IndicesTableModel::appendNewRow(const int idx, AppendFunctor fn)
+inline void IndexingTargetsListModel::appendNewRow(const int idx, AppendFunctor fn)
 {
     beginInsertRows(QModelIndex(), idx, idx);
     fn();
     endInsertRows();
+}
+
+template <typename RemoveFunctor>
+inline void IndexingTargetsListModel::removeRow(const int idx, RemoveFunctor fn)
+{
+    beginRemoveRows(QModelIndex(), idx, idx);
+    fn(idx);
+    endRemoveRows();
+}
+
+template <typename RefreshFunctor>
+inline void IndexingTargetsListModel::refresAll(RefreshFunctor fn)
+{
+    beginResetModel();
+    fn();
+    endResetModel();
 }
 
 }                                                           // namespace kate

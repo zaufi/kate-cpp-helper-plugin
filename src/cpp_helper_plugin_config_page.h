@@ -27,9 +27,9 @@
 // Standard includes
 #include <kate/plugin.h>
 #include <kate/pluginconfigpageinterface.h>
-#include <KProcess>
-#include <KListWidget>
-#include <KSharedConfig>
+#include <KDE/KProcess>
+#include <KDE/KListWidget>
+#include <KDE/KSharedConfig>
 #include <map>
 
 namespace Ui {

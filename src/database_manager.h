@@ -34,7 +34,6 @@
 // Standard includes
 #include <boost/filesystem/path.hpp>
 #include <KDE/KUrl>
-#include <QtCore/QAbstractTableModel>
 #include <QtCore/QObject>
 #include <QtCore/QStringList>
 #include <memory>
@@ -42,8 +41,13 @@
 #include <utility>
 #include <vector>
 
+class QAbstractTableModel;
+class QAbstractListModel;
+class QModelIndex;
+
 namespace kate {
-class IndicesTableModel;                                    // fwd decl
+class IndicesTableModel;                                    // fwd decls
+class IndexingTargetsListModel;
 
 /**
  * \brief Manage databases used by current session
@@ -73,45 +77,64 @@ public:
 
     /// Obtain a table model for currently configured indices
     QAbstractTableModel* getDatabasesTableModel();
+    /// Obtain a list model for currently configured targets
+    QAbstractListModel* getTargetsListModel();
 
 public Q_SLOTS:
     void enable(const QString&, bool);
+    void createNewIndex();
+    void removeCurrentIndex();
+    void rebuildCurrentIndex();
+    void refreshCurrentTargets(const QModelIndex&);
+    void selectCurrentTarget(const QModelIndex&);
+    void addNewTarget();
+    void removeCurrentTarget();
 
 Q_SIGNALS:
-    void indexChanged(const QString&, bool);
+    void indexStatusChanged(const QString&, bool);
+    void indexNameChanged(const QString&, const QString&);
 
 private:
     friend class IndicesTableModel;
+    friend class IndexingTargetsListModel;
+
     struct database_state
     {
         enum class status
         {
-            invalid
-          , enabled
-          , disabled
+            unknown
+          , ok
+          , invalid
           , reindexing
         };
         std::unique_ptr<DatabaseOptions> m_options;
         std::unique_ptr<index::ro::database> m_db;
-        status m_status = {status::invalid};
+        status m_status = {status::unknown};
+        bool m_enabled = {false};
 
-        /// Defaulted default constructor
-        database_state() = default;
-        /// Default move constructor
-        database_state(database_state&&) = default;
+        database_state() = default;                         ///< Default initialization
+        database_state(database_state&&) = default;         ///< Default move constructor
         /// Default move-assign operator
         database_state& operator=(database_state&&) = default;
+
+        bool isOk() const;
     };
 
-    static KUrl get_default_base_dir();
-    database_state try_load_database_meta(const boost::filesystem::path&);
+    typedef std::vector<database_state> collections_type;
+
+    static KUrl getDefaultBaseDir();
+    database_state tryLoadDatabaseMeta(const boost::filesystem::path&);
     void enable(int, bool);
     bool isEnabled(int) const;
+    void renameCollection(int, const QString&);
 
-    typedef std::vector<database_state> collections_type;
+    const KUrl m_base_dir;
     collections_type m_collections;
     QStringList m_enabled_list;
-    std::unique_ptr<QAbstractTableModel> m_indices_model;
+    std::unique_ptr<IndicesTableModel> m_indices_model;
+    std::unique_ptr<IndexingTargetsListModel> m_targets_model;
+    int m_last_selected_index;
+    int m_last_selected_target;
 };
 
 struct DatabaseManager::exception::invalid_manifest : public DatabaseManager::exception
@@ -120,10 +143,11 @@ struct DatabaseManager::exception::invalid_manifest : public DatabaseManager::ex
 };
 
 inline DatabaseManager::exception::exception(const std::string& str)
-  : std::runtime_error(str) {}
+  : std::runtime_error(str)
+{}
 
 inline DatabaseManager::DatabaseManager(const QStringList& enabled_list)
-  : DatabaseManager(DatabaseManager::get_default_base_dir(), enabled_list)
+  : DatabaseManager(DatabaseManager::getDefaultBaseDir(), enabled_list)
 {
 }
 

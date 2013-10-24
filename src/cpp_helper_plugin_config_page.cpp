@@ -34,12 +34,12 @@
 // Standard includes
 #include <kate/application.h>
 #include <kate/documentmanager.h>
-#include <KDebug>
-#include <KDirSelectDialog>
-#include <KPassivePopup>
-#include <KShellCompletion>
-#include <KStandardDirs>
-#include <KTabWidget>
+#include <KDE/KDebug>
+#include <KDE/KDirSelectDialog>
+#include <KDE/KPassivePopup>
+#include <KDE/KShellCompletion>
+#include <KDE/KStandardDirs>
+#include <KDE/KTabWidget>
 #include <QtGui/QVBoxLayout>
 #include <cstdlib>
 #include <vector>

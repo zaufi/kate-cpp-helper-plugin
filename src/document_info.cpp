@@ -26,9 +26,9 @@
 #include <src/utils.h>
 
 // Standard includes
-#include <KDebug>
-#include <KLocalizedString>                                 /// \todo Where is \c i18n() defiend?
-#include <KTextEditor/MarkInterface>
+#include <KDE/KDebug>
+#include <KDE/KLocalizedString>
+#include <KDE/KTextEditor/MarkInterface>
 #include <QtCore/QFileInfo>
 
 namespace kate {

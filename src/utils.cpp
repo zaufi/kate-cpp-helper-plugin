@@ -25,8 +25,8 @@
 
 // Standard includes
 #include <boost/range/algorithm/find.hpp>
-#include <KDebug>
-#include <KTextEditor/Range>
+#include <KDE/KDebug>
+#include <KDE/KTextEditor/Range>
 #include <algorithm>
 #include <cassert>
 #include <vector>
