@@ -30,6 +30,7 @@
 // Project specific includes
 #include <src/index/database.h>
 #include <src/database_options.h>
+#include <src/diagnostic_messages_model.h>
 
 // Standard includes
 #include <boost/filesystem/path.hpp>
@@ -93,6 +94,7 @@ public Q_SLOTS:
 Q_SIGNALS:
     void indexStatusChanged(const QString&, bool);
     void indexNameChanged(const QString&, const QString&);
+    void diagnosticMessage(DiagnosticMessagesModel::Record);
 
 private:
     friend class IndicesTableModel;

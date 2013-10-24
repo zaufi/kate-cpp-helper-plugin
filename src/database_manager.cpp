@@ -298,6 +298,13 @@ void DatabaseManager::addNewTarget()
           );
         assert("Sanity check" && targets.size() == sz + 1);
         m_last_selected_target = targets.size() - 1;
+        // Make some SPAM
+        auto msg = DiagnosticMessagesModel::Record{
+            clang::location{doc->url(), range.start().line() + 1, range.start().column() + 1}
+          , "Completion point"
+          , DiagnosticMessagesModel::Record::type::debug
+          }
+
     }
 }
 

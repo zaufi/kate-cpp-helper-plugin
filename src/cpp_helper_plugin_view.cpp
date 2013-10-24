@@ -230,6 +230,13 @@ CppHelperPluginView::CppHelperPluginView(
       , &m_plugin->databaseManager()
       , SLOT(removeCurrentTarget())
       );
+    connect(
+        &m_plugin->databaseManager()
+      , SIGNAL(diagnosticMessage(DiagnosticMessagesModel::Record))
+      , this
+      , SLOT(addDiagnosticMessage(DiagnosticMessagesModel::Record))
+      );
+
 
     mainWindow()->guiFactory()->addClient(this);
 }

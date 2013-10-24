@@ -102,11 +102,11 @@ void ClangCodeCompletionModel::completionInvoked(
         auto& unit = m_plugin->getTranslationUnitByDocument(doc);
         // Show some SPAM in a tool view
         m_diagnostic_model.append(
-            DiagnosticMessagesModel::Record(
+            DiagnosticMessagesModel::Record{
                 clang::location{doc->url(), range.start().line() + 1, range.start().column() + 1}
               , "Completion point"
               , DiagnosticMessagesModel::Record::type::debug
-              )
+              }
           );
         // Obtain diagnostic if any
         {
