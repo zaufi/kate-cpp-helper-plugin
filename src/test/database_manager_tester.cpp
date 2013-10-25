@@ -53,5 +53,6 @@ BOOST_AUTO_TEST_CASE(database_manager_test)
     BOOST_REQUIRE(boost::filesystem::exists(SAMPLE_DB_PATH_CSTR));
     QStringList enabled_dbs;
     enabled_dbs << "test";
-    DatabaseManager mgr(SAMPLE_DB_PATH, enabled_dbs);
+    DatabaseManager mgr{};
+    mgr.reset(enabled_dbs, SAMPLE_DB_PATH);
 }

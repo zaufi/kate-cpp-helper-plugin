@@ -5,8 +5,10 @@ configure_file(katecpphelperplugin.desktop.in katecpphelperplugin.desktop)
 # Make a library for unit tests
 #
 set(LIBTEST_SOURCES
+    clang/compiler_options.cpp
     clang/location.cpp
     clang/to_string.cpp
+    clang/unsaved_files_list.cpp
     index/database.cpp
     index/indexer.cpp
     indexing_targets_list_model.cpp
@@ -19,10 +21,10 @@ set(LIBTEST_SOURCES
 
 qt4_wrap_cpp(
     LIBTEST_SOURCES_MOC
-        index/indexer.h
-        indexing_targets_list_model.h
-        indices_table_model.h
-        database_manager.h
+    index/indexer.h
+    indexing_targets_list_model.h
+    indices_table_model.h
+    database_manager.h
   )
 
 kde4_add_kcfg_files(LIBTEST_SOURCES database_options.kcfgc)
@@ -49,6 +51,12 @@ set(KATE_CPP_HELPER_PLUGIN_SOURCES
     cpp_helper_plugin_config_page.cpp
     cpp_helper_plugin_view.cpp
     cpp_helper_plugin.cpp
+  )
+
+kde4_add_kcfg_files(
+    KATE_CPP_HELPER_PLUGIN_SOURCES
+    cpp_helper_plugin_config.kcfgc
+    cpp_helper_plugin_session_config.kcfgc
   )
 
 kde4_add_ui_files(

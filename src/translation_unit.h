@@ -29,20 +29,18 @@
 
 // Standard includes
 #include <KDE/KUrl>
-#include <QtCore/QPair>
-#include <QtCore/QStringList>
-#include <QtCore/QVector>
 #include <stdexcept>
 #include <vector>
 #include <utility>
 
-namespace kate {
+namespace kate { namespace clang {
+class compiler_options;
+class unsaved_files_list;
+}                                                           // namespace clang
+
 
 /**
- * \brief [Type brief class description here]
- *
- * [More detailed description here]
- *
+ * \brief A wrapper class to help interact w/ Clang-c API using Qt data types
  */
 class TranslationUnit
 {
@@ -58,22 +56,23 @@ public:
         explicit Exception(const std::string&);
     };
     typedef std::vector<DiagnosticMessagesModel::Record> records_list_type;
-    typedef QVector<QPair<QString, QString>> unsaved_files_list_type;
     /// Make a translation unit from a previously serialized file (PCH)
     TranslationUnit(CXIndex, const KUrl&);
+#if 0
     /// Make a translation unit from a given source file
     TranslationUnit(
         CXIndex
       , const KUrl&
-      , const QStringList&
+      , const clang::compiler_options&
       );
+#endif
     /// Make a translation unit from a given source file
     TranslationUnit(
         CXIndex
       , const KUrl&
-      , const QStringList&
+      , const clang::compiler_options&
       , unsigned
-      , const unsaved_files_list_type& = unsaved_files_list_type()
+      , const clang::unsaved_files_list&
       );
     /// Move ctor
     TranslationUnit(TranslationUnit&&) noexcept;
@@ -84,32 +83,22 @@ public:
     /// Delete copy-assign operator
     TranslationUnit& operator=(const TranslationUnit&) = delete;
     /// Destructor
-    virtual ~TranslationUnit()
-    {
-        if (m_unit)
-            clang_disposeTranslationUnit(m_unit);
-    }
+    virtual ~TranslationUnit();
 
     /// Allow implicit conversion to \c CXTranslationUnit, so clang index API
     /// cound be fed w/ instances of this class
-    operator CXTranslationUnit()
-    {
-        return m_unit;
-    }
-    operator CXTranslationUnit() const
-    {
-        return m_unit;
-    }
+    operator CXTranslationUnit();
+    operator CXTranslationUnit() const;
 
-    void updateUnsavedFiles(const unsaved_files_list_type&);
     QList<ClangCodeCompletionItem> completeAt(
         int
       , int
       , unsigned
+      , const clang::unsaved_files_list&
       , const PluginConfiguration::sanitize_rules_list_type&
       );
     void storeTo(const KUrl&);
-    void reparse();
+    void reparse(const clang::unsaved_files_list&);
 
     /// Obtain diagnostic messages after last operation
     /// \note Leave internal container empty
@@ -123,23 +112,16 @@ public:
     static unsigned defaultPCHParseOptions();
     static unsigned defaultEditingParseOptions();
     static unsigned defaultExplorerParseOptions();
-    /// \todo How to beautify this ugly interface?
-    static void transform_command_line_args(
-        const QStringList&
-      , std::vector<QByteArray>&
-      , std::vector<const char*>&
-      );
 
 private:
     void updateDiagnostic();
     void appendDiagnostic(const CXDiagnostic&);
     static QString makeParentText(CXCompletionString, CXCursorKind);
 
-    std::vector<std::pair<QByteArray, QByteArray>> m_unsaved_files_utf8;
-    std::vector<CXUnsavedFile> m_unsaved_files;
+    /// List of disgnostic messages issued after last operation
     records_list_type m_last_diagnostic_messages;
-    QByteArray m_filename;
-    CXTranslationUnit m_unit;
+    QByteArray m_filename;                                  ///< This TU main filename
+    CXTranslationUnit m_unit;                               ///< Clang-c's opaque data
 };
 
 struct TranslationUnit::Exception::CompletionFailure : public TranslationUnit::Exception
@@ -164,6 +146,16 @@ struct TranslationUnit::Exception::SaveFailure : public TranslationUnit::Excepti
 };
 
 inline TranslationUnit::Exception::Exception(const std::string& str) : std::runtime_error(str) {}
+
+inline TranslationUnit::operator CXTranslationUnit()
+{
+    return m_unit;
+}
+
+inline TranslationUnit::operator CXTranslationUnit() const
+{
+    return m_unit;
+}
 
 }                                                           // namespace kate
 // kate: hl C++11/Qt4;

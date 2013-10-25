@@ -77,7 +77,7 @@ CppHelperPlugin::CppHelperPlugin(
       );
     connect(
         &m_config
-      , SIGNAL(clangOptionsChanged())
+      , SIGNAL(compilerOptionsChanged())
       , this
       , SLOT(invalidateTranslationUnits())
       );
@@ -93,6 +93,19 @@ CppHelperPlugin::CppHelperPlugin(
       , SIGNAL(documentWillBeDeleted(KTextEditor::Document*))
       , this
       , SLOT(removeDocumentInfo(KTextEditor::Document*))
+      );
+    // Subscribe config instance to database manager's events
+    connect(
+        &m_db_mgr
+      , SIGNAL(indexStatusChanged(const QString&, bool))
+      , &m_config
+      , SLOT(setIndexState(const QString&, bool))
+      );
+    connect(
+        &m_db_mgr
+      , SIGNAL(indexNameChanged(const QString&, const QString&))
+      , &m_config
+      , SLOT(renameIndex(const QString&, const QString&))
       );
 }
 
@@ -138,25 +151,18 @@ Kate::PluginConfigPage* CppHelperPlugin::configPage(uint number, QWidget* parent
 //END PluginConfigPageInterface interface implementation
 
 //BEGIN Kate::Plugin interface implementation
+/**
+ * \attention This is a bad idea to initialize smth here that can be accessed
+ * from other object, like view, cuz this method get called after view creation...
+ */
 void CppHelperPlugin::readSessionConfig(KConfigBase* cfg, const QString& groupPrefix)
 {
     kDebug(DEBUG_AREA) << "** PLUGIN **: Reading session config: " << groupPrefix;
     config().readSessionConfig(cfg, groupPrefix);
     buildPCHIfAbsent();
-    m_db_mgr.reset(new DatabaseManager(config().enabledIndices()));
-    connect(
-        m_db_mgr.get()
-      , SIGNAL(indexStatusChanged(const QString&, bool))
-      , &m_config
-      , SLOT(setIndexState(const QString&, bool))
-      );
-    connect(
-        m_db_mgr.get()
-      , SIGNAL(indexNameChanged(const QString&, const QString&))
-      , &m_config
-      , SLOT(renameIndex(const QString&, const QString&))
-      );
+    m_db_mgr.reset(config().enabledIndices());
 }
+
 void CppHelperPlugin::writeSessionConfig(KConfigBase* cfg, const QString& groupPrefix)
 {
     kDebug(DEBUG_AREA) << "** PLUGIN **: Writing session config: " << groupPrefix;
@@ -183,6 +189,7 @@ Kate::PluginView* CppHelperPlugin::createView(Kate::MainWindow* parent)
 
 void CppHelperPlugin::updateDirWatcher(const QString& path)
 {
+    assert("Sanity check" && m_dir_watcher);
     m_dir_watcher->addDir(path, KDirWatch::WatchSubDirs | KDirWatch::WatchFiles);
     connect(
         m_dir_watcher.get()
@@ -205,13 +212,21 @@ void CppHelperPlugin::updateDirWatcher()
     m_dir_watcher.reset(new KDirWatch(0));
     m_dir_watcher->stopScan();
 
-    if (config().what_to_monitor() & 2)
+    auto want_system =
+        config().whatToMonitor() == SessionPluginConfiguration::EnumMonitorTargets::both
+     || config().whatToMonitor() == SessionPluginConfiguration::EnumMonitorTargets::system_dirs
+     ;
+    auto want_ssession =
+        config().whatToMonitor() == SessionPluginConfiguration::EnumMonitorTargets::both
+     || config().whatToMonitor() == SessionPluginConfiguration::EnumMonitorTargets::system_dirs
+     ;
+    if (want_system)
     {
         kDebug(DEBUG_AREA) << "Going to monitor system dirs for changes...";
         for (const auto& path : config().systemDirs())
             updateDirWatcher(path);
     }
-    if (config().what_to_monitor() & 1)
+    if (want_ssession)
     {
         kDebug(DEBUG_AREA) << "Going to monitor session dirs for changes...";
         for (const auto& path : config().sessionDirs())
@@ -356,6 +371,7 @@ void CppHelperPlugin::makePCHFile(const KUrl& filename)
           , filename
           , config().formCompilerOptions()
           , TranslationUnit::defaultPCHParseOptions()
+          , clang::unsaved_files_list{}                     // NOTE Not used for PCH
           };
         pch_unit.storeTo(pch_file_name);
         config().setPrecompiledFile(pch_file_name);         // Set PCH file only if everything is Ok
@@ -480,17 +496,12 @@ QList<KTextEditor::HighlightInterface::AttributeBlock> CppHelperPlugin::highligh
     return result;
 }
 
-TranslationUnit::unsaved_files_list_type CppHelperPlugin::makeUnsavedFilesList(
-    KTextEditor::Document* doc
-  ) const
+void CppHelperPlugin::updateUnsavedFiles()
 {
-    // Form unsaved files list
-    TranslationUnit::unsaved_files_list_type unsaved_files;
-    //  1) append this document to the list of unsaved files
-    const auto this_filename = doc->url().toLocalFile();
-    unsaved_files.push_back(qMakePair(this_filename, doc->text()));
-    /// \todo Collect other unsaved files
-    return unsaved_files;
+    for (auto* doc : application()->editor()->documents())
+        if (doc->isModified())
+            m_unsaved_files_cache.update(doc->url(), doc->text());
+    m_unsaved_files_cache.finalize_updating();
 }
 
 DocumentInfo& CppHelperPlugin::getDocumentInfo(KTextEditor::Document* doc)
@@ -519,10 +530,8 @@ TranslationUnit& CppHelperPlugin::getTranslationUnitByDocumentImpl(
 {
     // Make sure an entry for document exists
     auto& unit = m_units[doc].*unit_offset;
-    // Form unsaved files list
-    /// \todo It would be better to monitor if code has changed before
-    /// \c updateUnsavedFiles() and \c reparse()
-    auto unsaved_files = makeUnsavedFilesList(doc);
+    // Form/update an internal unsaved files list
+    updateUnsavedFiles();
     // Check if translation unit created
     if (!unit)
     {
@@ -536,7 +545,7 @@ TranslationUnit& CppHelperPlugin::getTranslationUnitByDocumentImpl(
         // Form command line parameters
         //  1) collect configured system and session dirs and make -I option series
         auto options = config().formCompilerOptions();
-        //  2) append PCH options
+        //  2) append PCH options if any specified
         kDebug(DEBUG_AREA) << config().precompiledHeaderFile();
         kDebug(DEBUG_AREA) << config().pchFile();
         if (use_pch && !config().pchFile().isEmpty())
@@ -544,14 +553,10 @@ TranslationUnit& CppHelperPlugin::getTranslationUnitByDocumentImpl(
 
         // Parse it!
         unit.reset(
-            new TranslationUnit(index, doc->url(), options, parse_options, unsaved_files)
+            new TranslationUnit(index, doc->url(), options, parse_options, m_unsaved_files_cache)
           );
     }
-    else
-    {
-        unit->updateUnsavedFiles(unsaved_files);
-    }
-    unit->reparse();
+    unit->reparse(m_unsaved_files_cache);
     return *unit;
 }
 

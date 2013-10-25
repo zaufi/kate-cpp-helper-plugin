@@ -24,6 +24,7 @@
 
 // Project specific includes
 #include <src/clang/disposable.h>
+#include <src/clang/unsaved_files_list.h>
 #include <src/database_manager.h>
 #include <src/header_files_cache.h>
 #include <src/plugin_configuration.h>
@@ -75,6 +76,7 @@ public:
     const HeaderFilesCache& headersCache() const;
     DatabaseManager& databaseManager();
     const DatabaseManager& databaseManager() const;
+    const clang::unsaved_files_list& unsavedFiles() const;
     //@}
 
     /// \name \c Kate::PluginConfigPageInterface interface implementation
@@ -103,7 +105,7 @@ public:
       , const QString&
       );
     /// Helper function to collect unsaved files from current editor
-    TranslationUnit::unsaved_files_list_type makeUnsavedFilesList(KTextEditor::Document*) const;
+    void updateUnsavedFiles();
     TranslationUnit& getTranslationUnitByDocument(KTextEditor::Document*, bool = true);
     DocumentInfo& getDocumentInfo(KTextEditor::Document*);
     void addDiagnosticMessage(DiagnosticMessagesModel::Record);
@@ -166,7 +168,7 @@ private:
     /// Directory watcher to monitor configured directories
     std::unique_ptr<KDirWatch> m_dir_watcher;
     /// Index databases manager
-    std::shared_ptr<DatabaseManager> m_db_mgr;
+    DatabaseManager m_db_mgr;
     /// \note Directory watcher reports about 4 times just for one event,
     /// so to avoid doing stupid job, lets remember what we've done the last time.
     QString m_last_updated;
@@ -174,6 +176,7 @@ private:
     KTextEditor::Document* m_hidden_doc;
     translation_units_map_type m_units;
     HeaderFilesCache m_headers_cache;
+    clang::unsaved_files_list m_unsaved_files_cache;
 };
 
 inline PluginConfiguration& CppHelperPlugin::config()
@@ -202,13 +205,16 @@ inline const HeaderFilesCache& CppHelperPlugin::headersCache() const
 }
 inline DatabaseManager& CppHelperPlugin::databaseManager()
 {
-    assert("DatabaseManager is not initialized. Review your code!" && m_db_mgr);
-    return *m_db_mgr.get();
+    return m_db_mgr;
 }
 inline const DatabaseManager& CppHelperPlugin::databaseManager() const
 {
-    assert("DatabaseManager is not initialized. Review your code!" && m_db_mgr);
-    return *m_db_mgr.get();
+    return m_db_mgr;
+}
+
+inline const clang::unsaved_files_list& CppHelperPlugin::unsavedFiles() const
+{
+    return m_unsaved_files_cache;
 }
 
 inline TranslationUnit& CppHelperPlugin::getTranslationUnitByDocument(

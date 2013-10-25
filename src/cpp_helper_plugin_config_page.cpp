@@ -295,12 +295,14 @@ void CppHelperPluginConfigPage::apply()
     m_plugin->config().setUseCwd(m_pss_config->useCurrentDirSwitch->isChecked());
     m_plugin->config().setOpenFirst(m_pss_config->openFirstHeader->isChecked());
     m_plugin->config().setUseWildcardSearch(m_pss_config->useWildcardSearch->isChecked());
-    m_plugin->config().setWhatToMonitor(
-        int(m_pss_config->nothing->isChecked()) * 0
-      + int(m_pss_config->session->isChecked()) * 1
-      + int(m_pss_config->system->isChecked()) * 2
-      + int(m_pss_config->all->isChecked()) * 3
-      );
+    auto want_monitor = SessionPluginConfiguration::EnumMonitorTargets::nothing;
+    if (m_pss_config->session->isChecked())
+        want_monitor = SessionPluginConfiguration::EnumMonitorTargets::session_dirs;
+    else if (m_pss_config->system->isChecked())
+        want_monitor = SessionPluginConfiguration::EnumMonitorTargets::system_dirs;
+    else if (m_pss_config->all->isChecked())
+        want_monitor = SessionPluginConfiguration::EnumMonitorTargets::both;
+    m_plugin->config().setWhatToMonitor(want_monitor);
     {
         auto extensions = m_pss_config
           ->ignoreExtensions
@@ -382,11 +384,11 @@ void CppHelperPluginConfigPage::reset()
     m_completion_settings->sanitizeRules->setHorizontalHeaderItem(1, new QTableWidgetItem(i18n("Replace")));
 
     // Setup dirs watcher
-    int flags = m_plugin->config().what_to_monitor();
-    m_pss_config->nothing->setChecked(flags == 0);
-    m_pss_config->session->setChecked(flags == 1);
-    m_pss_config->system->setChecked(flags == 2);
-    m_pss_config->all->setChecked(flags == 3);
+    int flags = m_plugin->config().whatToMonitor();
+    m_pss_config->nothing->setChecked(flags == SessionPluginConfiguration::EnumMonitorTargets::nothing);
+    m_pss_config->session->setChecked(flags == SessionPluginConfiguration::EnumMonitorTargets::session_dirs);
+    m_pss_config->system->setChecked(flags == SessionPluginConfiguration::EnumMonitorTargets::system_dirs);
+    m_pss_config->all->setChecked(flags == SessionPluginConfiguration::EnumMonitorTargets::both);
 
     pchHeaderChanged(m_plugin->config().precompiledHeaderFile());
     updateSuggestions();

@@ -23,12 +23,15 @@
 #pragma once
 
 // Project specific includes
+#include <src/clang/compiler_options.h>
+#include <src/cpp_helper_plugin_config.h>
+#include <src/cpp_helper_plugin_session_config.h>
 
 // Standard includes
-#include <KDE/KConfigBase>
 #include <KDE/KUrl>
-#include <QtCore/QStringList>
+#include <QtCore/QString>
 #include <QtCore/QRegExp>
+#include <memory>
 #include <vector>
 #include <utility>
 
@@ -40,8 +43,7 @@ namespace kate {
  * [More detailed description here]
  *
  */
-class PluginConfiguration
-  : public QObject
+class PluginConfiguration : public QObject
 {
     Q_OBJECT
 
@@ -49,36 +51,27 @@ public:
     typedef std::vector<std::pair<QRegExp, QString>> sanitize_rules_list_type;
 
     PluginConfiguration()
-      : m_monitor_flags(0)
-      , m_use_ltgt(true)
-      , m_config_dirty(false)
-      , m_open_first(false)
-      , m_use_wildcard_search(false)
-      , m_highlight_completions(true)
-      , m_sanitize_completions(true)
-      , m_auto_completions(true)
-      , m_include_macros(true)
-      , m_use_prefix_column(false)
     {}
 
     /// \name Accessors
     //@{
-    const QStringList& sessionDirs() const;
-    const QStringList& systemDirs() const;
-    const QStringList& ignoreExtensions() const;
-    const QStringList& enabledIndices() const;
-    const KUrl& precompiledHeaderFile() const;
-    const KUrl& pchFile() const;
-    const QString& clangParams() const;
+    QStringList systemDirs() const;
+    const sanitize_rules_list_type& sanitizeRules() const;
+
+    QStringList sessionDirs() const;
+    QStringList enabledIndices() const;
+    QStringList ignoreExtensions() const;
+    KUrl precompiledHeaderFile() const;
+    KUrl pchFile() const;
+    QString clangParams() const;
+    SessionPluginConfiguration::EnumMonitorTargets::type whatToMonitor() const;
     bool useLtGt() const;
     bool useCwd() const;
     bool shouldOpenFirstInclude() const;
     bool useWildcardSearch() const;
-    int what_to_monitor() const;
     bool sanitizeCompletions() const;
     bool highlightCompletions() const;
     bool autoCompletions() const;
-    const sanitize_rules_list_type& sanitizeRules() const;
     bool includeMacros() const;
     bool usePrefixColumn() const;
     unsigned completionFlags() const;
@@ -86,9 +79,9 @@ public:
 
     /// \name Modifiers
     //@{
-    void setSessionDirs(QStringList&);
-    void setSystemDirs(QStringList&);
-    void setIgnoreExtensions(QStringList&);
+    void setSessionDirs(const QStringList&);
+    void setSystemDirs(const QStringList&);
+    void setIgnoreExtensions(const QStringList&);
     void setClangParams(const QString&);
     void setPrecompiledHeaderFile(const KUrl&);
     void setPrecompiledFile(const KUrl&);
@@ -96,7 +89,7 @@ public:
     void setUseCwd(bool);
     void setOpenFirst(bool);
     void setUseWildcardSearch(bool);
-    void setWhatToMonitor(int);
+    void setWhatToMonitor(SessionPluginConfiguration::EnumMonitorTargets::type);
     void setSanitizeCompletions(bool);
     void setHighlightCompletions(bool);
     void setAutoCompletions(bool);
@@ -107,9 +100,8 @@ public:
 
     void readSessionConfig(KConfigBase*, const QString&);
     void writeSessionConfig(KConfigBase*, const QString&);
-    void readConfig();                                      ///< Read global config
 
-    QStringList formCompilerOptions() const;
+    clang::compiler_options formCompilerOptions() const;
 
 public Q_SLOTS:
     void setIndexState(const QString&, bool);
@@ -120,110 +112,165 @@ Q_SIGNALS:
     void sessionDirsChanged();
     void systemDirsChanged();
     void precompiledHeaderFileChanged();
-    void clangOptionsChanged();
+    void compilerOptionsChanged();
 
 private:
+    QString makeSureUnderlaidConfigsInitialized(KConfigBase*, const QString&);
+
+    std::unique_ptr<SystemPluginConfiguration> m_system;
+    std::unique_ptr<SessionPluginConfiguration> m_session;
     sanitize_rules_list_type m_sanitize_rules;
-    QStringList m_system_dirs;
-    QStringList m_session_dirs;
-    QStringList m_ignore_ext;
-    QStringList m_enabled_indices;
-    KUrl m_pch_header;
     KUrl m_pch_file;
-    QString m_clang_params;
-    int m_monitor_flags;
-    /// If \c true <em>Copy #include</em> action would put filename into \c '<' and \c '>'
-    /// instead of \c '"'
-    bool m_use_ltgt;
-    bool m_use_cwd;
     bool m_config_dirty;
-    bool m_open_first;
-    bool m_use_wildcard_search;
-    bool m_highlight_completions;
-    bool m_sanitize_completions;
-    bool m_auto_completions;
-    bool m_include_macros;
-    bool m_use_prefix_column;
 };
 
-inline const QStringList& PluginConfiguration::sessionDirs() const
+inline QStringList PluginConfiguration::systemDirs() const
 {
-    return m_session_dirs;
-}
-inline const QStringList& PluginConfiguration::systemDirs() const
-{
-    return m_system_dirs;
-}
-inline const QStringList& PluginConfiguration::ignoreExtensions() const
-{
-    return m_ignore_ext;
-}
-inline const QStringList& PluginConfiguration::enabledIndices() const
-{
-    return m_enabled_indices;
-}
-inline const KUrl& PluginConfiguration::precompiledHeaderFile() const
-{
-    return m_pch_header;
-}
-inline const KUrl& PluginConfiguration::pchFile() const
-{
-    return m_pch_file;
-}
-inline const QString& PluginConfiguration::clangParams() const
-{
-    return m_clang_params;
-}
-inline bool PluginConfiguration::useLtGt() const
-{
-    return m_use_ltgt;
-}
-inline bool PluginConfiguration::useCwd() const
-{
-    return m_use_cwd;
-}
-inline bool PluginConfiguration::shouldOpenFirstInclude() const
-{
-    return m_open_first;
-}
-inline bool PluginConfiguration::useWildcardSearch() const
-{
-    return m_use_wildcard_search;
-}
-inline int PluginConfiguration::what_to_monitor() const
-{
-    return m_monitor_flags;
-}
-inline bool PluginConfiguration::sanitizeCompletions() const
-{
-    return m_sanitize_completions;
-}
-inline bool PluginConfiguration::highlightCompletions() const
-{
-    return m_highlight_completions;
-}
-inline bool PluginConfiguration::autoCompletions() const
-{
-    return m_auto_completions;
+    return m_system->systemDirs();
 }
 inline auto PluginConfiguration::sanitizeRules() const -> const sanitize_rules_list_type&
 {
     return m_sanitize_rules;
 }
 
+inline QStringList PluginConfiguration::sessionDirs() const
+{
+    return m_session->sessionDirs();
+}
+inline QStringList PluginConfiguration::ignoreExtensions() const
+{
+    return m_session->ignoreExtensions();
+}
+inline QStringList PluginConfiguration::enabledIndices() const
+{
+    return m_session->enabledIndices();
+}
+inline KUrl PluginConfiguration::precompiledHeaderFile() const
+{
+    return m_session->pchHeader();
+}
+inline KUrl PluginConfiguration::pchFile() const
+{
+    return m_pch_file;
+}
+inline QString PluginConfiguration::clangParams() const
+{
+    return m_session->clangParams();
+}
+inline bool PluginConfiguration::useLtGt() const
+{
+    return m_session->useLtGt();
+}
+inline bool PluginConfiguration::useCwd() const
+{
+    return m_session->useCwd();
+}
+inline bool PluginConfiguration::shouldOpenFirstInclude() const
+{
+    return m_session->openFirst();
+}
+inline bool PluginConfiguration::useWildcardSearch() const
+{
+    return m_session->useWildcardSearch();
+}
+inline SessionPluginConfiguration::EnumMonitorTargets::type PluginConfiguration::whatToMonitor() const
+{
+    return SessionPluginConfiguration::EnumMonitorTargets::type(m_session->monitorTargets());
+}
+inline bool PluginConfiguration::highlightCompletions() const
+{
+    return m_session->highlightCompletions();
+}
+inline bool PluginConfiguration::sanitizeCompletions() const
+{
+    return m_session->sanitizeCompletions();
+}
+inline bool PluginConfiguration::autoCompletions() const
+{
+    return m_session->autoCompletions();
+}
+inline bool PluginConfiguration::includeMacros() const
+{
+    return m_session->includeMacros();
+}
+
+inline bool PluginConfiguration::usePrefixColumn() const
+{
+    return m_session->usePrefixColumn();
+}
 inline void PluginConfiguration::setPrecompiledFile(const KUrl& file)
 {
     m_pch_file = file;
 }
 
-inline bool PluginConfiguration::includeMacros() const
+inline void PluginConfiguration::setSystemDirs(const QStringList& dirs)
 {
-    return m_include_macros;
+    m_system->setSystemDirs(dirs);
+    Q_EMIT(systemDirsChanged());
+    Q_EMIT(dirWatchSettingsChanged());
 }
 
-inline bool PluginConfiguration::usePrefixColumn() const
+inline void PluginConfiguration::setSessionDirs(const QStringList& dirs)
 {
-    return m_use_prefix_column;
+    m_session->setSessionDirs(dirs);
+    Q_EMIT(sessionDirsChanged());
+    Q_EMIT(dirWatchSettingsChanged());
+}
+inline void PluginConfiguration::setIgnoreExtensions(const QStringList& exts)
+{
+    m_session->setIgnoreExtensions(exts);
+}
+inline void PluginConfiguration::setClangParams(const QString& params)
+{
+    m_session->setClangParams(params);
+    Q_EMIT(compilerOptionsChanged());
+    Q_EMIT(precompiledHeaderFileChanged());
+}
+inline void PluginConfiguration::setPrecompiledHeaderFile(const KUrl& file)
+{
+    m_session->setPchHeader(file);
+    Q_EMIT(precompiledHeaderFileChanged());
+}
+inline void PluginConfiguration::setUseLtGt(const bool f)
+{
+    m_session->setUseLtGt(f);
+}
+inline void PluginConfiguration::setUseCwd(const bool f)
+{
+    m_session->setUseCwd(f);
+}
+inline void PluginConfiguration::setOpenFirst(const bool f)
+{
+    m_session->setOpenFirst(f);
+}
+inline void PluginConfiguration::setUseWildcardSearch(const bool f)
+{
+    m_session->setUseWildcardSearch(f);
+}
+inline void PluginConfiguration::setWhatToMonitor(const SessionPluginConfiguration::EnumMonitorTargets::type v)
+{
+    m_session->setMonitorTargets(int(v));
+    Q_EMIT(dirWatchSettingsChanged());
+}
+inline void PluginConfiguration::setSanitizeCompletions(const bool f)
+{
+    m_session->setSanitizeCompletions(f);
+}
+inline void PluginConfiguration::setHighlightCompletions(const bool f)
+{
+    m_session->setHighlightCompletions(f);
+}
+inline void PluginConfiguration::setAutoCompletions(const bool f)
+{
+    m_session->setAutoCompletions(f);
+}
+inline void PluginConfiguration::setIncludeMacros(const bool f)
+{
+    m_session->setIncludeMacros(f);
+}
+inline void PluginConfiguration::setUsePrefixColumn(const bool f)
+{
+    m_session->setUsePrefixColumn(f);
 }
 
 }                                                           // namespace kate

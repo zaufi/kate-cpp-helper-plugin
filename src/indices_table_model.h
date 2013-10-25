@@ -49,7 +49,7 @@ class IndicesTableModel : public QAbstractTableModel
 
 public:
     /// Construct from a weak pointer to \c DatabaseManager
-    explicit IndicesTableModel(const std::weak_ptr<DatabaseManager>&);
+    explicit IndicesTableModel(DatabaseManager&);
 
     //BEGIN QAbstractItemModel interface
     virtual int columnCount(const QModelIndex&) const override;
@@ -72,7 +72,7 @@ private:
       , last__
     };
 
-    std::weak_ptr<DatabaseManager> m_db_mgr;
+    DatabaseManager& m_db_mgr;
 };
 
 template <typename AppendFunctor>

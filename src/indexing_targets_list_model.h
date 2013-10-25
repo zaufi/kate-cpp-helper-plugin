@@ -31,7 +31,6 @@
 
 // Standard includes
 #include <QtCore/QAbstractListModel>
-#include <src/database_manager.h>
 
 namespace kate {
 class DatabaseManager;                                      // fwd decl
@@ -48,8 +47,8 @@ class IndexingTargetsListModel : public QAbstractListModel
     Q_OBJECT
 
 public:
-    /// Construct from a weak pointer to \c DatabaseManager
-    explicit IndexingTargetsListModel(const std::weak_ptr<DatabaseManager>&);
+    /// Construct from a reference to \c DatabaseManager
+    explicit IndexingTargetsListModel(DatabaseManager&);
 
     //BEGIN QAbstractListModel interface
     virtual int rowCount(const QModelIndex&) const override;
@@ -69,7 +68,7 @@ public:
     void refresAll(RefreshFunctor);
 
 private:
-    std::weak_ptr<DatabaseManager> m_db_mgr;
+    DatabaseManager& m_db_mgr;
 };
 
 template <typename AppendFunctor>

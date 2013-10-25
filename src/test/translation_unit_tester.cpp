@@ -27,7 +27,9 @@
 
 // Project specific includes
 #include <src/translation_unit.h>
+#include <src/clang/compiler_options.h>
 #include <src/clang/disposable.h>
+#include <src/clang/unsaved_files_list.h>
 #include <config.h>
 
 // Standard includes
@@ -64,7 +66,7 @@ struct fixture
     }
 
     clang::DCXIndex m_index = {clang_createIndex(0, 1)};
-    QStringList m_options;
+    clang::compiler_options m_options;
 };
 
 }                                                           // anonymous namespace
@@ -78,7 +80,7 @@ BOOST_FIXTURE_TEST_CASE(translation_unit_test_0, fixture)
           , KUrl{CMAKE_SOURCE_DIR "/src/test/data/not-existed.cpp"}
           , m_options
           , TranslationUnit::defaultEditingParseOptions()
-          , TranslationUnit::unsaved_files_list_type()
+          , clang::unsaved_files_list{}
         };
         BOOST_FAIL("Unexpected success!");
     }

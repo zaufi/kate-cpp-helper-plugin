@@ -35,37 +35,41 @@
 namespace kate { namespace {
 const QString GLOBAL_CONFIG_GROUP_NAME = "CppHelper";
 const QString SESSION_GROUP_SUFFIX = ":cpp-helper";
-const QString CONFIGURED_DIRS_ITEM = "ConfiguredDirs";
-const QString SANITIZE_RULES_ITEM = "SanitizeRules";
-const QString PCH_FILE_ITEM = "PCHFile";
-const QString CLANG_CMDLINE_PARAMS_ITEM = "ClangCmdLineParams";
-const QString USE_LT_GT_ITEM = "UseLtGt";
-const QString USE_CWD_ITEM = "UseCwd";
-const QString OPEN_FIRST_INCLUDE_ITEM = "OpenFirstInclude";
-const QString USE_WILDCARD_SEARCH_ITEM = "UseWildcardSearch";
-const QString MONITOR_DIRS_ITEM = "MonitorDirs";
-const QString HIGHLIGHT_COMPLETIONS_ITEM = "HighlightCompletionItems";
-const QString SANITIZE_COMPLETIONS_ITEM = "SanitizeCompletionItems";
-const QString AUTO_COMPLETIONS_ITEM = "AutoCompletionItems";
-const QString INCLUDE_MACROS_ITEM = "IncludeMacrosToCompletionResults";
-const QString USE_PREFIX_COLUMN_ITEM = "UsePrefixColumn";
-const QString IGNORE_EXTENSIONS_ITEM = "IgnoreExtensions";
-const QString ENABLED_INDICES_ITEM = "EnabledIndices";
-
 const QString SANITIZE_RULE_SEPARATOR = "<$replace-with$>";
 }                                                           // anonymous namespace
 
-void PluginConfiguration::readConfig()
+QString PluginConfiguration::makeSureUnderlaidConfigsInitialized(
+    KConfigBase* config
+  , const QString& groupPrefix
+  )
 {
-    // Read global config
-    kDebug(DEBUG_AREA) << "Reading global config: " << KGlobal::config()->name();
-    KConfigGroup gcg(KGlobal::config(), GLOBAL_CONFIG_GROUP_NAME);
-    auto dirs = gcg.readPathEntry(CONFIGURED_DIRS_ITEM, QStringList());
-    kDebug(DEBUG_AREA) << "Got global configured include path list: " << dirs;
-    m_system_dirs = dirs;
+    /// \attention Is there OTHER (legal) way to get session config file?
+    auto* downcasted_config = dynamic_cast<KConfig*>(config);
+    assert("Sanity check" && downcasted_config);
+    auto session_config_file = downcasted_config->name();
+    auto session_config = KSharedConfig::openConfig(session_config_file, KConfig::SimpleConfig);
+
+    m_session.reset(
+        new SessionPluginConfiguration{session_config, groupPrefix + SESSION_GROUP_SUFFIX}
+      );
+
+    m_system.reset(new SystemPluginConfiguration{});
+    return session_config_file;
+}
+
+void PluginConfiguration::readSessionConfig(KConfigBase* config, const QString& groupPrefix)
+{
+    auto session_config_file = makeSureUnderlaidConfigsInitialized(config, groupPrefix);
+
+    kDebug(DEBUG_AREA) << "** CONFIG-MGR **: Reading session config: "
+      << session_config_file << "[" << groupPrefix << "]";
+
+    kDebug(DEBUG_AREA) << "Got per session configured include path list: " << sessionDirs();
+    kDebug(DEBUG_AREA) << "Got global configured include path list: " << systemDirs();
+
     // Read sanitize rules from serializable form
     m_sanitize_rules.clear();
-    auto rules = gcg.readPathEntry(SANITIZE_RULES_ITEM, QStringList());
+    auto rules = m_system->sanitizeRules();
     for (auto&& rule : rules)
     {
         auto l = rule.split(SANITIZE_RULE_SEPARATOR);
@@ -92,78 +96,58 @@ void PluginConfiguration::readConfig()
         }
     }
     kDebug(DEBUG_AREA) << "Got" << m_sanitize_rules.size() << "sanitize rules total";
-    //
+
     Q_EMIT(sessionDirsChanged());
     Q_EMIT(systemDirsChanged());
     Q_EMIT(dirWatchSettingsChanged());
 }
 
-void PluginConfiguration::readSessionConfig(KConfigBase* config, const QString& groupPrefix)
-{
-    kDebug(DEBUG_AREA) << "** CONFIG-MGR **: Reading session config: " << groupPrefix;
-    // Read session config
-    /// \todo Rename it!
-    KConfigGroup scg(config, groupPrefix + SESSION_GROUP_SUFFIX);
-    m_session_dirs = scg.readPathEntry(CONFIGURED_DIRS_ITEM, QStringList());
-    m_enabled_indices = scg.readEntry(ENABLED_INDICES_ITEM, QStringList());
-    m_pch_header= scg.readPathEntry(PCH_FILE_ITEM, QString());
-    m_clang_params = scg.readPathEntry(CLANG_CMDLINE_PARAMS_ITEM, QString());
-    m_use_ltgt = scg.readEntry(USE_LT_GT_ITEM, QVariant(false)).toBool();
-    m_use_cwd = scg.readEntry(USE_CWD_ITEM, QVariant(false)).toBool();
-    m_ignore_ext = scg.readEntry(IGNORE_EXTENSIONS_ITEM, QStringList());
-    m_open_first = scg.readEntry(OPEN_FIRST_INCLUDE_ITEM, QVariant(false)).toBool();
-    m_use_wildcard_search = scg.readEntry(USE_WILDCARD_SEARCH_ITEM, QVariant(false)).toBool();
-    m_highlight_completions = scg.readEntry(HIGHLIGHT_COMPLETIONS_ITEM, QVariant(true)).toBool();
-    m_sanitize_completions = scg.readEntry(SANITIZE_COMPLETIONS_ITEM, QVariant(true)).toBool();
-    m_auto_completions = scg.readEntry(AUTO_COMPLETIONS_ITEM, QVariant(true)).toBool();
-    m_include_macros = scg.readEntry(INCLUDE_MACROS_ITEM, QVariant(true)).toBool();
-    m_use_prefix_column = scg.readEntry(USE_PREFIX_COLUMN_ITEM, QVariant(false)).toBool();
-    m_monitor_flags = scg.readEntry(MONITOR_DIRS_ITEM, QVariant(0)).toInt();
-    m_config_dirty = false;
-
-    kDebug(DEBUG_AREA) << "Got per session configured include path list: " << m_session_dirs;
-
-    readConfig();
-}
-
 void PluginConfiguration::writeSessionConfig(KConfigBase* config, const QString& groupPrefix)
 {
-    kDebug(DEBUG_AREA) << "** CONFIG-MGR **: Writing session config: " << groupPrefix;
-    if (!m_config_dirty)
-    {
-        /// \todo Maybe I don't understand smth, but rally strange things r going on here:
-        /// after plugin gets enabled, \c writeSessionConfig() will be called \b BEFORE
-        /// any attempt to read configuration...
-        /// The only thing came into my mind that it is attempt to initialize config w/ default
-        /// values... but in that case everything stored before get lost!
-        kDebug(DEBUG_AREA) << "Config isn't dirty!!!";
-        readSessionConfig(config, groupPrefix);
-        return;
-    }
+    auto session_config_file = makeSureUnderlaidConfigsInitialized(config, groupPrefix);
 
-    // Write session config
-    KConfigGroup scg(config, groupPrefix + SESSION_GROUP_SUFFIX);
-    scg.writePathEntry(CONFIGURED_DIRS_ITEM, m_session_dirs);
-    scg.writeEntry(ENABLED_INDICES_ITEM, m_enabled_indices);
-    scg.writeEntry(PCH_FILE_ITEM, m_pch_header);
-    scg.writeEntry(CLANG_CMDLINE_PARAMS_ITEM, m_clang_params);
-    scg.writeEntry(USE_LT_GT_ITEM, QVariant(m_use_ltgt));
-    scg.writeEntry(USE_CWD_ITEM, QVariant(m_use_cwd));
-    scg.writeEntry(IGNORE_EXTENSIONS_ITEM, m_ignore_ext);
-    scg.writeEntry(OPEN_FIRST_INCLUDE_ITEM, QVariant(m_open_first));
-    scg.writeEntry(USE_WILDCARD_SEARCH_ITEM, QVariant(m_use_wildcard_search));
-    scg.writeEntry(HIGHLIGHT_COMPLETIONS_ITEM, QVariant(m_highlight_completions));
-    scg.writeEntry(SANITIZE_COMPLETIONS_ITEM, QVariant(m_sanitize_completions));
-    scg.writeEntry(AUTO_COMPLETIONS_ITEM, QVariant(m_auto_completions));
-    scg.writeEntry(INCLUDE_MACROS_ITEM, QVariant(m_include_macros));
-    scg.writeEntry(USE_PREFIX_COLUMN_ITEM, QVariant(m_use_prefix_column));
-    scg.writeEntry(MONITOR_DIRS_ITEM, QVariant(m_monitor_flags));
-    scg.sync();
-    // Write global config
-    KConfigGroup gcg(KGlobal::config(), GLOBAL_CONFIG_GROUP_NAME);
-    gcg.writePathEntry(CONFIGURED_DIRS_ITEM, m_system_dirs);
+    kDebug(DEBUG_AREA) << "** CONFIG-MGR **: Writing session config: "
+      << session_config_file << "[" << groupPrefix << "]";
+
+    config->sync();
+    m_session->writeConfig();
+    m_system->writeConfig();
+    config->sync();
+}
+
+void PluginConfiguration::setIndexState(const QString& index_name, const bool flag)
+{
+    auto enabled_indices = m_session->enabledIndices();
+    auto idx = enabled_indices.indexOf(index_name);
+    if (idx == -1 && flag)
+        enabled_indices << index_name;
+    else if (idx != -1 && !flag)
+        enabled_indices.removeAt(idx);
+    m_session->setEnabledIndices(enabled_indices);
+}
+
+void PluginConfiguration::renameIndex(const QString& old_name, const QString& new_name)
+{
+    auto enabled_indices = m_session->enabledIndices();
+    auto idx = enabled_indices.indexOf(old_name);
+    if (idx != -1)
+    {
+        enabled_indices.removeAt(idx);
+        enabled_indices << new_name;
+    }
+    m_session->setEnabledIndices(enabled_indices);
+}
+
+/**
+ * \todo Add overload to accept a sequence of pairs of \c QString,
+ * and move regex validation code here avoiding duplicates outside of
+ * this class.
+ */
+void PluginConfiguration::setSanitizeRules(sanitize_rules_list_type&& rules)
+{
+    m_sanitize_rules = std::move(rules);
     // Transform sanitize rules into a serializable list of strings
-    QStringList rules;
+    QStringList transformed_rules;
     for (auto&& rule : m_sanitize_rules)
     {
         auto r = rule.first.pattern();
@@ -179,190 +163,29 @@ void PluginConfiguration::writeSessionConfig(KConfigBase* config, const QString&
         }
         if (!rule.second.isEmpty())
             r += SANITIZE_RULE_SEPARATOR + rule.second;
-        rules << r;
+        transformed_rules << r;
     }
-    gcg.writePathEntry(SANITIZE_RULES_ITEM, rules);
-    gcg.sync();
-    m_config_dirty = false;
+    m_system->setSanitizeRules(transformed_rules);
 }
 
-void PluginConfiguration::setSessionDirs(QStringList& dirs)
+clang::compiler_options PluginConfiguration::formCompilerOptions() const
 {
-    kDebug(DEBUG_AREA) << "Got session dirs: " << m_session_dirs;
-    kDebug(DEBUG_AREA) << "... session dirs: " << dirs;
-    if (m_session_dirs != dirs)
-    {
-        m_session_dirs.swap(dirs);
-        m_config_dirty = true;
-        Q_EMIT(sessionDirsChanged());
-        Q_EMIT(dirWatchSettingsChanged());
-    }
-}
-
-void PluginConfiguration::setSystemDirs(QStringList& dirs)
-{
-    kDebug(DEBUG_AREA) << "Got system dirs: " << m_system_dirs;
-    kDebug(DEBUG_AREA) << "... system dirs: " << dirs;
-    if (m_system_dirs != dirs)
-    {
-        m_system_dirs.swap(dirs);
-        m_config_dirty = true;
-        Q_EMIT(systemDirsChanged());
-        Q_EMIT(dirWatchSettingsChanged());
-    }
-}
-
-void PluginConfiguration::setIgnoreExtensions(QStringList& extensions)
-{
-    kDebug(DEBUG_AREA) << "Got ignore extensions: " << m_ignore_ext;
-    if (m_ignore_ext != extensions)
-    {
-        m_ignore_ext.swap(extensions);
-        m_config_dirty = true;
-    }
-}
-
-void PluginConfiguration::setClangParams(const QString& params)
-{
-    if (m_clang_params != params)
-    {
-        m_clang_params = params;
-        m_config_dirty = true;
-        Q_EMIT(clangOptionsChanged());
-        Q_EMIT(precompiledHeaderFileChanged());
-    }
-}
-
-void PluginConfiguration::setPrecompiledHeaderFile(const KUrl& filename)
-{
-    if (m_pch_header != filename)
-    {
-        m_pch_header = filename;
-        m_config_dirty = true;
-        Q_EMIT(precompiledHeaderFileChanged());
-    }
-}
-
-void PluginConfiguration::setUseLtGt(const bool state)
-{
-    m_use_ltgt = state;
-    m_config_dirty = true;
-}
-
-void PluginConfiguration::setUseCwd(const bool state)
-{
-    m_use_cwd = state;
-    m_config_dirty = true;
-}
-
-void PluginConfiguration::setOpenFirst(const bool state)
-{
-    m_open_first = state;
-    m_config_dirty = true;
-}
-
-void PluginConfiguration::setUseWildcardSearch(const bool state)
-{
-    m_use_wildcard_search = state;
-    m_config_dirty = true;
-}
-
-void PluginConfiguration::setHighlightCompletions(const bool state)
-{
-    m_highlight_completions = state;
-    m_config_dirty = true;
-}
-
-void PluginConfiguration::setSanitizeCompletions(const bool state)
-{
-    m_sanitize_completions = state;
-    m_config_dirty = true;
-}
-
-void PluginConfiguration::setAutoCompletions(const bool state)
-{
-    m_auto_completions = state;
-    m_config_dirty = true;
-}
-
-void PluginConfiguration::setIncludeMacros(const bool state)
-{
-    m_include_macros = state;
-    m_config_dirty = true;
-}
-
-void PluginConfiguration::setUsePrefixColumn(const bool state)
-{
-    m_use_prefix_column = state;
-    m_config_dirty = true;
-}
-
-void PluginConfiguration::setIndexState(const QString& index_name, const bool flag)
-{
-    auto idx = m_enabled_indices.indexOf(index_name);
-    if (idx == -1 && flag)
-    {
-        m_enabled_indices << index_name;
-        m_config_dirty = true;
-    }
-    else if (idx != -1 && !flag)
-    {
-        m_enabled_indices.removeAt(idx);
-        m_config_dirty = true;
-    }
-}
-
-void PluginConfiguration::renameIndex(const QString& old_name, const QString& new_name)
-{
-    auto idx = m_enabled_indices.indexOf(old_name);
-    if (idx != -1)
-    {
-        m_enabled_indices.removeAt(idx);
-        m_enabled_indices << new_name;
-        m_config_dirty = true;
-    }
-}
-
-/**
- * \todo Add overload to accept a sequence of pairs of \c QString,
- * and move regex validation code here avoiding duplicates outside of
- * this class.
- */
-void PluginConfiguration::setSanitizeRules(sanitize_rules_list_type&& rules)
-{
-    m_sanitize_rules = std::move(rules);
-    m_config_dirty = true;
-    kDebug(DEBUG_AREA) << "** set config to `dirty' state!! **";
-}
-
-void PluginConfiguration::setWhatToMonitor(const int tgt)
-{
-    if (m_monitor_flags != tgt)
-    {
-        assert("Sanity check" && 0 <= tgt && tgt < 4);
-        m_monitor_flags = tgt;
-        m_config_dirty = true;
-        Q_EMIT(dirWatchSettingsChanged());
-    }
-    kDebug(DEBUG_AREA) << "** set config to `dirty' state!! **";
-}
-
-QStringList PluginConfiguration::formCompilerOptions() const
-{
+    auto session_dirs = sessionDirs();
+    auto system_dirs = systemDirs();
     QStringList options;
     // reserve space for at least known options count
-    options.reserve(systemDirs().size() + sessionDirs().size());
+    options.reserve(system_dirs.size() + session_dirs.size());
     // 1) split configured aux options and append to collected
     for (const QString& o : clangParams().split(QRegExp("\\s+"), QString::SkipEmptyParts))
         options.push_back(o);
     // 2) add configured system dirs as -I options
-    for (const QString& dir : systemDirs())
+    for (const QString& dir : system_dirs)
         options.push_back("-I" + dir);
     // 3) add configured session dirs as -I options
-    for (const QString& dir : sessionDirs())
+    for (const QString& dir : session_dirs)
         options.push_back("-I" + dir);
 
-    return options;
+    return clang::compiler_options{options};
 }
 
 unsigned PluginConfiguration::completionFlags() const

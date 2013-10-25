@@ -35,7 +35,7 @@
 
 namespace kate {
 
-IndicesTableModel::IndicesTableModel(const std::weak_ptr<DatabaseManager>& db_mgr)
+IndicesTableModel::IndicesTableModel(DatabaseManager& db_mgr)
   : QAbstractTableModel(nullptr)
   , m_db_mgr(db_mgr)
 {
@@ -43,9 +43,7 @@ IndicesTableModel::IndicesTableModel(const std::weak_ptr<DatabaseManager>& db_mg
 
 int IndicesTableModel::rowCount(const QModelIndex&) const
 {
-    const auto& dm = m_db_mgr.lock();
-    assert("Sanity check" && dm);
-    return dm->m_collections.size();
+    return m_db_mgr.m_collections.size();
 }
 
 int IndicesTableModel::columnCount(const QModelIndex&) const
@@ -55,15 +53,13 @@ int IndicesTableModel::columnCount(const QModelIndex&) const
 
 QVariant IndicesTableModel::data(const QModelIndex& index, const int role) const
 {
-    const auto& dm = m_db_mgr.lock();
-    assert("Sanity check" && dm);
     switch (role)
     {
         case Qt::DisplayRole:
             switch (index.column())
             {
                 case column::NAME:
-                    return dm->m_collections[index.row()].m_options->name();
+                    return m_db_mgr.m_collections[index.row()].m_options->name();
                 default:
                     break;
             }
@@ -71,7 +67,7 @@ QVariant IndicesTableModel::data(const QModelIndex& index, const int role) const
             switch (index.column())
             {
                 case column::NAME:
-                    return dm->isEnabled(index.row()) ? Qt::Checked : Qt::Unchecked;
+                    return m_db_mgr.isEnabled(index.row()) ? Qt::Checked : Qt::Unchecked;
                 default:
                     break;
             }
@@ -115,20 +111,18 @@ Qt::ItemFlags IndicesTableModel::flags(const QModelIndex& index) const
 
 bool IndicesTableModel::setData(const QModelIndex& index, const QVariant& value, const int role)
 {
-    const auto& dm = m_db_mgr.lock();
-    assert("Sanity check" && dm);
     if (role == Qt::EditRole)
     {
         // Save value from editor
         auto name = value.toString();
         if (name.isEmpty())
             name = "<No name>";
-        dm->m_collections[index.row()].m_options->setName(name);
+        m_db_mgr.m_collections[index.row()].m_options->setName(name);
     }
     else if (role == Qt::CheckStateRole)
     {
         auto flag = value.toBool();
-        dm->enable(index.row(), flag);
+        m_db_mgr.enable(index.row(), flag);
     }
     return true;
 }

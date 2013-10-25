@@ -29,6 +29,8 @@
 
 // Project specific includes
 #include <src/index/database.h>
+#include <src/indexing_targets_list_model.h>
+#include <src/indices_table_model.h>
 #include <src/database_options.h>
 #include <src/diagnostic_messages_model.h>
 
@@ -47,8 +49,6 @@ class QAbstractListModel;
 class QModelIndex;
 
 namespace kate {
-class IndicesTableModel;                                    // fwd decls
-class IndexingTargetsListModel;
 
 /**
  * \brief Manage databases used by current session
@@ -56,17 +56,22 @@ class IndexingTargetsListModel;
  * [More detailed description here]
  *
  */
-class DatabaseManager
-  : public QObject
-  , public std::enable_shared_from_this<DatabaseManager>
+class DatabaseManager : public QObject
 {
     Q_OBJECT
 
+    /// Delete copy ctor
+    DatabaseManager(const DatabaseManager&) = delete;
+    /// Delete copy-assign operator
+    DatabaseManager& operator=(const DatabaseManager&) = delete;
+    /// Delete move ctor
+    DatabaseManager(DatabaseManager&&) = delete;
+    /// Delete move-assign operator
+    DatabaseManager& operator=(DatabaseManager&&) = delete;
+
 public:
-    /// Construct from default base directory and list of enabled colelctions
-    explicit DatabaseManager(const QStringList&);
-    /// Construct w/ base path specified and list of enabled collections
-    explicit DatabaseManager(const KUrl&, const QStringList&);
+    /// Default constructor
+    DatabaseManager();
     /// Destructor
     ~DatabaseManager();
 
@@ -80,6 +85,9 @@ public:
     QAbstractTableModel* getDatabasesTableModel();
     /// Obtain a list model for currently configured targets
     QAbstractListModel* getTargetsListModel();
+
+    /// Reset everything using this params
+    void reset(const QStringList&, const KUrl& = DatabaseManager::getDefaultBaseDir());
 
 public Q_SLOTS:
     void enable(const QString&, bool);
@@ -130,11 +138,11 @@ private:
     bool isEnabled(int) const;
     void renameCollection(int, const QString&);
 
-    const KUrl m_base_dir;
+    KUrl m_base_dir;
+    IndicesTableModel m_indices_model;
+    IndexingTargetsListModel m_targets_model;
     collections_type m_collections;
     QStringList m_enabled_list;
-    std::unique_ptr<IndicesTableModel> m_indices_model;
-    std::unique_ptr<IndexingTargetsListModel> m_targets_model;
     int m_last_selected_index;
     int m_last_selected_target;
 };
@@ -148,9 +156,14 @@ inline DatabaseManager::exception::exception(const std::string& str)
   : std::runtime_error(str)
 {}
 
-inline DatabaseManager::DatabaseManager(const QStringList& enabled_list)
-  : DatabaseManager(DatabaseManager::getDefaultBaseDir(), enabled_list)
+inline QAbstractTableModel* DatabaseManager::getDatabasesTableModel()
 {
+    return &m_indices_model;
+}
+
+inline QAbstractListModel* DatabaseManager::getTargetsListModel()
+{
+    return &m_targets_model;
 }
 
 }                                                           // namespace kate

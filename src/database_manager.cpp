@@ -27,8 +27,6 @@
 
 // Project specific includes
 #include <src/database_manager.h>
-#include <src/indices_table_model.h>
-#include <src/indexing_targets_list_model.h>
 
 // Standard includes
 #include <boost/filesystem/operations.hpp>
@@ -61,32 +59,24 @@ const QString COMMENT = "comment";
 const QString TARGETS = "targets";
 }}}                                                         // namespace key, meta, anonymous namespace
 
-#if 0
-DatabaseManager::database_state::database_state(database_state&& other) noexcept
-  : m_status(other.m_status)
-{
-    m_path.swap(other.m_path);
-    m_targets.swap(other.m_targets);
-    m_name.swap(other.m_name);
-    m_comment.swap(other.m_comment);
-}
-
-auto DatabaseManager::database_state::operator=(database_state&& other) noexcept -> database_state&
-{
-    if (this != &other)
-    {
-        m_path.swap(other.m_path);
-        m_targets.swap(other.m_targets);
-        m_name.swap(other.m_name);
-        m_comment.swap(other.m_comment);
-    }
-    return *this;
-}
-#endif
-
 bool DatabaseManager::database_state::isOk() const
 {
     return m_status == status::ok;
+}
+
+DatabaseManager::DatabaseManager()
+  :  m_indices_model{*this}
+  , m_targets_model{*this}
+  , m_last_selected_index{-1}
+  , m_last_selected_target{-1}
+{
+}
+
+DatabaseManager::~DatabaseManager()
+{
+    // Write possible modified manifests for all collections
+    for (const auto& index : m_collections)
+        index.m_options->writeConfig();
 }
 
 /**
@@ -94,12 +84,19 @@ bool DatabaseManager::database_state::isOk() const
  *
  * \todo Handle the case when \c base_dir is not a directory actually
  */
-DatabaseManager::DatabaseManager(const KUrl& base_dir, const QStringList& enabled_list)
-  : m_base_dir(base_dir)
-  , m_enabled_list(enabled_list)
-  , m_last_selected_index(-1)
-  , m_last_selected_target(-1)
+void DatabaseManager::reset(const QStringList& enabled_list, const KUrl& base_dir)
 {
+    assert(
+        "DatabaseManager supposed to be default initialized"
+      && m_base_dir.isEmpty()
+      && m_collections.empty()
+      && m_enabled_list.empty()
+      );
+
+    /// Initialize vital members
+    m_base_dir = base_dir;
+    m_enabled_list = enabled_list;
+
     kDebug(DEBUG_AREA) << "Use indexer DB path:" << base_dir.toLocalFile();
     // NOTE Qt4 lacks a recursive directory iterator, so use
     // boost instead...
@@ -117,7 +114,8 @@ DatabaseManager::DatabaseManager(const KUrl& base_dir, const QStringList& enable
             /// \todo Handle errors
             auto state = tryLoadDatabaseMeta(it->path());
             assert("Sanity check" && state.m_options);
-            if (enabled_list.indexOf(state.m_options->name()) != -1)
+            auto name = state.m_options->name();
+            if (m_enabled_list.indexOf(name) != -1)
             {
                 const auto& db_path = state.m_options->path().toUtf8().constData();
                 state.m_db.reset(new index::ro::database(db_path));
@@ -130,29 +128,11 @@ DatabaseManager::DatabaseManager(const KUrl& base_dir, const QStringList& enable
                 state.m_enabled = false;
             }
             m_collections.emplace_back(std::move(state));
+            if (state.m_enabled)
+                Q_EMIT(indexStatusChanged(name, true));
         }
     }
-}
-
-DatabaseManager::~DatabaseManager()
-{
-    // Write possible modified manifests for all collections
-    for (const auto& index : m_collections)
-        index.m_options->writeConfig();
-}
-
-QAbstractTableModel* DatabaseManager::getDatabasesTableModel()
-{
-    if (!m_indices_model)
-        m_indices_model.reset(new IndicesTableModel{std::weak_ptr<DatabaseManager>{shared_from_this()}});
-    return m_indices_model.get();
-}
-
-QAbstractListModel* DatabaseManager::getTargetsListModel()
-{
-    if (!m_targets_model)
-        m_targets_model.reset(new IndexingTargetsListModel{std::weak_ptr<DatabaseManager>{shared_from_this()}});
-    return m_targets_model.get();
+    /// \todo Get rid of not-found indices?
 }
 
 void DatabaseManager::enable(const QString& name, const bool flag)
@@ -211,8 +191,7 @@ void DatabaseManager::createNewIndex()
     result.m_options->setPath(db_path.toLocalFile());
     result.m_options->setName("New collection");
 
-    assert("Sanity check" && m_indices_model);
-    m_indices_model->appendNewRow(
+    m_indices_model.appendNewRow(
         m_collections.size()
       , [this, &result]()
         {
@@ -237,8 +216,7 @@ void DatabaseManager::refreshCurrentTargets(const QModelIndex& index)
         "Database index is out of range"
       && std::size_t(index.row()) < m_collections.size()
       );
-    assert("Sanity check" && m_targets_model);
-    m_targets_model->refresAll(
+    m_targets_model.refresAll(
         [this, &index]()
         {
             m_last_selected_index = index.row();
@@ -248,7 +226,6 @@ void DatabaseManager::refreshCurrentTargets(const QModelIndex& index)
 
 void DatabaseManager::selectCurrentTarget(const QModelIndex& index)
 {
-    assert("Sanity check" && m_targets_model);
     assert(
         "Database index is out of range"
       && std::size_t(m_last_selected_index) < m_collections.size()
@@ -278,7 +255,6 @@ void DatabaseManager::addNewTarget()
       );
     if (target.isValid() && !target.isEmpty())
     {
-        assert("Sanity check" && m_targets_model);
         auto targets = m_collections[m_last_selected_index].m_options->targets();
         const auto& target_path = target.toLocalFile();
         // Do not allow duplicates!
@@ -288,7 +264,7 @@ void DatabaseManager::addNewTarget()
             return;
         }
         const auto sz = targets.size();
-        m_targets_model->appendNewRow(
+        m_targets_model.appendNewRow(
             targets.size()
           , [this, &target_path, &targets]()
             {
@@ -299,11 +275,13 @@ void DatabaseManager::addNewTarget()
         assert("Sanity check" && targets.size() == sz + 1);
         m_last_selected_target = targets.size() - 1;
         // Make some SPAM
+#if 0
         auto msg = DiagnosticMessagesModel::Record{
             clang::location{doc->url(), range.start().line() + 1, range.start().column() + 1}
           , "Completion point"
           , DiagnosticMessagesModel::Record::type::debug
           }
+#endif
 
     }
 }
@@ -313,7 +291,6 @@ void DatabaseManager::removeCurrentTarget()
     if (m_last_selected_index == -1)
         return;
 
-    assert("Sanity check" && m_targets_model);
     assert(
         "Database index is out of range"
       && std::size_t(m_last_selected_index) < m_collections.size()
@@ -326,7 +303,7 @@ void DatabaseManager::removeCurrentTarget()
     const auto sz = targets.size();
     assert("Index is out of range" && m_last_selected_target < sz);
 
-    m_targets_model->removeRow(
+    m_targets_model.removeRow(
         m_last_selected_target
       , [this, &targets](const int idx)
         {

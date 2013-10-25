@@ -24,9 +24,11 @@
 
 // Project specific includes
 #include <src/translation_unit.h>
+#include <src/clang/compiler_options.h>
 #include <src/clang/disposable.h>
 #include <src/clang/kind_of.h>
 #include <src/clang/to_string.h>
+#include <src/clang/unsaved_files_list.h>
 #include <src/sanitize_snippet.h>
 
 // Standard includes
@@ -151,64 +153,53 @@ TranslationUnit::TranslationUnit(
         throw Exception::LoadFailure("Fail to load a preparsed file");
 }
 
+#if 0
 TranslationUnit::TranslationUnit(
-    CXIndex index
-  , const KUrl& filename_url
-  , const QStringList& options
+    CXIndex index                                           ///< Clang-C index instance to use
+  , const KUrl& filename_url                                ///< File (document) URI
+  , clang::compiler_options&& options                       ///< Compiler options to use
   )
   : m_filename(filename_url.toLocalFile().toUtf8())
 {
     kDebug(DEBUG_AREA) << "Creating a translation unit: " << filename_url.toLocalFile();
     kDebug(DEBUG_AREA) << "w/ the following compiler options:" << options;
-    // Transform options compatible to clang API
-    // NOTE Too fraking much actions for that simple task...
-    // Definitely Qt doesn't suitable for that sort of tasks...
-    auto utf8_options = std::vector<QByteArray>{};
-    auto clang_options = std::vector<const char*>{};
-    transform_command_line_args(options, utf8_options, clang_options);
+    auto clang_options = options.get();
     // Ok, ready to go
     m_unit = clang_createTranslationUnitFromSourceFile(
         index
       , m_filename.constData()
-      , clang_options.size()
-      , clang_options.data()
+      , options.size()
+      , options.data()
       , 0
       , 0
       );
     if (!m_unit)
         throw Exception::ParseFailure("Failure to parse C++ code");
 }
+#endif
 
 TranslationUnit::TranslationUnit(
     CXIndex index
   , const KUrl& filename_url
-  , const QStringList& options
+  , const clang::compiler_options& options
   , const unsigned parse_options
-  , const unsaved_files_list_type& unsaved_files
+  , const clang::unsaved_files_list& unsaved_files
   )
   : m_filename(filename_url.toLocalFile().toUtf8())
 {
     kDebug(DEBUG_AREA) << "Parsing a translation unit: " << filename_url.toLocalFile();
     kDebug(DEBUG_AREA) << "w/ the following compiler options:" << options;
 
-    // Transform options compatible to clang API
-    // NOTE Too fraking much actions for that simple task...
-    // Definitely Qt doesn't suitable for that sort of tasks...
-    auto utf8_options = std::vector<QByteArray>{};
-    auto clang_options = std::vector<const char*>{};
-    transform_command_line_args(options, utf8_options, clang_options);
-
-    // Setup internal structures w/ unsaved files
-    updateUnsavedFiles(unsaved_files);
-
+    auto files = unsaved_files.get();
+    auto clang_options = options.get();
     // Ok, ready to parse
     m_unit = clang_parseTranslationUnit(
         index
       , m_filename.constData()
       , clang_options.data()
       , clang_options.size()
-      , m_unsaved_files.data()
-      , m_unsaved_files.size()
+      , files.data()
+      , files.size()
       , parse_options
       );
     if (!m_unit)
@@ -217,8 +208,7 @@ TranslationUnit::TranslationUnit(
 }
 
 TranslationUnit::TranslationUnit(TranslationUnit&& other) noexcept
-  : m_unsaved_files_utf8(std::move(other.m_unsaved_files_utf8))
-  , m_unsaved_files(std::move(other.m_unsaved_files))
+  : m_last_diagnostic_messages(std::move(other.m_last_diagnostic_messages))
   , m_unit(other.m_unit)
 {
     m_filename.swap(other.m_filename);
@@ -229,8 +219,7 @@ TranslationUnit& TranslationUnit::operator=(TranslationUnit&& other) noexcept
 {
     if (&other != this)
     {
-        m_unsaved_files_utf8 = std::move(other.m_unsaved_files_utf8);
-        m_unsaved_files = std::move(other.m_unsaved_files);
+        m_last_diagnostic_messages = std::move(other.m_last_diagnostic_messages);
         m_filename.swap(other.m_filename);
         m_unit = other.m_unit;
         other.m_unit = nullptr;
@@ -238,32 +227,22 @@ TranslationUnit& TranslationUnit::operator=(TranslationUnit&& other) noexcept
     return *this;
 }
 
-void TranslationUnit::updateUnsavedFiles(const unsaved_files_list_type& unsaved_files)
+TranslationUnit::~TranslationUnit()
 {
-    // Resize internal vectors according expected items count
-    m_unsaved_files_utf8.resize(unsaved_files.size());
-    m_unsaved_files.resize(unsaved_files.size());
-    // Transform unsaved files compatible to clang API
-    auto uf_idx = 0;
-    for (const auto& p : unsaved_files)
-    {
-        m_unsaved_files_utf8[uf_idx] = {p.first.toUtf8(), p.second.toUtf8()};
-        m_unsaved_files[uf_idx].Filename = m_unsaved_files_utf8[uf_idx].first.constData();
-        m_unsaved_files[uf_idx].Contents = m_unsaved_files_utf8[uf_idx].second.constData();
-        /// \note Fraking \c QByteArray has \c int as return type of \c size()! IDIOTS!
-        m_unsaved_files[uf_idx].Length = unsigned(m_unsaved_files_utf8[uf_idx].second.size());
-        uf_idx++;
-    }
+    if (m_unit)
+        clang_disposeTranslationUnit(m_unit);
 }
 
 QList<ClangCodeCompletionItem> TranslationUnit::completeAt(
     const int line
   , const int column
   , const unsigned completion_flags
+  , const clang::unsaved_files_list& unsaved_files
   , const PluginConfiguration::sanitize_rules_list_type& sanitize_rules
   )
 {
     QList<ClangCodeCompletionItem> completions;
+    auto files = unsaved_files.get();
 
     clang::DCXCodeCompleteResults res = {
         clang_codeCompleteAt(
@@ -271,8 +250,8 @@ QList<ClangCodeCompletionItem> TranslationUnit::completeAt(
           , m_filename.constData()
           , unsigned(line)
           , unsigned(column)
-          , m_unsaved_files.data()
-          , m_unsaved_files.size()
+          , files.data()
+          , files.size()
           , completion_flags
           )
       };
@@ -529,13 +508,14 @@ void TranslationUnit::storeTo(const KUrl& filename)
     }
 }
 
-void TranslationUnit::reparse()
+void TranslationUnit::reparse(const clang::unsaved_files_list& unsaved_files)
 {
+    auto files = unsaved_files.get();
     auto result = clang_reparseTranslationUnit(
         m_unit
-      , m_unsaved_files.size()
-      , m_unsaved_files.data()
-      , CXReparse_None /*clang_defaultReparseOptions(m_unit)*/
+      , files.size()
+      , files.data()
+      , clang_defaultReparseOptions(m_unit)
       );
     if (result)
     {
@@ -636,29 +616,6 @@ unsigned TranslationUnit::defaultEditingParseOptions()
 unsigned TranslationUnit::defaultExplorerParseOptions()
 {
     return CXTranslationUnit_Incomplete | CXTranslationUnit_SkipFunctionBodies;
-}
-
-/**
- * Transform command line options into a form compatible for clang API
- *
- * \note Too fraking much actions for that simple task...
- * Definitely Qt doesn't suitable for that sort of tasks...
- */
-void TranslationUnit::transform_command_line_args(
-    const QStringList& input
-  , std::vector<QByteArray>& args
-  , std::vector<const char*>& pointers
-  )
-{
-    args.resize(input.size());
-    pointers.resize(input.size(), nullptr);
-    auto opt_idx = 0;
-    for (const auto& o : input)
-    {
-        args[opt_idx] = o.toUtf8();
-        pointers[opt_idx] = args[opt_idx].constData();
-        opt_idx++;
-    }
 }
 
 }                                                           // namespace kate

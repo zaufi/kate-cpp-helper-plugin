@@ -83,7 +83,7 @@ public Q_SLOTS:
 private Q_SLOTS:
     void openHeader();                                      ///< Open header file under cursor
     void switchIfaceImpl();                                 ///< Open corresponding header/implementation file
-    void copyInclude();                                     ///< From #include directive w/ current file in the clipboard
+    void copyInclude();                                     ///< From \c #include directive w/ current file in the clipboard
     void viewCreated(KTextEditor::View*);
     void modeChanged(KTextEditor::Document*);
     void urlChanged(KTextEditor::Document*);

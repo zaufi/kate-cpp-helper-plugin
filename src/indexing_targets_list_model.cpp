@@ -33,7 +33,7 @@
 
 namespace kate {
 
-IndexingTargetsListModel::IndexingTargetsListModel(const std::weak_ptr<DatabaseManager>& db_mgr)
+IndexingTargetsListModel::IndexingTargetsListModel(DatabaseManager& db_mgr)
   : QAbstractListModel(nullptr)
   , m_db_mgr(db_mgr)
 {
@@ -41,23 +41,19 @@ IndexingTargetsListModel::IndexingTargetsListModel(const std::weak_ptr<DatabaseM
 
 int IndexingTargetsListModel::rowCount(const QModelIndex&) const
 {
-    const auto& dm = m_db_mgr.lock();
-    assert("Sanity check" && dm);
-    if (dm->m_last_selected_index != -1)
+    if (m_db_mgr.m_last_selected_index != -1)
     {
-        assert("Sanity check" && std::size_t(dm->m_last_selected_index) < dm->m_collections.size());
-        return dm->m_collections[dm->m_last_selected_index].m_options->targets().size();
+        assert("Sanity check" && std::size_t(m_db_mgr.m_last_selected_index) < m_db_mgr.m_collections.size());
+        return m_db_mgr.m_collections[m_db_mgr.m_last_selected_index].m_options->targets().size();
     }
     return 0;
 }
 
 QVariant IndexingTargetsListModel::data(const QModelIndex& index, const int role) const
 {
-    const auto& dm = m_db_mgr.lock();
-    assert("Sanity check" && dm);
-    if (dm->m_last_selected_index != -1 && role == Qt::DisplayRole)
+    if (m_db_mgr.m_last_selected_index != -1 && role == Qt::DisplayRole)
     {
-        const auto& targets = dm->m_collections[dm->m_last_selected_index].m_options->targets();
+        const auto& targets = m_db_mgr.m_collections[m_db_mgr.m_last_selected_index].m_options->targets();
         assert("Sanity check" && index.row() < targets.size());
         return targets[index.row()];
     }

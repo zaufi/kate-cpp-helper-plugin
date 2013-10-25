@@ -122,6 +122,7 @@ void ClangCodeCompletionModel::completionInvoked(
             unsigned(range.start().line() + 1)              // NOTE Kate count lines starting from 0
           , unsigned(range.start().column() + 1)            // NOTE Kate count columns starting from 0
           , m_plugin->config().completionFlags()
+          , m_plugin->unsavedFiles()
           , m_plugin->config().sanitizeCompletions()
               ? m_plugin->config().sanitizeRules()
               : PluginConfiguration::sanitize_rules_list_type()
