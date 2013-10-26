@@ -66,6 +66,7 @@ std::vector<const char*> PARSE_OPTIONS = {
 const std::string SAMPLE_DB_PATH = CMAKE_BINARY_DIR "/src/test/data/test.db";
 const char* const SAMPLE_DIR = CMAKE_SOURCE_DIR "/src/test/data";
 const char* const VAR_TEST_09 = CMAKE_SOURCE_DIR "/src/test/data/variables/test_009.cc";
+const index::dbid SAMPLE_ID = 0xdeadcafe;
 
 bool make_sure_database_not_exists(const boost::filesystem::path& path)
 {
@@ -83,7 +84,7 @@ void result_waiter::finished()
 }
 
 indexer_tester::indexer_tester()
-  : m_indexer{SAMPLE_DB_PATH}
+  : m_indexer{SAMPLE_ID, SAMPLE_DB_PATH}
 {
     QVERIFY(s_db_rm_flag);
     connect(&m_indexer, SIGNAL(finished()), &m_res, SLOT(finished()));

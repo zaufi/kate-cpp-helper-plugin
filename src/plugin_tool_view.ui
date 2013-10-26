@@ -214,6 +214,13 @@
                </property>
               </spacer>
              </item>
+             <item>
+              <widget class="KPushButton" name="stopIndexer">
+               <property name="text">
+                <string>Stop</string>
+               </property>
+              </widget>
+             </item>
             </layout>
            </item>
           </layout>

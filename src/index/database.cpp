@@ -38,35 +38,35 @@ const std::string XCONTAINER = "XCNT";
 const std::string XREDECLARATION = "XRDL";
 }                                                           // namespace term
 
-namespace {
+namespace { namespace meta {
 const std::string FILES_MAPPING = "HDRMAPCACHE";
-}                                                           // anonymous namespace
-
-namespace details {
-template <typename Database>
-inline database<Database>::database()
-{
-    auto hdr_cache = static_cast<Database* const>(this)->get_metadata(FILES_MAPPING);
-    if (!hdr_cache.empty())
-        m_files_cache.loadFromString(hdr_cache);
-}
-}                                                           // namespace details
-
+const std::string DB_ID = "DBID";
+}}                                                          // namespace meta, anonymous namespace
 
 namespace rw {
 
-database::database(const std::string& path) try
-  : Xapian::WritableDatabase(path, Xapian::DB_CREATE_OR_OPEN)
-  , details::database<database>()
+database::database(const dbid db_id, const std::string& path) try
+  : Xapian::WritableDatabase{path, Xapian::DB_CREATE_OR_OPEN}
+  , details::common_base{db_id}
 {
 }
 catch (const Xapian::DatabaseError& e)
 {
-    throw exception::database_failure("Index database [" + path + "] failure: " + e.get_msg());
+    throw exception::database_failure{"Index database [" + path + "] failure: " + e.get_msg()};
 }
 
 database::~database()
 {
+    try
+    {
+        kDebug(DEBUG_AREA) << "Store DB meta...";
+        set_metadata(meta::DB_ID, serialize(id()));
+        set_metadata(meta::FILES_MAPPING, headers_map().storeToString());
+    }
+    catch (...)
+    {
+        kDebug(DEBUG_AREA) << "Fail to store DB meta";
+    }
     commit();
 }
 
@@ -75,13 +75,12 @@ void database::commit()
     try
     {
         kDebug(DEBUG_AREA) << "Commiting DB changes...";
-        if (headers_map().isDirty())
-            set_metadata(FILES_MAPPING, headers_map().storeToString());
         Xapian::WritableDatabase::commit();
     }
     catch (...)
     {
-        kDebug(DEBUG_AREA) << "Fail to store headers mapping cache";
+        /// \todo Handle errors (some of them are recoverable...)
+        kDebug(DEBUG_AREA) << "Fail to commit";
     }
 }
 
@@ -89,14 +88,25 @@ void database::commit()
 
 namespace ro {
 
+/**
+ * \brief Construct from existed database
+ *
+ * This constructor assume that database already exists (physically on a disk)
+ */
 database::database(const std::string& path) try
-  : Xapian::Database(path)
-  , details::database<database>()
+  : Xapian::Database{path}
+  , details::common_base{}
 {
+    // Get internal DB ID
+    auto db_id_str = static_cast<Database* const>(this)->get_metadata(meta::DB_ID);
+    m_id = deserialize<decltype(m_id)>(db_id_str);
+    // Load files mapping
+    auto hdr_cache = static_cast<Database* const>(this)->get_metadata(meta::FILES_MAPPING);
+    m_files_cache.loadFromString(hdr_cache);
 }
 catch (const Xapian::DatabaseError& e)
 {
-    throw exception::database_failure("Index database [" + path + "] failure: " + e.get_msg());
+    throw exception::database_failure{"Index database [" + path + "] failure: " + e.get_msg()};
 }
 
 database::~database()

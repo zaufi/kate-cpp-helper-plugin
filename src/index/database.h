@@ -28,6 +28,7 @@
 #pragma once
 
 // Project specific includes
+#include <src/index/types.h>
 #include <src/header_files_cache.h>
 
 // Standard includes
@@ -75,29 +76,30 @@ namespace details {
  *
  * This class have some common members and provide some basic methods to access them.
  */
-template <typename Database>
-class database
+class common_base
 {
 public:
-    database();
-    HeaderFilesCache& headers_map();                        ///< Access header files mapping cache (mutable)
-    const HeaderFilesCache& headers_map() const;            ///< Access header files mapping cache (immutable)
+    common_base() = default;
+    common_base(const dbid db_id) : m_id(db_id) {}
 
-private:
+    const HeaderFilesCache& headers_map() const;            ///< Access header files mapping cache (immutable)
+    dbid id() const;
+
+protected:
     HeaderFilesCache m_files_cache;
+    dbid m_id = {0};
 };
 
-template <typename Database>
-inline HeaderFilesCache& database<Database>::headers_map()
+inline const HeaderFilesCache& common_base::headers_map() const
 {
     return m_files_cache;
 }
 
-template <typename Database>
-inline const HeaderFilesCache& database<Database>::headers_map() const
+inline dbid common_base::id() const
 {
-    return m_files_cache;
+    return m_id;
 }
+
 }                                                           // namespace details
 
 /// Read/write access to the indexer database
@@ -105,14 +107,22 @@ namespace rw {
 /**
  * \brief Class \c database w/ read/write access
  */
-class database : public Xapian::WritableDatabase, public details::database<database>
+class database : public Xapian::WritableDatabase, public details::common_base
 {
 public:
-    explicit database(const std::string&);                  ///< Construct from a database path
+    database(dbid, const std::string&);                     ///< Construct from a database path
     virtual ~database();
+
+    HeaderFilesCache& headers_map();                        ///< Access header files mapping cache (mutable)
 
     void commit();                                          ///< Commit recent changes to the DB
 };
+
+inline HeaderFilesCache& database::headers_map()
+{
+    return m_files_cache;
+}
+
 }                                                           // namespace rw
 
 /// Read-only access to the indexer database
@@ -120,10 +130,10 @@ namespace ro {
 /**
  * \brief Class \c database w/ read-only access
  */
-class database : public Xapian::Database, public details::database<database>
+class database : public Xapian::Database, public details::common_base
 {
 public:
-    /// Default constructor
+    /// Construct from DB path
     explicit database(const std::string&);
     /// Destructor
     ~database();

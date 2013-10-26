@@ -105,7 +105,7 @@ public:
       , running
     };
     /// Construct an indexer from database path
-    explicit indexer(const std::string&);
+    explicit indexer(dbid, const std::string&);
 
     indexer& set_compiler_options(std::vector<const char*>&&);
     indexer& add_target(const KUrl&);
@@ -134,8 +134,8 @@ private:
     rw::database m_db;
 };
 
-inline indexer::indexer(const std::string& path)
-  : m_db{path}
+inline indexer::indexer(const dbid id, const std::string& path)
+  : m_db{id, path}
 {
 }
 

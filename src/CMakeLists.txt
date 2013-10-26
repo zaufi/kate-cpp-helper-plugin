@@ -9,7 +9,9 @@ set(LIBTEST_SOURCES
     clang/location.cpp
     clang/to_string.cpp
     clang/unsaved_files_list.cpp
+    index/utils.cpp
     index/database.cpp
+    index/combined_index.cpp
     index/indexer.cpp
     indexing_targets_list_model.cpp
     indices_table_model.cpp
