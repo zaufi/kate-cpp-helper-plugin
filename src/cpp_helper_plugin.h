@@ -123,10 +123,12 @@ private Q_SLOTS:
     void createdPath(const QString&);
     void deletedPath(const QString&);
     void updateCurrentView();
-    void buildPCHIfAbsent();                                ///< Make sure a PCH is fresh
+    void buildPCHIfAbsent(bool);                            ///< Make sure a PCH is fresh
+    void rebuildPCH();                                      ///< Rebuild PCH file
     /// Update watcher to monitor currently configured directories
     void updateDirWatcher();
     void invalidateTranslationUnits();
+    void propagateCompilerOptionsToIndexer();
 
 private:
     /// Type to associate a document with a translation unit

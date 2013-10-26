@@ -65,7 +65,7 @@ bool DatabaseManager::database_state::isOk() const
 }
 
 DatabaseManager::DatabaseManager()
-  :  m_indices_model{*this}
+  : m_indices_model{*this}
   , m_targets_model{*this}
   , m_last_selected_index{-1}
   , m_last_selected_target{-1}

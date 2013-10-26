@@ -29,6 +29,7 @@
 
 // Project specific includes
 #include <src/index/database.h>
+#include <src/clang/compiler_options.h>
 #include <src/indexing_targets_list_model.h>
 #include <src/indices_table_model.h>
 #include <src/database_options.h>
@@ -88,6 +89,8 @@ public:
 
     /// Reset everything using this params
     void reset(const QStringList&, const KUrl& = DatabaseManager::getDefaultBaseDir());
+    /// Set compiler optoins for indexer
+    void setCompilerOptions(clang::compiler_options&&);
 
 public Q_SLOTS:
     void enable(const QString&, bool);
@@ -143,6 +146,7 @@ private:
     IndexingTargetsListModel m_targets_model;
     collections_type m_collections;
     QStringList m_enabled_list;
+    clang::compiler_options m_compiler_options;
     int m_last_selected_index;
     int m_last_selected_target;
 };
@@ -164,6 +168,11 @@ inline QAbstractTableModel* DatabaseManager::getDatabasesTableModel()
 inline QAbstractListModel* DatabaseManager::getTargetsListModel()
 {
     return &m_targets_model;
+}
+
+inline void DatabaseManager::setCompilerOptions(clang::compiler_options&& options)
+{
+    m_compiler_options = std::move(options);
 }
 
 }                                                           // namespace kate
