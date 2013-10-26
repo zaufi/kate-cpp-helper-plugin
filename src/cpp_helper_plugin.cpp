@@ -213,12 +213,12 @@ void CppHelperPlugin::updateDirWatcher()
     m_dir_watcher->stopScan();
 
     auto want_system =
-        config().whatToMonitor() == SessionPluginConfiguration::EnumMonitorTargets::both
-     || config().whatToMonitor() == SessionPluginConfiguration::EnumMonitorTargets::system_dirs
+        config().monitorTargets() == PluginConfiguration::MonitorTargets::both
+     || config().monitorTargets() == PluginConfiguration::MonitorTargets::systemDirs
      ;
     auto want_ssession =
-        config().whatToMonitor() == SessionPluginConfiguration::EnumMonitorTargets::both
-     || config().whatToMonitor() == SessionPluginConfiguration::EnumMonitorTargets::system_dirs
+        config().monitorTargets() == PluginConfiguration::MonitorTargets::both
+     || config().monitorTargets() == PluginConfiguration::MonitorTargets::systemDirs
      ;
     if (want_system)
     {

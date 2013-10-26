@@ -1,4 +1,0 @@
-File=cpp_helper_plugin_config.kcfg
-ClassName=SystemPluginConfiguration
-NameSpace=kate
-Mutators=true

@@ -53,12 +53,6 @@ set(KATE_CPP_HELPER_PLUGIN_SOURCES
     cpp_helper_plugin.cpp
   )
 
-kde4_add_kcfg_files(
-    KATE_CPP_HELPER_PLUGIN_SOURCES
-    cpp_helper_plugin_config.kcfgc
-    cpp_helper_plugin_session_config.kcfgc
-  )
-
 kde4_add_ui_files(
     KATE_CPP_HELPER_PLUGIN_SOURCES
     path_config.ui

@@ -1,4 +1,0 @@
-File=cpp_helper_plugin_session_config.kcfg
-ClassName=SessionPluginConfiguration
-NameSpace=kate
-Mutators=true

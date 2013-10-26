@@ -106,27 +106,27 @@ CppHelperPluginConfigPage::CppHelperPluginConfigPage(
     QWidget* parent
   , CppHelperPlugin* plugin
   )
-  : Kate::PluginConfigPage(parent)
-  , m_plugin(plugin)
-  , m_pss_config(new Ui::PerSessionSettingsConfigWidget())
-  , m_clang_config(new Ui::CLangOptionsWidget())
-  , m_system_list(new Ui::PathListConfigWidget())
-  , m_session_list(new Ui::PathListConfigWidget())
-  , m_compiler_paths(new Ui::DetectCompilerPathsWidget())
-  , m_favorite_sets(new Ui::SessionPathsSetsWidget())
-  , m_completion_settings(new Ui::CompletionSettings())
-  , m_compiler_proc(this)
+  : Kate::PluginConfigPage{parent}
+  , m_plugin{plugin}
+  , m_pss_config{new Ui::PerSessionSettingsConfigWidget()}
+  , m_clang_config{new Ui::CLangOptionsWidget()}
+  , m_system_list{new Ui::PathListConfigWidget()}
+  , m_session_list{new Ui::PathListConfigWidget()}
+  , m_compiler_paths{new Ui::DetectCompilerPathsWidget()}
+  , m_favorite_sets{new Ui::SessionPathsSetsWidget()}
+  , m_completion_settings{new Ui::CompletionSettings()}
+  , m_compiler_proc{this}
 {
-    QLayout* layout = new QVBoxLayout(this);
-    KTabWidget* tab = new KTabWidget(this);
+    auto* layout = new QVBoxLayout{this};
+    auto* tab = new KTabWidget{this};
     layout->addWidget(tab);
     layout->setMargin(0);
 
     // Global #include paths
     {
-        QWidget* system_tab = new QWidget(tab);
+        auto* system_tab = new QWidget{tab};
         // Setup paths list widget
-        QWidget* paths = new QWidget(system_tab);
+        auto* paths = new QWidget{system_tab};
         paths->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
         m_system_list->setupUi(paths);
         // Connect add/del buttons to actions
@@ -136,7 +136,7 @@ CppHelperPluginConfigPage::CppHelperPluginConfigPage(
         connect(m_system_list->moveDownButton, SIGNAL(clicked()), this, SLOT(moveGlobalDirDown()));
         connect(m_system_list->clearButton, SIGNAL(clicked()), this, SLOT(clearGlobalDirs()));
         // Setup predefined compiler's paths widget
-        QWidget* compilers = new QWidget(system_tab);
+        auto* compilers = new QWidget{system_tab};
         compilers->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
         m_compiler_paths->setupUi(compilers);
         {
@@ -156,7 +156,7 @@ CppHelperPluginConfigPage::CppHelperPluginConfigPage(
         // Connect add button to action
         connect(m_compiler_paths->addButton, SIGNAL(clicked()), this, SLOT(detectPredefinedCompilerPaths()));
         // Setup layout
-        QVBoxLayout* layout = new QVBoxLayout(system_tab);
+        auto* layout = new QVBoxLayout{system_tab};
         layout->addWidget(paths, 1);
         layout->addWidget(compilers, 0);
         system_tab->setLayout(layout);
@@ -165,9 +165,9 @@ CppHelperPluginConfigPage::CppHelperPluginConfigPage(
 
     // Session #include paths
     {
-        QWidget* session_tab = new QWidget(tab);
+        auto* session_tab = new QWidget{tab};
         // Setup paths list widget
-        QWidget* paths = new QWidget(session_tab);
+        auto* paths = new QWidget{session_tab};
         paths->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
         m_session_list->setupUi(paths);
         // Connect add/del buttons to actions
@@ -177,7 +177,7 @@ CppHelperPluginConfigPage::CppHelperPluginConfigPage(
         connect(m_session_list->moveDownButton, SIGNAL(clicked()), this, SLOT(moveSessionDirDown()));
         connect(m_session_list->clearButton, SIGNAL(clicked()), this, SLOT(clearSessionDirs()));
         // Setup predefined compiler's paths widget
-        QWidget* favorites = new QWidget(session_tab);
+        auto* favorites = new QWidget{session_tab};
         favorites->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
         m_favorite_sets->setupUi(favorites);
         connect(m_favorite_sets->addButton, SIGNAL(clicked()), this, SLOT(addSet()));
@@ -186,7 +186,7 @@ CppHelperPluginConfigPage::CppHelperPluginConfigPage(
         connect(m_favorite_sets->addSuggestedDirButton, SIGNAL(clicked()), this, SLOT(addSuggestedDir()));
         connect(m_favorite_sets->vcsOnly, SIGNAL(clicked()), this, SLOT(updateSuggestions()));
         // Setup layout
-        QVBoxLayout* layout = new QVBoxLayout(session_tab);
+        auto* layout = new QVBoxLayout{session_tab};
         layout->addWidget(paths, 1);
         layout->addWidget(favorites, 0);
         session_tab->setLayout(layout);
@@ -195,7 +195,7 @@ CppHelperPluginConfigPage::CppHelperPluginConfigPage(
 
     // Clang settings
     {
-        QWidget* clang_tab = new QWidget(tab);
+        auto* clang_tab = new QWidget{tab};
         m_clang_config->setupUi(clang_tab);
         tab->addTab(clang_tab, i18n("Clang Settings"));
         // Monitor changes to PCH file
@@ -223,7 +223,7 @@ CppHelperPluginConfigPage::CppHelperPluginConfigPage(
 
     // Completion settings
     {
-        QWidget* comp_tab = new QWidget(tab);
+        auto* comp_tab = new QWidget{tab};
         m_completion_settings->setupUi(comp_tab);
         tab->addTab(comp_tab, i18n("Code Completion Settings"));
         connect(m_completion_settings->addRule, SIGNAL(clicked()), this, SLOT(addEmptySanitizeRule()));
@@ -240,7 +240,7 @@ CppHelperPluginConfigPage::CppHelperPluginConfigPage(
 
     // Other settings
     {
-        QWidget* pss_tab = new QWidget(tab);
+        auto* pss_tab = new QWidget{tab};
         m_pss_config->setupUi(pss_tab);
         tab->addTab(pss_tab, i18n("Other Settings"));
         // Disable completion on 'ignore extensions' like edit
@@ -273,7 +273,7 @@ void CppHelperPluginConfigPage::apply()
     // Get settings from 'System #include dirs' tab
     {
         QStringList dirs;
-        for (int i = 0; i < m_session_list->pathsList->count(); ++i)
+        for (auto i = 0; i < m_session_list->pathsList->count(); ++i)
             dirs.append(m_session_list->pathsList->item(i)->text());
         m_plugin->config().setSessionDirs(dirs);
     }
@@ -281,7 +281,7 @@ void CppHelperPluginConfigPage::apply()
     // Get settings from 'Session #include dirs' tab
     {
         QStringList dirs;
-        for (int i = 0; i < m_system_list->pathsList->count(); ++i)
+        for (auto i = 0; i < m_system_list->pathsList->count(); ++i)
             dirs.append(m_system_list->pathsList->item(i)->text());
         m_plugin->config().setSystemDirs(dirs);
     }
@@ -295,19 +295,19 @@ void CppHelperPluginConfigPage::apply()
     m_plugin->config().setUseCwd(m_pss_config->useCurrentDirSwitch->isChecked());
     m_plugin->config().setOpenFirst(m_pss_config->openFirstHeader->isChecked());
     m_plugin->config().setUseWildcardSearch(m_pss_config->useWildcardSearch->isChecked());
-    auto want_monitor = SessionPluginConfiguration::EnumMonitorTargets::nothing;
+    auto want_monitor = PluginConfiguration::MonitorTargets::nothing;
     if (m_pss_config->session->isChecked())
-        want_monitor = SessionPluginConfiguration::EnumMonitorTargets::session_dirs;
+        want_monitor = PluginConfiguration::MonitorTargets::sessionDirs;
     else if (m_pss_config->system->isChecked())
-        want_monitor = SessionPluginConfiguration::EnumMonitorTargets::system_dirs;
+        want_monitor = PluginConfiguration::MonitorTargets::systemDirs;
     else if (m_pss_config->all->isChecked())
-        want_monitor = SessionPluginConfiguration::EnumMonitorTargets::both;
-    m_plugin->config().setWhatToMonitor(want_monitor);
+        want_monitor = PluginConfiguration::MonitorTargets::both;
+    m_plugin->config().setMonitorTargets(want_monitor);
     {
         auto extensions = m_pss_config
           ->ignoreExtensions
           ->text()
-          .split(QRegExp("[, :;]+"), QString::SkipEmptyParts);
+          .split(QRegExp{"[, :;]+"}, QString::SkipEmptyParts);
         kDebug(DEBUG_AREA) << "Extensions to ignore:" << extensions;
         m_plugin->config().setIgnoreExtensions(extensions);
     }
@@ -321,7 +321,7 @@ void CppHelperPluginConfigPage::apply()
     // Collect sanitize rules
     PluginConfiguration::sanitize_rules_list_type rules;
     rules.reserve(m_completion_settings->sanitizeRules->rowCount());
-    for (int row = 0; row != m_completion_settings->sanitizeRules->rowCount(); ++row)
+    for (auto row = 0; row != m_completion_settings->sanitizeRules->rowCount(); ++row)
     {
         auto* find_item = m_completion_settings->sanitizeRules->item(row, 0);
         auto* repl_item = m_completion_settings->sanitizeRules->item(row, 1);
@@ -368,11 +368,11 @@ void CppHelperPluginConfigPage::reset()
     m_completion_settings->sanitizeRules->clear();
     m_completion_settings->sanitizeRules->setRowCount(rules.size());
     kDebug(DEBUG_AREA) << "Sanitize rules count: " << rules.size();
-    int row = 0;
+    auto row = 0;
     for (const auto& rule : rules)
     {
-        auto* find = new QTableWidgetItem(rule.first.pattern());
-        auto* replace = new QTableWidgetItem(rule.second);
+        auto* find = new QTableWidgetItem{rule.first.pattern()};
+        auto* replace = new QTableWidgetItem{rule.second};
         m_completion_settings->sanitizeRules->setItem(row, 0, find);
         m_completion_settings->sanitizeRules->setItem(row, 1, replace);
         row++;
@@ -380,15 +380,15 @@ void CppHelperPluginConfigPage::reset()
     }
     m_completion_settings->sanitizeRules->resizeColumnsToContents();
     /// \todo Why headers text can't be taken from \c ui file?
-    m_completion_settings->sanitizeRules->setHorizontalHeaderItem(0, new QTableWidgetItem(i18n("Find")));
-    m_completion_settings->sanitizeRules->setHorizontalHeaderItem(1, new QTableWidgetItem(i18n("Replace")));
+    m_completion_settings->sanitizeRules->setHorizontalHeaderItem(0, new QTableWidgetItem{i18n("Find")});
+    m_completion_settings->sanitizeRules->setHorizontalHeaderItem(1, new QTableWidgetItem{i18n("Replace")});
 
     // Setup dirs watcher
-    int flags = m_plugin->config().whatToMonitor();
-    m_pss_config->nothing->setChecked(flags == SessionPluginConfiguration::EnumMonitorTargets::nothing);
-    m_pss_config->session->setChecked(flags == SessionPluginConfiguration::EnumMonitorTargets::session_dirs);
-    m_pss_config->system->setChecked(flags == SessionPluginConfiguration::EnumMonitorTargets::system_dirs);
-    m_pss_config->all->setChecked(flags == SessionPluginConfiguration::EnumMonitorTargets::both);
+    auto flags = m_plugin->config().monitorTargets();
+    m_pss_config->nothing->setChecked(flags == PluginConfiguration::MonitorTargets::nothing);
+    m_pss_config->session->setChecked(flags == PluginConfiguration::MonitorTargets::sessionDirs);
+    m_pss_config->system->setChecked(flags == PluginConfiguration::MonitorTargets::systemDirs);
+    m_pss_config->all->setChecked(flags == PluginConfiguration::MonitorTargets::both);
 
     pchHeaderChanged(m_plugin->config().precompiledHeaderFile());
     updateSuggestions();
@@ -404,7 +404,7 @@ void CppHelperPluginConfigPage::defaults()
 void CppHelperPluginConfigPage::addSessionIncludeDir()
 {
     addDirTo(
-        KDirSelectDialog::selectDirectory(KUrl(), true, this)
+        KDirSelectDialog::selectDirectory(KUrl{}, true, this)
       , m_session_list->pathsList
       );
     Q_EMIT(changed());
@@ -419,7 +419,7 @@ void CppHelperPluginConfigPage::delSessionIncludeDir()
 
 void CppHelperPluginConfigPage::moveSessionDirUp()
 {
-    const int current = m_session_list->pathsList->currentRow();
+    const auto current = m_session_list->pathsList->currentRow();
     if (current)
     {
         m_session_list->pathsList->insertItem(
@@ -433,7 +433,7 @@ void CppHelperPluginConfigPage::moveSessionDirUp()
 
 void CppHelperPluginConfigPage::moveSessionDirDown()
 {
-    const int current = m_session_list->pathsList->currentRow();
+    const auto current = m_session_list->pathsList->currentRow();
     if (current < m_session_list->pathsList->count() - 1)
     {
         m_session_list->pathsList->insertItem(
@@ -459,7 +459,7 @@ void CppHelperPluginConfigPage::addSet()
     auto it = m_include_sets.find(m_favorite_sets->setsList->currentText());
     if (it != end(m_include_sets))
     {
-        KConfigGroup general(it->second.m_config, INCSET_GROUP_NAME);
+        auto general = KConfigGroup{it->second.m_config, INCSET_GROUP_NAME};
         auto dirs = general.readPathEntry(INCSET_DIRS_KEY, QStringList());
         if (!dirs.isEmpty())
         {
@@ -475,7 +475,7 @@ void CppHelperPluginConfigPage::removeSet()
     auto it = m_include_sets.find(m_favorite_sets->setsList->currentText());
     if (it != end(m_include_sets))
     {
-        QFile file(it->second.m_file);
+        QFile file{it->second.m_file};
         kDebug(DEBUG_AREA) << "Going to remove file" << file.fileName();
         if (!file.remove())
         {
@@ -500,15 +500,15 @@ void CppHelperPluginConfigPage::storeSet()
     auto set_name = m_favorite_sets->setsList->currentText();
     kDebug(DEBUG_AREA) << "Current set name:" << set_name;
 
-    KSharedConfigPtr cfg;
+    auto cfg = KSharedConfigPtr{};
     {
         auto it = m_include_sets.find(set_name);
         if (it == end(m_include_sets))
         {
-            auto filename = QString(QUrl::toPercentEncoding(set_name));
+            auto filename = QString{QUrl::toPercentEncoding(set_name)};
             auto incset_file = KStandardDirs::locateLocal(
                 "data"
-              , QString(INCSET_FILE_TPL).arg(filename)
+              , QString{INCSET_FILE_TPL}.arg(filename)
               , true
               );
             kDebug(DEBUG_AREA) << "Going to make a new incset file for it:" << incset_file;
@@ -517,8 +517,8 @@ void CppHelperPluginConfigPage::storeSet()
         else cfg = it->second.m_config;
     }
 
-    QStringList dirs;
-    for (int i = 0, last = m_session_list->pathsList->count(); i < last; ++i)
+    auto dirs = QStringList{};
+    for (auto i = 0, last = m_session_list->pathsList->count(); i < last; ++i)
         dirs << m_session_list->pathsList->item(i)->text();
     kDebug(DEBUG_AREA) << "Collected current paths:" << dirs;
 
@@ -554,7 +554,7 @@ void CppHelperPluginConfigPage::delGlobalIncludeDir()
 
 void CppHelperPluginConfigPage::moveGlobalDirUp()
 {
-    const int current = m_system_list->pathsList->currentRow();
+    const auto current = m_system_list->pathsList->currentRow();
     if (current)
     {
         m_system_list->pathsList->insertItem(
@@ -568,7 +568,7 @@ void CppHelperPluginConfigPage::moveGlobalDirUp()
 
 void CppHelperPluginConfigPage::moveGlobalDirDown()
 {
-    const int current = m_system_list->pathsList->currentRow();
+    const auto current = m_system_list->pathsList->currentRow();
     if (current < m_system_list->pathsList->count() - 1)
     {
         m_system_list->pathsList->insertItem(
@@ -622,7 +622,7 @@ void CppHelperPluginConfigPage::rebuildPCH()
 
 void CppHelperPluginConfigPage::pchHeaderChanged(const QString& filename)
 {
-    const bool is_valid_pch_file = isPresentAndReadable(filename);
+    const auto is_valid_pch_file = isPresentAndReadable(filename);
     kDebug(DEBUG_AREA) << "Check if PCH header file present and readable: "
       << filename << ", result=" << is_valid_pch_file;
     m_clang_config->openPchHeader->setEnabled(is_valid_pch_file);
@@ -657,7 +657,7 @@ void CppHelperPluginConfigPage::detectPredefinedCompilerPaths()
 void CppHelperPluginConfigPage::error(QProcess::ProcessError error)
 {
     const auto binary = getCurrentCompiler();
-    QString status_str;
+    auto status_str = QString{};
     switch (error)
     {
         case QProcess::FailedToStart: status_str = i18n("Process failed to start"); break;
@@ -701,15 +701,15 @@ void CppHelperPluginConfigPage::finished(int exit_code, QProcess::ExitStatus exi
     }
     // Split output by lines
     auto lines = m_error.split('\n');
-    bool collect_paths = false;
+    auto collect_paths = false;
     for (const auto& line : lines)
     {
-        if (line == QLatin1String("#include <...> search starts here:"))
+        if (line == QLatin1String{"#include <...> search starts here:"})
         {
             collect_paths = true;
             continue;
         }
-        if (line == QLatin1String("End of search list."))
+        if (line == QLatin1String{"End of search list."})
         {
             collect_paths = false;
             continue;
@@ -735,7 +735,7 @@ void CppHelperPluginConfigPage::readyReadStandardError()
 
 bool CppHelperPluginConfigPage::contains(const QString& dir, const KListWidget* list)
 {
-    for (int i = 0; i < list->count(); ++i)
+    for (auto i = 0; i < list->count(); ++i)
         if (list->item(i)->text() == dir)
             return true;
     return false;
@@ -749,7 +749,7 @@ void CppHelperPluginConfigPage::addDirTo(const KUrl& dir_uri, KListWidget* list)
         while (dir_str.endsWith('/'))                       // remove possible trailing slashes
             dir_str.remove(dir_str.length() - 1, 1);
         if (!contains(dir_str, list))                       // append only if given path not in a list already
-            new QListWidgetItem(dir_str, list);
+            new QListWidgetItem{dir_str, list};
     }
 }
 
@@ -758,15 +758,15 @@ QString CppHelperPluginConfigPage::findBinary(const QString& binary) const
     assert("binary name expected to be non-empty" && !binary.isEmpty());
 
     const auto* path_env = std::getenv("PATH");
-    QString result;
+    auto result = QString{};
     if (path_env)
     {
         /// \todo Is there any portable way to get paths separator?
-        auto paths = QString(path_env).split(':', QString::SkipEmptyParts);
+        auto paths = QString{path_env}.split(':', QString::SkipEmptyParts);
         for (const auto& path : paths)
         {
-            const QString full_path = path + '/' + binary;
-            const auto fi = QFileInfo(full_path);
+            const auto full_path = QString{path + '/' + binary};
+            const auto fi = QFileInfo{full_path};
             if (fi.exists() && fi.isExecutable())
             {
                 result = full_path;
@@ -779,7 +779,7 @@ QString CppHelperPluginConfigPage::findBinary(const QString& binary) const
 
 QString CppHelperPluginConfigPage::getCurrentCompiler() const
 {
-    QString binary;
+    auto binary = QString{};
     if (m_compiler_paths->gcc->isChecked())
         binary = findBinary(DEFAULT_GCC_BINARY);
     else if (m_compiler_paths->clang->isChecked())
@@ -803,7 +803,7 @@ void CppHelperPluginConfigPage::updateSets()
     // Find *.incset files
     auto sets = KGlobal::dirs()->findAllResources(
         "data"
-      , QString(INCSET_FILE_TPL).arg("*")
+      , QString{INCSET_FILE_TPL}.arg("*")
       , KStandardDirs::NoSearchOptions
       );
     kDebug(DEBUG_AREA) << "sets:" << sets;
@@ -813,8 +813,8 @@ void CppHelperPluginConfigPage::updateSets()
     {
         KSharedConfigPtr incset = KSharedConfig::openConfig(filename, KConfig::SimpleConfig);
         KConfigGroup general(incset, INCSET_GROUP_NAME);
-        auto set_name = general.readEntry(INCSET_NAME_KEY, QString());
-        auto dirs = general.readPathEntry(INCSET_DIRS_KEY, QStringList());
+        auto set_name = general.readEntry(INCSET_NAME_KEY, QString{});
+        auto dirs = general.readPathEntry(INCSET_DIRS_KEY, QStringList{});
         kDebug(DEBUG_AREA) << "set name: " << set_name;
         kDebug(DEBUG_AREA) << "dirs: " << dirs;
         m_include_sets[set_name] = IncludeSetInfo{incset, filename};
@@ -830,8 +830,8 @@ void CppHelperPluginConfigPage::updateSuggestions()
     // Obtain a list of currecntly opened documents
     auto documents = m_plugin->application()->documentManager()->documents();
     // Collect paths
-    QStringList dirs;
-    const bool should_check_vcs = m_favorite_sets->vcsOnly->isChecked();
+    auto dirs = QStringList{};
+    const auto should_check_vcs = m_favorite_sets->vcsOnly->isChecked();
     for (auto* current_doc : documents)
     {
         // Get current document's URI
@@ -882,8 +882,8 @@ void CppHelperPluginConfigPage::addEmptySanitizeRule()
 
     const auto row = m_completion_settings->sanitizeRules->rowCount();
     m_completion_settings->sanitizeRules->insertRow(row);
-    m_completion_settings->sanitizeRules->setItem(row, 0, new QTableWidgetItem());
-    m_completion_settings->sanitizeRules->setItem(row, 1, new QTableWidgetItem());
+    m_completion_settings->sanitizeRules->setItem(row, 0, new QTableWidgetItem{});
+    m_completion_settings->sanitizeRules->setItem(row, 1, new QTableWidgetItem{});
 }
 
 void CppHelperPluginConfigPage::removeSanitizeRule()
@@ -908,7 +908,7 @@ void CppHelperPluginConfigPage::swapRuleRows(const int src, const int dst)
 
 void CppHelperPluginConfigPage::moveSanitizeRuleUp()
 {
-    const int current = m_completion_settings->sanitizeRules->currentRow();
+    const auto current = m_completion_settings->sanitizeRules->currentRow();
     if (current)
     {
         kDebug(DEBUG_AREA) << "Current rule row " << current;
@@ -919,7 +919,7 @@ void CppHelperPluginConfigPage::moveSanitizeRuleUp()
 
 void CppHelperPluginConfigPage::moveSanitizeRuleDown()
 {
-    const int current = m_completion_settings->sanitizeRules->currentRow();
+    const auto current = m_completion_settings->sanitizeRules->currentRow();
     if (current < m_completion_settings->sanitizeRules->rowCount() - 1)
     {
         kDebug(DEBUG_AREA) << "Current rule row " << current;
@@ -936,13 +936,13 @@ std::pair<bool, QString> CppHelperPluginConfigPage::isSanitizeRuleValid(
     if (!column)                                            // Only 1st column can be validated...
     {
         auto* item = m_completion_settings->sanitizeRules->item(row, column);
-        auto expr = QRegExp(item->text());
+        auto expr = QRegExp{item->text()};
         kDebug(DEBUG_AREA) << "Validate regex text: " << item->text() << ", pattern text:" << expr.pattern();
         return std::make_pair(expr.isValid(), expr.errorString());
     }
     /// \todo Make sure that \e replace part contains valid number of
     /// capture contexts...
-    return std::make_pair(true, QString());
+    return std::make_pair(true, QString{});
 }
 
 void CppHelperPluginConfigPage::validateSanitizeRule(const int row, const int column)
