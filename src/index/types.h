@@ -42,8 +42,10 @@ typedef Xapian::docid docid;
 
 class docref
 {
-    docref() = default;
-    docref(dbid id1, docid id2)
+public:
+    constexpr docref() : m_as_long{0} {}
+
+    constexpr docref(const dbid id1, const docid id2)
       : m_db_id{id1}
       , m_doc_id{id2}
     {}
@@ -57,6 +59,11 @@ class docref
         return m_doc_id;
     }
 
+    bool is_valid() const
+    {
+        return m_db_id && m_doc_id;
+    }
+
     static std::string to_string(docref ref)
     {
         return serialize(ref.m_as_long);
@@ -68,13 +75,13 @@ class docref
     }
 
 private:
-    explicit docref(uint64_t val)
+    constexpr explicit docref(uint64_t val)
       : m_as_long{val}
     {}
 
     union
     {
-        uint64_t m_as_long = {0};
+        uint64_t m_as_long;
         struct
         {
             dbid m_db_id;

@@ -73,6 +73,8 @@ public:
         /// Make a \c record from parts
         Record(clang::location&&, QString&&, type) noexcept;
         /// Make a \c record w/ message and given type (and empty location)
+        Record(const QString&, type) noexcept;
+        /// Make a \c record w/ message and given type (and empty location)
         Record(QString&&, type) noexcept;
         /// Move ctor
         Record(Record&&) noexcept;
@@ -114,6 +116,12 @@ public Q_SLOTS:
 private:
     std::deque<Record> m_records;                           ///< Stored records
 };
+
+inline DiagnosticMessagesModel::Record::Record(const QString& text, Record::type type) noexcept
+  : m_text(text)
+  , m_type(type)
+{
+}
 
 inline DiagnosticMessagesModel::Record::Record(QString&& text, Record::type type) noexcept
   : m_type(type)

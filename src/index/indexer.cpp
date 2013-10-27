@@ -89,11 +89,12 @@ inline Xapian::termpos make_term_position(const clang::location& loc)
 //BEGIN worker members
 struct worker::container_info
 {
-    Xapian::docid m_id;                                     ///< ID of the container in DB
+    docref m_ref;                                           ///< ref to a container ID in a current DB
 };
 
 worker::worker(indexer* const parent)
-  : m_indexer(parent)
+  : m_indexer{parent}
+  , m_is_cancelled{false}
 {
 }
 
@@ -213,7 +214,7 @@ bool worker::is_look_like_cpp_source(const QFileInfo& fi)
     return result;
 }
 
-CXIdxClientContainer worker::update_client_container(const Xapian::docid id)
+CXIdxClientContainer worker::update_client_container(const docref id)
 {
     auto& ptr = *m_containers.emplace(end(m_containers), new container_info{id});
     return CXIdxClientContainer(ptr.get());
@@ -251,7 +252,7 @@ CXIdxClientASTFile worker::on_include_ast_file(CXClientData client_data, const C
 CXIdxClientContainer worker::on_translation_unit(CXClientData client_data, void*)
 {
     auto* const wrkr = static_cast<worker*>(client_data);
-    return CXIdxClientContainer(wrkr->update_client_container(IVALID_DOCUMENT_ID));
+    return CXIdxClientContainer(wrkr->update_client_container(docref{}));
 }
 
 void worker::on_declaration(CXClientData client_data, const CXIdxDeclInfo* info)
@@ -278,12 +279,12 @@ void worker::on_declaration(CXClientData client_data, const CXIdxDeclInfo* info)
     if (info->semanticContainer)
     {
         const auto* const container = reinterpret_cast<const container_info* const>(info->semanticContainer);
-        doc.add_value(value_slot::SEMANTIC_CONTAINER, Xapian::sortable_serialise(container->m_id));
+        doc.add_value(value_slot::SEMANTIC_CONTAINER, docref::to_string(container->m_ref));
     }
     if (info->lexicalContainer)
     {
         const auto* const container = reinterpret_cast<const container_info* const>(info->lexicalContainer);
-        doc.add_value(value_slot::LEXICAL_CONTAINER, Xapian::sortable_serialise(container->m_id));
+        doc.add_value(value_slot::LEXICAL_CONTAINER, docref::to_string(container->m_ref));
     }
     if (info->declAsContainer)
         doc.add_boolean_term(term::XCONTAINER);
@@ -294,11 +295,12 @@ void worker::on_declaration(CXClientData client_data, const CXIdxDeclInfo* info)
     // Add the document to the DB finally
     auto docid = wrkr->m_indexer->m_db.add_document(doc);
 
+
     // Make a new container if necessary
     if (info->declAsContainer)
         clang_index_setClientContainer(
             info->declAsContainer
-          , wrkr->update_client_container(docid)
+          , wrkr->update_client_container({wrkr->m_indexer->m_db.id(), docid})
           );
 }
 

@@ -65,6 +65,8 @@ public:
     template <typename AppendFunctor>
     void appendNewRow(int, AppendFunctor);                  ///< Add a new empty row
 
+    void refreshRow(int);                                   ///< Notify the model about data changes
+
 private:
     enum column
     {

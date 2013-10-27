@@ -3,3 +3,4 @@ name=Test
 path=@CMAKE_CURRENT_BINARY_DIR@/data/fake.db
 comment=Sample database for unit tests
 targets[$e]=@CMAKE_SOURCE_DIR@/src/test/data/sample_files
+uuid=deadcafe-0427-4c42-a97c-3d1f4ffe8fde

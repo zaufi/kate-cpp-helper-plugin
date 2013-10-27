@@ -31,6 +31,7 @@
 #include <src/clang/disposable.h>
 #include <src/clang/location.h>
 #include <src/index/database.h>
+#include <src/index/types.h>
 
 // Standard includes
 #include <KDE/KUrl>
@@ -50,7 +51,7 @@ class worker : public QObject
     Q_OBJECT
 
 public:
-    explicit worker(indexer* const);
+    explicit worker(indexer*);
     ~worker();
 
     bool is_cancelled() const;
@@ -72,7 +73,7 @@ private:
     void handle_file(const QString&);
     void handle_directory(const QString&);
     bool is_look_like_cpp_source(const QFileInfo&);
-    CXIdxClientContainer update_client_container(Xapian::docid);
+    CXIdxClientContainer update_client_container(docref);
 
     static int on_abort_cb(CXClientData, void*);
     static void on_diagnostic_cb(CXClientData, CXDiagnosticSet, void*);
@@ -105,7 +106,7 @@ public:
       , running
     };
     /// Construct an indexer from database path
-    explicit indexer(dbid, const std::string&);
+    indexer(dbid, const std::string&);
 
     indexer& set_compiler_options(std::vector<const char*>&&);
     indexer& add_target(const KUrl&);

@@ -130,5 +130,6 @@ void updateListsFromFS(
 
 /// Find given header withing list of paths
 QStringList findHeader(const QString&, const QStringList&, const QStringList&);
+
 }                                                           // namespace kate
 // kate: hl C++11/Qt4;

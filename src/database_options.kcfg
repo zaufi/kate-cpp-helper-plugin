@@ -7,16 +7,19 @@
     <kcfgfile arg="true" />
     <group name="options">
         <entry name="name" type="String">
-            <label>Index collection name.</label>
+            <label>Index collection name</label>
         </entry>
         <entry name="comment" type="String">
-            <label>Comment.</label>
+            <label>Comment</label>
+        </entry>
+        <entry name="uuid" type="String">
+            <label>UUID</label>
         </entry>
         <entry name="path" type="Path">
-            <label>Path to an indexer database.</label>
+            <label>Path to an indexer database</label>
         </entry>
         <entry name="targets" type="PathList">
-            <label>Targets to be indexed.</label>
+            <label>Targets to be indexed</label>
         </entry>
     </group>
 </kcfg>

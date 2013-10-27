@@ -63,7 +63,7 @@ typename std::enable_if<
   , T
   >::type deserialize(const std::string& raw)
 {
-    assert("Size mismatch" && raw.size() == sizeof(T));
+    assert("Size mismatch" && sizeof(T) <= raw.size());
     union
     {
         T as_int;

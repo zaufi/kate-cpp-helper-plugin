@@ -155,6 +155,9 @@
            </item>
            <item>
             <widget class="QTableView" name="databases">
+             <property name="toolTip">
+              <string>List of available index collections</string>
+             </property>
              <property name="editTriggers">
               <set>QAbstractItemView::DoubleClicked|QAbstractItemView::EditKeyPressed</set>
              </property>
@@ -181,23 +184,22 @@
            <item>
             <layout class="QHBoxLayout" name="hl_2_2">
              <item>
-              <widget class="QPushButton" name="newDatabase">
+              <widget class="KPushButton" name="newDatabase">
+               <property name="toolTip">
+                <string>Add new index collection</string>
+               </property>
                <property name="text">
                 <string>New</string>
                </property>
               </widget>
              </item>
              <item>
-              <widget class="QPushButton" name="deleteDatabase">
+              <widget class="KPushButton" name="deleteDatabase">
+               <property name="toolTip">
+                <string>Remove selected index</string>
+               </property>
                <property name="text">
                 <string>Delete</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QPushButton" name="reindexDatabase">
-               <property name="text">
-                <string>Reindex</string>
                </property>
               </widget>
              </item>
@@ -215,7 +217,23 @@
               </spacer>
              </item>
              <item>
+              <widget class="KPushButton" name="reindexDatabase">
+               <property name="toolTip">
+                <string>Start rebuilding selected index</string>
+               </property>
+               <property name="text">
+                <string>Reindex</string>
+               </property>
+              </widget>
+             </item>
+             <item>
               <widget class="KPushButton" name="stopIndexer">
+               <property name="enabled">
+                <bool>false</bool>
+               </property>
+               <property name="toolTip">
+                <string>Stop indexing</string>
+               </property>
                <property name="text">
                 <string>Stop</string>
                </property>
@@ -236,6 +254,9 @@
            </item>
            <item>
             <widget class="QListView" name="targets">
+             <property name="toolTip">
+              <string>List of targets to be indexed</string>
+             </property>
              <property name="editTriggers">
               <set>QAbstractItemView::NoEditTriggers</set>
              </property>
@@ -250,20 +271,6 @@
            <item>
             <layout class="QHBoxLayout" name="hl_2_4">
              <item>
-              <widget class="QPushButton" name="addTarget">
-               <property name="text">
-                <string>Add</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QPushButton" name="removeTarget">
-               <property name="text">
-                <string>Remove</string>
-               </property>
-              </widget>
-             </item>
-             <item>
               <spacer name="spacer_2">
                <property name="orientation">
                 <enum>Qt::Horizontal</enum>
@@ -275,6 +282,26 @@
                 </size>
                </property>
               </spacer>
+             </item>
+             <item>
+              <widget class="KPushButton" name="addTarget">
+               <property name="toolTip">
+                <string>Add new target to be indexed</string>
+               </property>
+               <property name="text">
+                <string>Add</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="KPushButton" name="removeTarget">
+               <property name="toolTip">
+                <string>Remove index target</string>
+               </property>
+               <property name="text">
+                <string>Remove</string>
+               </property>
+              </widget>
              </item>
             </layout>
            </item>

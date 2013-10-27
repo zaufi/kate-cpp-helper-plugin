@@ -17,6 +17,7 @@ target_link_libraries(
     unit_tests
     # NOTE Due a single pass GNU linker `sharedcode4testsmoc` target (library)
     # must be specified twice: before and after `sharedcode4tests`
+    sharedcode4tests
     sharedcode4testsmoc
     sharedcode4tests
     sharedcode4testsmoc

@@ -37,6 +37,7 @@
 
 // Standard includes
 #include <boost/filesystem/path.hpp>
+#include <boost/uuid/uuid.hpp>
 #include <KDE/KUrl>
 #include <QtCore/QObject>
 #include <QtCore/QStringList>
@@ -49,7 +50,9 @@ class QAbstractTableModel;
 class QAbstractListModel;
 class QModelIndex;
 
-namespace kate {
+namespace kate { namespace index {
+class indexer;                                              // fwd decl
+}                                                           // namespace index
 
 /**
  * \brief Manage databases used by current session
@@ -96,16 +99,22 @@ public Q_SLOTS:
     void enable(const QString&, bool);
     void createNewIndex();
     void removeCurrentIndex();
+    void stopIndexer();
     void rebuildCurrentIndex();
+    void rebuildFinished();
     void refreshCurrentTargets(const QModelIndex&);
     void selectCurrentTarget(const QModelIndex&);
     void addNewTarget();
     void removeCurrentTarget();
+    void reportCurrentFile(QString);
+    void reportIndexingError(clang::location, QString);
 
 Q_SIGNALS:
     void indexStatusChanged(const QString&, bool);
     void indexNameChanged(const QString&, const QString&);
     void diagnosticMessage(DiagnosticMessagesModel::Record);
+    void reindexingStarted(const QString&);
+    void reindexingFinished(const QString&);
 
 private:
     friend class IndicesTableModel;
@@ -123,14 +132,17 @@ private:
         std::unique_ptr<DatabaseOptions> m_options;
         std::unique_ptr<index::ro::database> m_db;
         status m_status = {status::unknown};
+        boost::uuids::uuid m_id;
         bool m_enabled = {false};
 
         database_state() = default;                         ///< Default initialization
         database_state(database_state&&) = default;         ///< Default move constructor
         /// Default move-assign operator
         database_state& operator=(database_state&&) = default;
+        ~database_state();
 
         bool isOk() const;
+        void loadMetaFrom(const QString&);
     };
 
     typedef std::vector<database_state> collections_type;
@@ -147,8 +159,10 @@ private:
     collections_type m_collections;
     QStringList m_enabled_list;
     clang::compiler_options m_compiler_options;
+    std::unique_ptr<index::indexer> m_indexer;
     int m_last_selected_index;
     int m_last_selected_target;
+    int m_indexing_in_progress;
 };
 
 struct DatabaseManager::exception::invalid_manifest : public DatabaseManager::exception

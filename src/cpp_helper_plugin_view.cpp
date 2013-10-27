@@ -131,6 +131,7 @@ CppHelperPluginView::CppHelperPluginView(
     //BEGIN Setup toolview
     m_tool_view_interior->setupUi(new QWidget(m_tool_view.get()));
     m_tool_view->installEventFilter(this);
+    m_tool_view_interior->databases->installEventFilter(this);
 
     // Diagnostic messages tab
     m_tool_view_interior->diagnosticMessages->setModel(&m_diagnostic_data);
@@ -207,6 +208,12 @@ CppHelperPluginView::CppHelperPluginView(
       , SLOT(rebuildCurrentIndex())
       );
     connect(
+        m_tool_view_interior->stopIndexer
+      , SIGNAL(clicked())
+      , &m_plugin->databaseManager()
+      , SLOT(stopIndexer())
+      );
+    connect(
         m_tool_view_interior->databases
       , SIGNAL(activated(const QModelIndex&))
       , &m_plugin->databaseManager()
@@ -235,6 +242,18 @@ CppHelperPluginView::CppHelperPluginView(
       , SIGNAL(diagnosticMessage(DiagnosticMessagesModel::Record))
       , this
       , SLOT(addDiagnosticMessage(DiagnosticMessagesModel::Record))
+      );
+    connect(
+        &m_plugin->databaseManager()
+      , SIGNAL(reindexingStarted(const QString&))
+      , this
+      , SLOT(reindexingStarted(const QString&))
+      );
+    connect(
+        &m_plugin->databaseManager()
+      , SIGNAL(reindexingFinished(const QString&))
+      , this
+      , SLOT(reindexingFinished(const QString&))
       );
 
 
@@ -956,6 +975,10 @@ bool CppHelperPluginView::eventFilter(QObject* obj, QEvent* event)
             event->accept();
             return true;
         }
+        if (obj == m_tool_view_interior->databases)
+        {
+            kDebug(DEBUG_AREA) << "----- DATABASES EVENT! --- ";
+        }
     }
     return QObject::eventFilter(obj, event);
 }
@@ -1307,6 +1330,26 @@ void CppHelperPluginView::updateCppActionsAvailability(const bool enable_cpp_spe
         m_copy_include->setText(i18n("Copy #include to Clipboard"));
     else
         m_copy_include->setText(i18n("Copy File URI to Clipboard"));
+}
+
+void CppHelperPluginView::reindexingStarted(const QString& msg)
+{
+    addDiagnosticMessage(
+        DiagnosticMessagesModel::Record{msg, DiagnosticMessagesModel::Record::type::info}
+      );
+    // Disable rebuild index button
+    m_tool_view_interior->reindexDatabase->setEnabled(false);
+    m_tool_view_interior->stopIndexer->setEnabled(true);
+}
+
+void CppHelperPluginView::reindexingFinished(const QString& msg)
+{
+    addDiagnosticMessage(
+        DiagnosticMessagesModel::Record{msg, DiagnosticMessagesModel::Record::type::info}
+      );
+    // Enable rebuild index button
+    m_tool_view_interior->reindexDatabase->setEnabled(true);
+    m_tool_view_interior->stopIndexer->setEnabled(false);
 }
 
 //END CppHelperPluginView

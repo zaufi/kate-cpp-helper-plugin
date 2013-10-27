@@ -167,6 +167,7 @@ void CppHelperPlugin::readSessionConfig(KConfigBase* cfg, const QString& groupPr
     config().readSessionConfig(cfg, groupPrefix);
     buildPCHIfAbsent(false);
     m_db_mgr.reset(config().enabledIndices());
+    propagateCompilerOptionsToIndexer();
 }
 
 void CppHelperPlugin::writeSessionConfig(KConfigBase* cfg, const QString& groupPrefix)
@@ -363,6 +364,8 @@ void CppHelperPlugin::openDocument(const KUrl& pch_header)
  */
 void CppHelperPlugin::makePCHFile(const KUrl& filename)
 {
+    invalidateTranslationUnits();
+
     // Show busy mouse pointer
     QApplication::setOverrideCursor(QCursor(Qt::BusyCursor));
 

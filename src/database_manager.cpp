@@ -27,15 +27,22 @@
 
 // Project specific includes
 #include <src/database_manager.h>
+#include <src/index/indexer.h>
+#if 0
+#include <src/scope_exit.hh>
+#endif
+#include <src/index/utils.h>
 
 // Standard includes
 #include <boost/filesystem/operations.hpp>
 #include <boost/uuid/random_generator.hpp>
+#include <boost/uuid/string_generator.hpp>
 #include <boost/uuid/uuid_io.hpp>
 #include <KDE/KDebug>
 #include <KDE/KDirSelectDialog>
 #include <KDE/KGlobal>
 #include <KDE/KLocalizedString>
+#include <KDE/KPassivePopup>
 #include <KDE/KSharedConfig>
 #include <KDE/KSharedConfigPtr>
 #include <KDE/KStandardDirs>
@@ -49,6 +56,7 @@ namespace kate { namespace {
 /// \todo Make a constant w/ single declaration place for this path
 const QString DATABASES_DIR = "plugins/katecpphelperplugin/indexed-collections/";
 const char* const DB_MANIFEST_FILE = "manifest";
+const boost::uuids::string_generator UUID_PARSER;
 boost::uuids::random_generator UUID_GEN;
 namespace meta {
 const QString GROUP_NAME = "options";
@@ -59,9 +67,21 @@ const QString COMMENT = "comment";
 const QString TARGETS = "targets";
 }}}                                                         // namespace key, meta, anonymous namespace
 
+DatabaseManager::database_state::~database_state()
+{
+    if (m_options)
+        m_options->writeConfig();
+}
+
 bool DatabaseManager::database_state::isOk() const
 {
     return m_status == status::ok;
+}
+
+void DatabaseManager::database_state::loadMetaFrom(const QString& filename)
+{
+    auto db_meta = KSharedConfig::openConfig(filename, KConfig::SimpleConfig);
+    m_options.reset(new DatabaseOptions{db_meta});
 }
 
 DatabaseManager::DatabaseManager()
@@ -69,6 +89,7 @@ DatabaseManager::DatabaseManager()
   , m_targets_model{*this}
   , m_last_selected_index{-1}
   , m_last_selected_target{-1}
+  , m_indexing_in_progress{-1}
 {
 }
 
@@ -115,20 +136,22 @@ void DatabaseManager::reset(const QStringList& enabled_list, const KUrl& base_di
             auto state = tryLoadDatabaseMeta(it->path());
             assert("Sanity check" && state.m_options);
             auto name = state.m_options->name();
+            bool is_enabled;
             if (m_enabled_list.indexOf(name) != -1)
             {
                 const auto& db_path = state.m_options->path().toUtf8().constData();
                 state.m_db.reset(new index::ro::database(db_path));
-                state.m_enabled = true;
+                is_enabled = true;
                 state.m_status = database_state::status::ok;
             }
             else
             {
                 state.m_status = database_state::status::unknown;
-                state.m_enabled = false;
+                is_enabled = false;
             }
+            state.m_enabled = is_enabled;
             m_collections.emplace_back(std::move(state));
-            if (state.m_enabled)
+            if (is_enabled)
                 Q_EMIT(indexStatusChanged(name, true));
         }
     }
@@ -174,7 +197,8 @@ void DatabaseManager::enable(const int idx, const bool flag)
 
 void DatabaseManager::createNewIndex()
 {
-    const auto id = QString{to_string(UUID_GEN()).c_str()};
+    const auto uuid = UUID_GEN();
+    const auto id = QString{to_string(uuid).c_str()};
     auto db_path = KUrl{m_base_dir};
     db_path.addPath(id);
     kDebug(DEBUG_AREA) << "Add new collection to" << db_path;
@@ -184,12 +208,13 @@ void DatabaseManager::createNewIndex()
     }
     auto meta_path = db_path;
     meta_path.addPath(DB_MANIFEST_FILE);
-    auto db_meta = KSharedConfig::openConfig(meta_path.toLocalFile(), KConfig::SimpleConfig);
 
     database_state result;
-    result.m_options.reset(new DatabaseOptions{db_meta});
+    result.loadMetaFrom(meta_path.toLocalFile());
     result.m_options->setPath(db_path.toLocalFile());
     result.m_options->setName("New collection");
+    result.m_options->setUuid(id);
+    result.m_options->writeConfig();
 
     m_indices_model.appendNewRow(
         m_collections.size()
@@ -205,9 +230,135 @@ void DatabaseManager::removeCurrentIndex()
 
 }
 
-void DatabaseManager::rebuildCurrentIndex()
+void DatabaseManager::stopIndexer()
 {
 
+}
+
+void DatabaseManager::rebuildCurrentIndex()
+{
+    // Check if any index has been selected, and no other reindexing in progress
+    if (m_last_selected_index == -1)
+    {
+        kDebug(DEBUG_AREA) << "Nothing selected...";
+        /// \todo Make some spam?
+        return;
+    }
+    if (m_indexer)
+    {
+        kDebug(DEBUG_AREA) << "Reindexing already in progress...";
+        assert("Sanity check" && m_indexing_in_progress != -1);
+        /// \todo Make some spam?
+        return;
+    }
+
+    auto& state = m_collections[m_last_selected_index];
+    const auto& name = state.m_options->name();
+    Q_EMIT(reindexingStarted(QString{"Starting to rebuild index: %1"}.arg(name)));
+
+    // Make sure DB path + ".reindexing" suffix doesn't exits
+    boost::system::error_code error;
+    auto reindexing_db_path = boost::filesystem::path{
+        state.m_options->path().toUtf8().constData()
+      }.replace_extension("reindexing");
+    boost::filesystem::remove_all(reindexing_db_path, error);
+    if (error)
+    {
+        Q_EMIT(reindexingFinished(QString{"Index rebuilding failed: %1"}.arg(name)));
+        /// \todo Make some spam?
+        return;
+    }
+
+    // Make a new indexer and provide it w/ targets to scan
+    auto db_id = index::make_dbid(state.m_id);
+    m_indexer.reset(
+        new index::indexer{db_id, reindexing_db_path.string()}
+      );
+    m_indexer->set_compiler_options(m_compiler_options.get());
+
+    if (state.m_options->targets().empty())
+    {
+        m_indexer.reset();
+        Q_EMIT(reindexingFinished(QString{"Index rebuilding failed: %1"}.arg(name)));
+        KPassivePopup::message(
+            i18n("Error")
+          , i18n(
+              "No index targets specified for <icode>%1</icode>"
+            , name
+            )
+          , qobject_cast<QWidget*>(this)
+          );
+        /// \todo Make some spam
+        return;
+    }
+
+    for (auto& tgt : state.m_options->targets())
+        m_indexer->add_target(tgt);
+
+    // Subscribe self for indexer events
+    connect(
+        m_indexer.get()
+      , SIGNAL(finished())
+      , this
+      , SLOT(rebuildFinished())
+      );
+    m_indices_model.refreshRow(m_indexing_in_progress = m_last_selected_index);
+
+    // Shutdown possible opened DB and change status
+    state.m_db.reset();
+    state.m_status = database_state::status::reindexing;
+
+    // Go!
+    m_indexer->start();
+}
+
+void DatabaseManager::rebuildFinished()
+{
+    assert("Sanity check" && m_indexing_in_progress != -1);
+    auto& state = m_collections[m_indexing_in_progress];
+    m_indexer.reset();                                      // CLose DBs well
+
+    // Enable DB in a table view
+    state.m_status = database_state::status::ok;
+    auto reindexed_db = m_indexing_in_progress;
+    m_indexing_in_progress = -1;
+    m_indices_model.refreshRow(reindexed_db);
+
+    // Going to replace old index w/ a new one...
+    const auto db_path = boost::filesystem::path{state.m_options->path().toUtf8().constData()};
+    auto reindexing_db_path = db_path;
+    reindexing_db_path.replace_extension("reindexing");
+
+    boost::system::error_code error;
+    // Keep database meta
+    state.m_options.reset();                                // Flush meta
+    auto meta_fileanme = db_path / DB_MANIFEST_FILE;
+    boost::filesystem::copy(meta_fileanme, reindexing_db_path / DB_MANIFEST_FILE, error);
+    if (error)
+    {
+        /// \todo Make some spam?
+        return;
+    }
+    // Remove old index
+    boost::filesystem::remove_all(db_path, error);
+    if (error)
+    {
+        /// \todo Make some spam?
+        return;
+    }
+    // Move new index instead
+    boost::filesystem::rename(reindexing_db_path, db_path, error);
+    if (error)
+    {
+        /// \todo Make some spam?
+        return;
+    }
+    // Reload meta
+    state.loadMetaFrom(meta_fileanme.string().c_str());
+
+    // Notify that we've done...
+    const auto& name = state.m_options->name();
+    Q_EMIT(reindexingFinished(QString{"Index rebuilding has finished: %1"}.arg(name)));
 }
 
 void DatabaseManager::refreshCurrentTargets(const QModelIndex& index)
@@ -255,7 +406,8 @@ void DatabaseManager::addNewTarget()
       );
     if (target.isValid() && !target.isEmpty())
     {
-        auto targets = m_collections[m_last_selected_index].m_options->targets();
+        auto& state = m_collections[m_last_selected_index];
+        auto targets = state.m_options->targets();
         const auto& target_path = target.toLocalFile();
         // Do not allow duplicates!
         if (targets.indexOf(target_path) != -1)
@@ -274,6 +426,7 @@ void DatabaseManager::addNewTarget()
           );
         assert("Sanity check" && targets.size() == sz + 1);
         m_last_selected_target = targets.size() - 1;
+        state.m_options->writeConfig();
         // Make some SPAM
 #if 0
         auto msg = DiagnosticMessagesModel::Record{
@@ -282,7 +435,6 @@ void DatabaseManager::addNewTarget()
           , DiagnosticMessagesModel::Record::type::debug
           }
 #endif
-
     }
 }
 
@@ -299,10 +451,12 @@ void DatabaseManager::removeCurrentTarget()
     if (m_last_selected_target == -1)
         return;
 
-    auto targets = m_collections[m_last_selected_index].m_options->targets();
+    auto& state = m_collections[m_last_selected_index];
+    auto targets = state.m_options->targets();
     const auto sz = targets.size();
     assert("Index is out of range" && m_last_selected_target < sz);
 
+    kDebug(DEBUG_AREA) << "Remove target [" << state.m_options->name() << "]: " << targets[m_last_selected_target];
     m_targets_model.removeRow(
         m_last_selected_target
       , [this, &targets](const int idx)
@@ -311,6 +465,7 @@ void DatabaseManager::removeCurrentTarget()
             m_collections[m_last_selected_index].m_options->setTargets(targets);
         }
       );
+    state.m_options->writeConfig();
 
     assert("Sanity check" && targets.size() == sz - 1);
 
@@ -326,16 +481,17 @@ void DatabaseManager::removeCurrentTarget()
 auto DatabaseManager::tryLoadDatabaseMeta(const boost::filesystem::path& manifest) -> database_state
 {
     auto filename = QString{manifest.c_str()};
-    auto db_meta = KSharedConfig::openConfig(filename, KConfig::SimpleConfig);
 
     database_state result;
-    result.m_options.reset(new DatabaseOptions{db_meta});
+    result.loadMetaFrom(filename);
+    kDebug(DEBUG_AREA) << "Trying to parse UUID:" << result.m_options->uuid();
+    result.m_id = UUID_PARSER(result.m_options->uuid().toUtf8().constData());
 
     auto db_info = QFileInfo{result.m_options->path()};
     if (!db_info.exists() || !db_info.isDir())
     {
         throw exception::invalid_manifest(
-            std::string{"DB path doesn't exists or not a dir: "} + result.m_options->path().toUtf8().constData()
+            std::string{"DB path doesn't exists or not a dir: %1"} + result.m_options->path().toUtf8().constData()
           );
     }
 
@@ -347,6 +503,7 @@ void DatabaseManager::renameCollection(int idx, const QString& new_name)
 {
     auto old_name = m_collections[idx].m_options->name();
     m_collections[idx].m_options->setName(new_name);
+    m_collections[idx].m_options->writeConfig();
     idx = m_enabled_list.indexOf(old_name);
     if (idx != -1)
     {
@@ -361,6 +518,25 @@ KUrl DatabaseManager::getDefaultBaseDir()
 {
     auto base_dir = KGlobal::dirs()->locateLocal("appdata", DATABASES_DIR, true);
     return base_dir;
+}
+
+void DatabaseManager::reportCurrentFile(QString msg)
+{
+    auto report = DiagnosticMessagesModel::Record{
+        QString{"  indexing %1 ..."}.arg(msg)
+      , DiagnosticMessagesModel::Record::type::info
+      };
+    Q_EMIT(diagnosticMessage(report));
+}
+
+void DatabaseManager::reportIndexingError(clang::location loc, QString msg)
+{
+    auto report = DiagnosticMessagesModel::Record{
+        std::move(loc)
+      , std::move(msg)
+      , DiagnosticMessagesModel::Record::type::error
+      };
+    Q_EMIT(diagnosticMessage(report));
 }
 
 }                                                           // namespace kate

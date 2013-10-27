@@ -99,6 +99,8 @@ private Q_SLOTS:
     void diagnosticMessageActivated(const QModelIndex&);
     void onDocumentClose(KTextEditor::Document*);
     void updateCppActionsAvailability();                    ///< Enable/disable C++ specific actions in UI
+    void reindexingStarted(const QString&);
+    void reindexingFinished(const QString&);
 
 #if 0
     void aboutToShow();

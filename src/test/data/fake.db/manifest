@@ -3,3 +3,4 @@ name=Test
 path=/work/GitHub/build/kate-cpp-helper-plugin/src/test/data/fake.db
 comment=Sample database for unit tests
 targets[$e]=/work/GitHub/kate-cpp-helper-plugin/src/test/data/sample_files
+uuid=deadcafe-0427-4c42-a97c-3d1f4ffe8fde

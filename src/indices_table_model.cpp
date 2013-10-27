@@ -103,10 +103,13 @@ QVariant IndicesTableModel::headerData(
 
 Qt::ItemFlags IndicesTableModel::flags(const QModelIndex& index) const
 {
-    auto result = Qt::ItemIsSelectable | Qt::ItemIsEnabled;
+    int result = Qt::ItemIsSelectable;
+    // Disable reindexing in progress database
+    if (m_db_mgr.m_indexing_in_progress == -1 || index.row() != m_db_mgr.m_indexing_in_progress)
+        result |= Qt::ItemIsEnabled;
     if (index.column() == column::NAME)
         result |= Qt::ItemIsEditable | Qt::ItemIsUserCheckable;
-    return result;
+    return static_cast<Qt::ItemFlag>(result);
 }
 
 bool IndicesTableModel::setData(const QModelIndex& index, const QVariant& value, const int role)
@@ -125,6 +128,12 @@ bool IndicesTableModel::setData(const QModelIndex& index, const QVariant& value,
         m_db_mgr.enable(index.row(), flag);
     }
     return true;
+}
+
+void IndicesTableModel::refreshRow(const int row)
+{
+    auto index = createIndex(row, column::NAME);
+    Q_EMIT(dataChanged(index, index));
 }
 
 }                                                           // namespace kate
