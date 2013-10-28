@@ -11,6 +11,7 @@ add_boost_tests(
         header_files_cache_tester.cpp
         translation_unit_tester.cpp
         database_manager_tester.cpp
+        serialize_tester.cpp
   )
 
 target_link_libraries(

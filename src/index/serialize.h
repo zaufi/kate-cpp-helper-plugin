@@ -51,9 +51,7 @@ typename std::enable_if<
         char buf[sizeof(T)];
     };
     as_int = value;
-    auto result = std::string{sizeof(as_int), char{}};
-    std::copy(buf, buf + sizeof(T), begin(result));
-    return result;
+    return std::string{buf, buf + sizeof(T)};
 }
 
 /// Simple deserialization helper for integral types
@@ -63,7 +61,7 @@ typename std::enable_if<
   , T
   >::type deserialize(const std::string& raw)
 {
-    assert("Size mismatch" && sizeof(T) <= raw.size());
+    assert("Size mismatch" && raw.size() == sizeof(T));
     union
     {
         T as_int;

@@ -37,6 +37,34 @@
        </item>
       </layout>
      </widget>
+     <widget class="QWidget" name="searchTab">
+      <attribute name="title">
+       <string>Search</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="vl_4_1">
+       <item>
+        <layout class="QHBoxLayout" name="hl_0_1">
+         <item>
+          <widget class="KLineEdit" name="searchQuery">
+           <property name="placeholderText">
+            <string>Enter search query</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="KPushButton" name="search">
+           <property name="text">
+            <string>Search</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <widget class="QTableView" name="searchResults"/>
+       </item>
+      </layout>
+     </widget>
      <widget class="QWidget" name="includes">
       <attribute name="title">
        <string>#include Explorer</string>

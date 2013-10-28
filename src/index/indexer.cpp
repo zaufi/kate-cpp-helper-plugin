@@ -27,15 +27,16 @@
 
 // Project specific includes
 #include <src/index/indexer.h>
-#include <src/clang/disposable.h>
 #include <src/clang/kind_of.h>
-#include <src/clang/location.h>
 #include <src/clang/to_string.h>
 
 // Standard includes
 #include <KDE/KDebug>
 #include <KDE/KMimeType>
+#include <QtCore/QCoreApplication>
+#include <QtCore/QFileInfo>
 #include <QtCore/QDirIterator>
+#include <QtCore/QThread>
 #include <xapian/document.h>
 #include <xapian/queryparser.h>
 #include <set>
@@ -104,6 +105,7 @@ worker::~worker()
 
 void worker::request_cancel()
 {
+    kDebug() << "Indexing worker: Got stop request!";
     m_is_cancelled = true;
 }
 
@@ -126,6 +128,8 @@ void worker::process()
 void worker::handle_file(const QString& filename)
 {
     kDebug(DEBUG_AREA) << "Indexing" << filename;
+    Q_EMIT(indexing_uri(filename));
+
     clang::DCXIndexAction action = {clang_IndexAction_create(m_indexer->m_index)};
     IndexerCallbacks index_callbacks = {
         &worker::on_abort_cb
@@ -172,6 +176,8 @@ void worker::handle_directory(const QString& directory)
         dir_it.next();
         if (dispatch_target(dir_it.fileInfo()))
             break;
+        //
+        QCoreApplication::processEvents();
     }
 }
 
@@ -222,7 +228,7 @@ CXIdxClientContainer worker::update_client_container(const docref id)
 
 int worker::on_abort_cb(CXClientData client_data, void*)
 {
-    auto* const wrkr = static_cast<worker*>(client_data);
+    auto* const wrk = static_cast<worker*>(client_data);
     return 0;
 }
 
@@ -232,38 +238,55 @@ void worker::on_diagnostic_cb(CXClientData, CXDiagnosticSet, void*)
 
 CXIdxClientFile worker::on_entering_main_file(CXClientData client_data, CXFile file, void*)
 {
-    auto* const wrkr = static_cast<worker*>(client_data);
+    auto* const wrk = static_cast<worker*>(client_data);
     kDebug(DEBUG_AREA) << "Main file:" << clang::toString(file);
     return static_cast<CXIdxClientFile>(file);
 }
 
 CXIdxClientFile worker::on_include_file(CXClientData client_data, const CXIdxIncludedFileInfo* info)
 {
-    auto* const wrkr = static_cast<worker*>(client_data);
+    auto* const wrk = static_cast<worker*>(client_data);
     return static_cast<CXIdxClientFile>(info->file);
 }
 
 CXIdxClientASTFile worker::on_include_ast_file(CXClientData client_data, const CXIdxImportedASTFileInfo* info)
 {
-    auto* const wrkr = static_cast<worker*>(client_data);
+    auto* const wrk = static_cast<worker*>(client_data);
     return static_cast<CXIdxClientFile>(info->file);
 }
 
 CXIdxClientContainer worker::on_translation_unit(CXClientData client_data, void*)
 {
-    auto* const wrkr = static_cast<worker*>(client_data);
-    return CXIdxClientContainer(wrkr->update_client_container(docref{}));
+    auto* const wrk = static_cast<worker*>(client_data);
+    return CXIdxClientContainer(wrk->update_client_container(docref{}));
 }
 
 void worker::on_declaration(CXClientData client_data, const CXIdxDeclInfo* info)
 {
-    auto* const wrkr = static_cast<worker*>(client_data);
     auto loc = clang::location{info->loc};
     if (!info->entityInfo->name)
     {
         kDebug(DEBUG_AREA) << loc << ": it seems here is anonymous declaration";
         return;
     }
+    // Make sure we've not seen it yet
+    auto* const wrk = static_cast<worker*>(client_data);
+    auto file_id = wrk->m_indexer->m_db.headers_map()[loc.file().toLocalFile()];
+    auto decl_loc = declaration_location{file_id, loc.line(), loc.column()};
+    if (wrk->m_seen_declarations.find(decl_loc) != end(wrk->m_seen_declarations))
+    {
+        //kDebug(DEBUG_AREA) << loc << ": " << info->entityInfo->name << "seen it!";
+        return;
+    }
+
+    /// \note Unnamed parameters have empty name (only type, available via ref)
+    auto name = QString{info->entityInfo->name};
+    if (name.isEmpty())
+    {
+        kDebug(DEBUG_AREA) << loc << ": it seems here is unnamed parameter declaration";
+        return;
+    }
+
     kDebug() << loc << "declaration of" << QString(info->entityInfo->name);
 
     // Create a new document for declaration and attach all required value slots and terms
@@ -272,10 +295,7 @@ void worker::on_declaration(CXClientData client_data, const CXIdxDeclInfo* info)
     doc.add_boolean_term(term::XDECL);                      // Mark document w/ XDECL term
     doc.add_value(value_slot::LINE, Xapian::sortable_serialise(loc.line()));
     doc.add_value(value_slot::COLUMN, Xapian::sortable_serialise(loc.column()));
-    {
-        auto id = wrkr->m_indexer->m_db.headers_map()[loc.file().toLocalFile()];
-        doc.add_value(value_slot::COLUMN, Xapian::sortable_serialise(id));
-    }
+    doc.add_value(value_slot::COLUMN, Xapian::sortable_serialise(file_id));
     if (info->semanticContainer)
     {
         const auto* const container = reinterpret_cast<const container_info* const>(info->semanticContainer);
@@ -289,18 +309,20 @@ void worker::on_declaration(CXClientData client_data, const CXIdxDeclInfo* info)
     if (info->declAsContainer)
         doc.add_boolean_term(term::XCONTAINER);
 #if 0
+    /// \note Don't remember when it possible...
     if (info->isRedeclaration)
 #endif
 
     // Add the document to the DB finally
-    auto docid = wrkr->m_indexer->m_db.add_document(doc);
-
+    auto docid = wrk->m_indexer->m_db.add_document(doc);
+    auto ref = docref{wrk->m_indexer->m_db.id(), docid};
+    wrk->m_seen_declarations[decl_loc] = ref;               // Mark it as seen declaration
 
     // Make a new container if necessary
     if (info->declAsContainer)
         clang_index_setClientContainer(
             info->declAsContainer
-          , wrkr->update_client_container({wrkr->m_indexer->m_db.id(), docid})
+          , wrk->update_client_container(ref)
           );
 }
 
@@ -310,6 +332,16 @@ void worker::on_declaration_reference(CXClientData client_data, const CXIdxEntit
 //END worker members
 
 //BEGIN indexer members
+indexer::~indexer()
+{
+    if (m_worker_thread)
+    {
+        stop();
+        m_worker_thread->quit();
+        m_worker_thread->wait();
+    }
+}
+
 void indexer::start()
 {
     QThread* t = new QThread{};
@@ -326,6 +358,7 @@ void indexer::start()
     connect(t, SIGNAL(finished()), t, SLOT(deleteLater()));
     w->moveToThread(t);
     t->start();
+    m_worker_thread = t;
 }
 
 void indexer::stop()
@@ -341,6 +374,7 @@ void indexer::error_slot(clang::location loc, QString str)
 
 void indexer::finished_slot()
 {
+    m_worker_thread = nullptr;
     Q_EMIT(finished());
 }
 

@@ -191,11 +191,10 @@ inline bool HeaderFilesCache::isDirty() const
 
 inline std::string HeaderFilesCache::storeToString() const
 {
-    std::string result;
-    std::stringstream ofs{result, std::ios_base::out | std::ios_base::binary};
+    std::stringstream ofs{std::ios_base::out | std::ios_base::binary};
     boost::archive::binary_oarchive oa{ofs};
     oa << *this;
-    return result;
+    return ofs.str();
 }
 
 inline void HeaderFilesCache::loadFromString(const std::string& raw_data)

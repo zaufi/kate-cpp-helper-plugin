@@ -132,6 +132,13 @@ void DatabaseManager::reset(const QStringList& enabled_list, const KUrl& base_di
         if (it->path().filename() == DB_MANIFEST_FILE)
         {
             kDebug(DEBUG_AREA) << "found manifest:" << it->path().c_str();
+            {
+                auto report = DiagnosticMessagesModel::Record{
+                    QString{"found manifest: %1"}.arg(it->path().c_str())
+                  , DiagnosticMessagesModel::Record::type::debug
+                  };
+                Q_EMIT(diagnosticMessage(report));
+            }
             /// \todo Handle errors
             auto state = tryLoadDatabaseMeta(it->path());
             assert("Sanity check" && state.m_options);
@@ -140,7 +147,22 @@ void DatabaseManager::reset(const QStringList& enabled_list, const KUrl& base_di
             if (m_enabled_list.indexOf(name) != -1)
             {
                 const auto& db_path = state.m_options->path().toUtf8().constData();
-                state.m_db.reset(new index::ro::database(db_path));
+                try
+                {
+                    state.m_db.reset(new index::ro::database(db_path));
+                }
+                catch (const std::exception& e)
+                {
+                    auto msg = QString{"Index '%1' loading failure: %2"}
+                      .arg(state.m_options->name(), e.what());
+                    kDebug(DEBUG_AREA) << msg;
+                    auto report = DiagnosticMessagesModel::Record{
+                        msg
+                      , DiagnosticMessagesModel::Record::type::error
+                      };
+                    Q_EMIT(diagnosticMessage(report));
+                    continue;
+                }
                 is_enabled = true;
                 state.m_status = database_state::status::ok;
             }

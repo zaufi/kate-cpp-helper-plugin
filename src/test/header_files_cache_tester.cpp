@@ -48,8 +48,8 @@ BOOST_AUTO_TEST_CASE(HeaderFilesCacheTest)
         BOOST_CHECK_EQUAL(cache["/some/file/path"], HeaderFilesCache::NOT_FOUND);
     }
 
-    const int ID = c["/some/file/path"];
-    const int SAME_ID = c["/some/file/path"];
+    const auto ID = c["/some/file/path"];
+    const auto SAME_ID = c["/some/file/path"];
 
     BOOST_CHECK_EQUAL(c.isEmpty(), false);
     BOOST_CHECK_EQUAL(c.size(), 1u);
@@ -61,8 +61,8 @@ BOOST_AUTO_TEST_CASE(HeaderFilesCacheTest)
         BOOST_CHECK_EQUAL(cache["/some/file/path"], SAME_ID);
     }
 
-    const int ID2 = c["/some/file/path2"];
-    const int SAME_ID2 = c["/some/file/path2"];
+    const auto ID2 = c["/some/file/path2"];
+    const auto SAME_ID2 = c["/some/file/path2"];
 
     BOOST_CHECK_EQUAL(c.isEmpty(), false);
     BOOST_CHECK_EQUAL(c.size(), 2u);
@@ -71,6 +71,24 @@ BOOST_AUTO_TEST_CASE(HeaderFilesCacheTest)
     BOOST_CHECK_EQUAL(ID2, SAME_ID2);
     {
         const HeaderFilesCache& cache = c;
+        BOOST_CHECK_EQUAL(cache["/some/file/path2"], ID2);
+        BOOST_CHECK_EQUAL(cache["/some/file/path2"], SAME_ID2);
+    }
+
+    std::string serialized = c.storeToString();
+    {
+        HeaderFilesCache cache;
+
+        BOOST_CHECK_EQUAL(cache.isEmpty(), true);
+        BOOST_CHECK_EQUAL(cache.size(), 0u);
+
+        cache.loadFromString(serialized);
+
+        BOOST_CHECK_EQUAL(cache.isEmpty(), false);
+        BOOST_CHECK_EQUAL(cache.size(), 2u);
+
+        BOOST_CHECK_EQUAL(cache["/some/file/path"], ID);
+        BOOST_CHECK_EQUAL(cache["/some/file/path"], SAME_ID);
         BOOST_CHECK_EQUAL(cache["/some/file/path2"], ID2);
         BOOST_CHECK_EQUAL(cache["/some/file/path2"], SAME_ID2);
     }

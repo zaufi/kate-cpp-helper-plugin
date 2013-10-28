@@ -99,10 +99,11 @@ database::database(const std::string& path) try
 {
     // Get internal DB ID
     auto db_id_str = static_cast<Database* const>(this)->get_metadata(meta::DB_ID);
-    kDebug(DEBUG_AREA) << "db_id_str.size()=" << db_id_str.size();
+    assert("Sanity check" && !db_id_str.empty());
     m_id = deserialize<decltype(m_id)>(db_id_str);
     // Load files mapping
     auto hdr_cache = static_cast<Database* const>(this)->get_metadata(meta::FILES_MAPPING);
+    assert("Sanity check" && !hdr_cache.empty());
     m_files_cache.loadFromString(hdr_cache);
 }
 catch (const Xapian::DatabaseError& e)

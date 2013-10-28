@@ -35,11 +35,14 @@
 
 // Standard includes
 #include <KDE/KUrl>
-#include <QtCore/QThread>
-#include <QtCore/QFileInfo>
 #include <atomic>
+#include <map>
 #include <memory>
+#include <thread>
 #include <vector>
+
+class QFileInfo;
+class QThread;
 
 namespace kate { namespace index {
 
@@ -68,6 +71,23 @@ Q_SIGNALS:
 private:
     struct container_info;
 
+    struct declaration_location
+    {
+        int m_file_id;
+        int m_line;
+        int m_column;
+        friend bool operator<(
+            const declaration_location& lhs
+          , const declaration_location& rhs
+          )
+        {
+            return lhs.m_file_id < rhs.m_file_id
+              || (lhs.m_file_id == rhs.m_file_id && lhs.m_line < rhs.m_line)
+              || (lhs.m_file_id == rhs.m_file_id && lhs.m_line == rhs.m_line && lhs.m_column < rhs.m_column)
+              ;
+        }
+    };
+
     bool dispatch_target(const KUrl&);
     bool dispatch_target(const QFileInfo&);
     void handle_file(const QString&);
@@ -86,6 +106,7 @@ private:
 
     indexer* const m_indexer;
     std::vector<std::unique_ptr<container_info>> m_containers;
+    std::map<declaration_location, docref> m_seen_declarations;
     std::atomic<bool> m_is_cancelled;
 };
 
@@ -107,6 +128,8 @@ public:
     };
     /// Construct an indexer from database path
     indexer(dbid, const std::string&);
+    /// Cleanup everything
+    ~indexer();
 
     indexer& set_compiler_options(std::vector<const char*>&&);
     indexer& add_target(const KUrl&);
@@ -133,10 +156,12 @@ private:
     std::vector<const char*> m_options;
     std::vector<KUrl> m_targets;
     rw::database m_db;
+    QThread* m_worker_thread;
 };
 
 inline indexer::indexer(const dbid id, const std::string& path)
   : m_db{id, path}
+  , m_worker_thread{nullptr}
 {
 }
 
