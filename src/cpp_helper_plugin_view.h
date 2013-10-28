@@ -101,6 +101,7 @@ private Q_SLOTS:
     void updateCppActionsAvailability();                    ///< Enable/disable C++ specific actions in UI
     void reindexingStarted(const QString&);
     void reindexingFinished(const QString&);
+    void startSearch();
 
 #if 0
     void aboutToShow();

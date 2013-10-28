@@ -87,6 +87,7 @@ void DatabaseManager::database_state::loadMetaFrom(const QString& filename)
 DatabaseManager::DatabaseManager()
   : m_indices_model{*this}
   , m_targets_model{*this}
+  , m_search_results_model{*this}
   , m_last_selected_index{-1}
   , m_last_selected_target{-1}
   , m_indexing_in_progress{-1}
@@ -323,6 +324,18 @@ void DatabaseManager::rebuildCurrentIndex()
       , SIGNAL(finished())
       , this
       , SLOT(rebuildFinished())
+      );
+    connect(
+        m_indexer.get()
+      , SIGNAL(indexing_uri(QString))
+      , this
+      , SLOT(reportCurrentFile(QString))
+      );
+    connect(
+        m_indexer.get()
+      , SIGNAL(error(clang::location, QString))
+      , this
+      , SLOT(reportIndexingError(clang::location, QString))
       );
     m_indices_model.refreshRow(m_indexing_in_progress = m_last_selected_index);
 
@@ -561,5 +574,13 @@ void DatabaseManager::reportIndexingError(clang::location loc, QString msg)
     Q_EMIT(diagnosticMessage(report));
 }
 
+/**
+ * Forward search request to \c combined_index.
+ * Latter will fill the model w/ results, so they will be displayed...
+ */
+void DatabaseManager::startSearch(QString)
+{
+
+}
 }                                                           // namespace kate
 // kate: hl C++11/Qt4;

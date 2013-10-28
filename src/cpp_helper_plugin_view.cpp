@@ -131,7 +131,6 @@ CppHelperPluginView::CppHelperPluginView(
     //BEGIN Setup toolview
     m_tool_view_interior->setupUi(new QWidget(m_tool_view.get()));
     m_tool_view->installEventFilter(this);
-    m_tool_view_interior->databases->installEventFilter(this);
 
     // Diagnostic messages tab
     m_tool_view_interior->diagnosticMessages->setModel(&m_diagnostic_data);
@@ -156,6 +155,17 @@ CppHelperPluginView::CppHelperPluginView(
           , SLOT(clear())
           );
     }
+
+    // Search tab
+    m_tool_view_interior->searchResults->setModel(
+        m_plugin->databaseManager().getSearchResultsTableModel()
+      );
+    connect(
+        m_tool_view_interior->search
+      , SIGNAL(clicked())
+      , this
+      , SLOT(startSearch())
+      );
 
     // #include explorer tab
     m_tool_view_interior->includesTree->setHeaderHidden(true);
@@ -975,10 +985,6 @@ bool CppHelperPluginView::eventFilter(QObject* obj, QEvent* event)
             event->accept();
             return true;
         }
-        if (obj == m_tool_view_interior->databases)
-        {
-            kDebug(DEBUG_AREA) << "----- DATABASES EVENT! --- ";
-        }
     }
     return QObject::eventFilter(obj, event);
 }
@@ -1350,6 +1356,13 @@ void CppHelperPluginView::reindexingFinished(const QString& msg)
     // Enable rebuild index button
     m_tool_view_interior->reindexDatabase->setEnabled(true);
     m_tool_view_interior->stopIndexer->setEnabled(false);
+}
+
+void CppHelperPluginView::startSearch()
+{
+    auto query = m_tool_view_interior->searchQuery->text();
+    kDebug() << "Search query: " << query;
+    m_plugin->databaseManager().startSearch(query);
 }
 
 //END CppHelperPluginView

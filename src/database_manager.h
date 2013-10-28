@@ -30,10 +30,12 @@
 // Project specific includes
 #include <src/index/database.h>
 #include <src/clang/compiler_options.h>
+#include <src/index/combined_index.h>
 #include <src/indexing_targets_list_model.h>
 #include <src/indices_table_model.h>
 #include <src/database_options.h>
 #include <src/diagnostic_messages_model.h>
+#include <src/search_results_table_model.h>
 
 // Standard includes
 #include <boost/filesystem/path.hpp>
@@ -89,11 +91,15 @@ public:
     QAbstractTableModel* getDatabasesTableModel();
     /// Obtain a list model for currently configured targets
     QAbstractListModel* getTargetsListModel();
+    /// Obtain a table model for search results
+    QAbstractTableModel* getSearchResultsTableModel();
 
     /// Reset everything using this params
     void reset(const QStringList&, const KUrl& = DatabaseManager::getDefaultBaseDir());
     /// Set compiler optoins for indexer
     void setCompilerOptions(clang::compiler_options&&);
+    /// Handle search request
+    void startSearch(QString);
 
 public Q_SLOTS:
     void enable(const QString&, bool);
@@ -156,10 +162,12 @@ private:
     KUrl m_base_dir;
     IndicesTableModel m_indices_model;
     IndexingTargetsListModel m_targets_model;
+    SearchResultsTableModel m_search_results_model;
     collections_type m_collections;
     QStringList m_enabled_list;
     clang::compiler_options m_compiler_options;
     std::unique_ptr<index::indexer> m_indexer;
+    index::combined_index m_search_db;
     int m_last_selected_index;
     int m_last_selected_target;
     int m_indexing_in_progress;
@@ -182,6 +190,11 @@ inline QAbstractTableModel* DatabaseManager::getDatabasesTableModel()
 inline QAbstractListModel* DatabaseManager::getTargetsListModel()
 {
     return &m_targets_model;
+}
+
+inline QAbstractTableModel* DatabaseManager::getSearchResultsTableModel()
+{
+    return &m_search_results_model;
 }
 
 inline void DatabaseManager::setCompilerOptions(clang::compiler_options&& options)

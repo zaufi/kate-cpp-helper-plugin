@@ -15,6 +15,7 @@ set(LIBTEST_SOURCES
     index/indexer.cpp
     indexing_targets_list_model.cpp
     indices_table_model.cpp
+    search_results_table_model.cpp
     database_manager.cpp
     sanitize_snippet.cpp
     utils.cpp
@@ -26,6 +27,7 @@ qt4_wrap_cpp(
     index/indexer.h
     indexing_targets_list_model.h
     indices_table_model.h
+    search_results_table_model.h
     database_manager.h
   )
 

@@ -63,7 +63,7 @@ QDebug operator<<(QDebug dbg, const compiler_options& opts)
     QString result;
     for (const auto& o : opts.m_shadow)
         result += o;
-    dbg.nospace() << result;
+    dbg.space() << result;
     return dbg.space();
 }
 

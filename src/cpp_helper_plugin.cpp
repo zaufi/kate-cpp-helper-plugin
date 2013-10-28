@@ -113,6 +113,10 @@ CppHelperPlugin::CppHelperPlugin(
       , &m_db_mgr
       , SLOT(propagateCompilerOptionsToIndexer())
       );
+
+    // Register few types inQt meta-types system, so later we can use them
+    // in signal/slots...
+    qRegisterMetaType<clang::location>("location");
 }
 
 CppHelperPlugin::~CppHelperPlugin()

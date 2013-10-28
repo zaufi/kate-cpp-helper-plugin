@@ -169,3 +169,6 @@ inline std::ostream& operator<<(std::ostream& os, const location& l)
 }
 
 }}                                                          // namespace clang, kate
+
+Q_DECLARE_METATYPE(kate::clang::location);
+
