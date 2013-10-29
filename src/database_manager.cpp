@@ -719,6 +719,12 @@ void DatabaseManager::startSearch(QString query)
     }
 }
 
+clang::location DatabaseManager::getSearchResultLocation(const int row) const
+{
+    const auto& sr = m_search_results_model.getSearchResult(row);
+    return clang::location{sr.m_file, sr.m_line, sr.m_column};
+}
+
 const index::ro::database& DatabaseManager::findIndexByID(const index::dbid id) const
 {
     auto it = std::find_if(

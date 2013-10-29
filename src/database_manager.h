@@ -100,6 +100,8 @@ public:
     void setCompilerOptions(clang::compiler_options&&);
     /// Handle search request
     void startSearch(QString);
+    /// Get source file location for given search result number
+    clang::location getSearchResultLocation(int) const;
 
 public Q_SLOTS:
     void enable(const QString&, bool);

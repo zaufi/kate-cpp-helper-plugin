@@ -31,6 +31,7 @@
 
 // Standard includes
 #include <QtCore/QAbstractTableModel>
+#include <cassert>
 #include <vector>
 
 namespace kate {
@@ -68,6 +69,7 @@ public:
     //END QAbstractItemModel interface
 
     void updateSearchResults(search_results_list_type&&);
+    const search_result& getSearchResult(int) const;
 
 private:
     enum column
@@ -85,6 +87,17 @@ inline void SearchResultsTableModel::updateSearchResults(search_results_list_typ
     beginResetModel();
     m_results = std::move(results);
     endResetModel();
+}
+
+/**
+ * Get a search result by offset (index) in the internal collection
+ *
+ * \invariant \c row expected to be a valid index in the \c m_results
+ */
+inline auto SearchResultsTableModel::getSearchResult(const int row) const -> const search_result&
+{
+    assert("Sanity check" && std::size_t(row) < m_results.size());
+    return m_results[row];
 }
 
 }                                                           // namespace kate

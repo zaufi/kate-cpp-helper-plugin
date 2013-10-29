@@ -58,7 +58,9 @@ class ClangCodeCompletionModel;
  * we'll have to use explicit \c std::unique_ptr::release twice!
  * FRAK IT!
  *
- * \todo Add some suffix to slots
+ * \todo Add some suffix to slots? ORLY?
+ *
+ * \todo Use \c KUrl for file references
  *
  */
 class CppHelperPluginView
@@ -103,6 +105,7 @@ private Q_SLOTS:
     void reindexingFinished(const QString&);
     void startSearch();
     void searchResultsUpdated();
+    void searchResultActivated(const QModelIndex&);
 
 #if 0
     void aboutToShow();

@@ -168,6 +168,12 @@ CppHelperPluginView::CppHelperPluginView(
           );
     }
     connect(
+        m_tool_view_interior->searchResults
+      , SIGNAL(activated(const QModelIndex&))
+      , this
+      , SLOT(searchResultActivated(const QModelIndex&))
+      );
+    connect(
         m_tool_view_interior->searchQuery
       , SIGNAL(returnPressed())
       , this
@@ -805,10 +811,10 @@ void CppHelperPluginView::needTextHint(const KTextEditor::Cursor& pos, QString& 
         switch (status)
         {
             case DocumentInfo::Status::NotFound:
-                text = i18n("File not found");
+                text = i18nc("@info:tooltip", "File not found");
                 break;
             case DocumentInfo::Status::MultipleMatches:
-                text = i18n("Multiple files matched");
+                text = i18nc("@info:tooltip", "Multiple files matched");
                 break;
             default:
                 break;
@@ -1378,6 +1384,16 @@ void CppHelperPluginView::searchResultsUpdated()
     m_tool_view_interior->searchResults->setVisible(false);
     m_tool_view_interior->searchResults->resizeColumnsToContents();
     m_tool_view_interior->searchResults->setVisible(true);
+}
+
+void CppHelperPluginView::searchResultActivated(const QModelIndex& index)
+{
+    kDebug(DEBUG_AREA) << "SEARCH ITEM ACTIVATED" << index.row();
+    auto loc = m_plugin->databaseManager().getSearchResultLocation(index.row());
+    openFile(loc.file().toLocalFile());
+    // NOTE Kate has line/column numbers started from 0, but clang is more
+    // human readable...
+    mainWindow()->activeView()->setCursorPosition({loc.line() - 1, loc.column() - 1});
 }
 
 //END CppHelperPluginView
