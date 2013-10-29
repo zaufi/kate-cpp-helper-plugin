@@ -47,12 +47,36 @@ int SearchResultsTableModel::columnCount(const QModelIndex&) const
 
 int SearchResultsTableModel::rowCount(const QModelIndex&) const
 {
-    return 0;
+    return m_results.size();
 }
 
-QVariant SearchResultsTableModel::data(const QModelIndex&, int) const
+QVariant SearchResultsTableModel::data(const QModelIndex& index, const int role) const
 {
-    return QVariant{};
+    if (role != Qt::DisplayRole)
+        return QVariant{};
+
+    assert("Sanity check" && std::size_t(index.row()) < m_results.size());
+
+    auto result = QVariant{};
+    switch (index.column())
+    {
+        case column::LOCATION:
+        {
+            const auto& item = m_results[index.row()];
+            result = QString{"%1:%2:%3"}.arg(
+                item.m_file
+              , QString::number(item.m_line)
+              , QString::number(item.m_column)
+              );
+            break;
+        }
+        case column::NAME:
+            result = m_results[index.row()].m_name;
+            break;
+        default:
+            break;
+    }
+    return result;
 }
 
 QVariant SearchResultsTableModel::headerData(
@@ -74,6 +98,10 @@ QVariant SearchResultsTableModel::headerData(
                 default:
                     break;
             }
+        }
+        else if (orientation == Qt::Vertical)
+        {
+            return QString::number(section + 1);
         }
     }
     return QVariant{};

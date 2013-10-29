@@ -292,13 +292,15 @@ void worker::on_declaration(CXClientData client_data, const CXIdxDeclInfo* info)
     // Create a new document for declaration and attach all required value slots and terms
     auto doc = Xapian::Document{};
     doc.add_posting(info->entityInfo->name, make_term_position(loc));
-    doc.add_boolean_term(term::XDECL);                      // Mark document w/ XDECL term
+    // Mark document w/ XDECL prefixed term
+    /// \todo Remove possible spaces from \c name
+    doc.add_boolean_term(term::XDECL + info->entityInfo->name);
     doc.add_value(value_slot::NAME, info->entityInfo->name);
     doc.add_value(value_slot::LINE, Xapian::sortable_serialise(loc.line()));
     doc.add_value(value_slot::COLUMN, Xapian::sortable_serialise(loc.column()));
     doc.add_value(value_slot::FILE, Xapian::sortable_serialise(file_id));
     const auto database_id = wrk->m_indexer->m_db.id();
-    doc.add_value(value_slot::DBID, Xapian::sortable_serialise(database_id));
+    doc.add_value(value_slot::DBID, serialize(database_id));
     if (info->semanticContainer)
     {
         const auto* const container = reinterpret_cast<const container_info* const>(info->semanticContainer);

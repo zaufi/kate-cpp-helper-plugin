@@ -38,7 +38,11 @@
 
 namespace kate { namespace index {
 
-std::vector<docref> combined_index::search(const QString& q, const doccount start, const doccount maxitems)
+std::vector<Xapian::Document> combined_index::search(
+    const QString& q
+  , const doccount start
+  , const doccount maxitems
+  )
 {
     recombine_database();                                   // Make sure DB is Ok
     assert("Sanity check" && m_compound_db);
@@ -67,17 +71,9 @@ std::vector<docref> combined_index::search(const QString& q, const doccount star
     kDebug(DEBUG_AREA) <<  "Documents found:" << matches.size();
     kDebug(DEBUG_AREA) << "Documents estimated:" << matches.get_matches_estimated();
     //
-    auto result = std::vector<docref>{};
+    auto result = std::vector<Xapian::Document>{};
     for (auto it = std::begin(matches), last = std::end(matches); it != last; ++it)
-    {
-        const auto& doc = it.get_document();
-        const auto& dbid_str = doc.get_value(value_slot::DBID);
-        assert("Sanity check" && !dbid_str.empty());
-        const auto database_id = Xapian::sortable_unserialise(dbid_str);
-        const auto document_id = doc.get_docid();
-        kDebug(DEBUG_AREA) << "dbid=" << database_id << ", docid=" << document_id;
-        result.emplace_back(database_id, document_id);
-    }
+        result.emplace_back(it.get_document());
     return result;
 }
 

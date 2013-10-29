@@ -28,9 +28,6 @@
 // Project specific includes
 #include <src/database_manager.h>
 #include <src/index/indexer.h>
-#if 0
-#include <src/scope_exit.hh>
-#endif
 #include <src/index/utils.h>
 
 // Standard includes
@@ -50,6 +47,7 @@
 #include <QtCore/QDir>
 #include <QtCore/QFileInfo>
 #include <QtGui/QStringListModel>
+#include <xapian/queryparser.h>
 
 namespace kate { namespace {
 /// \attention Make sure this path replaced everywhre in case of changes
@@ -177,7 +175,7 @@ void DatabaseManager::reset(const QStringList& enabled_list, const KUrl& base_di
             }
         }
     }
-    /// \todo Get rid of not-found indices?
+    /// \todo Get rid of not-found indices? REALLY!
 }
 
 /// \todo Doesn't looks good/efficient...
@@ -255,6 +253,7 @@ void DatabaseManager::createNewIndex()
     meta_path.addPath(DB_MANIFEST_FILE);
 
     database_state result;
+    assert("Sanity check" && !result.m_enabled);
     result.loadMetaFrom(meta_path.toLocalFile());
     result.m_options->setPath(db_path.toLocalFile());
     result.m_options->setName("New collection");
@@ -664,13 +663,76 @@ void DatabaseManager::startSearch(QString query)
 {
     try
     {
-        auto results = m_search_db.search(query);
-        kDebug(DEBUG_AREA) << "GOT " << results.size() << "results";
+        auto documents = m_search_db.search(query);
+        kDebug(DEBUG_AREA) << "Found" << documents.size() << "results for query" << query;
+        auto model_data = SearchResultsTableModel::search_results_list_type{};
+        model_data.reserve(documents.size());
+        // Transform Xapian::Documents into a model
+        for (const auto& doc : documents)
+        {
+            // Get ID of an index produces this result
+            auto tmp_str = doc.get_value(index::value_slot::DBID);
+            if (tmp_str.empty())
+            {
+                kDebug(DEBUG_AREA) << "No DBID attached to a document";
+                continue;
+            }
+            auto index_id = index::deserialize<index::dbid>(tmp_str);
+            kDebug(DEBUG_AREA) << "DBID=" << index_id;
+            auto& index = findIndexByID(index_id);
+
+            // Get source file ID
+            tmp_str = doc.get_value(index::value_slot::FILE);
+            if (tmp_str.empty())
+            {
+                kDebug(DEBUG_AREA) << "No source file ID attached to a document";
+                continue;
+            }
+            auto file_id = static_cast<HeaderFilesCache::id_type>(Xapian::sortable_unserialise(tmp_str));
+
+            // Resolve header ID into string
+            auto filename = index.headers_map()[file_id];
+
+            // Get line/column
+            auto line = static_cast<int>(
+                Xapian::sortable_unserialise(doc.get_value(index::value_slot::LINE))
+              );
+            auto column = static_cast<int>(
+                Xapian::sortable_unserialise(doc.get_value(index::value_slot::COLUMN))
+              );
+
+            // Get entity name
+            auto name = doc.get_value(index::value_slot::NAME);
+            assert("Empty name?" && !name.empty());
+
+            //
+            model_data.emplace_back(
+                SearchResultsTableModel::search_result{name.c_str(), filename, line, column}
+              );
+        }
+        // Update the model w/ obtained data
+        m_search_results_model.updateSearchResults(std::move(model_data));
     }
     catch (...)
     {
         reportError("Search failure", -1, true);
     }
+}
+
+const index::ro::database& DatabaseManager::findIndexByID(const index::dbid id) const
+{
+    auto it = std::find_if(
+        begin(m_collections)
+      , end(m_collections)
+      , [id](const database_state& state)
+        {
+            if (state.m_status == database_state::status::ok)
+                return state.m_db->id() == id;
+            return false;
+        }
+      );
+    assert("Sanity check" && it != end(m_collections));
+    return *(it->m_db);
 }
 
 void DatabaseManager::reportError(const QString& prefix, const int index, const bool show_popup)

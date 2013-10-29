@@ -159,6 +159,7 @@ private:
     bool isEnabled(int) const;
     void renameCollection(int, const QString&);
     void reportError(const QString& = QString{}, int = -1, bool = false);
+    const index::ro::database& findIndexByID(const index::dbid) const;
 
     KUrl m_base_dir;
     IndicesTableModel m_indices_model;

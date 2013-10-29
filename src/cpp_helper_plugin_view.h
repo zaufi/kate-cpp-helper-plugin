@@ -102,6 +102,7 @@ private Q_SLOTS:
     void reindexingStarted(const QString&);
     void reindexingFinished(const QString&);
     void startSearch();
+    void searchResultsUpdated();
 
 #if 0
     void aboutToShow();

@@ -31,7 +31,6 @@
 #include <src/index/types.h>
 
 // Standard includes
-#include <xapian/query.h>
 #include <memory>
 #include <vector>
 
@@ -39,6 +38,7 @@ class QString;
 
 namespace Xapian {
 class Database;
+class Document;
 class Query;
 }                                                           // namespace Xapian
 
@@ -57,7 +57,7 @@ class combined_index
 {
 public:
     /// Search over all connected indices
-    std::vector<docref> search(const QString&, doccount = 0, doccount = 20);
+    std::vector<Xapian::Document> search(const QString&, doccount = 0, doccount = 20);
 
     void add_index(ro::database*);
     void remove_index(ro::database*);

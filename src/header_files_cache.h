@@ -51,21 +51,23 @@ namespace kate {
 class HeaderFilesCache
 {
 public:
-    explicit HeaderFilesCache(unsigned start_id = 0)
+    typedef unsigned id_type;
+
+    explicit HeaderFilesCache(id_type start_id = 0)
       : m_current_id{start_id}
       , m_cache_is_dirty{false}
     {}
 
     /// \name Accessors
     //@{
-    const QString operator[](unsigned id) const;            ///< Operator to get a string value by ID
-    unsigned operator[](const QString&) const ;             ///< Operator to get an ID by string
-    unsigned operator[](const QString&);                    ///< Operator to get an ID by string
+    const QString operator[](id_type id) const;             ///< Operator to get a string value by ID
+    id_type operator[](const QString&) const ;              ///< Operator to get an ID by string
+    id_type operator[](const QString&);                     ///< Operator to get an ID by string
     //@}
 
-    enum : unsigned
+    enum : id_type
     {
-        NOT_FOUND = std::numeric_limits<unsigned>::max()
+        NOT_FOUND = std::numeric_limits<id_type>::max()
     };
 
     bool isEmpty() const;
@@ -83,7 +85,7 @@ private:
     struct value_type
     {
         QString m_filename;
-        unsigned m_id;
+        id_type m_id;
 
         template <typename Archive>
         void save(Archive&, const unsigned int) const;
@@ -127,7 +129,7 @@ private:
     }
 
     index_type m_cache;
-    unsigned m_current_id;
+    id_type m_current_id;
     mutable bool m_cache_is_dirty;
 };
 
@@ -135,7 +137,7 @@ private:
  * \param[in] id identifier to get filename for
  * \return filename for correcponding ID, or empty string if not found
  */
-inline const QString HeaderFilesCache::operator[](unsigned id) const
+inline const QString HeaderFilesCache::operator[](id_type id) const
 {
     QString result;
     auto it = m_cache.get<int_idx>().find(id);
@@ -150,9 +152,9 @@ inline const QString HeaderFilesCache::operator[](unsigned id) const
  * \param[in] filename a filename to get identifier for
  * \return ID of the given value or \c HeaderFilesCache::NOT_FOUND
  */
-inline unsigned HeaderFilesCache::operator[](const QString& filename) const
+inline auto HeaderFilesCache::operator[](const QString& filename) const -> id_type
 {
-    auto result = unsigned(NOT_FOUND);
+    auto result = id_type(NOT_FOUND);
     auto it = m_cache.get<string_idx>().find(filename);
     if (it != end(m_cache.get<string_idx>()))
     {
@@ -167,9 +169,9 @@ inline unsigned HeaderFilesCache::operator[](const QString& filename) const
  * \param[in] filename a filename to get identifier for
  * \return ID of the given value (will add a new cache entry if not found)
  */
-inline unsigned HeaderFilesCache::operator[](const QString& filename)
+inline auto HeaderFilesCache::operator[](const QString& filename) -> id_type
 {
-    auto result = unsigned(NOT_FOUND);
+    auto result = id_type(NOT_FOUND);
     auto it = m_cache.get<string_idx>().find(filename);
     if (it == end(m_cache.get<string_idx>()))
     {

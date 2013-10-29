@@ -157,9 +157,16 @@ CppHelperPluginView::CppHelperPluginView(
     }
 
     // Search tab
-    m_tool_view_interior->searchResults->setModel(
-        m_plugin->databaseManager().getSearchResultsTableModel()
-      );
+    {
+        auto model = m_plugin->databaseManager().getSearchResultsTableModel();
+        m_tool_view_interior->searchResults->setModel(model);
+        connect(
+            model
+          , SIGNAL(modelReset())
+          , this
+          , SLOT(searchResultsUpdated())
+          );
+    }
     connect(
         m_tool_view_interior->searchQuery
       , SIGNAL(returnPressed())
@@ -1364,6 +1371,13 @@ void CppHelperPluginView::startSearch()
     kDebug() << "Search query: " << query;
     if (!query.isEmpty())
         m_plugin->databaseManager().startSearch(query);
+}
+
+void CppHelperPluginView::searchResultsUpdated()
+{
+    m_tool_view_interior->searchResults->setVisible(false);
+    m_tool_view_interior->searchResults->resizeColumnsToContents();
+    m_tool_view_interior->searchResults->setVisible(true);
 }
 
 //END CppHelperPluginView

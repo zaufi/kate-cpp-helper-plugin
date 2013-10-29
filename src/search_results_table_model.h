@@ -31,6 +31,7 @@
 
 // Standard includes
 #include <QtCore/QAbstractTableModel>
+#include <vector>
 
 namespace kate {
 class DatabaseManager;                                      // fwd decl
@@ -46,6 +47,15 @@ class SearchResultsTableModel : public QAbstractTableModel
     Q_OBJECT
 
 public:
+    struct search_result
+    {
+        QString m_name;
+        QString m_file;
+        int m_line;
+        int m_column;
+    };
+    typedef std::vector<search_result> search_results_list_type;
+
     /// Default constructor
     explicit SearchResultsTableModel(DatabaseManager&);
 
@@ -57,14 +67,24 @@ public:
     virtual Qt::ItemFlags flags(const QModelIndex&) const override;
     //END QAbstractItemModel interface
 
+    void updateSearchResults(search_results_list_type&&);
+
 private:
     enum column
     {
-        LOCATION
-      , NAME
+        NAME
+      , LOCATION
       , last__
     };
     DatabaseManager& m_db_mgr;
+    search_results_list_type m_results;
 };
+
+inline void SearchResultsTableModel::updateSearchResults(search_results_list_type&& results)
+{
+    beginResetModel();
+    m_results = std::move(results);
+    endResetModel();
+}
 
 }                                                           // namespace kate
