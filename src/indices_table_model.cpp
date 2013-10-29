@@ -120,7 +120,7 @@ bool IndicesTableModel::setData(const QModelIndex& index, const QVariant& value,
         auto name = value.toString();
         if (name.isEmpty())
             name = "<No name>";
-        m_db_mgr.m_collections[index.row()].m_options->setName(name);
+        m_db_mgr.renameCollection(index.row(), name);
     }
     else if (role == Qt::CheckStateRole)
     {

@@ -293,9 +293,12 @@ void worker::on_declaration(CXClientData client_data, const CXIdxDeclInfo* info)
     auto doc = Xapian::Document{};
     doc.add_posting(info->entityInfo->name, make_term_position(loc));
     doc.add_boolean_term(term::XDECL);                      // Mark document w/ XDECL term
+    doc.add_value(value_slot::NAME, info->entityInfo->name);
     doc.add_value(value_slot::LINE, Xapian::sortable_serialise(loc.line()));
     doc.add_value(value_slot::COLUMN, Xapian::sortable_serialise(loc.column()));
-    doc.add_value(value_slot::COLUMN, Xapian::sortable_serialise(file_id));
+    doc.add_value(value_slot::FILE, Xapian::sortable_serialise(file_id));
+    const auto database_id = wrk->m_indexer->m_db.id();
+    doc.add_value(value_slot::DBID, Xapian::sortable_serialise(database_id));
     if (info->semanticContainer)
     {
         const auto* const container = reinterpret_cast<const container_info* const>(info->semanticContainer);
@@ -314,8 +317,8 @@ void worker::on_declaration(CXClientData client_data, const CXIdxDeclInfo* info)
 #endif
 
     // Add the document to the DB finally
-    auto docid = wrk->m_indexer->m_db.add_document(doc);
-    auto ref = docref{wrk->m_indexer->m_db.id(), docid};
+    auto document_id = wrk->m_indexer->m_db.add_document(doc);
+    auto ref = docref{database_id, document_id};
     wrk->m_seen_declarations[decl_loc] = ref;               // Mark it as seen declaration
 
     // Make a new container if necessary

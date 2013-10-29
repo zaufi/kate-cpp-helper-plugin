@@ -65,6 +65,12 @@ public:
     template <typename AppendFunctor>
     void appendNewRow(int, AppendFunctor);                  ///< Add a new empty row
 
+    template <typename RemoveFunctor>
+    void removeRow(int, RemoveFunctor);                     ///< Remove a given row
+
+    template <typename RefreshFunctor>
+    void refreshAll(RefreshFunctor);                        ///< Reset a whole model
+
     void refreshRow(int);                                   ///< Notify the model about data changes
 
 private:
@@ -83,6 +89,22 @@ inline void IndicesTableModel::appendNewRow(const int idx, AppendFunctor fn)
     beginInsertRows(QModelIndex(), idx, idx);
     fn();
     endInsertRows();
+}
+
+template <typename RemoveFunctor>
+inline void IndicesTableModel::removeRow(const int idx, RemoveFunctor fn)
+{
+    beginRemoveRows(QModelIndex(), idx, idx);
+    fn(idx);
+    endRemoveRows();
+}
+
+template <typename RefreshFunctor>
+inline void IndicesTableModel::refreshAll(RefreshFunctor fn)
+{
+    beginResetModel();
+    fn();
+    endResetModel();
 }
 
 }                                                           // namespace kate

@@ -47,14 +47,13 @@
          <item>
           <widget class="KLineEdit" name="searchQuery">
            <property name="placeholderText">
-            <string>Enter search query</string>
+            <string>Enter search query and press ENTER</string>
            </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="KPushButton" name="search">
-           <property name="text">
-            <string>Search</string>
+           <property name="urlDropsEnabled">
+            <bool>false</bool>
+           </property>
+           <property name="showClearButton" stdset="0">
+            <bool>true</bool>
            </property>
           </widget>
          </item>

@@ -39,6 +39,7 @@ namespace kate { namespace index {
 
 typedef uint32_t dbid;
 typedef Xapian::docid docid;
+typedef Xapian::doccount doccount;
 
 class docref
 {

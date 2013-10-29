@@ -34,6 +34,7 @@
 #include <boost/multi_index/indexed_by.hpp>
 #include <boost/serialization/split_member.hpp>
 #include <QtCore/QString>
+#include <limits>
 #include <sstream>
 #include <string>
 
@@ -50,16 +51,21 @@ namespace kate {
 class HeaderFilesCache
 {
 public:
+    explicit HeaderFilesCache(unsigned start_id = 0)
+      : m_current_id{start_id}
+      , m_cache_is_dirty{false}
+    {}
+
     /// \name Accessors
     //@{
-    const QString operator[](int id) const;                 ///< Operator to get a string value by ID
-    int operator[](const QString&) const ;                  ///< Operator to get an ID by string
-    int operator[](const QString&);                         ///< Operator to get an ID by string
+    const QString operator[](unsigned id) const;            ///< Operator to get a string value by ID
+    unsigned operator[](const QString&) const ;             ///< Operator to get an ID by string
+    unsigned operator[](const QString&);                    ///< Operator to get an ID by string
     //@}
 
-    enum : int
+    enum : unsigned
     {
-        NOT_FOUND = -1
+        NOT_FOUND = std::numeric_limits<unsigned>::max()
     };
 
     bool isEmpty() const;
@@ -77,7 +83,7 @@ private:
     struct value_type
     {
         QString m_filename;
-        int m_id;
+        unsigned m_id;
 
         template <typename Archive>
         void save(Archive&, const unsigned int) const;
@@ -121,14 +127,15 @@ private:
     }
 
     index_type m_cache;
-    bool m_cache_is_dirty;
+    unsigned m_current_id;
+    mutable bool m_cache_is_dirty;
 };
 
 /**
  * \param[in] id identifier to get filename for
  * \return filename for correcponding ID, or empty string if not found
  */
-inline const QString HeaderFilesCache::operator[](int id) const
+inline const QString HeaderFilesCache::operator[](unsigned id) const
 {
     QString result;
     auto it = m_cache.get<int_idx>().find(id);
@@ -143,9 +150,9 @@ inline const QString HeaderFilesCache::operator[](int id) const
  * \param[in] filename a filename to get identifier for
  * \return ID of the given value or \c HeaderFilesCache::NOT_FOUND
  */
-inline int HeaderFilesCache::operator[](const QString& filename) const
+inline unsigned HeaderFilesCache::operator[](const QString& filename) const
 {
-    auto result = int(NOT_FOUND);
+    auto result = unsigned(NOT_FOUND);
     auto it = m_cache.get<string_idx>().find(filename);
     if (it != end(m_cache.get<string_idx>()))
     {
@@ -160,13 +167,13 @@ inline int HeaderFilesCache::operator[](const QString& filename) const
  * \param[in] filename a filename to get identifier for
  * \return ID of the given value (will add a new cache entry if not found)
  */
-inline int HeaderFilesCache::operator[](const QString& filename)
+inline unsigned HeaderFilesCache::operator[](const QString& filename)
 {
-    auto result = int(NOT_FOUND);
+    auto result = unsigned(NOT_FOUND);
     auto it = m_cache.get<string_idx>().find(filename);
     if (it == end(m_cache.get<string_idx>()))
     {
-        result = int(m_cache.size());
+        result = m_current_id++;
         m_cache.insert({filename, result});
         m_cache_is_dirty = true;
     }
@@ -193,7 +200,8 @@ inline std::string HeaderFilesCache::storeToString() const
 {
     std::stringstream ofs{std::ios_base::out | std::ios_base::binary};
     boost::archive::binary_oarchive oa{ofs};
-    oa << *this;
+    oa << m_current_id << m_cache;
+    m_cache_is_dirty = false;
     return ofs.str();
 }
 
@@ -201,7 +209,8 @@ inline void HeaderFilesCache::loadFromString(const std::string& raw_data)
 {
     std::stringstream ifs{raw_data, std::ios_base::in | std::ios_base::binary};
     boost::archive::binary_iarchive ia{ifs};
-    ia >> *this;
+    ia >> m_current_id >> m_cache;
+    m_cache_is_dirty = false;
 }
 
 template <typename Archive>

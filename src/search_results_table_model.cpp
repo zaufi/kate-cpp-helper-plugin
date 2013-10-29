@@ -40,4 +40,48 @@ SearchResultsTableModel::SearchResultsTableModel(DatabaseManager& db_mgr)
 {
 }
 
+int SearchResultsTableModel::columnCount(const QModelIndex&) const
+{
+    return column::last__;
+}
+
+int SearchResultsTableModel::rowCount(const QModelIndex&) const
+{
+    return 0;
+}
+
+QVariant SearchResultsTableModel::data(const QModelIndex&, int) const
+{
+    return QVariant{};
+}
+
+QVariant SearchResultsTableModel::headerData(
+    const int section
+  , const Qt::Orientation orientation
+  , const int role
+  ) const
+{
+    if (role == Qt::DisplayRole)
+    {
+        if (orientation == Qt::Horizontal)
+        {
+            switch (section)
+            {
+                case column::LOCATION:
+                    return QString{i18nc("@title:row", "Location")};
+                case column::NAME:
+                    return QString{i18nc("@title:row", "Name")};
+                default:
+                    break;
+            }
+        }
+    }
+    return QVariant{};
+}
+
+Qt::ItemFlags SearchResultsTableModel::flags(const QModelIndex&) const
+{
+    return Qt::ItemIsSelectable | Qt::ItemIsEnabled;
+}
+
 }                                                           // namespace kate

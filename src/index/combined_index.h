@@ -28,15 +28,18 @@
 #pragma once
 
 // Project specific includes
-#include <src/index/search_iface.h>
+#include <src/index/types.h>
 
 // Standard includes
+#include <xapian/query.h>
 #include <memory>
+#include <vector>
 
 class QString;
 
 namespace Xapian {
 class Database;
+class Query;
 }                                                           // namespace Xapian
 
 namespace kate { namespace index { namespace ro {
@@ -50,17 +53,18 @@ class database;
  * [More detailed description here]
  *
  */
-class combined_index : public search_iface
+class combined_index
 {
 public:
     /// Search over all connected indices
-    std::vector<search_result> search(const QString&) override;
+    std::vector<docref> search(const QString&, doccount = 0, doccount = 20);
 
     void add_index(ro::database*);
     void remove_index(ro::database*);
 
 private:
     void recombine_database();
+    Xapian::Query parse_query(const std::string&);
 
     std::vector<ro::database*> m_db_list;
     std::unique_ptr<Xapian::Database> m_compound_db;

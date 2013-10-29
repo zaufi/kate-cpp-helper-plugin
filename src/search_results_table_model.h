@@ -55,7 +55,6 @@ public:
     virtual QVariant data(const QModelIndex&, int) const override;
     virtual QVariant headerData(int, Qt::Orientation, int) const override;
     virtual Qt::ItemFlags flags(const QModelIndex&) const override;
-    virtual bool setData(const QModelIndex&, const QVariant&, int) override;
     //END QAbstractItemModel interface
 
 private:

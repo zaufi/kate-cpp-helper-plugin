@@ -42,15 +42,17 @@ extern const std::string XDECL;
 extern const std::string XREF;
 extern const std::string XCONTAINER;
 extern const std::string XREDECLARATION;
+extern const std::string XKIND;
 }                                                           // namespace term
 namespace value_slot {
+constexpr Xapian::valueno NAME = 0;
 constexpr Xapian::valueno LINE = 1;
 constexpr Xapian::valueno COLUMN = 2;
 constexpr Xapian::valueno FILE = 3;
 constexpr Xapian::valueno SEMANTIC_CONTAINER = 4;
 constexpr Xapian::valueno LEXICAL_CONTAINER = 5;
-constexpr Xapian::valueno KIND = 6;
-constexpr Xapian::valueno TYPE = 7;
+constexpr Xapian::valueno TYPE = 6;
+constexpr Xapian::valueno DBID = 7;
 }                                                           // namespace value_slot
 
 /// Exceptions group for database classes

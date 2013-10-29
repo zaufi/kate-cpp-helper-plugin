@@ -131,6 +131,8 @@ add_definitions(-DBOOST_RESULT_OF_USE_DECLTYPE)
 add_definitions(${QT_DEFINITIONS} ${KDE4_DEFINITIONS})
 # Use expression templates to build QStrings
 add_definitions(-DQT_USE_QSTRINGBUILDER)
+# NOTE Disable trivial Qt keywords due conflicts w/ some Xapian headers
+add_definitions(-DQT_NO_KEYWORDS)
 # Add LLVM definitions
 add_definitions(${LLVM_CXXFLAGS})
 # Use Kate plugins debug area as default

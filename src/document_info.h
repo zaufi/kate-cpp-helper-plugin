@@ -63,9 +63,9 @@ public:
 
     struct IncludeLocationData
     {
-        static const int ROOT = -1;
-        int m_header_id;                                    ///< ID of the \c #included file
-        int m_included_by_id;                               ///< ID of a parent of the current file
+        static const unsigned ROOT = -1;
+        unsigned m_header_id;                               ///< ID of the \c #included file
+        unsigned m_included_by_id;                          ///< ID of a parent of the current file
         int m_line;                                         ///< inclusion line
         int m_column;                                       ///< inclusion column
     };
@@ -74,12 +74,12 @@ public:
     virtual ~DocumentInfo();
 
     bool isRangeWithSameLineExists(const KTextEditor::Range&) const;
-    Status getLineStatus(const int);
+    Status getLineStatus(int);
     void addInclusionEntry(const IncludeLocationData&);
     void clearInclusionTree();
-    std::vector<int> getListOfIncludedBy(const int) const;
-    std::vector<IncludeLocationData> getListOfIncludedBy2(const int) const;
-    std::vector<int> getIncludedHeaders(const int) const;
+    std::vector<unsigned> getListOfIncludedBy(unsigned) const;
+    std::vector<IncludeLocationData> getListOfIncludedBy2(unsigned) const;
+    std::vector<unsigned> getIncludedHeaders(unsigned) const;
 
 public Q_SLOTS:
     void addRange(KTextEditor::MovingRange*);
@@ -111,7 +111,7 @@ private:
                 boost::multi_index::tag<include_idx>
               , boost::multi_index::member<
                     IncludeLocationData
-                  , int
+                  , unsigned
                   , &IncludeLocationData::m_header_id
                   >
               >
@@ -119,7 +119,7 @@ private:
                 boost::multi_index::tag<included_by_idx>
               , boost::multi_index::member<
                     IncludeLocationData
-                  , int
+                  , unsigned
                   , &IncludeLocationData::m_included_by_id
                   >
               >

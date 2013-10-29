@@ -161,8 +161,8 @@ CppHelperPluginView::CppHelperPluginView(
         m_plugin->databaseManager().getSearchResultsTableModel()
       );
     connect(
-        m_tool_view_interior->search
-      , SIGNAL(clicked())
+        m_tool_view_interior->searchQuery
+      , SIGNAL(returnPressed())
       , this
       , SLOT(startSearch())
       );
@@ -1362,10 +1362,10 @@ void CppHelperPluginView::startSearch()
 {
     auto query = m_tool_view_interior->searchQuery->text();
     kDebug() << "Search query: " << query;
-    m_plugin->databaseManager().startSearch(query);
+    if (!query.isEmpty())
+        m_plugin->databaseManager().startSearch(query);
 }
 
 //END CppHelperPluginView
-
 }                                                           // namespace kate
 // kate: hl C++11/Qt4;

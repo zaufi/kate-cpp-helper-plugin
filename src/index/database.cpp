@@ -32,10 +32,11 @@
 #include <KDE/KDebug>
 
 namespace kate { namespace index { namespace term {
-const std::string XDECL = "XDCL";
-const std::string XREF = "XRF";
+const std::string XDECL = "DL";
+const std::string XREF = "RF";
 const std::string XCONTAINER = "XCNT";
-const std::string XREDECLARATION = "XRDL";
+const std::string XREDECLARATION = "RDL";
+const std::string XKIND = "K";
 }                                                           // namespace term
 
 namespace { namespace meta {
@@ -59,7 +60,7 @@ database::~database()
 {
     try
     {
-        kDebug(DEBUG_AREA) << "Store DB meta...";
+        kDebug(DEBUG_AREA) << "Store DB meta [" << id() << "]...";
         set_metadata(meta::DB_ID, serialize(id()));
         set_metadata(meta::FILES_MAPPING, headers_map().storeToString());
     }

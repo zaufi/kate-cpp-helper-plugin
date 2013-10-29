@@ -231,9 +231,9 @@ void DocumentInfo::rangeInvalid(KTextEditor::MovingRange* range)
     }
 }
 
-std::vector<int> DocumentInfo::getListOfIncludedBy(const int id) const
+std::vector<unsigned> DocumentInfo::getListOfIncludedBy(const unsigned id) const
 {
-    std::vector<int> result;
+    std::vector<unsigned> result;
     auto p = m_includes.get<include_idx>().equal_range(id);
     if (p.first != m_includes.get<include_idx>().end())
     {
@@ -254,7 +254,7 @@ std::vector<int> DocumentInfo::getListOfIncludedBy(const int id) const
     return result;
 }
 
-auto DocumentInfo::getListOfIncludedBy2(const int id) const -> std::vector<IncludeLocationData>
+auto DocumentInfo::getListOfIncludedBy2(const unsigned id) const -> std::vector<IncludeLocationData>
 {
     std::vector<IncludeLocationData> result;
     auto p = m_includes.get<include_idx>().equal_range(id);
@@ -269,9 +269,9 @@ auto DocumentInfo::getListOfIncludedBy2(const int id) const -> std::vector<Inclu
     return result;
 }
 
-std::vector<int> DocumentInfo::getIncludedHeaders(const int id) const
+std::vector<unsigned> DocumentInfo::getIncludedHeaders(const unsigned id) const
 {
-    std::vector<int> result;
+    std::vector<unsigned> result;
     auto p = m_includes.get<included_by_idx>().equal_range(id);
     if (p.first != m_includes.get<included_by_idx>().end())
     {

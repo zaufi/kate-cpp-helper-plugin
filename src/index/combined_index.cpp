@@ -30,13 +30,54 @@
 #include <src/index/database.h>
 
 // Standard includes
+#include <KDE/KDebug>
 #include <xapian/database.h>
+#include <xapian/query.h>
+#include <xapian/queryparser.h>
+#include <xapian/enquire.h>
 
 namespace kate { namespace index {
 
-std::vector<search_result> combined_index::search(const QString&)
+std::vector<docref> combined_index::search(const QString& q, const doccount start, const doccount maxitems)
 {
-    auto result = std::vector<search_result>{};
+    recombine_database();                                   // Make sure DB is Ok
+    assert("Sanity check" && m_compound_db);
+    kDebug(DEBUG_AREA) << "Indices enabled: " << m_db_list.size();
+    if (m_db_list.empty())
+    {
+        throw std::runtime_error("No indices enabled for search...");
+    }
+    //
+    auto query_str = std::string{q.toUtf8().constData()};
+    Xapian::Query query = parse_query(query_str);
+    kDebug(DEBUG_AREA) << "Parsed query: " << query.get_description().c_str();
+    //
+    Xapian::MSet matches;
+    try
+    {
+        auto enquire = Xapian::Enquire{*m_compound_db};     // NOTE May throw only if DB instance is uninitialized
+        enquire.set_query(query);
+        enquire.set_sort_by_relevance();
+        matches = enquire.get_mset(start, maxitems);
+    }
+    catch (const Xapian::Error& e)
+    {
+        throw std::runtime_error(std::string{"Database failure: "} + e.get_msg());
+    }
+    kDebug(DEBUG_AREA) <<  "Documents found:" << matches.size();
+    kDebug(DEBUG_AREA) << "Documents estimated:" << matches.get_matches_estimated();
+    //
+    auto result = std::vector<docref>{};
+    for (auto it = std::begin(matches), last = std::end(matches); it != last; ++it)
+    {
+        const auto& doc = it.get_document();
+        const auto& dbid_str = doc.get_value(value_slot::DBID);
+        assert("Sanity check" && !dbid_str.empty());
+        const auto database_id = Xapian::sortable_unserialise(dbid_str);
+        const auto document_id = doc.get_docid();
+        kDebug(DEBUG_AREA) << "dbid=" << database_id << ", docid=" << document_id;
+        result.emplace_back(database_id, document_id);
+    }
     return result;
 }
 
@@ -45,11 +86,12 @@ void combined_index::add_index(ro::database* ptr)
     auto it = std::find(begin(m_db_list), end(m_db_list), ptr);
     if (it == end(m_db_list))
     {
+        recombine_database();
         m_db_list.emplace_back(ptr);
-        m_compound_db.reset();
+        m_compound_db->add_database(*ptr);
     }
-
 }
+
 void combined_index::remove_index(ro::database* ptr)
 {
     auto it = std::find(begin(m_db_list), end(m_db_list), ptr);
@@ -62,9 +104,35 @@ void combined_index::remove_index(ro::database* ptr)
 
 void combined_index::recombine_database()
 {
-    m_compound_db.reset(new Xapian::Database{});
-    for (auto* ptr : m_db_list)
-        m_compound_db->add_database(*ptr);
+    if (!m_compound_db)
+    {
+        m_compound_db.reset(new Xapian::Database{});
+        for (auto* ptr : m_db_list)
+            m_compound_db->add_database(*ptr);
+    }
+}
+
+Xapian::Query combined_index::parse_query(const std::string& query_str)
+{
+    assert("Sanity check" && m_compound_db);
+
+    Xapian::QueryParser qp;
+    qp.set_database(*m_compound_db);
+
+    // Setup prefixes
+    qp.add_boolean_prefix("decl", term::XDECL);
+
+    // Parse it!
+    Xapian::Query query;
+    try
+    {
+        query = qp.parse_query(query_str);
+    }
+    catch (const Xapian::QueryParserError& e)
+    {
+        throw std::runtime_error(std::string{"Invalid query: "} + e.get_msg());
+    }
+    return query;
 }
 
 }}                                                          // namespace index, kate

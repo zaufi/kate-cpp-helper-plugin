@@ -158,6 +158,7 @@ private:
     void enable(int, bool);
     bool isEnabled(int) const;
     void renameCollection(int, const QString&);
+    void reportError(const QString& = QString{}, int = -1, bool = false);
 
     KUrl m_base_dir;
     IndicesTableModel m_indices_model;

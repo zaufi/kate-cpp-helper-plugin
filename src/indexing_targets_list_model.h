@@ -65,7 +65,7 @@ public:
 
     /// Reset the model
     template <typename RefreshFunctor>
-    void refresAll(RefreshFunctor);
+    void refreshAll(RefreshFunctor);
 
 private:
     DatabaseManager& m_db_mgr;
@@ -88,7 +88,7 @@ inline void IndexingTargetsListModel::removeRow(const int idx, RemoveFunctor fn)
 }
 
 template <typename RefreshFunctor>
-inline void IndexingTargetsListModel::refresAll(RefreshFunctor fn)
+inline void IndexingTargetsListModel::refreshAll(RefreshFunctor fn)
 {
     beginResetModel();
     fn();

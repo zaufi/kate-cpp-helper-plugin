@@ -135,7 +135,7 @@ void DatabaseManager::reset(const QStringList& enabled_list, const KUrl& base_di
             kDebug(DEBUG_AREA) << "found manifest:" << it->path().c_str();
             {
                 auto report = DiagnosticMessagesModel::Record{
-                    QString{"found manifest: %1"}.arg(it->path().c_str())
+                    i18nc("@info/plain", "found manifest: %1", it->path().c_str())
                   , DiagnosticMessagesModel::Record::type::debug
                   };
                 Q_EMIT(diagnosticMessage(report));
@@ -152,16 +152,9 @@ void DatabaseManager::reset(const QStringList& enabled_list, const KUrl& base_di
                 {
                     state.m_db.reset(new index::ro::database(db_path));
                 }
-                catch (const std::exception& e)
+                catch (...)
                 {
-                    auto msg = QString{"Index '%1' loading failure: %2"}
-                      .arg(state.m_options->name(), e.what());
-                    kDebug(DEBUG_AREA) << msg;
-                    auto report = DiagnosticMessagesModel::Record{
-                        msg
-                      , DiagnosticMessagesModel::Record::type::error
-                      };
-                    Q_EMIT(diagnosticMessage(report));
+                    reportError(i18n("Load failure '%1'", name));
                     continue;
                 }
                 is_enabled = true;
@@ -175,10 +168,22 @@ void DatabaseManager::reset(const QStringList& enabled_list, const KUrl& base_di
             state.m_enabled = is_enabled;
             m_collections.emplace_back(std::move(state));
             if (is_enabled)
+            {
+                m_search_db.add_index(m_collections.back().m_db.get());
                 Q_EMIT(indexStatusChanged(name, true));
+            }
         }
     }
     /// \todo Get rid of not-found indices?
+}
+
+/// \todo Doesn't looks good/efficient...
+bool DatabaseManager::isEnabled(const int idx) const
+{
+    assert("Index is out of range" && std::size_t(idx) < m_collections.size());
+    const auto& name = m_collections[idx].m_options->name();
+    const auto result = m_enabled_list.indexOf(name) != -1;
+    return result;
 }
 
 void DatabaseManager::enable(const QString& name, const bool flag)
@@ -195,27 +200,41 @@ void DatabaseManager::enable(const QString& name, const bool flag)
     }
 }
 
-/// \todo Doesn't looks good/efficient...
-bool DatabaseManager::isEnabled(const int idx) const
-{
-    assert("Index is out of range" && std::size_t(idx) < m_collections.size());
-    const auto& name = m_collections[idx].m_options->name();
-    const auto result = m_enabled_list.indexOf(name) != -1;
-    return result;
-}
-
 void DatabaseManager::enable(const int idx, const bool flag)
 {
     assert("Sanity check" && 0 <= idx && std::size_t(idx) < m_collections.size());
-    m_collections[idx].m_enabled = flag;
-    const auto& name = m_collections[idx].m_options->name();
+    auto& state = m_collections[idx];
+    const auto& name = state.m_options->name();
     kDebug(DEBUG_AREA) << "Seting" << name << ": is_enabled=" << flag;
     if (flag)
+    {
+        // Try to open index first...
+        try
+        {
+            state.m_db.reset(
+                new index::ro::database(
+                    state.m_options->path().toUtf8().constData()
+                  )
+              );
+        }
+        catch (...)
+        {
+            reportError("Enabling failed", idx, true);
+            return;
+        }
+        m_search_db.add_index(state.m_db.get());
         m_enabled_list << name;
+        state.m_status = database_state::status::ok;
+    }
     else
+    {
         m_enabled_list.removeOne(name);
+        m_search_db.remove_index(state.m_db.get());
+        state.m_db.reset();
+        state.m_status = database_state::status::unknown;
+    }
+    state.m_enabled = flag;
     Q_EMIT(indexStatusChanged(name, flag));
-    /// \todo Add or shutdown DB
 }
 
 void DatabaseManager::createNewIndex()
@@ -250,7 +269,59 @@ void DatabaseManager::createNewIndex()
 
 void DatabaseManager::removeCurrentIndex()
 {
+    // Check if any index has been selected, and no other reindexing in progress
+    if (m_last_selected_index == -1)
+    {
+        KPassivePopup::message(
+            i18nc("@title:window", "Error")
+          , i18nc("@info", "No index selected...")
+            /// \todo WTF?! \c nullptr can't be used here!?
+          , reinterpret_cast<QWidget*>(0)
+          );
+        return;
+    }
+    if (m_indexing_in_progress == m_last_selected_index)
+    {
+        /// \note If indexing already in progress \em Reindex
+        /// should be disabled already...
+        kDebug(DEBUG_AREA) << "Reindexing in progress...Stop it!";
+        assert("Sanity check" && m_indexer);
+        return;
+    }
+    // Disable if needed...
+    enable(m_last_selected_index, false);
 
+    // Take state out of collection
+    auto state = std::move(m_collections[m_last_selected_index]);
+    // Remove it (taking care about models)
+    m_targets_model.refreshAll(
+        [this]()
+        {
+            m_last_selected_target = -1;
+        }
+      );
+    auto last_selected_index = m_last_selected_index;
+    m_last_selected_index = -1;
+    m_indices_model.removeRow(
+        last_selected_index
+      , [this](const int row)
+        {
+            m_collections.erase(begin(m_collections) + row);
+        }
+      );
+    auto name = state.m_options->name();
+    auto path = state.m_options->path();
+    state.m_options.reset();                                // Flush any unsaved options
+
+    // Remove all files
+    boost::system::error_code error;
+    auto db_path = boost::filesystem::path{path.toUtf8().constData()};
+    boost::filesystem::remove_all(db_path, error);
+    if (error)
+    {
+        /// \todo Make some spam?
+        return;
+    }
 }
 
 void DatabaseManager::stopIndexer()
@@ -263,21 +334,26 @@ void DatabaseManager::rebuildCurrentIndex()
     // Check if any index has been selected, and no other reindexing in progress
     if (m_last_selected_index == -1)
     {
-        kDebug(DEBUG_AREA) << "Nothing selected...";
-        /// \todo Make some spam?
+        KPassivePopup::message(
+            i18nc("@title:window", "Error")
+          , i18nc("@info", "No index selected...")
+            /// \todo WTF?! \c nullptr can't be used here!?
+          , reinterpret_cast<QWidget*>(0)
+          );
         return;
     }
     if (m_indexer)
     {
+        /// \note If indexing already in progress \em Reindex
+        /// should be disabled already...
         kDebug(DEBUG_AREA) << "Reindexing already in progress...";
         assert("Sanity check" && m_indexing_in_progress != -1);
-        /// \todo Make some spam?
         return;
     }
 
     auto& state = m_collections[m_last_selected_index];
     const auto& name = state.m_options->name();
-    Q_EMIT(reindexingStarted(QString{"Starting to rebuild index: %1"}.arg(name)));
+    Q_EMIT(reindexingStarted(i18nc("@info/plain", "Starting to rebuild index: %1", name)));
 
     // Make sure DB path + ".reindexing" suffix doesn't exits
     boost::system::error_code error;
@@ -287,13 +363,23 @@ void DatabaseManager::rebuildCurrentIndex()
     boost::filesystem::remove_all(reindexing_db_path, error);
     if (error)
     {
-        Q_EMIT(reindexingFinished(QString{"Index rebuilding failed: %1"}.arg(name)));
-        /// \todo Make some spam?
+        Q_EMIT(
+            reindexingFinished(
+                i18nc(
+                    "@info/plain"
+                  , "Index '%1' rebuilding failed: %2"
+                  , name
+                  , error.message().c_str()
+                  )
+              )
+          );
+        /// \todo Make better spam?
         return;
     }
 
     // Make a new indexer and provide it w/ targets to scan
     auto db_id = index::make_dbid(state.m_id);
+    kDebug(DEBUG_AREA) << "Make short DB ID:" << to_string(state.m_id).c_str() << " --> " << db_id;
     m_indexer.reset(
         new index::indexer{db_id, reindexing_db_path.string()}
       );
@@ -302,16 +388,18 @@ void DatabaseManager::rebuildCurrentIndex()
     if (state.m_options->targets().empty())
     {
         m_indexer.reset();
-        Q_EMIT(reindexingFinished(QString{"Index rebuilding failed: %1"}.arg(name)));
+        auto msg = i18nc(
+              "@info/plain"
+            , "No index targets specified for <icode>%1</icode>"
+            , name
+            );
+        Q_EMIT(reindexingFinished(msg));
         KPassivePopup::message(
             i18n("Error")
-          , i18n(
-              "No index targets specified for <icode>%1</icode>"
-            , name
-            )
-          , qobject_cast<QWidget*>(this)
+          , msg
+            /// \todo WTF?! \c nullptr can't be used here!?
+          , reinterpret_cast<QWidget*>(0)
           );
-        /// \todo Make some spam
         return;
     }
 
@@ -393,7 +481,7 @@ void DatabaseManager::rebuildFinished()
 
     // Notify that we've done...
     const auto& name = state.m_options->name();
-    Q_EMIT(reindexingFinished(QString{"Index rebuilding has finished: %1"}.arg(name)));
+    Q_EMIT(reindexingFinished(i18nc("@info/plain", "Index rebuilding has finished: %1", name)));
 }
 
 void DatabaseManager::refreshCurrentTargets(const QModelIndex& index)
@@ -402,7 +490,7 @@ void DatabaseManager::refreshCurrentTargets(const QModelIndex& index)
         "Database index is out of range"
       && std::size_t(index.row()) < m_collections.size()
       );
-    m_targets_model.refresAll(
+    m_targets_model.refreshAll(
         [this, &index]()
         {
             m_last_selected_index = index.row();
@@ -462,14 +550,6 @@ void DatabaseManager::addNewTarget()
         assert("Sanity check" && targets.size() == sz + 1);
         m_last_selected_target = targets.size() - 1;
         state.m_options->writeConfig();
-        // Make some SPAM
-#if 0
-        auto msg = DiagnosticMessagesModel::Record{
-            clang::location{doc->url(), range.start().line() + 1, range.start().column() + 1}
-          , "Completion point"
-          , DiagnosticMessagesModel::Record::type::debug
-          }
-#endif
     }
 }
 
@@ -519,7 +599,6 @@ auto DatabaseManager::tryLoadDatabaseMeta(const boost::filesystem::path& manifes
 
     database_state result;
     result.loadMetaFrom(filename);
-    kDebug(DEBUG_AREA) << "Trying to parse UUID:" << result.m_options->uuid();
     result.m_id = UUID_PARSER(result.m_options->uuid().toUtf8().constData());
 
     auto db_info = QFileInfo{result.m_options->path()};
@@ -544,7 +623,7 @@ void DatabaseManager::renameCollection(int idx, const QString& new_name)
     {
         m_enabled_list.removeAt(idx);
         m_enabled_list << new_name;
-        // Notify config only if index really was enabled
+        // Notify config, only if index really was enabled
         Q_EMIT(indexNameChanged(old_name, new_name));
     }
 }
@@ -558,7 +637,7 @@ KUrl DatabaseManager::getDefaultBaseDir()
 void DatabaseManager::reportCurrentFile(QString msg)
 {
     auto report = DiagnosticMessagesModel::Record{
-        QString{"  indexing %1 ..."}.arg(msg)
+        i18nc("@info/plain", "  indexing %1 ...", msg)
       , DiagnosticMessagesModel::Record::type::info
       };
     Q_EMIT(diagnosticMessage(report));
@@ -578,9 +657,66 @@ void DatabaseManager::reportIndexingError(clang::location loc, QString msg)
  * Forward search request to \c combined_index.
  * Latter will fill the model w/ results, so they will be displayed...
  */
-void DatabaseManager::startSearch(QString)
+void DatabaseManager::startSearch(QString query)
 {
-
+    try
+    {
+        auto results = m_search_db.search(query);
+        kDebug(DEBUG_AREA) << "GOT " << results.size() << "results";
+    }
+    catch (...)
+    {
+        reportError("Search failure", -1, true);
+    }
 }
+
+void DatabaseManager::reportError(const QString& prefix, const int index, const bool show_popup)
+{
+    assert("Sanity check" && (index == -1 || std::size_t(index) < m_collections.size()));
+    try
+    {
+        throw;
+    }
+    catch (const std::exception& e)
+    {
+        auto msg = QString{};
+        if (index != -1 && !prefix.isEmpty())
+            msg = i18nc(
+                "@info/plain"
+              , "Index '%1': %2: %3"
+              , m_collections[index].m_options->name()
+              , prefix
+              , e.what()
+              );
+        else if (index != -1 && prefix.isEmpty())
+            msg = i18nc(
+                "@info/plain"
+              , "Index '%1': %2"
+              , m_collections[index].m_options->name()
+              , e.what()
+              );
+        else if (index == -1 && !prefix.isEmpty())
+            msg = QString{"%1: %2"}.arg(prefix, e.what());
+        else
+            msg = e.what();
+        //
+        auto report = DiagnosticMessagesModel::Record{
+            msg
+          , DiagnosticMessagesModel::Record::type::error
+          };
+        Q_EMIT(diagnosticMessage(report));
+        kDebug(DEBUG_AREA) << msg;
+
+        // Show any popup also?
+        if (show_popup)
+            KPassivePopup::message(
+                i18nc("@title:window", "Error")
+              , msg
+                /// \todo WTF?! \c nullptr can't be used here!?
+              , reinterpret_cast<QWidget*>(0)
+              );
+    }
+}
+
 }                                                           // namespace kate
 // kate: hl C++11/Qt4;
