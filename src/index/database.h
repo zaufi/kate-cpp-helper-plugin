@@ -81,15 +81,14 @@ namespace details {
 class common_base
 {
 public:
-    common_base() = default;
-    common_base(const dbid db_id) : m_id(db_id) {}
+    explicit common_base(const dbid db_id = 0) : m_id(db_id) {}
 
     const HeaderFilesCache& headers_map() const;            ///< Access header files mapping cache (immutable)
     dbid id() const;
 
 protected:
     HeaderFilesCache m_files_cache;
-    dbid m_id = {0};
+    dbid m_id;
 };
 
 inline const HeaderFilesCache& common_base::headers_map() const

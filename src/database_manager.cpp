@@ -82,6 +82,9 @@ void DatabaseManager::database_state::loadMetaFrom(const QString& filename)
 {
     auto db_meta = KSharedConfig::openConfig(filename, KConfig::SimpleConfig);
     m_options.reset(new DatabaseOptions{db_meta});
+    auto uuid_str = std::string{m_options->uuid().toUtf8().constData()};
+    if (!uuid_str.empty())
+        m_id = UUID_PARSER(uuid_str);
 }
 
 DatabaseManager::DatabaseManager()
@@ -257,6 +260,7 @@ void DatabaseManager::createNewIndex()
     result.m_options->setName("New collection");
     result.m_options->setUuid(id);
     result.m_options->writeConfig();
+    result.m_id = uuid;
 
     m_indices_model.appendNewRow(
         m_collections.size()
@@ -599,7 +603,6 @@ auto DatabaseManager::tryLoadDatabaseMeta(const boost::filesystem::path& manifes
 
     database_state result;
     result.loadMetaFrom(filename);
-    result.m_id = UUID_PARSER(result.m_options->uuid().toUtf8().constData());
 
     auto db_info = QFileInfo{result.m_options->path()};
     if (!db_info.exists() || !db_info.isDir())

@@ -39,7 +39,7 @@ dbid make_dbid(const boost::uuids::uuid& uuid)
         dbid id;
         char buf[sizeof(dbid)];
     };
-    for (auto i = 0u; i < sizeof(buf); ++i)
+    for (auto i = 0u; i < sizeof(dbid); ++i)
         buf[i] = uuid.data[i];
     return id;
 }
