@@ -67,6 +67,7 @@ inline bool may_apply_template_kind(const CXIdxEntityKind kind)
     switch (kind)
     {
         case CXIdxEntity_Function:
+        case CXIdxEntity_Struct:
         case CXIdxEntity_CXXClass:
         case CXIdxEntity_CXXStaticMethod:
         case CXIdxEntity_CXXInstanceMethod:

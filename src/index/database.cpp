@@ -32,11 +32,16 @@
 #include <KDE/KDebug>
 
 namespace kate { namespace index { namespace term {
-const std::string XDECL = "DL";
-const std::string XREF = "RF";
+const std::string XDECL = "XDL";
+const std::string XREF = "XRF";
 const std::string XCONTAINER = "XCNT";
-const std::string XREDECLARATION = "RDL";
-const std::string XKIND = "K";
+const std::string XREDECLARATION = "XRDL";
+const std::string XKIND = "XK";
+const std::string XANONYMOUS = "XA";
+const std::string XSTATIC = "XST";
+const std::string XNAMESPACE = "XNS";
+const std::string XSCOPE = "XSC";
+const std::string XTEMPLATE = "XTP";
 }                                                           // namespace term
 
 namespace { namespace meta {

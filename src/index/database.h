@@ -43,6 +43,10 @@ extern const std::string XREF;
 extern const std::string XCONTAINER;
 extern const std::string XREDECLARATION;
 extern const std::string XKIND;
+extern const std::string XANONYMOUS;
+extern const std::string XSTATIC;
+extern const std::string XSCOPE;
+extern const std::string XTEMPLATE;
 }                                                           // namespace term
 namespace value_slot {
 constexpr Xapian::valueno NAME = 0;
@@ -53,6 +57,8 @@ constexpr Xapian::valueno SEMANTIC_CONTAINER = 4;
 constexpr Xapian::valueno LEXICAL_CONTAINER = 5;
 constexpr Xapian::valueno TYPE = 6;
 constexpr Xapian::valueno DBID = 7;
+constexpr Xapian::valueno KIND = 8;
+constexpr Xapian::valueno TEMPLATE = 9;
 }                                                           // namespace value_slot
 
 /// Exceptions group for database classes

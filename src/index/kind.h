@@ -1,9 +1,9 @@
 /**
  * \file
  *
- * \brief Commonly used types for indexing susbystem
+ * \brief Enum \c kate::index::kind (interface)
  *
- * \date Sat Oct 26 12:26:50 MSK 2013 -- Initial design
+ * \date Wed Oct 30 17:54:10 MSK 2013 -- Initial design
  */
 /*
  * Copyright (C) 2011-2013 Alex Turbov, all rights reserved.
@@ -31,65 +31,41 @@
 #include <src/index/serialize.h>
 
 // Standard includes
-#include <xapian/types.h>
-#include <cstdint>
-#include <string>
 
 namespace kate { namespace index {
 
-typedef uint32_t fileid;
-typedef uint32_t dbid;
-typedef Xapian::docid docid;
-typedef Xapian::doccount doccount;
-
-class docref
+/**
+ * \brief Enumeration type for possible symbol's kind
+ */
+enum class kind
 {
-public:
-    constexpr docref() : m_as_long{0} {}
-
-    constexpr docref(const dbid id1, const docid id2)
-      : m_db_id{id1}
-      , m_doc_id{id2}
-    {}
-
-    dbid database_id() const
-    {
-        return m_db_id;
-    }
-    docid document_id() const
-    {
-        return m_doc_id;
-    }
-
-    bool is_valid() const
-    {
-        return m_db_id && m_doc_id;
-    }
-
-    static std::string to_string(docref ref)
-    {
-        return serialize(ref.m_as_long);
-    }
-    static docref from_string(const std::string& raw)
-    {
-        auto result = deserialize<decltype(docref::m_as_long)>(raw);
-        return docref{result};
-    }
-
-private:
-    constexpr explicit docref(uint64_t val)
-      : m_as_long{val}
-    {}
-
-    union
-    {
-        uint64_t m_as_long;
-        struct
-        {
-            dbid m_db_id;
-            docid m_doc_id;
-        };
-    };
+    NAMESPACE
+  , NAMESPACE_ALIAS
+  , TYPEDEF
+  , TYPE_ALIAS
+  , STRUCT
+  , CLASS
+  , UNION
+  , ENUM
+  , ENUM_CONSTANT
+  , VARIABLE
+  , FIELD
+  , PARAMETER
+  , FUNCTION
+  , METHOD
+  , CONSTRUCTOR
+  , DESTRUCTOR
+  , CONVERSTION
 };
+
+inline std::string serialize(const kind value)
+{
+    return serialize(static_cast<unsigned>(value));
+}
+
+inline kind deserialize(const std::string& raw)
+{
+    return static_cast<kind>(deserialize<unsigned>(raw));
+}
 
 }}                                                          // namespace index, kate

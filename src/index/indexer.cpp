@@ -29,6 +29,7 @@
 #include <src/index/indexer.h>
 #include <src/clang/kind_of.h>
 #include <src/clang/to_string.h>
+#include <src/index/kind.h>
 
 // Standard includes
 #include <KDE/KDebug>
@@ -226,9 +227,8 @@ CXIdxClientContainer worker::update_client_container(const docref id)
     return CXIdxClientContainer(ptr.get());
 }
 
-int worker::on_abort_cb(CXClientData client_data, void*)
+int worker::on_abort_cb(CXClientData, void*)
 {
-    auto* const wrk = static_cast<worker*>(client_data);
     return 0;
 }
 
@@ -239,6 +239,7 @@ void worker::on_diagnostic_cb(CXClientData, CXDiagnosticSet, void*)
 CXIdxClientFile worker::on_entering_main_file(CXClientData client_data, CXFile file, void*)
 {
     auto* const wrk = static_cast<worker*>(client_data);
+    Q_UNUSED(wrk);
     kDebug(DEBUG_AREA) << "Main file:" << clang::toString(file);
     return static_cast<CXIdxClientFile>(file);
 }
@@ -246,12 +247,14 @@ CXIdxClientFile worker::on_entering_main_file(CXClientData client_data, CXFile f
 CXIdxClientFile worker::on_include_file(CXClientData client_data, const CXIdxIncludedFileInfo* info)
 {
     auto* const wrk = static_cast<worker*>(client_data);
+    Q_UNUSED(wrk);
     return static_cast<CXIdxClientFile>(info->file);
 }
 
 CXIdxClientASTFile worker::on_include_ast_file(CXClientData client_data, const CXIdxImportedASTFileInfo* info)
 {
     auto* const wrk = static_cast<worker*>(client_data);
+    Q_UNUSED(wrk);
     return static_cast<CXIdxClientFile>(info->file);
 }
 
@@ -261,7 +264,7 @@ CXIdxClientContainer worker::on_translation_unit(CXClientData client_data, void*
     return CXIdxClientContainer(wrk->update_client_container(docref{}));
 }
 
-void worker::on_declaration(CXClientData client_data, const CXIdxDeclInfo* info)
+void worker::on_declaration(CXClientData client_data, const CXIdxDeclInfo* const info)
 {
     auto loc = clang::location{info->loc};
     if (!info->entityInfo->name)
@@ -279,23 +282,26 @@ void worker::on_declaration(CXClientData client_data, const CXIdxDeclInfo* info)
         return;
     }
 
-    /// \note Unnamed parameters have empty name (only type, available via ref)
+    /// \note Unnamed parameters and anonymous namespaces/structs/unions have an empty name!
+    /// \todo Remove possible spaces from \c name?
     auto name = QString{info->entityInfo->name};
-    if (name.isEmpty())
-    {
-        kDebug(DEBUG_AREA) << loc << ": it seems here is unnamed parameter declaration";
-        return;
-    }
 
-    kDebug() << loc << "declaration of" << QString(info->entityInfo->name);
+    kDebug() << loc << "declaration of" << name;
 
     // Create a new document for declaration and attach all required value slots and terms
     auto doc = Xapian::Document{};
-    doc.add_posting(info->entityInfo->name, make_term_position(loc));
-    // Mark document w/ XDECL prefixed term
-    /// \todo Remove possible spaces from \c name
-    doc.add_boolean_term(term::XDECL + info->entityInfo->name);
-    doc.add_value(value_slot::NAME, info->entityInfo->name);
+    // Attach terms related to name
+    if (info->entityInfo->name)
+    {
+        doc.add_posting(info->entityInfo->name, make_term_position(loc));
+        doc.add_value(value_slot::NAME, info->entityInfo->name);
+        // Mark the document w/ XDECL prefixed term
+        doc.add_boolean_term(term::XDECL + info->entityInfo->name);
+    }
+    else
+    {
+        doc.add_boolean_term(term::XANONYMOUS);
+    }
     doc.add_value(value_slot::LINE, Xapian::sortable_serialise(loc.line()));
     doc.add_value(value_slot::COLUMN, Xapian::sortable_serialise(loc.column()));
     doc.add_value(value_slot::FILE, Xapian::sortable_serialise(file_id));
@@ -313,10 +319,8 @@ void worker::on_declaration(CXClientData client_data, const CXIdxDeclInfo* info)
     }
     if (info->declAsContainer)
         doc.add_boolean_term(term::XCONTAINER);
-#if 0
-    /// \note Don't remember when it possible...
-    if (info->isRedeclaration)
-#endif
+
+    update_document_with_kind(info, doc);                   // Get more terms/slots to attach
 
     // Add the document to the DB finally
     auto document_id = wrk->m_indexer->m_db.add_document(doc);
@@ -331,8 +335,152 @@ void worker::on_declaration(CXClientData client_data, const CXIdxDeclInfo* info)
           );
 }
 
-void worker::on_declaration_reference(CXClientData client_data, const CXIdxEntityRefInfo* info)
+void worker::on_declaration_reference(CXClientData client_data, const CXIdxEntityRefInfo* const info)
 {
+    auto* const wrk = static_cast<worker*>(client_data);
+    Q_UNUSED(wrk);
+    Q_UNUSED(info);
+}
+
+void worker::update_document_with_kind(const CXIdxDeclInfo* info, Xapian::Document& doc)
+{
+    kDebug() << "kind=" << clang::toString(clang::kind_of(*info->entityInfo));
+    switch (clang::kind_of(*info->entityInfo))
+    {
+        case CXIdxEntity_CXXNamespace:
+            doc.add_boolean_term(term::XKIND + "ns");
+            doc.add_value(value_slot::KIND, serialize(kind::NAMESPACE));
+            break;
+        case CXIdxEntity_CXXNamespaceAlias:
+            doc.add_boolean_term(term::XKIND + "ns-alias");
+            doc.add_value(value_slot::KIND, serialize(kind::NAMESPACE_ALIAS));
+            break;
+        case CXIdxEntity_Typedef:
+            doc.add_boolean_term(term::XKIND + "typedef");
+            doc.add_value(value_slot::KIND, serialize(kind::TYPEDEF));
+            break;
+        case CXIdxEntity_CXXTypeAlias:
+            doc.add_boolean_term(term::XKIND + "type-alias");
+            doc.add_value(value_slot::KIND, serialize(kind::TYPE_ALIAS));
+            update_document_with_template_kind(info->entityInfo->templateKind, doc);
+            break;
+        case CXIdxEntity_Struct:
+            doc.add_boolean_term(term::XKIND + "struct");
+            doc.add_value(value_slot::KIND, serialize(kind::STRUCT));
+            update_document_with_template_kind(info->entityInfo->templateKind, doc);
+            break;
+        case CXIdxEntity_CXXClass:
+            doc.add_boolean_term(term::XKIND + "class");
+            doc.add_value(value_slot::KIND, serialize(kind::CLASS));
+            update_document_with_template_kind(info->entityInfo->templateKind, doc);
+            break;
+        case CXIdxEntity_Union:
+            doc.add_boolean_term(term::XKIND + "union");
+            doc.add_value(value_slot::KIND, serialize(kind::UNION));
+            break;
+        case CXIdxEntity_Enum:
+            doc.add_boolean_term(term::XKIND + "enum");
+            doc.add_value(value_slot::KIND, serialize(kind::ENUM));
+            break;
+        case CXIdxEntity_EnumConstant:
+            doc.add_boolean_term(term::XKIND + "enum-const");
+            doc.add_value(value_slot::KIND, serialize(kind::ENUM_CONSTANT));
+            break;
+        case CXIdxEntity_Function:
+            doc.add_boolean_term(term::XKIND + "fn");
+            doc.add_value(value_slot::KIND, serialize(kind::FUNCTION));
+            update_document_with_template_kind(info->entityInfo->templateKind, doc);
+            break;
+        case CXIdxEntity_CXXInstanceMethod:
+            doc.add_boolean_term(term::XKIND + "fn");
+            doc.add_boolean_term(term::XKIND + "method");
+            doc.add_value(value_slot::KIND, serialize(kind::METHOD));
+            update_document_with_template_kind(info->entityInfo->templateKind, doc);
+            break;
+        case CXIdxEntity_CXXStaticMethod:
+            doc.add_boolean_term(term::XSTATIC);
+            doc.add_boolean_term(term::XKIND + "fn");
+            doc.add_boolean_term(term::XKIND + "method");
+            doc.add_value(value_slot::KIND, serialize(kind::METHOD));
+            update_document_with_template_kind(info->entityInfo->templateKind, doc);
+            break;
+        case CXIdxEntity_CXXConstructor:
+            doc.add_boolean_term(term::XKIND + "fn");
+            doc.add_boolean_term(term::XKIND + "ctor");
+            doc.add_value(value_slot::KIND, serialize(kind::CONSTRUCTOR));
+            update_document_with_template_kind(info->entityInfo->templateKind, doc);
+            break;
+        case CXIdxEntity_CXXDestructor:
+            doc.add_boolean_term(term::XKIND + "fn");
+            doc.add_boolean_term(term::XKIND + "dtor");
+            doc.add_value(value_slot::KIND, serialize(kind::DESTRUCTOR));
+            break;
+        case CXIdxEntity_CXXConversionFunction:
+            doc.add_boolean_term(term::XKIND + "fn");
+            doc.add_boolean_term(term::XKIND + "conversion");
+            doc.add_value(value_slot::KIND, serialize(kind::CONVERSTION));
+            update_document_with_template_kind(info->entityInfo->templateKind, doc);
+            break;
+        case CXIdxEntity_Variable:
+        {
+            auto cursor_kind = clang::kind_of(info->cursor);
+            if (cursor_kind == CXCursor_ParmDecl)
+            {
+                doc.add_boolean_term(term::XKIND + "arg");
+                doc.add_boolean_term(term::XKIND + "param");
+                doc.add_value(value_slot::KIND, serialize(kind::PARAMETER));
+            }
+            else
+            {
+                doc.add_boolean_term(term::XKIND + "var");
+                doc.add_value(value_slot::KIND, serialize(kind::VARIABLE));
+            }
+            break;
+        }
+        case CXIdxEntity_CXXStaticVariable:
+            doc.add_boolean_term(term::XSTATIC);
+            doc.add_boolean_term(term::XKIND + "var");
+            doc.add_boolean_term(term::XKIND + "field");
+            doc.add_value(value_slot::KIND, serialize(kind::FIELD));
+            break;
+        case CXIdxEntity_Field:
+            doc.add_boolean_term(term::XKIND + "var");
+            doc.add_boolean_term(term::XKIND + "field");
+            doc.add_value(value_slot::KIND, serialize(kind::FIELD));
+            break;
+        default:
+            break;
+    }
+}
+
+void worker::update_document_with_template_kind(
+    const CXIdxEntityCXXTemplateKind template_kind
+  , Xapian::Document& doc
+  )
+{
+    switch (template_kind)
+    {
+        case CXIdxEntity_Template:
+            doc.add_boolean_term(term::XTEMPLATE);
+            doc.add_value(value_slot::TEMPLATE, serialize(
+                unsigned(CXIdxEntity_Template)
+              );
+            break;
+        case CXIdxEntity_TemplatePartialSpecialization:
+            doc.add_boolean_term(term::XTEMPLATE + "ps");
+            doc.add_value(value_slot::TEMPLATE, serialize(
+                unsigned(CXIdxEntity_TemplatePartialSpecialization)
+              );
+            break;
+        case CXIdxEntity_TemplateSpecialization:
+            doc.add_boolean_term(term::XTEMPLATE + "fs");
+            doc.add_value(value_slot::TEMPLATE, serialize(
+                unsigned(CXIdxEntity_TemplateSpecialization)
+              );
+            break;
+        default:
+            break;
+    }
 }
 //END worker members
 

@@ -117,6 +117,12 @@ Xapian::Query combined_index::parse_query(const std::string& query_str)
 
     // Setup prefixes
     qp.add_boolean_prefix("decl", term::XDECL);
+    qp.add_boolean_prefix("redecl", term::XREDECLARATION);
+    qp.add_boolean_prefix("anon", term::XANONYMOUS);
+    qp.add_boolean_prefix("anonymous", term::XANONYMOUS);
+    qp.add_boolean_prefix("static", term::XSTATIC);
+    qp.add_boolean_prefix("kind", term::XKIND);
+    qp.add_boolean_prefix("scope", term::XSCOPE);
 
     // Parse it!
     Xapian::Query query;

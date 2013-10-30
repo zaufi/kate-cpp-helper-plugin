@@ -118,8 +118,12 @@ struct indexer_data
         auto kind = kind_of(*info);
         std::cout << cb << ": '" << (info->name ? info->name : "<null>")
           << "', kind: " << to_string(kind)
-          << (may_apply_template_kind(kind) ? to_string(info->templateKind) : std::string()) << std::endl
-          << "     USR: " << (info->USR ? info->USR : "<no-USR>") << std::endl
+          << (may_apply_template_kind(kind) ? to_string(info->templateKind) : std::string())
+          << " [" << info->templateKind << "]" << std::endl
+#if 0
+          << "     USR: " << (info->USR ? info->USR : "<no-USR>")
+#endif
+          << std::endl
           ;
         out_cursor(info->cursor);
         //
@@ -218,6 +222,7 @@ CXIdxClientContainer on_translation_unit(CXClientData client_data, void*)
 
 void on_declaration(CXClientData client_data, const CXIdxDeclInfo* info)
 {
+    std::cout << "---------------------------------------------" << std::endl;
     auto* const data = static_cast<indexer_data*>(client_data);
     data->out_location(info->loc);
     data->out_entity_info("decl", info->entityInfo);
@@ -262,7 +267,7 @@ void on_declaration(CXClientData client_data, const CXIdxDeclInfo* info)
 
 void on_declaration_reference(CXClientData client_data, const CXIdxEntityRefInfo* info)
 {
-    std::cout << __PRETTY_FUNCTION__ << std::endl;
+    std::cout << "---------------------------------------------" << std::endl;
     auto* const data = static_cast<indexer_data*>(client_data);
     data->out_location(info->loc);
     data->out_entity_info("ref", info->referencedEntity);

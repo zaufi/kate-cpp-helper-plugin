@@ -73,7 +73,7 @@ private:
 
     struct declaration_location
     {
-        int m_file_id;
+        fileid m_file_id;
         int m_line;
         int m_column;
         friend bool operator<(
@@ -103,6 +103,8 @@ private:
     static CXIdxClientContainer on_translation_unit(CXClientData, void*);
     static void on_declaration(CXClientData, const CXIdxDeclInfo*);
     static void on_declaration_reference(CXClientData, const CXIdxEntityRefInfo*);
+    static void update_document_with_kind(const CXIdxDeclInfo*, Xapian::Document&);
+    static void update_document_with_template_kind(CXIdxEntityCXXTemplateKind, Xapian::Document&);
 
     indexer* const m_indexer;
     std::vector<std::unique_ptr<container_info>> m_containers;

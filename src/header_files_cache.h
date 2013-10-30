@@ -23,6 +23,7 @@
 #pragma once
 
 // Project specific includes
+#include <src/index/types.h>
 
 // Standard includes
 #include <boost/archive/binary_iarchive.hpp>
@@ -51,7 +52,7 @@ namespace kate {
 class HeaderFilesCache
 {
 public:
-    typedef unsigned id_type;
+    typedef index::fileid id_type;
 
     explicit HeaderFilesCache(id_type start_id = 0)
       : m_current_id{start_id}
@@ -71,7 +72,7 @@ public:
     };
 
     bool isEmpty() const;
-    size_t size() const;
+    std::size_t size() const;
     bool isDirty() const;
 
     std::string storeToString() const;
@@ -188,7 +189,7 @@ inline bool HeaderFilesCache::isEmpty() const
     return m_cache.empty();
 }
 
-inline size_t HeaderFilesCache::size() const
+inline std::size_t HeaderFilesCache::size() const
 {
     return m_cache.size();
 }
