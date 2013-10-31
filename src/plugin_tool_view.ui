@@ -2,6 +2,14 @@
 <ui version="4.0">
  <class>PluginToolViewWidget</class>
  <widget class="QWidget" name="PluginToolViewWidget">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>596</width>
+    <height>292</height>
+   </rect>
+  </property>
   <property name="windowTitle">
    <string>C++ Helper ToolView</string>
   </property>
@@ -15,7 +23,7 @@
       <attribute name="title">
        <string>Diagnostic Messages</string>
       </attribute>
-      <layout class="QVBoxLayout" name="verticalLayout">
+      <layout class="QHBoxLayout" name="horizontalLayout">
        <item>
         <widget class="QListView" name="diagnosticMessages">
          <property name="styleSheet">
@@ -76,6 +84,12 @@
          <property name="showGrid">
           <bool>false</bool>
          </property>
+         <property name="sortingEnabled">
+          <bool>true</bool>
+         </property>
+         <attribute name="horizontalHeaderVisible">
+          <bool>false</bool>
+         </attribute>
          <attribute name="horizontalHeaderStretchLastSection">
           <bool>true</bool>
          </attribute>

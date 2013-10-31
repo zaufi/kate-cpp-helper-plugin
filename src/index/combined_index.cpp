@@ -123,6 +123,7 @@ Xapian::Query combined_index::parse_query(const std::string& query_str)
     qp.add_boolean_prefix("static", term::XSTATIC);
     qp.add_boolean_prefix("kind", term::XKIND);
     qp.add_boolean_prefix("scope", term::XSCOPE);
+    qp.add_boolean_prefix("template", term::XTEMPLATE);
 
     // Parse it!
     Xapian::Query query;

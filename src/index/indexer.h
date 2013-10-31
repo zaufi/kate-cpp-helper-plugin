@@ -154,18 +154,12 @@ Q_SIGNALS:
 private:
     friend class worker;
 
-    clang::DCXIndex m_index = {clang_createIndex(1, 1)};
+    std::unique_ptr<QThread> m_worker_thread;
+    clang::DCXIndex m_index;
     std::vector<const char*> m_options;
     std::vector<KUrl> m_targets;
     rw::database m_db;
-    QThread* m_worker_thread;
 };
-
-inline indexer::indexer(const dbid id, const std::string& path)
-  : m_db{id, path}
-  , m_worker_thread{nullptr}
-{
-}
 
 inline indexer& indexer::set_compiler_options(std::vector<const char*>&& options)
 {

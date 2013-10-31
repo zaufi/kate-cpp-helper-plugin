@@ -32,11 +32,12 @@
 #include <KDE/KAction>
 #include <KDE/KActionMenu>
 #include <KDE/KTextEditor/View>
-#include <QtGui/QStandardItemModel>
-#include <QtGui/QStandardItem>
 #include <clang-c/Index.h>
 #include <map>
 #include <memory>
+
+class QSortFilterProxyModel;
+class QStandardItemModel;
 
 namespace kate { namespace details {
 struct InclusionVisitorData;
@@ -142,6 +143,7 @@ private:
     std::unique_ptr<QWidget> m_tool_view;                   ///< A tool-view widget of this plugin
     Ui_PluginToolViewWidget* const m_tool_view_interior;    ///< Interior widget of a tool-view
     QStandardItemModel* m_includes_list_model;
+    QSortFilterProxyModel* m_search_results_model;
     KTextEditor::Document* m_last_explored_document;        ///< Document explored in the \c #includes view
 #if 0
     std::unique_ptr<KActionMenu> m_menu;                    ///< Context menu

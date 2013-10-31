@@ -48,7 +48,7 @@ class database;
 
 
 /**
- * \brief Compaund searchable database
+ * \brief Compound searchable database
  *
  * [More detailed description here]
  *
@@ -57,7 +57,7 @@ class combined_index
 {
 public:
     /// Search over all connected indices
-    std::vector<Xapian::Document> search(const QString&, doccount = 0, doccount = 20);
+    std::vector<Xapian::Document> search(const QString&, doccount = 0, doccount = 2000);
 
     void add_index(ro::database*);
     void remove_index(ro::database*);

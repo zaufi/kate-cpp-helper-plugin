@@ -47,9 +47,12 @@
 #include <QtGui/QApplication>
 #include <QtGui/QClipboard>
 #include <QtGui/QKeyEvent>
+#include <QtGui/QSortFilterProxyModel>
+#include <QtGui/QStandardItem>
+#include <QtGui/QStandardItemModel>
+#include <QtGui/QToolTip>
 #include <QtCore/QFileInfo>
 #include <QtCore/QDirIterator>
-#include <QtGui/QToolTip>
 #include <cassert>
 #include <set>
 #include <stack>
@@ -84,6 +87,7 @@ CppHelperPluginView::CppHelperPluginView(
       )
   , m_tool_view_interior(new Ui_PluginToolViewWidget())
   , m_includes_list_model(new QStandardItemModel())
+  , m_search_results_model(new QSortFilterProxyModel(this))
   , m_last_explored_document(nullptr)
 #if 0
   , m_menu(new KActionMenu(i18n("C++ Helper: Playground"), this))
@@ -159,7 +163,8 @@ CppHelperPluginView::CppHelperPluginView(
     // Search tab
     {
         auto model = m_plugin->databaseManager().getSearchResultsTableModel();
-        m_tool_view_interior->searchResults->setModel(model);
+        m_search_results_model->setSourceModel(model);
+        m_tool_view_interior->searchResults->setModel(m_search_results_model);
         connect(
             model
           , SIGNAL(modelReset())
@@ -1388,8 +1393,9 @@ void CppHelperPluginView::searchResultsUpdated()
 
 void CppHelperPluginView::searchResultActivated(const QModelIndex& index)
 {
-    kDebug(DEBUG_AREA) << "SEARCH ITEM ACTIVATED" << index.row();
-    auto loc = m_plugin->databaseManager().getSearchResultLocation(index.row());
+    auto loc = m_plugin->databaseManager().getSearchResultLocation(
+        m_search_results_model->mapToSource(index).row()
+      );
     openFile(loc.file().toLocalFile());
     // NOTE Kate has line/column numbers started from 0, but clang is more
     // human readable...

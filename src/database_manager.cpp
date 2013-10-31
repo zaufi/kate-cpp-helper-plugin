@@ -152,14 +152,15 @@ void DatabaseManager::reset(const QStringList& enabled_list, const KUrl& base_di
                 try
                 {
                     state.m_db.reset(new index::ro::database(db_path));
+                    state.m_status = database_state::status::ok;
                 }
                 catch (...)
                 {
                     reportError(i18n("Load failure '%1'", name));
+                    state.m_status = database_state::status::invalid;
                     continue;
                 }
                 is_enabled = true;
-                state.m_status = database_state::status::ok;
             }
             else
             {
@@ -221,6 +222,7 @@ void DatabaseManager::enable(const int idx, const bool flag)
         catch (...)
         {
             reportError("Enabling failed", idx, true);
+            state.m_status = database_state::status::invalid;
             return;
         }
         m_search_db.add_index(state.m_db.get());
@@ -431,6 +433,7 @@ void DatabaseManager::rebuildCurrentIndex()
     m_indices_model.refreshRow(m_indexing_in_progress = m_last_selected_index);
 
     // Shutdown possible opened DB and change status
+    m_search_db.remove_index(state.m_db.get());
     state.m_db.reset();
     state.m_status = database_state::status::reindexing;
 
@@ -445,7 +448,6 @@ void DatabaseManager::rebuildFinished()
     m_indexer.reset();                                      // CLose DBs well
 
     // Enable DB in a table view
-    state.m_status = database_state::status::ok;
     auto reindexed_db = m_indexing_in_progress;
     m_indexing_in_progress = -1;
     m_indices_model.refreshRow(reindexed_db);
@@ -482,8 +484,22 @@ void DatabaseManager::rebuildFinished()
     // Reload meta
     state.loadMetaFrom(meta_fileanme.string().c_str());
 
-    // Notify that we've done...
     const auto& name = state.m_options->name();
+    // Relod index
+    try
+    {
+        state.m_db.reset(new index::ro::database{db_path.string()});
+        m_search_db.add_index(state.m_db.get());
+        state.m_status = database_state::status::ok;
+    }
+    catch (...)
+    {
+        reportError(i18n("Load failure '%1'", name));
+        state.m_status = database_state::status::invalid;
+        return;
+    }
+
+    // Notify that we've done...
     Q_EMIT(reindexingFinished(i18nc("@info/plain", "Index rebuilding has finished: %1", name)));
 }
 
@@ -678,7 +694,6 @@ void DatabaseManager::startSearch(QString query)
                 continue;
             }
             auto index_id = index::deserialize<index::dbid>(tmp_str);
-            kDebug(DEBUG_AREA) << "DBID=" << index_id;
             auto& index = findIndexByID(index_id);
 
             // Get source file ID
@@ -703,11 +718,15 @@ void DatabaseManager::startSearch(QString query)
 
             // Get entity name
             auto name = doc.get_value(index::value_slot::NAME);
-            assert("Empty name?" && !name.empty());
 
             //
             model_data.emplace_back(
-                SearchResultsTableModel::search_result{name.c_str(), filename, line, column}
+                SearchResultsTableModel::search_result{
+                    name.empty() ? "<anonymous>" : name.c_str()
+                  , filename
+                  , line
+                  , column
+                  }
               );
         }
         // Update the model w/ obtained data
@@ -733,7 +752,10 @@ const index::ro::database& DatabaseManager::findIndexByID(const index::dbid id) 
       , [id](const database_state& state)
         {
             if (state.m_status == database_state::status::ok)
+            {
+                assert("Sanity check" && state.m_db);
                 return state.m_db->id() == id;
+            }
             return false;
         }
       );

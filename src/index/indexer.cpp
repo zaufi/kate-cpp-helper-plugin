@@ -267,11 +267,6 @@ CXIdxClientContainer worker::on_translation_unit(CXClientData client_data, void*
 void worker::on_declaration(CXClientData client_data, const CXIdxDeclInfo* const info)
 {
     auto loc = clang::location{info->loc};
-    if (!info->entityInfo->name)
-    {
-        kDebug(DEBUG_AREA) << loc << ": it seems here is anonymous declaration";
-        return;
-    }
     // Make sure we've not seen it yet
     auto* const wrk = static_cast<worker*>(client_data);
     auto file_id = wrk->m_indexer->m_db.headers_map()[loc.file().toLocalFile()];
@@ -291,7 +286,7 @@ void worker::on_declaration(CXClientData client_data, const CXIdxDeclInfo* const
     // Create a new document for declaration and attach all required value slots and terms
     auto doc = Xapian::Document{};
     // Attach terms related to name
-    if (info->entityInfo->name)
+    if (!name.isEmpty())
     {
         doc.add_posting(info->entityInfo->name, make_term_position(loc));
         doc.add_value(value_slot::NAME, info->entityInfo->name);
@@ -300,7 +295,7 @@ void worker::on_declaration(CXClientData client_data, const CXIdxDeclInfo* const
     }
     else
     {
-        doc.add_boolean_term(term::XANONYMOUS);
+        doc.add_boolean_term(term::XANONYMOUS + "y");
     }
     doc.add_value(value_slot::LINE, Xapian::sortable_serialise(loc.line()));
     doc.add_value(value_slot::COLUMN, Xapian::sortable_serialise(loc.column()));
@@ -398,7 +393,7 @@ void worker::update_document_with_kind(const CXIdxDeclInfo* info, Xapian::Docume
             update_document_with_template_kind(info->entityInfo->templateKind, doc);
             break;
         case CXIdxEntity_CXXStaticMethod:
-            doc.add_boolean_term(term::XSTATIC);
+            doc.add_boolean_term(term::XSTATIC + "y");
             doc.add_boolean_term(term::XKIND + "fn");
             doc.add_boolean_term(term::XKIND + "method");
             doc.add_value(value_slot::KIND, serialize(kind::METHOD));
@@ -438,7 +433,7 @@ void worker::update_document_with_kind(const CXIdxDeclInfo* info, Xapian::Docume
             break;
         }
         case CXIdxEntity_CXXStaticVariable:
-            doc.add_boolean_term(term::XSTATIC);
+            doc.add_boolean_term(term::XSTATIC + "y");
             doc.add_boolean_term(term::XKIND + "var");
             doc.add_boolean_term(term::XKIND + "field");
             doc.add_value(value_slot::KIND, serialize(kind::FIELD));
@@ -461,21 +456,24 @@ void worker::update_document_with_template_kind(
     switch (template_kind)
     {
         case CXIdxEntity_Template:
-            doc.add_boolean_term(term::XTEMPLATE);
-            doc.add_value(value_slot::TEMPLATE, serialize(
-                unsigned(CXIdxEntity_Template)
+            doc.add_boolean_term(term::XTEMPLATE + "y");
+            doc.add_value(
+                value_slot::TEMPLATE
+              , serialize(unsigned(CXIdxEntity_Template))
               );
             break;
         case CXIdxEntity_TemplatePartialSpecialization:
             doc.add_boolean_term(term::XTEMPLATE + "ps");
-            doc.add_value(value_slot::TEMPLATE, serialize(
-                unsigned(CXIdxEntity_TemplatePartialSpecialization)
+            doc.add_value(
+                value_slot::TEMPLATE
+              , serialize(unsigned(CXIdxEntity_TemplatePartialSpecialization))
               );
             break;
         case CXIdxEntity_TemplateSpecialization:
             doc.add_boolean_term(term::XTEMPLATE + "fs");
-            doc.add_value(value_slot::TEMPLATE, serialize(
-                unsigned(CXIdxEntity_TemplateSpecialization)
+            doc.add_value(
+                value_slot::TEMPLATE
+              , serialize(unsigned(CXIdxEntity_TemplateSpecialization))
               );
             break;
         default:
@@ -485,6 +483,12 @@ void worker::update_document_with_template_kind(
 //END worker members
 
 //BEGIN indexer members
+indexer::indexer(const dbid id, const std::string& path)
+  : m_index{clang_createIndex(1, 1)}
+  , m_db{id, path}
+{
+}
+
 indexer::~indexer()
 {
     if (m_worker_thread)
@@ -511,7 +515,7 @@ void indexer::start()
     connect(t, SIGNAL(finished()), t, SLOT(deleteLater()));
     w->moveToThread(t);
     t->start();
-    m_worker_thread = t;
+    m_worker_thread.reset(t);
 }
 
 void indexer::stop()
