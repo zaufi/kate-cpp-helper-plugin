@@ -29,8 +29,14 @@
 #include <src/index/utils.h>
 
 // Standard includes
+#include <boost/uuid/string_generator.hpp>
+#include <boost/uuid/uuid_io.hpp>
+#include <QtCore/QString>
+#include <cassert>
 
-namespace kate { namespace index {
+namespace kate { namespace index { namespace {
+const boost::uuids::string_generator UUID_PARSER;
+}                                                           // anonymous namespace
 
 dbid make_dbid(const boost::uuids::uuid& uuid)
 {
@@ -42,6 +48,21 @@ dbid make_dbid(const boost::uuids::uuid& uuid)
     for (auto i = 0u; i < sizeof(dbid); ++i)
         buf[i] = uuid.data[i];
     return id;
+}
+
+/// \todo Move to the upper level: it has no relation to indexing
+boost::uuids::uuid fromString(const QString& uuid_str)
+{
+    assert("UUID string has unexpected size" && uuid_str.size() == 36);
+    auto uuid_std_str = std::string{uuid_str.toUtf8().constData()};
+    return UUID_PARSER(uuid_std_str);
+}
+
+/// \todo Move to the upper level: it has no relation to indexing
+QString toString(const boost::uuids::uuid& uuid)
+{
+    auto uuid_std_str = to_string(uuid);
+    return QString{uuid_std_str.c_str()};
 }
 
 }}                                                          // namespace index, kate

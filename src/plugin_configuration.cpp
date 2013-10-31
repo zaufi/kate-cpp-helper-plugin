@@ -22,6 +22,7 @@
 
 // Project specific includes
 #include <src/plugin_configuration.h>
+#include <src/index/utils.h>
 
 // Standard includes
 #include <KDE/KConfigGroup>
@@ -103,7 +104,6 @@ void PluginConfiguration::readSessionConfig(KConfigBase* config, const QString& 
     /// \todo Rename it!
     KConfigGroup scg(config, groupPrefix + SESSION_GROUP_SUFFIX);
     m_session_dirs = scg.readPathEntry(CONFIGURED_DIRS_ITEM, QStringList{});
-    m_enabled_indices = scg.readEntry(ENABLED_INDICES_ITEM, QStringList{});
     m_pch_header= scg.readPathEntry(PCH_FILE_ITEM, QString{});
     m_clang_params = scg.readPathEntry(CLANG_CMDLINE_PARAMS_ITEM, QString{});
     m_use_ltgt = scg.readEntry(USE_LT_GT_ITEM, QVariant{false}).toBool();
@@ -116,11 +116,25 @@ void PluginConfiguration::readSessionConfig(KConfigBase* config, const QString& 
     m_auto_completions = scg.readEntry(AUTO_COMPLETIONS_ITEM, QVariant{true}).toBool();
     m_include_macros = scg.readEntry(INCLUDE_MACROS_ITEM, QVariant{true}).toBool();
     m_use_prefix_column = scg.readEntry(USE_PREFIX_COLUMN_ITEM, QVariant{false}).toBool();
+    //
     auto monitor_flags = scg.readEntry(MONITOR_DIRS_ITEM, QVariant{0}).toInt();
     if (monitor_flags < int(MonitorTargets::last__))
         m_monitor_flags = static_cast<MonitorTargets>(monitor_flags);
     else
         m_monitor_flags = MonitorTargets::nothing;
+    //
+    for (const auto& index : scg.readEntry(ENABLED_INDICES_ITEM, QStringList{}))
+    {
+        try
+        {
+            m_enabled_indices.insert(index::fromString(index));
+        }
+        catch (...)
+        {
+            /// \todo Make some spam?
+            continue;
+        }
+    }
     m_config_dirty = false;
 
     kDebug(DEBUG_AREA) << "Got per session configured include path list: " << m_session_dirs;
@@ -144,7 +158,6 @@ void PluginConfiguration::writeSessionConfig(KConfigBase* config, const QString&
     // Write session config
     KConfigGroup scg(config, groupPrefix + SESSION_GROUP_SUFFIX);
     scg.writePathEntry(CONFIGURED_DIRS_ITEM, m_session_dirs);
-    scg.writeEntry(ENABLED_INDICES_ITEM, m_enabled_indices);
     scg.writePathEntry(PCH_FILE_ITEM, m_pch_header.toLocalFile());
     scg.writeEntry(CLANG_CMDLINE_PARAMS_ITEM, m_clang_params);
     scg.writeEntry(IGNORE_EXTENSIONS_ITEM, m_ignore_ext);
@@ -158,6 +171,13 @@ void PluginConfiguration::writeSessionConfig(KConfigBase* config, const QString&
     scg.writeEntry(USE_LT_GT_ITEM, m_use_ltgt);
     scg.writeEntry(USE_PREFIX_COLUMN_ITEM, m_use_prefix_column);
     scg.writeEntry(USE_WILDCARD_SEARCH_ITEM, m_use_wildcard_search);
+    {
+        auto enabled_indices = QStringList{};
+        for (const auto& index : m_enabled_indices)
+            enabled_indices << index::toString(index);
+        scg.writeEntry(ENABLED_INDICES_ITEM, enabled_indices);
+    }
+
     scg.sync();
 
     // Write global config
@@ -244,30 +264,15 @@ void PluginConfiguration::setPrecompiledHeaderFile(const KUrl& filename)
     }
 }
 
-void PluginConfiguration::setIndexState(const QString& index_name, const bool flag)
+/// \todo Set dirty flag only if smth really has changed
+void PluginConfiguration::setIndexState(const QString& uuid_str, const bool flag)
 {
-    auto idx = m_enabled_indices.indexOf(index_name);
-    if (idx == -1 && flag)
-    {
-        m_enabled_indices << index_name;
-        m_config_dirty = true;
-    }
-    else if (idx != -1 && !flag)
-    {
-        m_enabled_indices.removeAt(idx);
-        m_config_dirty = true;
-    }
-}
-
-void PluginConfiguration::renameIndex(const QString& old_name, const QString& new_name)
-{
-    auto idx = m_enabled_indices.indexOf(old_name);
-    if (idx != -1)
-    {
-        m_enabled_indices.removeAt(idx);
-        m_enabled_indices << new_name;
-        m_config_dirty = true;
-    }
+    auto uuid = index::fromString(uuid_str);
+    if (flag)
+        m_enabled_indices.insert(uuid);
+    else
+        m_enabled_indices.erase(uuid);
+    m_config_dirty = true;
 }
 
 void PluginConfiguration::setMonitorTargets(const MonitorTargets tgt)

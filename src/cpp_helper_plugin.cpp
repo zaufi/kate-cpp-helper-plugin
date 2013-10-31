@@ -102,12 +102,6 @@ CppHelperPlugin::CppHelperPlugin(
       , SLOT(setIndexState(const QString&, bool))
       );
     connect(
-        &m_db_mgr
-      , SIGNAL(indexNameChanged(const QString&, const QString&))
-      , &m_config
-      , SLOT(renameIndex(const QString&, const QString&))
-      );
-    connect(
         &m_config
       , SIGNAL(compilerOptionsChanged())
       , &m_db_mgr

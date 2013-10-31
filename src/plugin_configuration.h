@@ -26,12 +26,14 @@
 #include <src/clang/compiler_options.h>
 
 // Standard includes
+#include <boost/uuid/uuid.hpp>
 #include <KDE/KConfigBase>
 #include <KDE/KUrl>
 #include <QtCore/QStringList>
 #include <QtCore/QRegExp>
-#include <vector>
+#include <set>
 #include <utility>
+#include <vector>
 
 namespace kate {
 
@@ -63,7 +65,7 @@ public:
     const QStringList& systemDirs() const;
     const QStringList& sessionDirs() const;
     const QStringList& ignoreExtensions() const;
-    const QStringList& enabledIndices() const;
+    const std::set<boost::uuids::uuid>& enabledIndices() const;
     const KUrl& precompiledHeaderFile() const;
     const KUrl& pchFile() const;
     const QString& clangParams() const;
@@ -109,7 +111,6 @@ public:
 
 public Q_SLOTS:
     void setIndexState(const QString&, bool);
-    void renameIndex(const QString&, const QString&);
 
 Q_SIGNALS:
     void clangOptionsChanged();
@@ -123,7 +124,7 @@ private:
     QStringList m_system_dirs;
     QStringList m_session_dirs;
     QStringList m_ignore_ext;
-    QStringList m_enabled_indices;
+    std::set<boost::uuids::uuid> m_enabled_indices;
     KUrl m_pch_header;
     KUrl m_pch_file;
     QString m_clang_params;
@@ -158,7 +159,7 @@ inline const QStringList& PluginConfiguration::ignoreExtensions() const
 {
     return m_ignore_ext;
 }
-inline const QStringList& PluginConfiguration::enabledIndices() const
+inline const std::set<boost::uuids::uuid>& PluginConfiguration::enabledIndices() const
 {
     return m_enabled_indices;
 }

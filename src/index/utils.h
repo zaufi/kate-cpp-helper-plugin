@@ -33,9 +33,17 @@
 // Standard includes
 #include <boost/uuid/uuid.hpp>
 
+class QString;
+
 namespace kate { namespace index {
 
 /// Helper function to produce (almost) random short DB id
 dbid make_dbid(const boost::uuids::uuid&);
+
+/// Helper function to parse UUID from \c QString
+boost::uuids::uuid fromString(const QString&);
+
+/// Helper function to render UUID to \c QString
+QString toString(const boost::uuids::uuid&);
 
 }}                                                          // namespace index, kate

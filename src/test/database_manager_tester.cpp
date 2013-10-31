@@ -51,8 +51,6 @@ const KUrl SAMPLE_DB_PATH = QString{SAMPLE_DB_PATH_CSTR};
 BOOST_AUTO_TEST_CASE(database_manager_test)
 {
     BOOST_REQUIRE(boost::filesystem::exists(SAMPLE_DB_PATH_CSTR));
-    QStringList enabled_dbs;
-    enabled_dbs << "test";
     DatabaseManager mgr{};
-    mgr.reset(enabled_dbs, SAMPLE_DB_PATH);
+    mgr.reset({}, SAMPLE_DB_PATH);
 }

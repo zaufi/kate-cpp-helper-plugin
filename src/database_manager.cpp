@@ -33,8 +33,6 @@
 // Standard includes
 #include <boost/filesystem/operations.hpp>
 #include <boost/uuid/random_generator.hpp>
-#include <boost/uuid/string_generator.hpp>
-#include <boost/uuid/uuid_io.hpp>
 #include <KDE/KDebug>
 #include <KDE/KDirSelectDialog>
 #include <KDE/KGlobal>
@@ -54,7 +52,6 @@ namespace kate { namespace {
 /// \todo Make a constant w/ single declaration place for this path
 const QString DATABASES_DIR = "plugins/katecpphelperplugin/indexed-collections/";
 const char* const DB_MANIFEST_FILE = "manifest";
-const boost::uuids::string_generator UUID_PARSER;
 boost::uuids::random_generator UUID_GEN;
 namespace meta {
 const QString GROUP_NAME = "options";
@@ -80,9 +77,7 @@ void DatabaseManager::database_state::loadMetaFrom(const QString& filename)
 {
     auto db_meta = KSharedConfig::openConfig(filename, KConfig::SimpleConfig);
     m_options.reset(new DatabaseOptions{db_meta});
-    auto uuid_str = std::string{m_options->uuid().toUtf8().constData()};
-    if (!uuid_str.empty())
-        m_id = UUID_PARSER(uuid_str);
+    m_id = index::fromString(m_options->uuid());
 }
 
 DatabaseManager::DatabaseManager()
@@ -107,7 +102,7 @@ DatabaseManager::~DatabaseManager()
  *
  * \todo Handle the case when \c base_dir is not a directory actually
  */
-void DatabaseManager::reset(const QStringList& enabled_list, const KUrl& base_dir)
+void DatabaseManager::reset(const std::set<boost::uuids::uuid>& enabled_list, const KUrl& base_dir)
 {
     assert(
         "DatabaseManager supposed to be default initialized"
@@ -144,9 +139,8 @@ void DatabaseManager::reset(const QStringList& enabled_list, const KUrl& base_di
             /// \todo Handle errors
             auto state = tryLoadDatabaseMeta(it->path());
             assert("Sanity check" && state.m_options);
-            auto name = state.m_options->name();
             bool is_enabled;
-            if (m_enabled_list.indexOf(name) != -1)
+            if (m_enabled_list.find(state.m_id) != end(m_enabled_list))
             {
                 const auto& db_path = state.m_options->path().toUtf8().constData();
                 try
@@ -156,7 +150,7 @@ void DatabaseManager::reset(const QStringList& enabled_list, const KUrl& base_di
                 }
                 catch (...)
                 {
-                    reportError(i18n("Load failure '%1'", name));
+                    reportError(i18n("Load failure '%1'", state.m_options->name()));
                     state.m_status = database_state::status::invalid;
                     continue;
                 }
@@ -172,7 +166,11 @@ void DatabaseManager::reset(const QStringList& enabled_list, const KUrl& base_di
             if (is_enabled)
             {
                 m_search_db.add_index(m_collections.back().m_db.get());
-                Q_EMIT(indexStatusChanged(name, true));
+                Q_EMIT(indexStatusChanged(index::toString(state.m_id), true));
+            }
+            else
+            {
+                Q_EMIT(indexStatusChanged(index::toString(state.m_id), false));
             }
         }
     }
@@ -183,9 +181,7 @@ void DatabaseManager::reset(const QStringList& enabled_list, const KUrl& base_di
 bool DatabaseManager::isEnabled(const int idx) const
 {
     assert("Index is out of range" && std::size_t(idx) < m_collections.size());
-    const auto& name = m_collections[idx].m_options->name();
-    const auto result = m_enabled_list.indexOf(name) != -1;
-    return result;
+    return m_enabled_list.find(m_collections[idx].m_id) != end(m_enabled_list);
 }
 
 void DatabaseManager::enable(const QString& name, const bool flag)
@@ -226,24 +222,24 @@ void DatabaseManager::enable(const int idx, const bool flag)
             return;
         }
         m_search_db.add_index(state.m_db.get());
-        m_enabled_list << name;
+        m_enabled_list.insert(state.m_id);
         state.m_status = database_state::status::ok;
     }
     else
     {
-        m_enabled_list.removeOne(name);
+        m_enabled_list.erase(state.m_id);
         m_search_db.remove_index(state.m_db.get());
         state.m_db.reset();
         state.m_status = database_state::status::unknown;
     }
     state.m_enabled = flag;
-    Q_EMIT(indexStatusChanged(name, flag));
+    Q_EMIT(indexStatusChanged(index::toString(state.m_id), flag));
 }
 
 void DatabaseManager::createNewIndex()
 {
     const auto uuid = UUID_GEN();
-    const auto id = QString{to_string(uuid).c_str()};
+    const auto id = index::toString(uuid);
     auto db_path = KUrl{m_base_dir};
     db_path.addPath(id);
     kDebug(DEBUG_AREA) << "Add new collection to" << db_path;
@@ -384,7 +380,7 @@ void DatabaseManager::rebuildCurrentIndex()
 
     // Make a new indexer and provide it w/ targets to scan
     auto db_id = index::make_dbid(state.m_id);
-    kDebug(DEBUG_AREA) << "Make short DB ID:" << to_string(state.m_id).c_str() << " --> " << db_id;
+    kDebug(DEBUG_AREA) << "Make short DB ID:" << index::toString(state.m_id) << " --> " << db_id;
     m_indexer.reset(
         new index::indexer{db_id, reindexing_db_path.string()}
       );
@@ -485,7 +481,7 @@ void DatabaseManager::rebuildFinished()
     state.loadMetaFrom(meta_fileanme.string().c_str());
 
     const auto& name = state.m_options->name();
-    // Relod index
+    // Reload index
     try
     {
         state.m_db.reset(new index::ro::database{db_path.string()});
@@ -636,14 +632,6 @@ void DatabaseManager::renameCollection(int idx, const QString& new_name)
     auto old_name = m_collections[idx].m_options->name();
     m_collections[idx].m_options->setName(new_name);
     m_collections[idx].m_options->writeConfig();
-    idx = m_enabled_list.indexOf(old_name);
-    if (idx != -1)
-    {
-        m_enabled_list.removeAt(idx);
-        m_enabled_list << new_name;
-        // Notify config, only if index really was enabled
-        Q_EMIT(indexNameChanged(old_name, new_name));
-    }
 }
 
 KUrl DatabaseManager::getDefaultBaseDir()

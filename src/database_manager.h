@@ -44,6 +44,7 @@
 #include <QtCore/QObject>
 #include <QtCore/QStringList>
 #include <memory>
+#include <set>
 #include <stdexcept>
 #include <utility>
 #include <vector>
@@ -95,7 +96,7 @@ public:
     QAbstractTableModel* getSearchResultsTableModel();
 
     /// Reset everything using this params
-    void reset(const QStringList&, const KUrl& = DatabaseManager::getDefaultBaseDir());
+    void reset(const std::set<boost::uuids::uuid>&, const KUrl& = DatabaseManager::getDefaultBaseDir());
     /// Set compiler optoins for indexer
     void setCompilerOptions(clang::compiler_options&&);
     /// Handle search request
@@ -119,7 +120,6 @@ public Q_SLOTS:
 
 Q_SIGNALS:
     void indexStatusChanged(const QString&, bool);
-    void indexNameChanged(const QString&, const QString&);
     void diagnosticMessage(DiagnosticMessagesModel::Record);
     void reindexingStarted(const QString&);
     void reindexingFinished(const QString&);
@@ -168,7 +168,7 @@ private:
     IndexingTargetsListModel m_targets_model;
     SearchResultsTableModel m_search_results_model;
     collections_type m_collections;
-    QStringList m_enabled_list;
+    std::set<boost::uuids::uuid> m_enabled_list;
     clang::compiler_options m_compiler_options;
     std::unique_ptr<index::indexer> m_indexer;
     index::combined_index m_search_db;
