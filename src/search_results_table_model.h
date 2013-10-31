@@ -31,6 +31,7 @@
 #include <src/index/kind.h>
 
 // Standard includes
+#include <clang-c/Index.h>
 #include <QtCore/QAbstractTableModel>
 #include <cassert>
 #include <vector>
@@ -52,11 +53,29 @@ public:
     struct search_result
     {
         QString m_name;
+        QString m_type;
         QString m_file;
         int m_line;
         int m_column;
         index::kind m_kind;
+        CXIdxEntityCXXTemplateKind m_template_kind;
+        bool m_static;
 
+        search_result(const index::kind k)
+          : m_kind{k}
+          , m_template_kind{CXIdxEntity_Template}
+          , m_static{false}
+        {}
+
+        /// Delete copy ctor
+        search_result(const search_result&) = delete;
+        /// Delete copy-assign operator
+        search_result& operator=(const search_result&) = delete;
+        /// Move ctor
+        search_result(search_result&&) noexcept;
+        /// Move-assign operator
+        search_result& operator=(search_result&&) noexcept;
+        /// Get symbol kind as string
         QString kindSpelling() const;
     };
     typedef std::vector<search_result> search_results_list_type;
@@ -78,9 +97,8 @@ public:
 private:
     enum column
     {
-        NAME
-      , KIND
-      , LOCATION
+        KIND
+      , NAME
       , last__
     };
     DatabaseManager& m_db_mgr;

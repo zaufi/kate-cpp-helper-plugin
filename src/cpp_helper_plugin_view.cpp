@@ -184,6 +184,12 @@ CppHelperPluginView::CppHelperPluginView(
       , this
       , SLOT(startSearch())
       );
+    connect(
+        m_tool_view_interior->locationText
+      , SIGNAL(linkActivated(const QString&))
+      , this
+      , SLOT(locationLinkActivated(const QString&))
+      );
 
     // #include explorer tab
     m_tool_view_interior->includesTree->setHeaderHidden(true);
@@ -283,7 +289,12 @@ CppHelperPluginView::CppHelperPluginView(
       , this
       , SLOT(reindexingFinished(const QString&))
       );
-
+    connect(
+        &m_plugin->databaseManager()
+      , SIGNAL(openFile(const KUrl&, KTextEditor::Cursor))
+      , this
+      , SLOT(openFile(const KUrl&, KTextEditor::Cursor))
+      );
 
     mainWindow()->guiFactory()->addClient(this);
 }
@@ -632,23 +643,25 @@ QStringList CppHelperPluginView::findFileLocations(const QString& filename)
  * \note This function assume that given file is really exists.
  * \todo Turn the parameter into \c KUrl
  */
-inline void CppHelperPluginView::openFile(const QString& file)
+inline void CppHelperPluginView::openFile(const KUrl& file, const KTextEditor::Cursor cursor)
 {
     if (file.isEmpty()) return;                             // Nothing to do if no file specified
     kDebug(DEBUG_AREA) << "Going to open " << file;
     auto* new_doc = m_plugin->application()->documentManager()->openUrl(file);
-    auto fi = QFileInfo{file};
+    auto fi = QFileInfo{file.toLocalFile()};
     if (fi.isReadable())
     {
         kDebug(DEBUG_AREA) << "Is file " << file << " writeable? -- " << fi.isWritable();
         new_doc->setReadWrite(fi.isWritable());
         mainWindow()->activateView(new_doc);
+        if (cursor.isValid())
+            mainWindow()->activeView()->setCursorPosition(cursor);
     }
     else
     {
         KPassivePopup::message(
             i18n("Open error")
-          , i18n("File %1 is not readable", file)
+          , i18n("File %1 is not readable", file.toLocalFile())
           , qobject_cast<QWidget*>(this)
           );
     }
@@ -1393,13 +1406,31 @@ void CppHelperPluginView::searchResultsUpdated()
 
 void CppHelperPluginView::searchResultActivated(const QModelIndex& index)
 {
-    auto loc = m_plugin->databaseManager().getSearchResultLocation(
-        m_search_results_model->mapToSource(index).row()
+    const auto& underlaid_index = m_search_results_model->mapToSource(index);
+    const auto& details = m_plugin->databaseManager().getDetailsOf(underlaid_index.row());
+    m_tool_view_interior->locationText->setText(
+        QString{R"~(<a href="#%1">%2:%3:%4</a>)~"}.arg(
+            QString::number(underlaid_index.row())
+          , details.m_file
+          , QString::number(details.m_line)
+          , QString::number(details.m_column)
+          )
       );
-    openFile(loc.file().toLocalFile());
-    // NOTE Kate has line/column numbers started from 0, but clang is more
-    // human readable...
-    mainWindow()->activeView()->setCursorPosition({loc.line() - 1, loc.column() - 1});
+    if (!details.m_type.isEmpty())
+    {
+        m_tool_view_interior->row1Label->setText(i18nc("@label", "Type:"));
+        m_tool_view_interior->row1Text->setText(details.m_type);
+    }
+}
+
+void CppHelperPluginView::locationLinkActivated(const QString& link)
+{
+    kDebug() << "link=" << link;
+    assert("Unexpected link format" && link[0] == '#');
+    const auto row = link.mid(1).toInt();
+    const auto& details = m_plugin->databaseManager().getDetailsOf(row);
+    // NOTE Kate has zero-based positioning
+    openFile(details.m_file, {details.m_line - 1, details.m_column - 1});
 }
 
 //END CppHelperPluginView

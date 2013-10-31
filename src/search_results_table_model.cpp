@@ -36,7 +36,8 @@
 namespace kate { namespace {
 std::map<index::kind, QString> SYMBOL_KIND_TO_STRING_MAP =
 {
-    {index::kind::NAMESPACE, "namespace"}
+    {index::kind::UNEXPOSED, "<unexposed>"}
+  , {index::kind::NAMESPACE, "namespace"}
   , {index::kind::NAMESPACE_ALIAS, "namespace alias"}
   , {index::kind::TYPEDEF, "typedef"}
   , {index::kind::TYPE_ALIAS, "type alias"}
@@ -55,6 +56,32 @@ std::map<index::kind, QString> SYMBOL_KIND_TO_STRING_MAP =
   , {index::kind::CONVERSTION, "converstion"}
 };
 }                                                           // anonymous namespace
+
+SearchResultsTableModel::search_result::search_result(search_result&& other) noexcept
+  : m_line{other.m_line}
+  , m_column{other.m_column}
+  , m_kind{other.m_kind}
+  , m_template_kind{other.m_template_kind}
+  , m_static{other.m_static}
+{
+    m_name.swap(other.m_name);
+    m_type.swap(other.m_type);
+    m_file.swap(other.m_file);
+}
+
+auto SearchResultsTableModel::search_result::operator=(search_result&& other) noexcept -> search_result&
+{
+    assert("R u insane? ;-)" && &other != this);
+    m_name.swap(other.m_name);
+    m_type.swap(other.m_type);
+    m_file.swap(other.m_file);
+    m_line = other.m_line;
+    m_column = other.m_column;
+    m_kind = other.m_kind;
+    m_template_kind = other.m_template_kind;
+    m_static = other.m_static;
+    return *this;
+}
 
 QString SearchResultsTableModel::search_result::kindSpelling() const
 {
@@ -94,12 +121,18 @@ QVariant SearchResultsTableModel::data(const QModelIndex& index, const int role)
     auto result = QVariant{};
     switch (index.column())
     {
+#if 0
+        case column::TYPE:
+            result = m_results[index.row()].m_type;
+            break;
+#endif
         case column::NAME:
             result = m_results[index.row()].m_name;
             break;
         case column::KIND:
             result = m_results[index.row()].kindSpelling();
             break;
+#if 0
         case column::LOCATION:
         {
             const auto& item = m_results[index.row()];
@@ -110,6 +143,7 @@ QVariant SearchResultsTableModel::data(const QModelIndex& index, const int role)
               );
             break;
         }
+#endif
         default:
             break;
     }
@@ -132,8 +166,6 @@ QVariant SearchResultsTableModel::headerData(
                     return QString{i18nc("@title:row", "Name")};
                 case column::KIND:
                     return QString{i18nc("@title:row", "Kind")};
-                case column::LOCATION:
-                    return QString{i18nc("@title:row", "Location")};
                 default:
                     break;
             }

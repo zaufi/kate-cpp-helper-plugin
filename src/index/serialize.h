@@ -41,7 +41,7 @@ namespace kate { namespace index {
 /// Simple serialization helper for integral types
 template <typename T>
 typename std::enable_if<
-    std::is_integral<T>::value
+    std::is_integral<T>::value || std::is_same<T, bool>::value
   , std::string
   >::type serialize(const T value)
 {
@@ -57,7 +57,7 @@ typename std::enable_if<
 /// Simple deserialization helper for integral types
 template <typename T>
 typename std::enable_if<
-    std::is_integral<T>::value
+    std::is_integral<T>::value || std::is_same<T, bool>::value
   , T
   >::type deserialize(const std::string& raw)
 {

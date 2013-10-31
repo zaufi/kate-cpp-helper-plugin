@@ -59,6 +59,7 @@ constexpr Xapian::valueno TYPE = 6;
 constexpr Xapian::valueno DBID = 7;
 constexpr Xapian::valueno KIND = 8;
 constexpr Xapian::valueno TEMPLATE = 9;
+constexpr Xapian::valueno STATIC = 10;
 }                                                           // namespace value_slot
 
 /// Exceptions group for database classes

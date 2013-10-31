@@ -41,6 +41,7 @@
 #include <boost/filesystem/path.hpp>
 #include <boost/uuid/uuid.hpp>
 #include <KDE/KUrl>
+#include <KDE/KTextEditor/Cursor>
 #include <QtCore/QObject>
 #include <QtCore/QStringList>
 #include <memory>
@@ -103,6 +104,7 @@ public:
     void startSearch(QString);
     /// Get source file location for given search result number
     clang::location getSearchResultLocation(int) const;
+    const SearchResultsTableModel::search_result& getDetailsOf(int);
 
 public Q_SLOTS:
     void enable(const QString&, bool);

@@ -2,10 +2,18 @@
 <ui version="4.0">
  <class>PluginToolViewWidget</class>
  <widget class="QWidget" name="PluginToolViewWidget">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>596</width>
+    <height>292</height>
+   </rect>
+  </property>
   <property name="windowTitle">
    <string>C++ Helper ToolView</string>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout_3">
+  <layout class="QVBoxLayout" name="verticalLayout">
    <item>
     <widget class="KTabWidget" name="tabs">
      <property name="currentIndex">
@@ -41,50 +49,107 @@
       <attribute name="title">
        <string>Search</string>
       </attribute>
-      <layout class="QVBoxLayout" name="vl_4_1">
+      <layout class="QVBoxLayout" name="vl_2_0">
        <item>
-        <layout class="QHBoxLayout" name="hl_0_1">
-         <item>
-          <widget class="KLineEdit" name="searchQuery">
-           <property name="placeholderText">
-            <string>Enter search query and press ENTER</string>
+        <widget class="QSplitter" name="searchSplitter">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <widget class="QWidget" name="lw_2_1">
+          <layout class="QVBoxLayout" name="vl_2_1">
+           <item>
+            <widget class="KLineEdit" name="searchQuery"/>
+           </item>
+           <item>
+            <widget class="QTableView" name="searchResults">
+             <property name="showDropIndicator" stdset="0">
+              <bool>false</bool>
+             </property>
+             <property name="alternatingRowColors">
+              <bool>true</bool>
+             </property>
+             <property name="selectionMode">
+              <enum>QAbstractItemView::SingleSelection</enum>
+             </property>
+             <property name="selectionBehavior">
+              <enum>QAbstractItemView::SelectRows</enum>
+             </property>
+             <property name="showGrid">
+              <bool>false</bool>
+             </property>
+             <property name="sortingEnabled">
+              <bool>true</bool>
+             </property>
+             <attribute name="horizontalHeaderStretchLastSection">
+              <bool>true</bool>
+             </attribute>
+             <attribute name="verticalHeaderVisible">
+              <bool>false</bool>
+             </attribute>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+         <widget class="QGroupBox" name="details">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+            <horstretch>20</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="title">
+           <string>Symbol Details</string>
+          </property>
+          <layout class="QFormLayout" name="formLayout_2">
+           <property name="fieldGrowthPolicy">
+            <enum>QFormLayout::ExpandingFieldsGrow</enum>
            </property>
-           <property name="urlDropsEnabled">
-            <bool>false</bool>
-           </property>
-           <property name="showClearButton" stdset="0">
-            <bool>true</bool>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <widget class="QTableView" name="searchResults">
-         <property name="showDropIndicator" stdset="0">
-          <bool>false</bool>
-         </property>
-         <property name="alternatingRowColors">
-          <bool>true</bool>
-         </property>
-         <property name="selectionMode">
-          <enum>QAbstractItemView::SingleSelection</enum>
-         </property>
-         <property name="selectionBehavior">
-          <enum>QAbstractItemView::SelectRows</enum>
-         </property>
-         <property name="showGrid">
-          <bool>false</bool>
-         </property>
-         <property name="sortingEnabled">
-          <bool>true</bool>
-         </property>
-         <attribute name="horizontalHeaderStretchLastSection">
-          <bool>true</bool>
-         </attribute>
-         <attribute name="verticalHeaderVisible">
-          <bool>false</bool>
-         </attribute>
+           <item row="0" column="0">
+            <widget class="QLabel" name="locationLabel">
+             <property name="text">
+              <string>Location:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QLabel" name="locationText">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="text">
+              <string/>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="0">
+            <widget class="QLabel" name="row1Label" />
+           </item>
+           <item row="1" column="1">
+            <widget class="QLabel" name="row1Text" />
+           </item>
+           <item row="2" column="0">
+            <widget class="QLabel" name="row2Label" />
+           </item>
+           <item row="2" column="1">
+            <widget class="QLabel" name="row2Text" />
+           </item>
+           <item row="3" column="0">
+            <widget class="QLabel" name="row3Label" />
+           </item>
+           <item row="3" column="1">
+            <widget class="QLabel" name="row3Text" />
+           </item>
+           <item row="4" column="0">
+            <widget class="QLabel" name="row4Label" />
+           </item>
+           <item row="4" column="1">
+            <widget class="QLabel" name="row4Text" />
+           </item>
+          </layout>
+         </widget>
         </widget>
        </item>
       </layout>
@@ -93,14 +158,14 @@
       <attribute name="title">
        <string>#include Explorer</string>
       </attribute>
-      <layout class="QVBoxLayout" name="verticalLayout_2">
+      <layout class="QVBoxLayout" name="vl_3_0">
        <item>
         <widget class="QSplitter" name="paneSplitter">
          <property name="orientation">
           <enum>Qt::Horizontal</enum>
          </property>
-         <widget class="QWidget" name="layoutWidget1">
-          <layout class="QVBoxLayout" name="vl_1_2">
+         <widget class="QWidget" name="lw_3_1">
+          <layout class="QVBoxLayout" name="vl_3_2">
            <item>
             <widget class="QLabel" name="treeLabel">
              <property name="text">
@@ -131,8 +196,8 @@
            </item>
           </layout>
          </widget>
-         <widget class="QWidget" name="layoutWidget2">
-          <layout class="QVBoxLayout" name="vl_1_3">
+         <widget class="QWidget" name="lw_3_2">
+          <layout class="QVBoxLayout" name="vl_3_3">
            <item>
             <widget class="QLabel" name="includedByLabel">
              <property name="text">
@@ -158,7 +223,7 @@
         </widget>
        </item>
        <item>
-        <layout class="QHBoxLayout" name="hl_1_1">
+        <layout class="QHBoxLayout" name="hl_3_1">
          <item>
           <widget class="KTreeWidgetSearchLine" name="searchFilter">
            <property name="toolTip">
@@ -196,8 +261,8 @@
          <property name="childrenCollapsible">
           <bool>false</bool>
          </property>
-         <widget class="QWidget" name="layoutWidget">
-          <layout class="QVBoxLayout" name="vl_2_1">
+         <widget class="QWidget" name="lw_4_1">
+          <layout class="QVBoxLayout" name="vl_4_1">
            <item>
             <widget class="QLabel" name="databasesLabel">
              <property name="text">
@@ -234,7 +299,7 @@
             </widget>
            </item>
            <item>
-            <layout class="QHBoxLayout" name="hl_2_2">
+            <layout class="QHBoxLayout" name="hl_4_1">
              <item>
               <widget class="KPushButton" name="newDatabase">
                <property name="toolTip">
@@ -256,7 +321,7 @@
               </widget>
              </item>
              <item>
-              <spacer name="spacer_1">
+              <spacer name="sp_4_1">
                <property name="orientation">
                 <enum>Qt::Horizontal</enum>
                </property>
@@ -295,8 +360,8 @@
            </item>
           </layout>
          </widget>
-         <widget class="QWidget" name="layoutWidget_2">
-          <layout class="QVBoxLayout" name="vl_2_3">
+         <widget class="QWidget" name="lw_4_2">
+          <layout class="QVBoxLayout" name="vl_4_3">
            <item>
             <widget class="QLabel" name="targetsLabel">
              <property name="text">
@@ -321,9 +386,9 @@
             </widget>
            </item>
            <item>
-            <layout class="QHBoxLayout" name="hl_2_4">
+            <layout class="QHBoxLayout" name="hl_4_2">
              <item>
-              <spacer name="spacer_2">
+              <spacer name="sp_4_2">
                <property name="orientation">
                 <enum>Qt::Horizontal</enum>
                </property>

@@ -507,7 +507,7 @@ void CppHelperPluginConfigPage::storeSet()
         {
             auto filename = QString{QUrl::toPercentEncoding(set_name)};
             auto incset_file = KStandardDirs::locateLocal(
-                "data"
+                "appdata"
               , QString{INCSET_FILE_TPL}.arg(filename)
               , true
               );
@@ -802,7 +802,7 @@ void CppHelperPluginConfigPage::updateSets()
 
     // Find *.incset files
     auto sets = KGlobal::dirs()->findAllResources(
-        "data"
+        "appdata"
       , QString{INCSET_FILE_TPL}.arg("*")
       , KStandardDirs::NoSearchOptions
       );

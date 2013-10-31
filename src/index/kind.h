@@ -39,7 +39,8 @@ namespace kate { namespace index {
  */
 enum class kind
 {
-    NAMESPACE
+    UNEXPOSED
+  , NAMESPACE
   , NAMESPACE_ALIAS
   , TYPEDEF
   , TYPE_ALIAS

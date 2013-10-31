@@ -84,6 +84,8 @@ public Q_SLOTS:
     void addDiagnosticMessage(DiagnosticMessagesModel::Record);
 
 private Q_SLOTS:
+    /// Open a single document
+    void openFile(const KUrl&, KTextEditor::Cursor = KTextEditor::Cursor{});
     void openHeader();                                      ///< Open header file under cursor
     void switchIfaceImpl();                                 ///< Open corresponding header/implementation file
     void copyInclude();                                     ///< From \c #include directive w/ current file in the clipboard
@@ -107,6 +109,7 @@ private Q_SLOTS:
     void startSearch();
     void searchResultsUpdated();
     void searchResultActivated(const QModelIndex&);
+    void locationLinkActivated(const QString&);
 
 #if 0
     void aboutToShow();
@@ -128,7 +131,6 @@ private:
 
     /// Try to get an \c #include filename under cursor as range
     KTextEditor::Range findIncludeFilenameNearCursor() const;
-    void openFile(const QString&);                          ///< Open a single document
     void openFiles(const QStringList&);                     ///< Open documents for all URIs in a given list
     QStringList findFileLocations(const QString&);          ///< Get list of absolute paths to filename
     void inclusionVisitor(details::InclusionVisitorData*, CXFile, CXSourceLocation*, unsigned);

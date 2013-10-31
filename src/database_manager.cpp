@@ -29,6 +29,7 @@
 #include <src/database_manager.h>
 #include <src/index/indexer.h>
 #include <src/index/utils.h>
+#include <src/string_cast.h>
 
 // Standard includes
 #include <boost/filesystem/operations.hpp>
@@ -53,6 +54,7 @@ namespace kate { namespace {
 const QString DATABASES_DIR = "plugins/katecpphelperplugin/indexed-collections/";
 const char* const DB_MANIFEST_FILE = "manifest";
 boost::uuids::random_generator UUID_GEN;
+const QString ANONYMOUS = "<anonymous>";
 namespace meta {
 const QString GROUP_NAME = "options";
 namespace key {
@@ -684,6 +686,13 @@ void DatabaseManager::startSearch(QString query)
             auto index_id = index::deserialize<index::dbid>(tmp_str);
             auto& index = findIndexByID(index_id);
 
+            // Get kind
+            tmp_str = doc.get_value(index::value_slot::KIND);
+            assert("Sanity check" && !tmp_str.empty());
+
+            // Form a search result item
+            auto result = SearchResultsTableModel::search_result{index::deserialize(tmp_str)};
+
             // Get source file ID
             tmp_str = doc.get_value(index::value_slot::FILE);
             if (tmp_str.empty())
@@ -692,35 +701,45 @@ void DatabaseManager::startSearch(QString query)
                 continue;
             }
             auto file_id = static_cast<HeaderFilesCache::id_type>(Xapian::sortable_unserialise(tmp_str));
-
             // Resolve header ID into string
-            auto filename = index.headers_map()[file_id];
+            result.m_file = index.headers_map()[file_id];
 
             // Get line/column
-            auto line = static_cast<int>(
+            result.m_line = static_cast<int>(
                 Xapian::sortable_unserialise(doc.get_value(index::value_slot::LINE))
               );
-            auto column = static_cast<int>(
+            result.m_column = static_cast<int>(
                 Xapian::sortable_unserialise(doc.get_value(index::value_slot::COLUMN))
               );
-            // Get kind
-            tmp_str = doc.get_value(index::value_slot::KIND);
-            assert("Sanity check" && !tmp_str.empty());
-            auto symbol_kind = index::deserialize(tmp_str);
 
             // Get entity name
             auto name = doc.get_value(index::value_slot::NAME);
+            result.m_name = name.empty() ? ANONYMOUS : string_cast<QString>(name);
+
+            // Get entity type
+            auto type = doc.get_value(index::value_slot::TYPE);
+            result.m_type = type.empty() ? QString{} : string_cast<QString>(type);
+
+            // Get some other props
+            {
+                const auto& template_str = doc.get_value(index::value_slot::TEMPLATE);
+                if (!template_str.empty())
+                {
+                    const auto value = index::deserialize<unsigned>(template_str);
+                    result.m_template_kind = CXIdxEntityCXXTemplateKind(value);
+                }
+            }
+            {
+                const auto& static_str = doc.get_value(index::value_slot::STATIC);
+                if (!static_str.empty())
+                {
+                    const auto value = index::deserialize<bool>(static_str);
+                    result.m_static = CXIdxEntityCXXTemplateKind(value);
+                }
+            }
 
             //
-            model_data.emplace_back(
-                SearchResultsTableModel::search_result{
-                    name.empty() ? "<anonymous>" : name.c_str()
-                  , filename
-                  , line
-                  , column
-                  , symbol_kind
-                  }
-              );
+            model_data.emplace_back(std::move(result));
         }
         // Update the model w/ obtained data
         m_search_results_model.updateSearchResults(std::move(model_data));
@@ -802,6 +821,11 @@ void DatabaseManager::reportError(const QString& prefix, const int index, const 
               , reinterpret_cast<QWidget*>(0)
               );
     }
+}
+
+const SearchResultsTableModel::search_result& DatabaseManager::getDetailsOf(const int index)
+{
+    return m_search_results_model.getSearchResult(index);
 }
 
 }                                                           // namespace kate
