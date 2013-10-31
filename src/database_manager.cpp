@@ -703,6 +703,10 @@ void DatabaseManager::startSearch(QString query)
             auto column = static_cast<int>(
                 Xapian::sortable_unserialise(doc.get_value(index::value_slot::COLUMN))
               );
+            // Get kind
+            tmp_str = doc.get_value(index::value_slot::KIND);
+            assert("Sanity check" && !tmp_str.empty());
+            auto symbol_kind = index::deserialize(tmp_str);
 
             // Get entity name
             auto name = doc.get_value(index::value_slot::NAME);
@@ -714,6 +718,7 @@ void DatabaseManager::startSearch(QString query)
                   , filename
                   , line
                   , column
+                  , symbol_kind
                   }
               );
         }

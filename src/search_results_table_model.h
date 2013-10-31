@@ -28,6 +28,7 @@
 #pragma once
 
 // Project specific includes
+#include <src/index/kind.h>
 
 // Standard includes
 #include <QtCore/QAbstractTableModel>
@@ -54,6 +55,9 @@ public:
         QString m_file;
         int m_line;
         int m_column;
+        index::kind m_kind;
+
+        QString kindSpelling() const;
     };
     typedef std::vector<search_result> search_results_list_type;
 
@@ -75,6 +79,7 @@ private:
     enum column
     {
         NAME
+      , KIND
       , LOCATION
       , last__
     };

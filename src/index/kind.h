@@ -56,6 +56,7 @@ enum class kind
   , CONSTRUCTOR
   , DESTRUCTOR
   , CONVERSTION
+  , last__
 };
 
 inline std::string serialize(const kind value)

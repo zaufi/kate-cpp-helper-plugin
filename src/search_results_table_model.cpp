@@ -31,8 +31,42 @@
 
 // Standard includes
 #include <KDE/KLocalizedString>
+#include <map>
 
-namespace kate {
+namespace kate { namespace {
+std::map<index::kind, QString> SYMBOL_KIND_TO_STRING_MAP =
+{
+    {index::kind::NAMESPACE, "namespace"}
+  , {index::kind::NAMESPACE_ALIAS, "namespace alias"}
+  , {index::kind::TYPEDEF, "typedef"}
+  , {index::kind::TYPE_ALIAS, "type alias"}
+  , {index::kind::STRUCT, "struct"}
+  , {index::kind::CLASS, "class"}
+  , {index::kind::UNION, "union"}
+  , {index::kind::ENUM, "enum"}
+  , {index::kind::ENUM_CONSTANT, "enum constant"}
+  , {index::kind::VARIABLE, "variable"}
+  , {index::kind::FIELD, "field"}
+  , {index::kind::PARAMETER, "parameter"}
+  , {index::kind::FUNCTION, "function"}
+  , {index::kind::METHOD, "method"}
+  , {index::kind::CONSTRUCTOR, "constructor"}
+  , {index::kind::DESTRUCTOR, "destructor"}
+  , {index::kind::CONVERSTION, "converstion"}
+};
+}                                                           // anonymous namespace
+
+QString SearchResultsTableModel::search_result::kindSpelling() const
+{
+    auto it = SYMBOL_KIND_TO_STRING_MAP.find(m_kind);
+    assert(
+        "List of symbol's kind seems changed! Review your code!"
+      && it != end(SYMBOL_KIND_TO_STRING_MAP)
+      && SYMBOL_KIND_TO_STRING_MAP.size() == std::size_t(index::kind::last__)
+      && m_kind < index::kind::last__
+      );
+    return it->second;
+}
 
 SearchResultsTableModel::SearchResultsTableModel(DatabaseManager& db_mgr)
   : QAbstractTableModel(nullptr)
@@ -60,6 +94,12 @@ QVariant SearchResultsTableModel::data(const QModelIndex& index, const int role)
     auto result = QVariant{};
     switch (index.column())
     {
+        case column::NAME:
+            result = m_results[index.row()].m_name;
+            break;
+        case column::KIND:
+            result = m_results[index.row()].kindSpelling();
+            break;
         case column::LOCATION:
         {
             const auto& item = m_results[index.row()];
@@ -70,9 +110,6 @@ QVariant SearchResultsTableModel::data(const QModelIndex& index, const int role)
               );
             break;
         }
-        case column::NAME:
-            result = m_results[index.row()].m_name;
-            break;
         default:
             break;
     }
@@ -91,10 +128,12 @@ QVariant SearchResultsTableModel::headerData(
         {
             switch (section)
             {
-                case column::LOCATION:
-                    return QString{i18nc("@title:row", "Location")};
                 case column::NAME:
                     return QString{i18nc("@title:row", "Name")};
+                case column::KIND:
+                    return QString{i18nc("@title:row", "Kind")};
+                case column::LOCATION:
+                    return QString{i18nc("@title:row", "Location")};
                 default:
                     break;
             }

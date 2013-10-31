@@ -2,14 +2,6 @@
 <ui version="4.0">
  <class>PluginToolViewWidget</class>
  <widget class="QWidget" name="PluginToolViewWidget">
-  <property name="geometry">
-   <rect>
-    <x>0</x>
-    <y>0</y>
-    <width>596</width>
-    <height>292</height>
-   </rect>
-  </property>
   <property name="windowTitle">
    <string>C++ Helper ToolView</string>
   </property>
@@ -87,11 +79,11 @@
          <property name="sortingEnabled">
           <bool>true</bool>
          </property>
-         <attribute name="horizontalHeaderVisible">
-          <bool>false</bool>
-         </attribute>
          <attribute name="horizontalHeaderStretchLastSection">
           <bool>true</bool>
+         </attribute>
+         <attribute name="verticalHeaderVisible">
+          <bool>false</bool>
          </attribute>
         </widget>
        </item>
