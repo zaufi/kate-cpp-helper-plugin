@@ -119,12 +119,16 @@ public Q_SLOTS:
     void removeCurrentTarget();
     void reportCurrentFile(QString);
     void reportIndexingError(clang::location, QString);
+    void indexLocalsToggled(bool);
+    void indexImplicitsToggled(bool);
 
 Q_SIGNALS:
     void indexStatusChanged(const QString&, bool);
     void diagnosticMessage(DiagnosticMessagesModel::Record);
     void reindexingStarted(const QString&);
     void reindexingFinished(const QString&);
+    void setIndexLocalsChecked(bool);
+    void setSkipImplicitsChecked(bool);
 
 private:
     friend class IndicesTableModel;

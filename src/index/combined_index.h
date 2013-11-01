@@ -45,6 +45,7 @@ class Query;
 namespace kate { namespace index { namespace ro {
 class database;
 }                                                           // namespace ro
+class document;
 
 
 /**
@@ -57,7 +58,7 @@ class combined_index
 {
 public:
     /// Search over all connected indices
-    std::vector<Xapian::Document> search(const QString&, doccount = 0, doccount = 2000);
+    std::vector<document> search(const QString&, doccount = 0, doccount = 2000);
 
     void add_index(ro::database*);
     void remove_index(ro::database*);

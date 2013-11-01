@@ -149,7 +149,7 @@ void worker::handle_file(const QString& filename)
       , sizeof(index_callbacks)
         // CXIndexOpt_SuppressRedundantRefs
         // CXIndexOpt_SkipParsedBodiesInSession
-      , CXIndexOpt_IndexFunctionLocalSymbols
+      , CXIndexOpt_IndexFunctionLocalSymbols | CXIndexOpt_SkipParsedBodiesInSession
       , filename.toUtf8().constData()
       , m_indexer->m_options.data()
       , m_indexer->m_options.size()
@@ -279,7 +279,7 @@ void worker::on_declaration(CXClientData client_data, const CXIdxDeclInfo* const
     auto name = QString{info->entityInfo->name};
 
     // Create a new document for declaration and attach all required value slots and terms
-    auto doc = Xapian::Document{};
+    auto doc = document{};
     // Attach terms related to name
     if (!name.isEmpty())
     {
@@ -312,12 +312,20 @@ void worker::on_declaration(CXClientData client_data, const CXIdxDeclInfo* const
 
     update_document_with_kind(info, doc);                   // Get more terms/slots to attach
 
-    // Attach symbol type
+    // Attach symbol type. Get aliasd type for typedefs.
     {
-        auto ct = clang_getCursorType(info->cursor);
-        auto type_str = to_string(clang::DCXString{clang_getTypeSpelling(ct)});
-        if (!type_str.empty())
-            doc.add_value(value_slot::TYPE, type_str);
+        const auto kind = clang::kind_of(*info->entityInfo);
+        const auto is_typedef = kind == CXIdxEntity_CXXTypeAlias || kind == CXIdxEntity_Typedef;
+        auto ct = is_typedef
+          ? clang_getTypedefDeclUnderlyingType(info->cursor)
+          : clang_getCursorType(info->cursor)
+          ;
+        if (clang::kind_of(ct) != CXType_Invalid || clang::kind_of(ct) != CXType_Unexposed)
+        {
+            auto type_str = to_string(clang::DCXString{clang_getTypeSpelling(ct)});
+            if (!type_str.empty())
+                doc.add_value(value_slot::TYPE, type_str);
+        }
     }
 
     // Add the document to the DB finally
@@ -340,7 +348,7 @@ void worker::on_declaration_reference(CXClientData client_data, const CXIdxEntit
     Q_UNUSED(info);
 }
 
-void worker::update_document_with_kind(const CXIdxDeclInfo* info, Xapian::Document& doc)
+void worker::update_document_with_kind(const CXIdxDeclInfo* info, document& doc)
 {
     kDebug() << "kind=" << clang::toString(clang::kind_of(*info->entityInfo));
     switch (clang::kind_of(*info->entityInfo))
@@ -446,17 +454,13 @@ void worker::update_document_with_kind(const CXIdxDeclInfo* info, Xapian::Docume
 
 void worker::update_document_with_template_kind(
     const CXIdxEntityCXXTemplateKind template_kind
-  , Xapian::Document& doc
+  , document& doc
   )
 {
     switch (template_kind)
     {
         case CXIdxEntity_Template:
             doc.add_boolean_term(term::XTEMPLATE + "y");
-            doc.add_value(
-                value_slot::TEMPLATE
-              , serialize(unsigned(CXIdxEntity_Template))
-              );
             doc.add_value(
                 value_slot::TEMPLATE
               , serialize(unsigned(template_kind))
@@ -466,19 +470,11 @@ void worker::update_document_with_template_kind(
             doc.add_boolean_term(term::XTEMPLATE + "ps");
             doc.add_value(
                 value_slot::TEMPLATE
-              , serialize(unsigned(CXIdxEntity_TemplatePartialSpecialization))
-              );
-            doc.add_value(
-                value_slot::TEMPLATE
               , serialize(unsigned(template_kind))
               );
             break;
         case CXIdxEntity_TemplateSpecialization:
             doc.add_boolean_term(term::XTEMPLATE + "fs");
-            doc.add_value(
-                value_slot::TEMPLATE
-              , serialize(unsigned(CXIdxEntity_TemplateSpecialization))
-              );
             doc.add_value(
                 value_slot::TEMPLATE
               , serialize(unsigned(template_kind))

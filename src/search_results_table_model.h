@@ -55,16 +55,14 @@ public:
         QString m_name;
         QString m_type;
         QString m_file;
-        int m_line;
-        int m_column;
+        int m_line = {-1};
+        int m_column = {-1};
         index::kind m_kind;
-        CXIdxEntityCXXTemplateKind m_template_kind;
-        bool m_static;
+        CXIdxEntityCXXTemplateKind m_template_kind = {CXIdxEntity_NonTemplate};
+        bool m_static = {false};
 
-        search_result(const index::kind k)
+        explicit search_result(const index::kind k)
           : m_kind{k}
-          , m_template_kind{CXIdxEntity_Template}
-          , m_static{false}
         {}
 
         /// Delete copy ctor

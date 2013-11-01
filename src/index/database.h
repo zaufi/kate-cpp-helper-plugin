@@ -48,19 +48,23 @@ extern const std::string XSTATIC;
 extern const std::string XSCOPE;
 extern const std::string XTEMPLATE;
 }                                                           // namespace term
-namespace value_slot {
-constexpr Xapian::valueno NAME = 0;
-constexpr Xapian::valueno LINE = 1;
-constexpr Xapian::valueno COLUMN = 2;
-constexpr Xapian::valueno FILE = 3;
-constexpr Xapian::valueno SEMANTIC_CONTAINER = 4;
-constexpr Xapian::valueno LEXICAL_CONTAINER = 5;
-constexpr Xapian::valueno TYPE = 6;
-constexpr Xapian::valueno DBID = 7;
-constexpr Xapian::valueno KIND = 8;
-constexpr Xapian::valueno TEMPLATE = 9;
-constexpr Xapian::valueno STATIC = 10;
-}                                                           // namespace value_slot
+
+enum class value_slot : Xapian::valueno
+{
+    NAME
+  , LINE
+  , COLUMN
+  , FILE
+  , SEMANTIC_CONTAINER
+  , LEXICAL_CONTAINER
+  , TYPE
+  , DBID
+  , KIND
+  , TEMPLATE
+  , STATIC
+  , SIZEOF
+  , ALIGNOF
+};
 
 /// Exceptions group for database classes
 struct exception : public std::runtime_error
@@ -110,6 +114,31 @@ inline dbid common_base::id() const
 
 }                                                           // namespace details
 
+/**
+ * \brief Class \c document
+ */
+class document : public Xapian::Document
+{
+public:
+    /// Defaulted default ctor
+    document() = default;
+    /// Conversion ctor from \c Xapian::Document
+    document(Xapian::Document d) : Xapian::Document{d} {}
+    /// Default copy ctor
+    document(const document&) = default;
+    /// Default copy-assign operator
+    document& operator=(const document&) = default;
+
+    void add_value(const value_slot slot, const std::string& value)
+    {
+        Xapian::Document::add_value(Xapian::valueno(slot), value);
+    }
+    std::string get_value(const value_slot slot) const
+    {
+        return Xapian::Document::get_value(Xapian::valueno(slot));
+    }
+};
+
 /// Read/write access to the indexer database
 namespace rw {
 /**
@@ -124,6 +153,7 @@ public:
     HeaderFilesCache& headers_map();                        ///< Access header files mapping cache (mutable)
 
     void commit();                                          ///< Commit recent changes to the DB
+    void add_value(value_slot, const std::string&);         ///< Add a value to a slot
 };
 
 inline HeaderFilesCache& database::headers_map()

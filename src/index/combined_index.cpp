@@ -38,7 +38,7 @@
 
 namespace kate { namespace index {
 
-std::vector<Xapian::Document> combined_index::search(
+std::vector<document> combined_index::search(
     const QString& q
   , const doccount start
   , const doccount maxitems
@@ -71,7 +71,7 @@ std::vector<Xapian::Document> combined_index::search(
     kDebug(DEBUG_AREA) <<  "Documents found:" << matches.size();
     kDebug(DEBUG_AREA) << "Documents estimated:" << matches.get_matches_estimated();
     //
-    auto result = std::vector<Xapian::Document>{};
+    auto result = std::vector<document>{};
     for (auto it = std::begin(matches), last = std::end(matches); it != last; ++it)
         result.emplace_back(it.get_document());
     return result;

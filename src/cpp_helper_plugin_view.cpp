@@ -60,6 +60,9 @@
 namespace kate { namespace {
 const QStringList HDR_EXTENSIONS = QStringList() << "h" << "hh" << "hpp" << "hxx" << "H";
 const QStringList SRC_EXTENSIONS = QStringList() << "c" << "cc" << "cpp" << "cxx" << "C" << "inl";
+const QString EXPLORER_TREE_WIDTH_KEY = "ExplorerTreeWidth";
+const QString SEARCH_PANE_WIDTH_KEY = "SearchDetailsPaneWidth";
+const QString INDICES_LIST_WIDTH_KEY = "IndicesListWidth";
 }                                                           // anonymous namespace
 
 //BEGIN CppHelperPluginView
@@ -79,7 +82,8 @@ CppHelperPluginView::CppHelperPluginView(
   , m_switch(actionCollection()->addAction("file_open_switch_iface_impl"))
   , m_tool_view(
         mw->createToolView(
-            "kate_private_plugin_katecppplugin"
+            plugin
+          , "kate_private_plugin_katecppplugin"
           , Kate::MainWindow::Bottom
           , SmallIcon("source-cpp11")
           , i18n("C++ Helper")
@@ -93,6 +97,8 @@ CppHelperPluginView::CppHelperPluginView(
   , m_menu(new KActionMenu(i18n("C++ Helper: Playground"), this))
 #endif
 {
+    assert("Sanity check" && m_tool_view);
+
     //BEGIN Setup plugin actions
     m_open_header->setText(i18n("Open Header Under Cursor"));
     m_open_header->setShortcut(QKeySequence(Qt::Key_F10));
@@ -185,10 +191,28 @@ CppHelperPluginView::CppHelperPluginView(
       , SLOT(startSearch())
       );
     connect(
-        m_tool_view_interior->locationText
-      , SIGNAL(linkActivated(const QString&))
-      , this
-      , SLOT(locationLinkActivated(const QString&))
+        m_tool_view_interior->indexFunctionBody
+      , SIGNAL(toggled(bool))
+      , &m_plugin->databaseManager()
+      , SLOT(indexLocalsToggled(bool))
+      );
+    connect(
+        m_tool_view_interior->skipImplicits
+      , SIGNAL(toggled(bool))
+      , &m_plugin->databaseManager()
+      , SLOT(indexImplicitsToggled(bool))
+      );
+    connect(
+        &m_plugin->databaseManager()
+      , SIGNAL(setSkipImplicitsChecked(bool))
+      , m_tool_view_interior->skipImplicits
+      , SLOT(setChecked(bool))
+      );
+    connect(
+        &m_plugin->databaseManager()
+      , SIGNAL(setIndexLocalsChecked(bool))
+      , m_tool_view_interior->indexFunctionBody
+      , SLOT(setChecked(bool))
       );
 
     // #include explorer tab
@@ -304,14 +328,23 @@ CppHelperPluginView::~CppHelperPluginView()
     mainWindow()->guiFactory()->removeClient(this);
 }
 
-void CppHelperPluginView::readSessionConfig(KConfigBase*, const QString& groupPrefix)
+void CppHelperPluginView::readSessionConfig(KConfigBase* config, const QString& groupPrefix)
 {
     kDebug(DEBUG_AREA) << "** VIEW **: Reading session config: " << groupPrefix;
+    KConfigGroup scg(config, groupPrefix);
+    m_explorer_widths = scg.readEntry(EXPLORER_TREE_WIDTH_KEY, QList<int>{});
+    m_search_widths = scg.readEntry(SEARCH_PANE_WIDTH_KEY,  QList<int>{});
+    m_indices_width = scg.readEntry(INDICES_LIST_WIDTH_KEY, QList<int>{});
 }
 
-void CppHelperPluginView::writeSessionConfig(KConfigBase*, const QString& groupPrefix)
+void CppHelperPluginView::writeSessionConfig(KConfigBase* config, const QString& groupPrefix)
 {
     kDebug(DEBUG_AREA) << "** VIEW **: Writing session config: " << groupPrefix;
+    KConfigGroup scg(config, groupPrefix);
+    scg.writeEntry(SEARCH_PANE_WIDTH_KEY, m_tool_view_interior->searchSplitter->sizes());
+    scg.writeEntry(EXPLORER_TREE_WIDTH_KEY, m_tool_view_interior->includesSplitter->sizes());
+    scg.writeEntry(INDICES_LIST_WIDTH_KEY, m_tool_view_interior->indicesSplitter->sizes());
+    scg.sync();
 }
 
 void CppHelperPluginView::addDiagnosticMessage(DiagnosticMessagesModel::Record record)
@@ -940,6 +973,12 @@ bool CppHelperPluginView::handleView(KTextEditor::View* view)
     if (!view)                                              // Null view is quite possible...
         return false;                                       // do nothing in this case.
 
+    if (!m_widths_applied)
+    {
+        applyToolViewInteriorWidths();
+        m_widths_applied = true;
+    }
+
     const auto is_suitable_document =
         isSuitableDocument(view->document()->mimeType(), view->document()->highlightingMode());
 
@@ -1406,20 +1445,47 @@ void CppHelperPluginView::searchResultsUpdated()
 
 void CppHelperPluginView::searchResultActivated(const QModelIndex& index)
 {
+    // Make it invisible while updating...
+    m_tool_view_interior->details->blockSignals(true);
+    clearSearchDetails();
+    //
     const auto& underlaid_index = m_search_results_model->mapToSource(index);
     const auto& details = m_plugin->databaseManager().getDetailsOf(underlaid_index.row());
-    m_tool_view_interior->locationText->setText(
-        QString{R"~(<a href="#%1">%2:%3:%4</a>)~"}.arg(
-            QString::number(underlaid_index.row())
-          , details.m_file
-          , QString::number(details.m_line)
-          , QString::number(details.m_column)
-          )
+    const auto& location = QString{R"~(<a href="#%1">%2:%3:%4</a>)~"}.arg(
+        QString::number(underlaid_index.row())
+      , details.m_file
+      , QString::number(details.m_line)
+      , QString::number(details.m_column)
       );
+    appendSearchDetailsRow(i18nc("@label", "Location:"), location);
     if (!details.m_type.isEmpty())
+        appendSearchDetailsRow(i18nc("@label", "Type:"), details.m_type);
+    // Make it visible again
+    m_tool_view_interior->details->blockSignals(false);
+}
+
+inline void CppHelperPluginView::appendSearchDetailsRow(const QString& label, const QString& value)
+{
+    auto* text = new QLabel{value};
+    auto sizePolicy = QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Expanding};
+    text->setSizePolicy(sizePolicy);
+    text->setWordWrap(true);
+    connect(
+        text
+      , SIGNAL(linkActivated(const QString&))
+      , this
+      , SLOT(locationLinkActivated(const QString&))
+      );
+    m_tool_view_interior->detailsFormLayout->addRow(label, text);
+}
+
+inline void CppHelperPluginView::clearSearchDetails()
+{
+    while (auto* item = m_tool_view_interior->detailsFormLayout->takeAt(0))
     {
-        m_tool_view_interior->row1Label->setText(i18nc("@label", "Type:"));
-        m_tool_view_interior->row1Text->setText(details.m_type);
+        if (auto* widget = item->widget())
+            delete widget;
+        delete item;
     }
 }
 
@@ -1431,6 +1497,17 @@ void CppHelperPluginView::locationLinkActivated(const QString& link)
     const auto& details = m_plugin->databaseManager().getDetailsOf(row);
     // NOTE Kate has zero-based positioning
     openFile(details.m_file, {details.m_line - 1, details.m_column - 1});
+}
+
+void CppHelperPluginView::applyToolViewInteriorWidths()
+{
+    // Resize tool-view interior
+    if (!m_search_widths.isEmpty())
+        m_tool_view_interior->searchSplitter->setSizes(m_search_widths);
+    if (!m_explorer_widths.isEmpty())
+        m_tool_view_interior->includesSplitter->setSizes(m_explorer_widths);
+    if (!m_indices_width.isEmpty())
+        m_tool_view_interior->indicesSplitter->setSizes(m_indices_width);
 }
 
 //END CppHelperPluginView

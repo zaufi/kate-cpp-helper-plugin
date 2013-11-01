@@ -121,29 +121,31 @@ QVariant SearchResultsTableModel::data(const QModelIndex& index, const int role)
     auto result = QVariant{};
     switch (index.column())
     {
-#if 0
-        case column::TYPE:
-            result = m_results[index.row()].m_type;
-            break;
-#endif
         case column::NAME:
             result = m_results[index.row()].m_name;
             break;
         case column::KIND:
-            result = m_results[index.row()].kindSpelling();
-            break;
-#if 0
-        case column::LOCATION:
         {
-            const auto& item = m_results[index.row()];
-            result = QString{"%1:%2:%3"}.arg(
-                item.m_file
-              , QString::number(item.m_line)
-              , QString::number(item.m_column)
-              );
+            auto kind_str = QString{};
+            if (m_results[index.row()].m_static)
+                kind_str = "static ";
+            switch (m_results[index.row()].m_template_kind)
+            {
+                case CXIdxEntity_Template:
+                    kind_str += "template ";
+                    break;
+                case CXIdxEntity_TemplatePartialSpecialization:
+                    kind_str += "partly specialized template ";
+                    break;
+                case CXIdxEntity_TemplateSpecialization:
+                    kind_str += "fully specialized template ";
+                    break;
+                default:
+                    break;
+            }
+            result = QString{kind_str + m_results[index.row()].kindSpelling()};
             break;
         }
-#endif
         default:
             break;
     }
@@ -162,10 +164,10 @@ QVariant SearchResultsTableModel::headerData(
         {
             switch (section)
             {
-                case column::NAME:
-                    return QString{i18nc("@title:row", "Name")};
                 case column::KIND:
                     return QString{i18nc("@title:row", "Kind")};
+                case column::NAME:
+                    return QString{i18nc("@title:row", "Name")};
                 default:
                     break;
             }

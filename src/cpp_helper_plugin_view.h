@@ -85,7 +85,7 @@ public Q_SLOTS:
 
 private Q_SLOTS:
     /// Open a single document
-    void openFile(const KUrl&, KTextEditor::Cursor = KTextEditor::Cursor{});
+    void openFile(const KUrl&, KTextEditor::Cursor = KTextEditor::Cursor::invalid());
     void openHeader();                                      ///< Open header file under cursor
     void switchIfaceImpl();                                 ///< Open corresponding header/implementation file
     void copyInclude();                                     ///< From \c #include directive w/ current file in the clipboard
@@ -136,6 +136,9 @@ private:
     void inclusionVisitor(details::InclusionVisitorData*, CXFile, CXSourceLocation*, unsigned);
     void dblClickOpenFile(QString&&);
     void updateCppActionsAvailability(const bool);          ///< Enable/disable C++ specific actions in UI
+    void appendSearchDetailsRow(const QString&, const QString&);
+    void clearSearchDetails();
+    void applyToolViewInteriorWidths();
 
     CppHelperPlugin* m_plugin;                              ///< Parent plugin
     KAction* m_open_header;                                 ///< <em>Open header</em> action
@@ -152,6 +155,11 @@ private:
     QAction* m_what_is_this;                                ///< Get info about symbol under cursor
 #endif
     completions_models_map_type m_completers;               ///< Registered completers by view
+
+    QList<int> m_explorer_widths;
+    QList<int> m_search_widths;
+    QList<int> m_indices_width;
+    bool m_widths_applied = {false};
 };
 
 }                                                           // namespace kate

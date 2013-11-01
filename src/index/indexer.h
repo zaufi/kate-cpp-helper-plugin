@@ -103,8 +103,8 @@ private:
     static CXIdxClientContainer on_translation_unit(CXClientData, void*);
     static void on_declaration(CXClientData, const CXIdxDeclInfo*);
     static void on_declaration_reference(CXClientData, const CXIdxEntityRefInfo*);
-    static void update_document_with_kind(const CXIdxDeclInfo*, Xapian::Document&);
-    static void update_document_with_template_kind(CXIdxEntityCXXTemplateKind, Xapian::Document&);
+    static void update_document_with_kind(const CXIdxDeclInfo*, document&);
+    static void update_document_with_template_kind(CXIdxEntityCXXTemplateKind, document&);
 
     indexer* const m_indexer;
     std::vector<std::unique_ptr<container_info>> m_containers;
@@ -134,7 +134,10 @@ public:
     ~indexer();
 
     indexer& set_compiler_options(std::vector<const char*>&&);
+    indexer& set_indexing_options(unsigned);
     indexer& add_target(const KUrl&);
+
+    static unsigned default_indexing_options();
 
 public Q_SLOTS:
     void start();
@@ -159,6 +162,7 @@ private:
     std::vector<const char*> m_options;
     std::vector<KUrl> m_targets;
     rw::database m_db;
+    unsigned m_indexing_options = {default_indexing_options()};
 };
 
 inline indexer& indexer::set_compiler_options(std::vector<const char*>&& options)
@@ -171,6 +175,17 @@ inline indexer& indexer::add_target(const KUrl& url)
 {
     m_targets.emplace_back(url);
     return *this;
+}
+
+inline indexer& indexer::set_indexing_options(const unsigned options)
+{
+    m_indexing_options = options;
+    return *this;
+}
+
+inline unsigned indexer::default_indexing_options()
+{
+    return CXIndexOpt_SkipParsedBodiesInSession | CXIndexOpt_SuppressWarnings;
 }
 
 }}                                                          // namespace index, kate

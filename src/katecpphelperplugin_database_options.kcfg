@@ -21,5 +21,13 @@
         <entry name="targets" type="PathList">
             <label>Targets to be indexed</label>
         </entry>
+        <entry name="indexLocals" type="Bool" key="index-locals">
+            <label>Index function local symbols</label>
+            <default>false</default>
+        </entry>
+        <entry name="skipImplicitTemplateInstantiations" type="Bool" key="skip-implicit-template-instantiations">
+            <label>Suppress redundand references</label>
+            <default>true</default>
+        </entry>
     </group>
 </kcfg>

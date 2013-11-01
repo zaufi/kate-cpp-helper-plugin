@@ -270,6 +270,44 @@ void DatabaseManager::createNewIndex()
       );
 }
 
+void DatabaseManager::indexLocalsToggled(const bool is_checked)
+{
+    // Check if any index has been selected, and no other reindexing in progress
+    if (m_last_selected_index == -1)
+    {
+        KPassivePopup::message(
+            i18nc("@title:window", "Error")
+          , i18nc("@info", "No index selected...")
+            /// \todo WTF?! \c nullptr can't be used here!?
+          , reinterpret_cast<QWidget*>(0)
+          );
+        return;
+    }
+
+    auto& state = m_collections[m_last_selected_index];
+    state.m_options->setIndexLocals(is_checked);
+    state.m_options->writeConfig();
+}
+
+void DatabaseManager::indexImplicitsToggled(const bool is_checked)
+{
+    // Check if any index has been selected, and no other reindexing in progress
+    if (m_last_selected_index == -1)
+    {
+        KPassivePopup::message(
+            i18nc("@title:window", "Error")
+          , i18nc("@info", "No index selected...")
+            /// \todo WTF?! \c nullptr can't be used here!?
+          , reinterpret_cast<QWidget*>(0)
+          );
+        return;
+    }
+
+    auto& state = m_collections[m_last_selected_index];
+    state.m_options->setSkipImplicitTemplateInstantiations(is_checked);
+    state.m_options->writeConfig();
+}
+
 void DatabaseManager::removeCurrentIndex()
 {
     // Check if any index has been selected, and no other reindexing in progress
@@ -294,7 +332,7 @@ void DatabaseManager::removeCurrentIndex()
     // Disable if needed...
     enable(m_last_selected_index, false);
 
-    // Take state out of collection
+    // Take the state out of collection
     auto state = std::move(m_collections[m_last_selected_index]);
     // Remove it (taking care about models)
     m_targets_model.refreshAll(
@@ -386,7 +424,12 @@ void DatabaseManager::rebuildCurrentIndex()
     m_indexer.reset(
         new index::indexer{db_id, reindexing_db_path.string()}
       );
-    m_indexer->set_compiler_options(m_compiler_options.get());
+    auto indexing_options = index::indexer::default_indexing_options();
+    if (state.m_options->indexLocals())
+        indexing_options |= CXIndexOpt_IndexFunctionLocalSymbols;
+    if (state.m_options->skipImplicitTemplateInstantiations())
+        indexing_options |= CXIndexOpt_IndexImplicitTemplateInstantiations;
+    m_indexer->set_indexing_options(indexing_options).set_compiler_options(m_compiler_options.get());
 
     if (state.m_options->targets().empty())
     {
@@ -513,6 +556,9 @@ void DatabaseManager::refreshCurrentTargets(const QModelIndex& index)
             m_last_selected_index = index.row();
         }
       );
+    const auto& options = *m_collections[m_last_selected_index].m_options;
+    Q_EMIT(setIndexLocalsChecked(options.indexLocals()));
+    Q_EMIT(setSkipImplicitsChecked(options.skipImplicitTemplateInstantiations()));
 }
 
 void DatabaseManager::selectCurrentTarget(const QModelIndex& index)
