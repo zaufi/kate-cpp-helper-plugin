@@ -516,7 +516,7 @@ QList<KTextEditor::HighlightInterface::AttributeBlock> CppHelperPlugin::highligh
 void CppHelperPlugin::updateUnsavedFiles()
 {
     for (auto* doc : application()->editor()->documents())
-        if (doc->isModified())
+        if (doc->isModified() && doc->url().isValid())
             m_unsaved_files_cache.update(doc->url(), doc->text());
     m_unsaved_files_cache.finalize_updating();
 }

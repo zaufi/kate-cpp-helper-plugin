@@ -40,6 +40,7 @@ void unsaved_files_list::update(const KUrl& file, const QString& text)
         initiate_updating();
 
     assert("Sanity check" && m_updating);
+    assert("Sanity check" && !file.toLocalFile().isEmpty());
 
     auto it = m_index_prev.find(file);
     if (it == end(m_index_prev))
