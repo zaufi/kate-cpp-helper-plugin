@@ -470,7 +470,15 @@ void worker::update_document_with_kind(const CXIdxDeclInfo* info, document& doc)
             // ATTENTION Fall into the next (CXIdxEntity_Field) case...
         case CXIdxEntity_Field:
             doc.add_boolean_term(term::XKIND + "field");
-            doc.add_value(value_slot::KIND, serialize(kind::FIELD));
+            if (clang_Cursor_isBitField(info->cursor))
+            {
+                doc.add_boolean_term(term::XKIND + "bitfield");
+                doc.add_value(value_slot::KIND, serialize(kind::BITFIELD));
+            }
+            else
+            {
+                doc.add_value(value_slot::KIND, serialize(kind::FIELD));
+            }
             break;
         default:
             break;

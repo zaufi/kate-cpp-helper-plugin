@@ -60,6 +60,7 @@ public:
         index::kind m_kind;
         CXIdxEntityCXXTemplateKind m_template_kind = {CXIdxEntity_NonTemplate};
         bool m_static = {false};
+        bool m_bit_field = {false};
 
         explicit search_result(const index::kind k)
           : m_kind{k}

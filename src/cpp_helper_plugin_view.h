@@ -136,7 +136,8 @@ private:
     void inclusionVisitor(details::InclusionVisitorData*, CXFile, CXSourceLocation*, unsigned);
     void dblClickOpenFile(QString&&);
     void updateCppActionsAvailability(const bool);          ///< Enable/disable C++ specific actions in UI
-    void appendSearchDetailsRow(const QString&, const QString&);
+    void appendSearchDetailsRow(const QString&, const QString&, bool = true);
+    void appendSearchDetailsRow(const QString&, bool);
     void clearSearchDetails();
     void applyToolViewInteriorWidths();
 

@@ -63,6 +63,8 @@ const QStringList SRC_EXTENSIONS = QStringList() << "c" << "cc" << "cpp" << "cxx
 const QString EXPLORER_TREE_WIDTH_KEY = "ExplorerTreeWidth";
 const QString SEARCH_PANE_WIDTH_KEY = "SearchDetailsPaneWidth";
 const QString INDICES_LIST_WIDTH_KEY = "IndicesListWidth";
+const auto CHECK_MARK = QChar{0x14, 0x27};
+const auto BALOUT_X = QChar{0x17, 0x27};
 }                                                           // anonymous namespace
 
 //BEGIN CppHelperPluginView
@@ -1457,19 +1459,28 @@ void CppHelperPluginView::searchResultActivated(const QModelIndex& index)
       , QString::number(details.m_line)
       , QString::number(details.m_column)
       );
-    appendSearchDetailsRow(i18nc("@label", "Location:"), location);
+    appendSearchDetailsRow(i18nc("@label", "Location:"), location, false);
     if (!details.m_type.isEmpty())
         appendSearchDetailsRow(i18nc("@label", "Type:"), details.m_type);
+    if (details.m_static)
+        appendSearchDetailsRow(i18nc("@label", "Static:"), CHECK_MARK, false);
+
     // Make it visible again
     m_tool_view_interior->details->blockSignals(false);
 }
 
-inline void CppHelperPluginView::appendSearchDetailsRow(const QString& label, const QString& value)
+inline void CppHelperPluginView::appendSearchDetailsRow(
+    const QString& label
+  , const QString& value
+  , const bool selectable
+  )
 {
     auto* text = new QLabel{value};
     auto sizePolicy = QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Expanding};
     text->setSizePolicy(sizePolicy);
     text->setWordWrap(true);
+    if (selectable)
+        text->setTextInteractionFlags(Qt::TextSelectableByMouse);
     connect(
         text
       , SIGNAL(linkActivated(const QString&))
@@ -1477,6 +1488,14 @@ inline void CppHelperPluginView::appendSearchDetailsRow(const QString& label, co
       , SLOT(locationLinkActivated(const QString&))
       );
     m_tool_view_interior->detailsFormLayout->addRow(label, text);
+}
+
+inline void CppHelperPluginView::appendSearchDetailsRow(const QString& label, const bool flag)
+{
+    auto* cb = new QCheckBox{};
+    cb->setChecked(flag);
+    cb->setEnabled(false);
+    m_tool_view_interior->detailsFormLayout->addRow(label, cb);
 }
 
 inline void CppHelperPluginView::clearSearchDetails()

@@ -50,8 +50,9 @@ enum class kind
   , ENUM
   , ENUM_CONSTANT
   , VARIABLE
-  , FIELD
   , PARAMETER
+  , FIELD
+  , BITFIELD
   , FUNCTION
   , METHOD
   , CONSTRUCTOR

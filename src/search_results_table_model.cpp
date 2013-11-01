@@ -47,8 +47,9 @@ std::map<index::kind, QString> SYMBOL_KIND_TO_STRING_MAP =
   , {index::kind::ENUM, "enum"}
   , {index::kind::ENUM_CONSTANT, "enum constant"}
   , {index::kind::VARIABLE, "variable"}
-  , {index::kind::FIELD, "field"}
   , {index::kind::PARAMETER, "parameter"}
+  , {index::kind::FIELD, "field"}
+  , {index::kind::BITFIELD, "bit-field"}
   , {index::kind::FUNCTION, "function"}
   , {index::kind::METHOD, "method"}
   , {index::kind::CONSTRUCTOR, "constructor"}
