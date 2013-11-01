@@ -2,14 +2,6 @@
 <ui version="4.0">
  <class>PluginToolViewWidget</class>
  <widget class="QWidget" name="PluginToolViewWidget">
-  <property name="geometry">
-   <rect>
-    <x>0</x>
-    <y>0</y>
-    <width>596</width>
-    <height>379</height>
-   </rect>
-  </property>
   <property name="windowTitle">
    <string>C++ Helper ToolView</string>
   </property>
@@ -41,83 +33,6 @@
          <property name="wordWrap">
           <bool>true</bool>
          </property>
-        </widget>
-       </item>
-      </layout>
-     </widget>
-     <widget class="QWidget" name="searchTab">
-      <attribute name="title">
-       <string>Search</string>
-      </attribute>
-      <layout class="QVBoxLayout" name="vl_2_0">
-       <item>
-        <widget class="QSplitter" name="searchSplitter">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-         <widget class="QWidget" name="lw_2_1">
-          <layout class="QVBoxLayout" name="vl_2_1">
-           <item>
-            <widget class="KLineEdit" name="searchQuery"/>
-           </item>
-           <item>
-            <widget class="QTableView" name="searchResults">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="showDropIndicator" stdset="0">
-              <bool>false</bool>
-             </property>
-             <property name="alternatingRowColors">
-              <bool>true</bool>
-             </property>
-             <property name="selectionMode">
-              <enum>QAbstractItemView::SingleSelection</enum>
-             </property>
-             <property name="selectionBehavior">
-              <enum>QAbstractItemView::SelectRows</enum>
-             </property>
-             <property name="showGrid">
-              <bool>false</bool>
-             </property>
-             <property name="sortingEnabled">
-              <bool>true</bool>
-             </property>
-             <attribute name="horizontalHeaderStretchLastSection">
-              <bool>true</bool>
-             </attribute>
-             <attribute name="verticalHeaderVisible">
-              <bool>false</bool>
-             </attribute>
-            </widget>
-           </item>
-          </layout>
-         </widget>
-         <widget class="QGroupBox" name="details">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
-            <horstretch>1</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="title">
-           <string>Symbol Details</string>
-          </property>
-          <layout class="QFormLayout" name="detailsFormLayout">
-           <property name="fieldGrowthPolicy">
-            <enum>QFormLayout::ExpandingFieldsGrow</enum>
-           </property>
-           <property name="rowWrapPolicy">
-            <enum>QFormLayout::WrapLongRows</enum>
-           </property>
-           <property name="labelAlignment">
-            <set>Qt::AlignRight|Qt::AlignTop|Qt::AlignTrailing</set>
-           </property>
-          </layout>
-         </widget>
         </widget>
        </item>
       </layout>
@@ -213,6 +128,83 @@
           </widget>
          </item>
         </layout>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="searchTab">
+      <attribute name="title">
+       <string>Search</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="vl_2_0">
+       <item>
+        <widget class="QSplitter" name="searchSplitter">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <widget class="QWidget" name="lw_2_1">
+          <layout class="QVBoxLayout" name="vl_2_1">
+           <item>
+            <widget class="KLineEdit" name="searchQuery"/>
+           </item>
+           <item>
+            <widget class="QTableView" name="searchResults">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="showDropIndicator" stdset="0">
+              <bool>false</bool>
+             </property>
+             <property name="alternatingRowColors">
+              <bool>true</bool>
+             </property>
+             <property name="selectionMode">
+              <enum>QAbstractItemView::SingleSelection</enum>
+             </property>
+             <property name="selectionBehavior">
+              <enum>QAbstractItemView::SelectRows</enum>
+             </property>
+             <property name="showGrid">
+              <bool>false</bool>
+             </property>
+             <property name="sortingEnabled">
+              <bool>true</bool>
+             </property>
+             <attribute name="horizontalHeaderStretchLastSection">
+              <bool>true</bool>
+             </attribute>
+             <attribute name="verticalHeaderVisible">
+              <bool>false</bool>
+             </attribute>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+         <widget class="QGroupBox" name="details">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+            <horstretch>1</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="title">
+           <string>Symbol Details</string>
+          </property>
+          <layout class="QFormLayout" name="detailsFormLayout">
+           <property name="fieldGrowthPolicy">
+            <enum>QFormLayout::ExpandingFieldsGrow</enum>
+           </property>
+           <property name="rowWrapPolicy">
+            <enum>QFormLayout::WrapLongRows</enum>
+           </property>
+           <property name="labelAlignment">
+            <set>Qt::AlignRight|Qt::AlignTop|Qt::AlignTrailing</set>
+           </property>
+          </layout>
+         </widget>
+        </widget>
        </item>
       </layout>
      </widget>

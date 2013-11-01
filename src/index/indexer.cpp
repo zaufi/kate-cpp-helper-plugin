@@ -30,8 +30,10 @@
 #include <src/clang/kind_of.h>
 #include <src/clang/to_string.h>
 #include <src/index/kind.h>
+#include <src/string_cast.h>
 
 // Standard includes
+#include <boost/algorithm/string.hpp>
 #include <KDE/KDebug>
 #include <KDE/KMimeType>
 #include <QtCore/QCoreApplication>
@@ -276,17 +278,41 @@ void worker::on_declaration(CXClientData client_data, const CXIdxDeclInfo* const
 
     /// \note Unnamed parameters and anonymous namespaces/structs/unions have an empty name!
     /// \todo Remove possible spaces from \c name?
-    auto name = QString{info->entityInfo->name};
+    auto name = string_cast<std::string>(info->entityInfo->name);
 
     // Create a new document for declaration and attach all required value slots and terms
     auto doc = document{};
     // Attach terms related to name
-    if (!name.isEmpty())
+    if (!name.empty())
     {
-        doc.add_posting(info->entityInfo->name, make_term_position(loc));
+        // Try to remove any template parameters from the name.
+        // For example constructors/descturctors have them.
+        const auto kind = clang::kind_of(*info->entityInfo);
+        const auto try_remove_template_params =
+            kind == CXIdxEntity_CXXConstructor
+          || kind == CXIdxEntity_CXXDestructor
+          || kind == CXIdxEntity_CXXInstanceMethod
+          || kind == CXIdxEntity_CXXConversionFunction
+          || kind == CXIdxEntity_Function
+          ;
+        if (try_remove_template_params)
+        {
+#ifndef NDEBUG
+            auto before = name;
+#endif
+            const auto tpos = name.find('<');
+            if (tpos != std::string::npos && boost::ends_with(name, ">"))
+                name.erase(tpos);
+#ifndef NDEBUG
+            if (!boost::equal(before, name))
+                kDebug() << "name cleaner: " << before.c_str() << " --> " << name.c_str();
+#endif
+        }
+        // NOTE Add terms w/ possible stripped name, but have a full name
+        // at value slots
+        doc.add_posting(name, make_term_position(loc));
+        doc.add_boolean_term(term::XDECL + name);           // Mark the document w/ XDECL prefixed term
         doc.add_value(value_slot::NAME, info->entityInfo->name);
-        // Mark the document w/ XDECL prefixed term
-        doc.add_boolean_term(term::XDECL + info->entityInfo->name);
     }
     else
     {
@@ -350,7 +376,6 @@ void worker::on_declaration_reference(CXClientData client_data, const CXIdxEntit
 
 void worker::update_document_with_kind(const CXIdxDeclInfo* info, document& doc)
 {
-    kDebug() << "kind=" << clang::toString(clang::kind_of(*info->entityInfo));
     switch (clang::kind_of(*info->entityInfo))
     {
         case CXIdxEntity_CXXNamespace:

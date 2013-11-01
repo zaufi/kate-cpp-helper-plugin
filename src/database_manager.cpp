@@ -141,7 +141,7 @@ void DatabaseManager::reset(const std::set<boost::uuids::uuid>& enabled_list, co
             /// \todo Handle errors
             auto state = tryLoadDatabaseMeta(it->path());
             assert("Sanity check" && state.m_options);
-            bool is_enabled;
+            bool is_enabled = false;
             if (m_enabled_list.find(state.m_id) != end(m_enabled_list))
             {
                 const auto& db_path = state.m_options->path().toUtf8().constData();
@@ -149,19 +149,17 @@ void DatabaseManager::reset(const std::set<boost::uuids::uuid>& enabled_list, co
                 {
                     state.m_db.reset(new index::ro::database(db_path));
                     state.m_status = database_state::status::ok;
+                    is_enabled = true;
                 }
                 catch (...)
                 {
                     reportError(i18n("Load failure '%1'", state.m_options->name()));
                     state.m_status = database_state::status::invalid;
-                    continue;
                 }
-                is_enabled = true;
             }
             else
             {
                 state.m_status = database_state::status::unknown;
-                is_enabled = false;
             }
             state.m_enabled = is_enabled;
             m_collections.emplace_back(std::move(state));

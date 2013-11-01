@@ -38,7 +38,10 @@
 namespace kate {
 
 template <typename OutputString, typename InputString>
-OutputString string_cast(const InputString&);
+typename std::enable_if<
+    !(std::is_same<InputString, const char*>::value || std::is_same<InputString, clang::DCXString>::value)
+  , OutputString
+  >::type string_cast(const InputString&);
 
 template <>
 inline std::string string_cast<std::string, QString>(const QString& str)
@@ -67,7 +70,7 @@ typename std::enable_if<
   , OutputString
   >::type string_cast(InputString c_str)
 {
-    return c_str;
+    return c_str ? c_str : OutputString{};
 }
 
 template <typename OutputString, typename InputString>
@@ -77,7 +80,8 @@ typename std::enable_if<
   , OutputString
   >::type string_cast(const InputString& str)
 {
-    return clang_getCString(str);
+    const auto* const c_str = clang_getCString(str);
+    return c_str ? c_str : OutputString{};
 }
 
 }                                                           // namespace kate

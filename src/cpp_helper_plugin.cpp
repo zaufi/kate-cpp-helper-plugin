@@ -68,6 +68,10 @@ CppHelperPlugin::CppHelperPlugin(
 {
     assert("clang index expected to be valid" && m_local_index);
 
+    // Register few types inQt meta-types system, so later we can use them
+    // in signal/slots...
+    qRegisterMetaType<clang::location>("clang::location");
+
     // Connect self to configuration updates
     connect(
         &m_config
@@ -107,10 +111,6 @@ CppHelperPlugin::CppHelperPlugin(
       , &m_db_mgr
       , SLOT(propagateCompilerOptionsToIndexer())
       );
-
-    // Register few types inQt meta-types system, so later we can use them
-    // in signal/slots...
-    qRegisterMetaType<clang::location>("location");
 }
 
 CppHelperPlugin::~CppHelperPlugin()
