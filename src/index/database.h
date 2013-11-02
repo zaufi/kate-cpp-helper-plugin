@@ -64,6 +64,7 @@ enum class value_slot : Xapian::valueno
   , STATIC
   , SIZEOF
   , ALIGNOF
+  , VALUE
 };
 
 /// Exceptions group for database classes

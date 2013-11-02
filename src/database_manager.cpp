@@ -776,9 +776,14 @@ void DatabaseManager::startSearch(QString query)
             {
                 const auto& static_str = doc.get_value(index::value_slot::STATIC);
                 if (!static_str.empty())
+                    result.m_static = index::deserialize<bool>(static_str);
+            }
+            {
+                const auto& value_str = doc.get_value(index::value_slot::VALUE);
+                if (!value_str.empty())
                 {
-                    const auto value = index::deserialize<bool>(static_str);
-                    result.m_static = CXIdxEntityCXXTemplateKind(value);
+                    result.m_value = static_cast<long long>(Xapian::sortable_unserialise(value_str));
+                    kDebug() << "GETTING VALUE: " << result.m_value.get();
                 }
             }
 

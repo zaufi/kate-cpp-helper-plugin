@@ -64,10 +64,12 @@ SearchResultsTableModel::search_result::search_result(search_result&& other) noe
   , m_kind{other.m_kind}
   , m_template_kind{other.m_template_kind}
   , m_static{other.m_static}
+  , m_bit_field{other.m_bit_field}
 {
     m_name.swap(other.m_name);
     m_type.swap(other.m_type);
     m_file.swap(other.m_file);
+    m_value.swap(other.m_value);
 }
 
 auto SearchResultsTableModel::search_result::operator=(search_result&& other) noexcept -> search_result&
@@ -76,11 +78,13 @@ auto SearchResultsTableModel::search_result::operator=(search_result&& other) no
     m_name.swap(other.m_name);
     m_type.swap(other.m_type);
     m_file.swap(other.m_file);
+    m_value.swap(other.m_value);
     m_line = other.m_line;
     m_column = other.m_column;
     m_kind = other.m_kind;
     m_template_kind = other.m_template_kind;
     m_static = other.m_static;
+    m_bit_field = other.m_bit_field;
     return *this;
 }
 

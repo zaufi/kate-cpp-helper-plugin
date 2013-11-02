@@ -1465,6 +1465,20 @@ void CppHelperPluginView::searchResultActivated(const QModelIndex& index)
     if (details.m_static)
         appendSearchDetailsRow(i18nc("@label", "Static:"), CHECK_MARK, false);
 
+    switch (details.m_kind)
+    {
+        case index::kind::ENUM_CONSTANT:
+            assert("Sanity check" && details.m_value);
+            appendSearchDetailsRow(i18nc("@label", "Value:"), QString::number(details.m_value.get()));
+            break;
+        case index::kind::BITFIELD:
+            assert("Sanity check" && details.m_value);
+            appendSearchDetailsRow(i18nc("@label", "Width:"), QString::number(details.m_value.get()));
+            break;
+        default:
+            break;
+    }
+
     // Make it visible again
     m_tool_view_interior->details->blockSignals(false);
 }

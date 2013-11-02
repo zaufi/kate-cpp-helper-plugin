@@ -30,6 +30,7 @@
 // Project specific includes
 
 // Standard includes
+#include <clang-c/Index.h>
 
 namespace kate { namespace clang {
 

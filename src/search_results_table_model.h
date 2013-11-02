@@ -31,6 +31,7 @@
 #include <src/index/kind.h>
 
 // Standard includes
+#include <boost/optional.hpp>
 #include <clang-c/Index.h>
 #include <QtCore/QAbstractTableModel>
 #include <cassert>
@@ -55,6 +56,7 @@ public:
         QString m_name;
         QString m_type;
         QString m_file;
+        boost::optional<long long> m_value;
         int m_line = {-1};
         int m_column = {-1};
         index::kind m_kind;

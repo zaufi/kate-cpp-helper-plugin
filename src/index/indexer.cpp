@@ -149,9 +149,7 @@ void worker::handle_file(const QString& filename)
       , this
       , &index_callbacks
       , sizeof(index_callbacks)
-        // CXIndexOpt_SuppressRedundantRefs
-        // CXIndexOpt_SkipParsedBodiesInSession
-      , CXIndexOpt_IndexFunctionLocalSymbols | CXIndexOpt_SkipParsedBodiesInSession
+      , m_indexer->m_indexing_options
       , filename.toUtf8().constData()
       , m_indexer->m_options.data()
       , m_indexer->m_options.size()
@@ -273,6 +271,8 @@ void worker::on_declaration(CXClientData client_data, const CXIdxDeclInfo* const
     auto* const wrk = static_cast<worker*>(client_data);
     auto file_id = wrk->m_indexer->m_db.headers_map()[loc.file().toLocalFile()];
     auto decl_loc = declaration_location{file_id, loc.line(), loc.column()};
+    /// \todo Track all locations for namespaces and then update
+    /// the only document w/ them...
     if (wrk->m_seen_declarations.find(decl_loc) != end(wrk->m_seen_declarations))
         return;
 
@@ -342,10 +342,13 @@ void worker::on_declaration(CXClientData client_data, const CXIdxDeclInfo* const
     {
         const auto kind = clang::kind_of(*info->entityInfo);
         const auto is_typedef = kind == CXIdxEntity_CXXTypeAlias || kind == CXIdxEntity_Typedef;
-        auto ct = is_typedef
-          ? clang_getTypedefDeclUnderlyingType(info->cursor)
-          : clang_getCursorType(info->cursor)
-          ;
+        CXType ct;
+        if (is_typedef)
+            ct = clang_getTypedefDeclUnderlyingType(info->cursor);
+        else if (kind == CXIdxEntity_Enum)
+            ct = clang_getEnumDeclIntegerType(info->cursor);
+        else
+            ct = clang_getCursorType(info->cursor);
         if (clang::kind_of(ct) != CXType_Invalid || clang::kind_of(ct) != CXType_Unexposed)
         {
             auto type_str = to_string(clang::DCXString{clang_getTypeSpelling(ct)});
@@ -414,9 +417,13 @@ void worker::update_document_with_kind(const CXIdxDeclInfo* info, document& doc)
             doc.add_value(value_slot::KIND, serialize(kind::ENUM));
             break;
         case CXIdxEntity_EnumConstant:
+        {
             doc.add_boolean_term(term::XKIND + "enum-const");
             doc.add_value(value_slot::KIND, serialize(kind::ENUM_CONSTANT));
+            const auto value = clang_getEnumConstantDeclValue(info->cursor);
+            doc.add_value(value_slot::VALUE, Xapian::sortable_serialise(value));
             break;
+        }
         case CXIdxEntity_Function:
             doc.add_boolean_term(term::XKIND + "fn");
             doc.add_value(value_slot::KIND, serialize(kind::FUNCTION));
@@ -474,6 +481,8 @@ void worker::update_document_with_kind(const CXIdxDeclInfo* info, document& doc)
             {
                 doc.add_boolean_term(term::XKIND + "bitfield");
                 doc.add_value(value_slot::KIND, serialize(kind::BITFIELD));
+                const auto width = clang_getFieldDeclBitWidth(info->cursor);
+                doc.add_value(value_slot::VALUE, Xapian::sortable_serialise(width));
             }
             else
             {
