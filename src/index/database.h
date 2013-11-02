@@ -61,7 +61,7 @@ enum class value_slot : Xapian::valueno
   , DBID
   , KIND
   , TEMPLATE
-  , STATIC
+  , FLAGS
   , SIZEOF
   , ALIGNOF
   , VALUE

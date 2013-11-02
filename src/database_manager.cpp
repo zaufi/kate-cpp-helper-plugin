@@ -735,7 +735,7 @@ void DatabaseManager::startSearch(QString query)
             assert("Sanity check" && !tmp_str.empty());
 
             // Form a search result item
-            auto result = SearchResultsTableModel::search_result{index::deserialize(tmp_str)};
+            auto result = index::search_result{index::deserialize(tmp_str)};
 
             // Get source file ID
             tmp_str = doc.get_value(index::value_slot::FILE);
@@ -774,9 +774,10 @@ void DatabaseManager::startSearch(QString query)
                 }
             }
             {
-                const auto& static_str = doc.get_value(index::value_slot::STATIC);
+                const auto& static_str = doc.get_value(index::value_slot::FLAGS);
                 if (!static_str.empty())
-                    result.m_static = index::deserialize<bool>(static_str);
+                    result.m_flags.m_flags_as_int =
+                        index::deserialize<decltype(result.m_flags.m_flags_as_int)>(static_str);
             }
             {
                 const auto& value_str = doc.get_value(index::value_slot::VALUE);
@@ -872,7 +873,7 @@ void DatabaseManager::reportError(const QString& prefix, const int index, const 
     }
 }
 
-const SearchResultsTableModel::search_result& DatabaseManager::getDetailsOf(const int index)
+const index::search_result& DatabaseManager::getDetailsOf(const int index)
 {
     return m_search_results_model.getSearchResult(index);
 }

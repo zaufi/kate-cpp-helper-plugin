@@ -29,10 +29,9 @@
 
 // Project specific includes
 #include <src/index/kind.h>
+#include <src/index/search_result.h>
 
 // Standard includes
-#include <boost/optional.hpp>
-#include <clang-c/Index.h>
 #include <QtCore/QAbstractTableModel>
 #include <cassert>
 #include <vector>
@@ -51,35 +50,7 @@ class SearchResultsTableModel : public QAbstractTableModel
     Q_OBJECT
 
 public:
-    struct search_result
-    {
-        QString m_name;
-        QString m_type;
-        QString m_file;
-        boost::optional<long long> m_value;
-        int m_line = {-1};
-        int m_column = {-1};
-        index::kind m_kind;
-        CXIdxEntityCXXTemplateKind m_template_kind = {CXIdxEntity_NonTemplate};
-        bool m_static = {false};
-        bool m_bit_field = {false};
-
-        explicit search_result(const index::kind k)
-          : m_kind{k}
-        {}
-
-        /// Delete copy ctor
-        search_result(const search_result&) = delete;
-        /// Delete copy-assign operator
-        search_result& operator=(const search_result&) = delete;
-        /// Move ctor
-        search_result(search_result&&) noexcept;
-        /// Move-assign operator
-        search_result& operator=(search_result&&) noexcept;
-        /// Get symbol kind as string
-        QString kindSpelling() const;
-    };
-    typedef std::vector<search_result> search_results_list_type;
+    typedef std::vector<index::search_result> search_results_list_type;
 
     /// Default constructor
     explicit SearchResultsTableModel(DatabaseManager&);
@@ -93,7 +64,7 @@ public:
     //END QAbstractItemModel interface
 
     void updateSearchResults(search_results_list_type&&);
-    const search_result& getSearchResult(int) const;
+    const index::search_result& getSearchResult(int) const;
 
 private:
     enum column
@@ -118,7 +89,7 @@ inline void SearchResultsTableModel::updateSearchResults(search_results_list_typ
  *
  * \invariant \c row expected to be a valid index in the \c m_results
  */
-inline auto SearchResultsTableModel::getSearchResult(const int row) const -> const search_result&
+inline const index::search_result& SearchResultsTableModel::getSearchResult(const int row) const
 {
     assert("Sanity check" && std::size_t(row) < m_results.size());
     return m_results[row];

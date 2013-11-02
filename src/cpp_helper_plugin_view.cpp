@@ -1462,8 +1462,14 @@ void CppHelperPluginView::searchResultActivated(const QModelIndex& index)
     appendSearchDetailsRow(i18nc("@label", "Location:"), location, false);
     if (!details.m_type.isEmpty())
         appendSearchDetailsRow(i18nc("@label", "Type:"), details.m_type);
-    if (details.m_static)
+    if (details.m_flags.m_static)
         appendSearchDetailsRow(i18nc("@label", "Static:"), CHECK_MARK, false);
+    if (details.m_flags.m_const)
+        appendSearchDetailsRow(i18nc("@label", "Const:"), CHECK_MARK, false);
+    if (details.m_flags.m_volatile)
+        appendSearchDetailsRow(i18nc("@label", "Volatile:"), CHECK_MARK, false);
+    if (details.m_flags.m_pod)
+        appendSearchDetailsRow(i18nc("@label", "POD:"), CHECK_MARK, false);
 
     switch (details.m_kind)
     {

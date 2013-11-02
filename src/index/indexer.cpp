@@ -336,7 +336,10 @@ void worker::on_declaration(CXClientData client_data, const CXIdxDeclInfo* const
     if (info->declAsContainer)
         doc.add_boolean_term(term::XCONTAINER);
 
-    update_document_with_kind(info, doc);                   // Get more terms/slots to attach
+    // Get more terms/slots to attach
+    auto type_flags = update_document_with_kind(info, doc);
+    if (type_flags.m_flags_as_int)
+        doc.add_value(value_slot::FLAGS, serialize(type_flags.m_flags_as_int));
 
     // Attach symbol type. Get aliasd type for typedefs.
     {
@@ -377,8 +380,10 @@ void worker::on_declaration_reference(CXClientData client_data, const CXIdxEntit
     Q_UNUSED(info);
 }
 
-void worker::update_document_with_kind(const CXIdxDeclInfo* info, document& doc)
+search_result::flags worker::update_document_with_kind(const CXIdxDeclInfo* info, document& doc)
 {
+    search_result::flags type_flags;
+
     switch (clang::kind_of(*info->entityInfo))
     {
         case CXIdxEntity_CXXNamespace:
@@ -431,7 +436,7 @@ void worker::update_document_with_kind(const CXIdxDeclInfo* info, document& doc)
             break;
         case CXIdxEntity_CXXStaticMethod:
             doc.add_boolean_term(term::XSTATIC + "y");
-            doc.add_value(value_slot::STATIC, serialize(true));
+            type_flags.m_static = true;
             // ATTENTION Fall into the next (CXIdxEntity_CXXInstanceMethod) case...
         case CXIdxEntity_CXXInstanceMethod:
             doc.add_boolean_term(term::XKIND + "fn");
@@ -473,7 +478,7 @@ void worker::update_document_with_kind(const CXIdxDeclInfo* info, document& doc)
         }
         case CXIdxEntity_CXXStaticVariable:
             doc.add_boolean_term(term::XSTATIC + "y");
-            doc.add_value(value_slot::STATIC, serialize(true));
+            type_flags.m_static = true;
             // ATTENTION Fall into the next (CXIdxEntity_Field) case...
         case CXIdxEntity_Field:
             doc.add_boolean_term(term::XKIND + "field");
@@ -492,6 +497,7 @@ void worker::update_document_with_kind(const CXIdxDeclInfo* info, document& doc)
         default:
             break;
     }
+    return type_flags;
 }
 
 void worker::update_document_with_template_kind(

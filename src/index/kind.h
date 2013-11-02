@@ -32,6 +32,8 @@
 
 // Standard includes
 
+class QString;
+
 namespace kate { namespace index {
 
 /**
@@ -70,5 +72,10 @@ inline kind deserialize(const std::string& raw)
 {
     return static_cast<kind>(deserialize<unsigned>(raw));
 }
+
+/// Make a human readable string from \c kind
+std::string to_string(kind);
+/// Make a human readable string from \c kind
+QString toString(kind);
 
 }}                                                          // namespace index, kate

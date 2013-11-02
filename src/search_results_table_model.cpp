@@ -31,74 +31,8 @@
 
 // Standard includes
 #include <KDE/KLocalizedString>
-#include <map>
 
-namespace kate { namespace {
-std::map<index::kind, QString> SYMBOL_KIND_TO_STRING_MAP =
-{
-    {index::kind::UNEXPOSED, "<unexposed>"}
-  , {index::kind::NAMESPACE, "namespace"}
-  , {index::kind::NAMESPACE_ALIAS, "namespace alias"}
-  , {index::kind::TYPEDEF, "typedef"}
-  , {index::kind::TYPE_ALIAS, "type alias"}
-  , {index::kind::STRUCT, "struct"}
-  , {index::kind::CLASS, "class"}
-  , {index::kind::UNION, "union"}
-  , {index::kind::ENUM, "enum"}
-  , {index::kind::ENUM_CONSTANT, "enum constant"}
-  , {index::kind::VARIABLE, "variable"}
-  , {index::kind::PARAMETER, "parameter"}
-  , {index::kind::FIELD, "field"}
-  , {index::kind::BITFIELD, "bit-field"}
-  , {index::kind::FUNCTION, "function"}
-  , {index::kind::METHOD, "method"}
-  , {index::kind::CONSTRUCTOR, "constructor"}
-  , {index::kind::DESTRUCTOR, "destructor"}
-  , {index::kind::CONVERSTION, "converstion"}
-};
-}                                                           // anonymous namespace
-
-SearchResultsTableModel::search_result::search_result(search_result&& other) noexcept
-  : m_line{other.m_line}
-  , m_column{other.m_column}
-  , m_kind{other.m_kind}
-  , m_template_kind{other.m_template_kind}
-  , m_static{other.m_static}
-  , m_bit_field{other.m_bit_field}
-{
-    m_name.swap(other.m_name);
-    m_type.swap(other.m_type);
-    m_file.swap(other.m_file);
-    m_value.swap(other.m_value);
-}
-
-auto SearchResultsTableModel::search_result::operator=(search_result&& other) noexcept -> search_result&
-{
-    assert("R u insane? ;-)" && &other != this);
-    m_name.swap(other.m_name);
-    m_type.swap(other.m_type);
-    m_file.swap(other.m_file);
-    m_value.swap(other.m_value);
-    m_line = other.m_line;
-    m_column = other.m_column;
-    m_kind = other.m_kind;
-    m_template_kind = other.m_template_kind;
-    m_static = other.m_static;
-    m_bit_field = other.m_bit_field;
-    return *this;
-}
-
-QString SearchResultsTableModel::search_result::kindSpelling() const
-{
-    auto it = SYMBOL_KIND_TO_STRING_MAP.find(m_kind);
-    assert(
-        "List of symbol's kind seems changed! Review your code!"
-      && it != end(SYMBOL_KIND_TO_STRING_MAP)
-      && SYMBOL_KIND_TO_STRING_MAP.size() == std::size_t(index::kind::last__)
-      && m_kind < index::kind::last__
-      );
-    return it->second;
-}
+namespace kate {
 
 SearchResultsTableModel::SearchResultsTableModel(DatabaseManager& db_mgr)
   : QAbstractTableModel(nullptr)
@@ -132,7 +66,7 @@ QVariant SearchResultsTableModel::data(const QModelIndex& index, const int role)
         case column::KIND:
         {
             auto kind_str = QString{};
-            if (m_results[index.row()].m_static)
+            if (m_results[index.row()].m_flags.m_static)
                 kind_str = "static ";
             switch (m_results[index.row()].m_template_kind)
             {
@@ -148,7 +82,7 @@ QVariant SearchResultsTableModel::data(const QModelIndex& index, const int role)
                 default:
                     break;
             }
-            result = QString{kind_str + m_results[index.row()].kindSpelling()};
+            result = QString{kind_str + toString(m_results[index.row()].m_kind)};
             break;
         }
         default:

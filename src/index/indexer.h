@@ -31,6 +31,7 @@
 #include <src/clang/disposable.h>
 #include <src/clang/location.h>
 #include <src/index/database.h>
+#include <src/index/search_result.h>
 #include <src/index/types.h>
 
 // Standard includes
@@ -103,7 +104,7 @@ private:
     static CXIdxClientContainer on_translation_unit(CXClientData, void*);
     static void on_declaration(CXClientData, const CXIdxDeclInfo*);
     static void on_declaration_reference(CXClientData, const CXIdxEntityRefInfo*);
-    static void update_document_with_kind(const CXIdxDeclInfo*, document&);
+    static search_result::flags update_document_with_kind(const CXIdxDeclInfo*, document&);
     static void update_document_with_template_kind(CXIdxEntityCXXTemplateKind, document&);
 
     indexer* const m_indexer;

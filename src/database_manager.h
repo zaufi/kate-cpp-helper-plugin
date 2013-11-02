@@ -104,7 +104,7 @@ public:
     void startSearch(QString);
     /// Get source file location for given search result number
     clang::location getSearchResultLocation(int) const;
-    const SearchResultsTableModel::search_result& getDetailsOf(int);
+    const index::search_result& getDetailsOf(int);
 
 public Q_SLOTS:
     void enable(const QString&, bool);
