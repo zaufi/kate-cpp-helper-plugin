@@ -33,7 +33,7 @@
 
 // Standard includes
 #include <cassert>
-
+#include <cstring>
 #if defined(CINDEX_VERSION_MAJOR) && defined(CINDEX_VERSION_MINOR)
 # if CINDEX_VERSION_MAJOR == 0 && CINDEX_VERSION_MINOR == 6
 // libclang got version macros since clang 3.2
@@ -243,6 +243,16 @@ QList<ClangCodeCompletionItem> TranslationUnit::completeAt(
 {
     QList<ClangCodeCompletionItem> completions;
     auto files = unsaved_files.get();
+#ifndef NDEBUG
+    for (auto& item : files)
+        assert(
+            "Sanity check"
+          && item.Filename
+          && std::strlen(item.Filename)
+          && item.Contents
+          && item.Length
+          );
+#endif
 
     clang::DCXCodeCompleteResults res = {
         clang_codeCompleteAt(

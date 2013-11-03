@@ -34,6 +34,9 @@
 
 // Standard includes
 #include <boost/algorithm/string.hpp>
+#include <boost/archive/binary_oarchive.hpp>
+#include <boost/serialization/list.hpp>
+#include <boost/serialization/string.hpp>
 #include <KDE/KDebug>
 #include <KDE/KMimeType>
 #include <QtCore/QCoreApplication>
@@ -335,7 +338,7 @@ void worker::on_declaration(CXClientData client_data, const CXIdxDeclInfo* const
         doc.add_value(value_slot::LEXICAL_CONTAINER, docref::to_string(container->m_ref));
     }
     if (info->declAsContainer)
-        doc.add_boolean_term(term::XCONTAINER);
+        doc.add_boolean_term(term::XCONTAINER);             /// \todo Does it really needed?
 
     // Get more terms/slots to attach
     auto type_flags = update_document_with_kind(info, doc);
@@ -371,21 +374,14 @@ void worker::on_declaration(CXClientData client_data, const CXIdxDeclInfo* const
             if (arity != -1)
                 doc.add_value(value_slot::ARITY, Xapian::sortable_serialise(arity));
         }
-    }
 
-#if 0
-    const auto* class_info = clang_index_getCXXClassDeclInfo(info);
-    if (class_info)
-    {
-        for (unsigned i = 0; i != class_info->numBases; ++i)
-        {
-            auto* base_info = class_info->bases[i]->base;
-            auto kind = clang::kind_of(*base_info);
-            kDebug(DEBUG_AREA) << "     base " << i << ": " << clang::toString(kind) << ' '
-                << (base_info->name ? base_info->name : "<null>");
-        }
+        // Get base classes
+        const auto can_have_inheritance = kind == CXIdxEntity_Struct
+          || kind == CXIdxEntity_CXXClass
+          ;
+        if (can_have_inheritance)
+            update_document_with_base_classes(info, doc);
     }
-#endif
 
     if ((type_flags.m_redecl = bool(info->isRedeclaration)))
         doc.add_boolean_term(term::XREDECLARATION);
@@ -597,6 +593,28 @@ void worker::update_document_with_type_size(
         if (0 < align)
             doc.add_value(value_slot::ALIGNOF, Xapian::sortable_serialise(align));
     }
+}
+
+void worker::update_document_with_base_classes(const CXIdxDeclInfo* info, document& doc)
+{
+    const auto* class_info = clang_index_getCXXClassDeclInfo(info);
+    std::list<std::string> bases;
+    if (class_info)
+    {
+        for (unsigned i = 0; i != class_info->numBases; ++i)
+        {
+            auto& base_info = class_info->bases[i]->base;
+            auto name = string_cast<std::string>(base_info->name);
+            assert("Unnamed base class?" && !name.empty());
+            doc.add_boolean_term(term::XBASE_CLASS + name);
+            bases.emplace_back(std::move(name));
+        }
+    }
+    // serialize bases list into a value slot
+    std::stringstream ss{std::ios_base::out | std::ios_base::binary};
+    boost::archive::binary_oarchive oa{ss};
+    oa << bases;
+    doc.add_value(value_slot::BASES, ss.str());
 }
 //END worker members
 

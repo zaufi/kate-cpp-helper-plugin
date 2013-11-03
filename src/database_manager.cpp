@@ -32,7 +32,10 @@
 #include <src/string_cast.h>
 
 // Standard includes
+#include <boost/archive/binary_iarchive.hpp>
 #include <boost/filesystem/operations.hpp>
+#include <boost/serialization/list.hpp>
+#include <boost/serialization/string.hpp>
 #include <boost/uuid/random_generator.hpp>
 #include <KDE/KDebug>
 #include <KDE/KDirSelectDialog>
@@ -801,6 +804,23 @@ void DatabaseManager::startSearch(QString query)
                 const auto& str = doc.get_value(index::value_slot::ARITY);
                 if (!str.empty())
                     result.m_arity = static_cast<int>(Xapian::sortable_unserialise(str));
+            }
+            {
+                const auto& str = doc.get_value(index::value_slot::BASES);
+                if (!str.empty())
+                {
+                    std::stringstream ss{str, std::ios_base::in | std::ios_base::binary};
+                    boost::archive::binary_iarchive ia{ss};
+                    std::list<std::string> l;
+                    ia >> l;
+                    if (!l.empty())                         // Is there anything to transform?
+                    {
+                        auto bases = QStringList{};
+                        for (const auto& base : l)
+                            bases << string_cast<QString>(base);
+                        result.m_bases = bases;
+                    }
+                }
             }
 
             //

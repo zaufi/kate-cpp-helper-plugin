@@ -107,6 +107,7 @@ private:
     static search_result::flags update_document_with_kind(const CXIdxDeclInfo*, document&);
     static void update_document_with_template_kind(CXIdxEntityCXXTemplateKind, document&);
     static void update_document_with_type_size(const CXIdxDeclInfo*, document&);
+    static void update_document_with_base_classes(const CXIdxDeclInfo*, document&);
 
     indexer* const m_indexer;
     std::vector<std::unique_ptr<container_info>> m_containers;

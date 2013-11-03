@@ -69,7 +69,7 @@ enum class value_slot : Xapian::valueno
   , ALIGNOF
   , VALUE
   , ARITY
-  , BASE
+  , BASES
 };
 
 /// Exceptions group for database classes

@@ -1463,6 +1463,13 @@ void CppHelperPluginView::searchResultActivated(const QModelIndex& index)
     appendSearchDetailsRow(i18nc("@label", "Location:"), location, false);
     if (!details.m_type.isEmpty())
         appendSearchDetailsRow(i18nc("@label", "Type:"), details.m_type);
+    if (details.m_bases)
+    {
+        auto first = true;
+        for (auto& base : details.m_bases.get())
+            appendSearchDetailsRow(first ? i18nc("@label", "Base class:") : QString{" "}, base);
+            first = false;
+    }
     if (details.m_arity)
         appendSearchDetailsRow(i18nc("@label", "Arity:"), QString::number(details.m_arity.get()), false);
     if (details.m_sizeof)

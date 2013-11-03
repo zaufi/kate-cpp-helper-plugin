@@ -43,6 +43,7 @@ search_result::search_result(search_result&& other) noexcept
     m_name.swap(other.m_name);
     m_type.swap(other.m_type);
     m_file.swap(other.m_file);
+    m_bases.swap(other.m_bases);
     m_value.swap(other.m_value);
     m_sizeof.swap(other.m_sizeof);
     m_alignof.swap(other.m_alignof);
@@ -56,6 +57,7 @@ search_result& search_result::operator=(search_result&& other) noexcept
     m_name.swap(other.m_name);
     m_type.swap(other.m_type);
     m_file.swap(other.m_file);
+    m_bases.swap(other.m_bases);
     m_value.swap(other.m_value);
     m_sizeof.swap(other.m_sizeof);
     m_alignof.swap(other.m_alignof);

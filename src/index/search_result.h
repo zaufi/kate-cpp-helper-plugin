@@ -34,14 +34,15 @@
 #include <boost/optional.hpp>
 #include <clang-c/Index.h>
 #include <QtCore/QString>
+#include <QtCore/QStringList>
 #include <cstddef>
 
 namespace kate { namespace index {
 
 /**
- * \brief [Type brief class description here]
+ * \brief Structure to hold search result
  *
- * [More detailed description here]
+ * It contains everything needed for various kind of symbols.
  *
  */
 struct search_result
@@ -65,9 +66,12 @@ struct search_result
         flags() : m_flags_as_int{0} {}
     };
 
+    /// \attention DO NOT FORGET TO MODIFY MOVE CTOR/ASSIGN, IF U R GOING TO ADD A NEW MEMBER.
+
     QString m_name;                                         ///< Symbol's name
     QString m_type;                                         ///< Symbol's type
     QString m_file;                                         ///< Filename of a declaration
+    boost::optional<QStringList> m_bases;                   ///< List of base classes
     boost::optional<long long> m_value;                     ///< Value depended on a symbol's kind
     boost::optional<std::size_t> m_sizeof;
     boost::optional<std::size_t> m_alignof;
