@@ -29,6 +29,7 @@
 
 // Project specific includes
 #include <src/index/types.h>
+#include <src/index/numeric_value_range_processor.h>
 
 // Standard includes
 #include <memory>
@@ -57,6 +58,8 @@ class document;
 class combined_index
 {
 public:
+    /// Iniialize query parser w/ range processors and prefixes
+    combined_index();
     /// Search over all connected indices
     std::vector<document> search(const QString&, doccount = 0, doccount = 2000);
 
@@ -69,6 +72,12 @@ private:
 
     std::vector<ro::database*> m_db_list;
     std::unique_ptr<Xapian::Database> m_compound_db;
+    numeric_value_range_processor m_arity_processor;
+    numeric_value_range_processor m_size_processor;
+    numeric_value_range_processor m_align_processor;
+    numeric_value_range_processor m_line_processor;
+    numeric_value_range_processor m_column_processor;
+    Xapian::QueryParser m_qp;
 };
 
 }}                                                          // namespace index, kate

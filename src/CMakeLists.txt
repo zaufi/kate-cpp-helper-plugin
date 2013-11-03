@@ -12,6 +12,7 @@ set(LIBTEST_SOURCES
     index/kind.cpp
     index/utils.cpp
     index/database.cpp
+    index/numeric_value_range_processor.cpp
     index/combined_index.cpp
     index/indexer.cpp
     index/search_result.cpp

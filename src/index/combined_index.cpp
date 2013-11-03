@@ -38,6 +38,32 @@
 
 namespace kate { namespace index {
 
+combined_index::combined_index()
+  : m_arity_processor{value_slot::ARITY, "arity"}
+  , m_size_processor{value_slot::SIZEOF, "size"}
+  , m_align_processor{value_slot::ALIGNOF, "align"}
+  , m_line_processor{value_slot::LINE, "line"}
+  , m_column_processor{value_slot::COLUMN, "column"}
+{
+    m_qp.add_valuerangeprocessor(&m_arity_processor);
+    m_qp.add_valuerangeprocessor(&m_align_processor);
+    m_qp.add_valuerangeprocessor(&m_column_processor);
+    m_qp.add_valuerangeprocessor(&m_line_processor);
+    m_qp.add_valuerangeprocessor(&m_size_processor);
+
+    // Setup prefixes
+    m_qp.add_boolean_prefix("decl", term::XDECL);
+    m_qp.add_boolean_prefix("redecl", term::XREDECLARATION);
+    m_qp.add_boolean_prefix("anon", term::XANONYMOUS);
+    m_qp.add_boolean_prefix("anonymous", term::XANONYMOUS);
+    m_qp.add_boolean_prefix("static", term::XSTATIC);
+    m_qp.add_boolean_prefix("kind", term::XKIND);
+    m_qp.add_boolean_prefix("scope", term::XSCOPE);
+    m_qp.add_boolean_prefix("template", term::XTEMPLATE);
+    m_qp.add_boolean_prefix("pod", term::XPOD);
+    m_qp.add_boolean_prefix("base", term::XBASE_CLASS);
+}
+
 std::vector<document> combined_index::search(
     const QString& q
   , const doccount start
@@ -112,24 +138,13 @@ Xapian::Query combined_index::parse_query(const std::string& query_str)
 {
     assert("Sanity check" && m_compound_db);
 
-    Xapian::QueryParser qp;
-    qp.set_database(*m_compound_db);
-
-    // Setup prefixes
-    qp.add_boolean_prefix("decl", term::XDECL);
-    qp.add_boolean_prefix("redecl", term::XREDECLARATION);
-    qp.add_boolean_prefix("anon", term::XANONYMOUS);
-    qp.add_boolean_prefix("anonymous", term::XANONYMOUS);
-    qp.add_boolean_prefix("static", term::XSTATIC);
-    qp.add_boolean_prefix("kind", term::XKIND);
-    qp.add_boolean_prefix("scope", term::XSCOPE);
-    qp.add_boolean_prefix("template", term::XTEMPLATE);
+    m_qp.set_database(*m_compound_db);
 
     // Parse it!
     Xapian::Query query;
     try
     {
-        query = qp.parse_query(query_str);
+        query = m_qp.parse_query(query_str);
     }
     catch (const Xapian::QueryParserError& e)
     {

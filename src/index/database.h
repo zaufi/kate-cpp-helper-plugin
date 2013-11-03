@@ -47,6 +47,9 @@ extern const std::string XANONYMOUS;
 extern const std::string XSTATIC;
 extern const std::string XSCOPE;
 extern const std::string XTEMPLATE;
+extern const std::string XPOD;
+extern const std::string XBASE_CLASS;
+extern const std::string XIMPLICIT;
 }                                                           // namespace term
 
 enum class value_slot : Xapian::valueno
@@ -65,6 +68,8 @@ enum class value_slot : Xapian::valueno
   , SIZEOF
   , ALIGNOF
   , VALUE
+  , ARITY
+  , BASE
 };
 
 /// Exceptions group for database classes

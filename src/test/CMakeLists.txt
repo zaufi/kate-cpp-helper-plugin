@@ -13,6 +13,7 @@ add_boost_tests(
         database_manager_tester.cpp
         serialize_tester.cpp
         index_utils_tester.cpp
+        unsaved_files_list_tester.cpp
   )
 
 target_link_libraries(

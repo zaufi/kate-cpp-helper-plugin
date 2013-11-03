@@ -35,13 +35,16 @@ namespace kate { namespace index { namespace term {
 const std::string XDECL = "XDL";
 const std::string XREF = "XRF";
 const std::string XCONTAINER = "XCNT";
-const std::string XREDECLARATION = "XRDL";
+const std::string XREDECLARATION = "XRDLy";
 const std::string XKIND = "XK";
-const std::string XANONYMOUS = "XA";
-const std::string XSTATIC = "XST";
+const std::string XANONYMOUS = "XAy";
+const std::string XSTATIC = "XSTy";
 const std::string XNAMESPACE = "XNS";
 const std::string XSCOPE = "XSC";
 const std::string XTEMPLATE = "XTP";
+const std::string XPOD = "XPODy";
+const std::string XBASE_CLASS = "XBS";
+const std::string XIMPLICIT = "XIy";
 }                                                           // namespace term
 
 namespace { namespace meta {

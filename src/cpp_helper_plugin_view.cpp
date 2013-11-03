@@ -599,11 +599,12 @@ void CppHelperPluginView::openHeader()
     if (!r.isEmpty())
     {
         filename = doc->text(r).trimmed();
-        assert("Getting text on non-empty range should return smth!" && !filename.isEmpty());
-
-        // Try to find an absolute path to given filename
-        candidates = findFileLocations(filename);
-        kDebug(DEBUG_AREA) << "Found candidates: " << candidates;
+        if (!filename.isEmpty())
+        {
+            // Try to find an absolute path to given filename
+            candidates = findFileLocations(filename);
+            kDebug(DEBUG_AREA) << "Found candidates: " << candidates;
+        }
     }
 
     // If there is no ambiguity, then just emit a signal to open the file
@@ -1462,6 +1463,14 @@ void CppHelperPluginView::searchResultActivated(const QModelIndex& index)
     appendSearchDetailsRow(i18nc("@label", "Location:"), location, false);
     if (!details.m_type.isEmpty())
         appendSearchDetailsRow(i18nc("@label", "Type:"), details.m_type);
+    if (details.m_arity)
+        appendSearchDetailsRow(i18nc("@label", "Arity:"), QString::number(details.m_arity.get()), false);
+    if (details.m_sizeof)
+        appendSearchDetailsRow(i18nc("@label", "Size:"), QString::number(details.m_sizeof.get()), false);
+    if (details.m_alignof)
+        appendSearchDetailsRow(i18nc("@label", "Align:"), QString::number(details.m_alignof.get()), false);
+    if (details.m_flags.m_implicit)
+        appendSearchDetailsRow(i18nc("@label", "Implicit:"), CHECK_MARK, false);
     if (details.m_flags.m_static)
         appendSearchDetailsRow(i18nc("@label", "Static:"), CHECK_MARK, false);
     if (details.m_flags.m_const)

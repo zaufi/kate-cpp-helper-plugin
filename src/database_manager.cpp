@@ -79,7 +79,10 @@ void DatabaseManager::database_state::loadMetaFrom(const QString& filename)
 {
     auto db_meta = KSharedConfig::openConfig(filename, KConfig::SimpleConfig);
     m_options.reset(new DatabaseOptions{db_meta});
-    m_id = index::fromString(m_options->uuid());
+    const auto& uuid_str = m_options->uuid();
+    /// \note When creating a new index UUID is empty!
+    if (!uuid_str.isEmpty())
+        m_id = index::fromString(m_options->uuid());
 }
 
 DatabaseManager::DatabaseManager()
@@ -766,26 +769,38 @@ void DatabaseManager::startSearch(QString query)
 
             // Get some other props
             {
-                const auto& template_str = doc.get_value(index::value_slot::TEMPLATE);
-                if (!template_str.empty())
+                const auto& str = doc.get_value(index::value_slot::TEMPLATE);
+                if (!str.empty())
                 {
-                    const auto value = index::deserialize<unsigned>(template_str);
+                    const auto value = index::deserialize<unsigned>(str);
                     result.m_template_kind = CXIdxEntityCXXTemplateKind(value);
                 }
             }
             {
-                const auto& static_str = doc.get_value(index::value_slot::FLAGS);
-                if (!static_str.empty())
+                const auto& str = doc.get_value(index::value_slot::FLAGS);
+                if (!str.empty())
                     result.m_flags.m_flags_as_int =
-                        index::deserialize<decltype(result.m_flags.m_flags_as_int)>(static_str);
+                        index::deserialize<decltype(result.m_flags.m_flags_as_int)>(str);
             }
             {
-                const auto& value_str = doc.get_value(index::value_slot::VALUE);
-                if (!value_str.empty())
-                {
-                    result.m_value = static_cast<long long>(Xapian::sortable_unserialise(value_str));
-                    kDebug() << "GETTING VALUE: " << result.m_value.get();
-                }
+                const auto& str = doc.get_value(index::value_slot::VALUE);
+                if (!str.empty())
+                    result.m_value = static_cast<long long>(Xapian::sortable_unserialise(str));
+            }
+            {
+                const auto& str = doc.get_value(index::value_slot::SIZEOF);
+                if (!str.empty())
+                    result.m_sizeof = static_cast<std::size_t>(Xapian::sortable_unserialise(str));
+            }
+            {
+                const auto& str = doc.get_value(index::value_slot::ALIGNOF);
+                if (!str.empty())
+                    result.m_alignof = static_cast<std::size_t>(Xapian::sortable_unserialise(str));
+            }
+            {
+                const auto& str = doc.get_value(index::value_slot::ARITY);
+                if (!str.empty())
+                    result.m_arity = static_cast<int>(Xapian::sortable_unserialise(str));
             }
 
             //

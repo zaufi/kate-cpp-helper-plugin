@@ -276,7 +276,8 @@ void worker::on_declaration(CXClientData client_data, const CXIdxDeclInfo* const
     if (wrk->m_seen_declarations.find(decl_loc) != end(wrk->m_seen_declarations))
         return;
 
-    /// \note Unnamed parameters and anonymous namespaces/structs/unions have an empty name!
+    /// \note Unnamed parameters and anonymous namespaces/classes/structs/enums/unions
+    /// have an empty name!
     /// \todo Remove possible spaces from \c name?
     auto name = string_cast<std::string>(info->entityInfo->name);
 
@@ -316,7 +317,7 @@ void worker::on_declaration(CXClientData client_data, const CXIdxDeclInfo* const
     }
     else
     {
-        doc.add_boolean_term(term::XANONYMOUS + "y");
+        doc.add_boolean_term(term::XANONYMOUS);
     }
     doc.add_value(value_slot::LINE, Xapian::sortable_serialise(loc.line()));
     doc.add_value(value_slot::COLUMN, Xapian::sortable_serialise(loc.column()));
@@ -338,10 +339,8 @@ void worker::on_declaration(CXClientData client_data, const CXIdxDeclInfo* const
 
     // Get more terms/slots to attach
     auto type_flags = update_document_with_kind(info, doc);
-    if (type_flags.m_flags_as_int)
-        doc.add_value(value_slot::FLAGS, serialize(type_flags.m_flags_as_int));
 
-    // Attach symbol type. Get aliasd type for typedefs.
+    // Attach symbol type. Get aliased type for typedefs, get underlaid type for enums.
     {
         const auto kind = clang::kind_of(*info->entityInfo);
         const auto is_typedef = kind == CXIdxEntity_CXXTypeAlias || kind == CXIdxEntity_Typedef;
@@ -352,13 +351,51 @@ void worker::on_declaration(CXClientData client_data, const CXIdxDeclInfo* const
             ct = clang_getEnumDeclIntegerType(info->cursor);
         else
             ct = clang_getCursorType(info->cursor);
-        if (clang::kind_of(ct) != CXType_Invalid || clang::kind_of(ct) != CXType_Unexposed)
+        const auto k = clang::kind_of(ct);
+        if (k != CXType_Invalid && k != CXType_Unexposed)
         {
             auto type_str = to_string(clang::DCXString{clang_getTypeSpelling(ct)});
             if (!type_str.empty())
                 doc.add_value(value_slot::TYPE, type_str);
+            // Check some type properties
+            if (clang_isPODType(ct))
+            {
+                doc.add_boolean_term(term::XPOD);
+                type_flags.m_pod = true;
+            }
+            if (clang_isConstQualifiedType(ct))
+                type_flags.m_const = true;
+            if (clang_isVolatileQualifiedType(ct))
+                type_flags.m_volatile = true;
+            const auto arity = clang_getNumArgTypes(ct);
+            if (arity != -1)
+                doc.add_value(value_slot::ARITY, Xapian::sortable_serialise(arity));
         }
     }
+
+#if 0
+    const auto* class_info = clang_index_getCXXClassDeclInfo(info);
+    if (class_info)
+    {
+        for (unsigned i = 0; i != class_info->numBases; ++i)
+        {
+            auto* base_info = class_info->bases[i]->base;
+            auto kind = clang::kind_of(*base_info);
+            kDebug(DEBUG_AREA) << "     base " << i << ": " << clang::toString(kind) << ' '
+                << (base_info->name ? base_info->name : "<null>");
+        }
+    }
+#endif
+
+    if ((type_flags.m_redecl = bool(info->isRedeclaration)))
+        doc.add_boolean_term(term::XREDECLARATION);
+
+    if ((type_flags.m_implicit = bool(info->isImplicit)))
+        doc.add_boolean_term(term::XIMPLICIT);
+
+    // Attach collected type flags finally
+    if (type_flags.m_flags_as_int)
+        doc.add_value(value_slot::FLAGS, serialize(type_flags.m_flags_as_int));
 
     // Add the document to the DB finally
     auto document_id = wrk->m_indexer->m_db.add_document(doc);
@@ -382,7 +419,7 @@ void worker::on_declaration_reference(CXClientData client_data, const CXIdxEntit
 
 search_result::flags worker::update_document_with_kind(const CXIdxDeclInfo* info, document& doc)
 {
-    search_result::flags type_flags;
+    auto type_flags = search_result::flags{};
 
     switch (clang::kind_of(*info->entityInfo))
     {
@@ -397,29 +434,35 @@ search_result::flags worker::update_document_with_kind(const CXIdxDeclInfo* info
         case CXIdxEntity_Typedef:
             doc.add_boolean_term(term::XKIND + "typedef");
             doc.add_value(value_slot::KIND, serialize(kind::TYPEDEF));
+            update_document_with_type_size(info, doc);
             break;
         case CXIdxEntity_CXXTypeAlias:
             doc.add_boolean_term(term::XKIND + "type-alias");
             doc.add_value(value_slot::KIND, serialize(kind::TYPE_ALIAS));
             update_document_with_template_kind(info->entityInfo->templateKind, doc);
+            update_document_with_type_size(info, doc);
             break;
         case CXIdxEntity_Struct:
             doc.add_boolean_term(term::XKIND + "struct");
             doc.add_value(value_slot::KIND, serialize(kind::STRUCT));
             update_document_with_template_kind(info->entityInfo->templateKind, doc);
+            update_document_with_type_size(info, doc);
             break;
         case CXIdxEntity_CXXClass:
             doc.add_boolean_term(term::XKIND + "class");
             doc.add_value(value_slot::KIND, serialize(kind::CLASS));
             update_document_with_template_kind(info->entityInfo->templateKind, doc);
+            update_document_with_type_size(info, doc);
             break;
         case CXIdxEntity_Union:
             doc.add_boolean_term(term::XKIND + "union");
             doc.add_value(value_slot::KIND, serialize(kind::UNION));
+            update_document_with_type_size(info, doc);
             break;
         case CXIdxEntity_Enum:
             doc.add_boolean_term(term::XKIND + "enum");
             doc.add_value(value_slot::KIND, serialize(kind::ENUM));
+            update_document_with_type_size(info, doc);
             break;
         case CXIdxEntity_EnumConstant:
         {
@@ -435,7 +478,7 @@ search_result::flags worker::update_document_with_kind(const CXIdxDeclInfo* info
             update_document_with_template_kind(info->entityInfo->templateKind, doc);
             break;
         case CXIdxEntity_CXXStaticMethod:
-            doc.add_boolean_term(term::XSTATIC + "y");
+            doc.add_boolean_term(term::XSTATIC);
             type_flags.m_static = true;
             // ATTENTION Fall into the next (CXIdxEntity_CXXInstanceMethod) case...
         case CXIdxEntity_CXXInstanceMethod:
@@ -473,11 +516,12 @@ search_result::flags worker::update_document_with_kind(const CXIdxDeclInfo* info
             {
                 doc.add_boolean_term(term::XKIND + "var");
                 doc.add_value(value_slot::KIND, serialize(kind::VARIABLE));
+                update_document_with_type_size(info, doc);
             }
             break;
         }
         case CXIdxEntity_CXXStaticVariable:
-            doc.add_boolean_term(term::XSTATIC + "y");
+            doc.add_boolean_term(term::XSTATIC);
             type_flags.m_static = true;
             // ATTENTION Fall into the next (CXIdxEntity_Field) case...
         case CXIdxEntity_Field:
@@ -488,10 +532,12 @@ search_result::flags worker::update_document_with_kind(const CXIdxDeclInfo* info
                 doc.add_value(value_slot::KIND, serialize(kind::BITFIELD));
                 const auto width = clang_getFieldDeclBitWidth(info->cursor);
                 doc.add_value(value_slot::VALUE, Xapian::sortable_serialise(width));
+                type_flags.m_bit_field = true;
             }
             else
             {
                 doc.add_value(value_slot::KIND, serialize(kind::FIELD));
+                update_document_with_type_size(info, doc);
             }
             break;
         default:
@@ -530,6 +576,26 @@ void worker::update_document_with_template_kind(
             break;
         default:
             break;
+    }
+}
+
+void worker::update_document_with_type_size(
+    const CXIdxDeclInfo* info
+  , document& doc
+  )
+{
+    auto ct = clang_getCursorType(info->cursor);
+    const auto k = clang::kind_of(ct);
+    if (k != CXType_Invalid && k != CXType_Unexposed)
+    {
+        // Get sizeof
+        const auto size = clang_Type_getSizeOf(ct);
+        if (0 < size)
+            doc.add_value(value_slot::SIZEOF, Xapian::sortable_serialise(size));
+        // Get alignof
+        const auto align = clang_Type_getAlignOf(ct);
+        if (0 < align)
+            doc.add_value(value_slot::ALIGNOF, Xapian::sortable_serialise(align));
     }
 }
 //END worker members

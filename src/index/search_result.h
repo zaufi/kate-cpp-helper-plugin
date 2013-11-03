@@ -46,6 +46,25 @@ namespace kate { namespace index {
  */
 struct search_result
 {
+    struct flags
+    {
+        union
+        {
+            unsigned m_flags_as_int;
+            struct
+            {
+                bool m_static    : 1;                       ///< Symbol has \c static modifier
+                bool m_const     : 1;                       ///< Symbol has \c const  modifier
+                bool m_volatile  : 1;                       ///< Symbol has \c m_volatile modifier
+                bool m_pod       : 1;                       ///< Symbol is a POD
+                bool m_bit_field : 1;                       ///< Symbol is a bit-field
+                bool m_redecl    : 1;                       ///< Is redeclaration?
+                bool m_implicit  : 1;                       ///< Is implicit?
+            };
+        };
+        flags() : m_flags_as_int{0} {}
+    };
+
     QString m_name;                                         ///< Symbol's name
     QString m_type;                                         ///< Symbol's type
     QString m_file;                                         ///< Filename of a declaration
@@ -53,26 +72,15 @@ struct search_result
     boost::optional<std::size_t> m_sizeof;
     boost::optional<std::size_t> m_alignof;
     boost::optional<off_t> m_offsetof;
+    boost::optional<int> m_arity;
     int m_line = {-1};
     int m_column = {-1};
     kind m_kind;
     CXIdxEntityCXXTemplateKind m_template_kind = {CXIdxEntity_NonTemplate};
-    struct flags
-    {
-        union
-        {
-            unsigned m_flags_as_int = {0};
-            bool m_static    : 1;                               ///< Symbol has \c static modifier
-            bool m_const     : 1;                               ///< Symbol has \c const  modifier
-            bool m_volatile  : 1;                               ///< Symbol has \c m_volatile modifier
-            bool m_pod       : 1;                               ///< Symbol is a POD
-            bool m_bit_field : 1;                               ///< Symbol is a bit-field
-        };
-    };
     flags m_flags;
 
     explicit search_result(const kind k)
-        : m_kind{k}
+      : m_kind{k}
     {}
 
     /// Delete copy ctor
