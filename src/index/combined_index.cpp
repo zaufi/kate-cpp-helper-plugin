@@ -53,16 +53,19 @@ combined_index::combined_index()
     m_qp.add_valuerangeprocessor(&m_size_processor);
 
     // Setup prefixes
-    m_qp.add_boolean_prefix("decl", term::XDECL);
-    m_qp.add_boolean_prefix("redecl", term::XREDECLARATION);
+    m_qp.add_boolean_prefix("access", term::XACCESS);
     m_qp.add_boolean_prefix("anon", term::XANONYMOUS);
     m_qp.add_boolean_prefix("anonymous", term::XANONYMOUS);
-    m_qp.add_boolean_prefix("static", term::XSTATIC);
-    m_qp.add_boolean_prefix("kind", term::XKIND);
-    m_qp.add_boolean_prefix("scope", term::XSCOPE);
-    m_qp.add_boolean_prefix("template", term::XTEMPLATE);
-    m_qp.add_boolean_prefix("pod", term::XPOD);
     m_qp.add_boolean_prefix("base", term::XBASE_CLASS);
+    m_qp.add_boolean_prefix("inh", term::XINHERITANCE);
+    m_qp.add_boolean_prefix("inheritance", term::XINHERITANCE);
+    m_qp.add_boolean_prefix("decl", term::XDECL);
+    m_qp.add_boolean_prefix("kind", term::XKIND);
+    m_qp.add_boolean_prefix("pod", term::XPOD);
+    m_qp.add_boolean_prefix("redecl", term::XREDECLARATION);
+    m_qp.add_boolean_prefix("scope", term::XSCOPE);
+    m_qp.add_boolean_prefix("static", term::XSTATIC);
+    m_qp.add_boolean_prefix("template", term::XTEMPLATE);
 }
 
 std::vector<document> combined_index::search(

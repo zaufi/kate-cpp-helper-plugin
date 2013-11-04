@@ -31,11 +31,13 @@
 // Standard includes
 
 namespace kate { namespace index { namespace term {
+const std::string XACCESS = "XC";
 const std::string XANONYMOUS = "XAy";
-const std::string XBASE_CLASS = "XBS";
+const std::string XBASE_CLASS = "XBC";
 const std::string XCONTAINER = "XCNT";
 const std::string XDECL = "XDL";
 const std::string XIMPLICIT = "XIy";
+const std::string XINHERITANCE = "XH";
 const std::string XKIND = "XK";
 const std::string XNAMESPACE = "XNS";
 const std::string XPOD = "XPODy";

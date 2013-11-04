@@ -42,6 +42,7 @@
 #include <boost/serialization/string.hpp>
 #include <KDE/KUrl>
 #include <KDE/KDebug>
+#include <KDE/KLocalizedString>
 #include <KDE/KMimeType>
 #include <QtCore/QCoreApplication>
 #include <QtCore/QFileInfo>
@@ -102,9 +103,6 @@ void worker::process()
 
 void worker::handle_file(const QString& filename)
 {
-#if 0
-    kDebug(DEBUG_AREA) << "Indexing" << filename;
-#endif
     Q_EMIT(indexing_uri(filename));
 
     clang::DCXIndexAction action = {clang_IndexAction_create(m_indexer->m_index)};
@@ -133,7 +131,12 @@ void worker::handle_file(const QString& filename)
       , clang_defaultEditingTranslationUnitOptions()        /// \todo Use TranslationUnit class
       );
     if (result)
-        Q_EMIT(error(clang::location{}, QString("Errors on indexing %1").arg(filename)));
+        Q_EMIT(
+            error(
+                clang::location{}
+              , i18nc("@info/plain", "Indexing of <filename>%1</filename> finished with errors", filename)
+              )
+          );
 }
 
 void worker::handle_directory(const QString& directory)
@@ -202,15 +205,11 @@ int worker::on_abort_cb(CXClientData, void*)
 
 void worker::on_diagnostic_cb(CXClientData, CXDiagnosticSet, void*)
 {
+
 }
 
 CXIdxClientFile worker::on_entering_main_file(CXClientData client_data, CXFile file, void*)
 {
-    auto* const wrk = static_cast<worker*>(client_data);
-    Q_UNUSED(wrk);
-#if 0
-    kDebug(DEBUG_AREA) << "Main file:" << clang::toString(file);
-#endif
     return static_cast<CXIdxClientFile>(file);
 }
 
@@ -298,6 +297,7 @@ void worker::on_declaration(CXClientData client_data, const CXIdxDeclInfo* const
     if (info->semanticContainer)
     {
         const auto* const container = reinterpret_cast<const container_info* const>(info->semanticContainer);
+#if 0
         if (container->m_name.empty())
             qname = name;
         else
@@ -305,6 +305,7 @@ void worker::on_declaration(CXClientData client_data, const CXIdxDeclInfo* const
         doc.add_boolean_term(term::XSCOPE + name);
         doc.add_boolean_term(term::XSCOPE + qname);
         kDebug(DEBUG_AREA) << "qname=" << qname.c_str();
+#endif
         doc.add_value(value_slot::SEMANTIC_CONTAINER, docref::to_string(container->m_ref));
     }
     if (info->lexicalContainer)
@@ -578,23 +579,71 @@ void worker::update_document_with_base_classes(const CXIdxDeclInfo* info, docume
     std::list<std::string> bases;
     if (class_info)
     {
-        for (unsigned i = 0; i != class_info->numBases; ++i)
+        for (auto i = 0u; i < class_info->numBases; ++i)
         {
-            auto& base_info = class_info->bases[i]->base;
-            auto name = string_cast<std::string>(base_info->name);
-            assert("Unnamed base class?" && !name.empty());
-            kDebug(DEBUG_AREA) << "found base class: " << name.c_str();
-            kDebug(DEBUG_AREA) << "is-virtual-1: " << clang_isVirtualBase(base_info->cursor);
-            kDebug(DEBUG_AREA) << "is-virtual-2: " << clang_isVirtualBase(class_info->bases[i]->cursor);
-            doc.add_boolean_term(term::XBASE_CLASS + name);
-            bases.emplace_back(std::move(name));
+            if (class_info->bases[i]->base && class_info->bases[i]->base->name)
+            {
+                auto name = string_cast<std::string>(class_info->bases[i]->base->name);
+                assert("Unnamed base class?" && !name.empty());
+                doc.add_boolean_term(term::XBASE_CLASS + name);
+
+                auto inheritance_term = std::string{};
+                const auto is_virtual = clang_isVirtualBase(class_info->bases[i]->cursor);
+                kDebug() << "is_virtual=" << is_virtual;
+                if (is_virtual)
+                    inheritance_term = "virtual";
+                kDebug() << "inheritance_term=" << inheritance_term.c_str();
+                const auto access = clang_getCXXAccessSpecifier(class_info->bases[i]->cursor);
+                kDebug() << "access=" << access;
+                auto access_term = std::string{};
+                switch (access)
+                {
+                    case CX_CXXPublic:
+                        access_term = "public";
+                        break;
+                    case CX_CXXProtected:
+                        access_term = "protected";
+                        break;
+                    case CX_CXXPrivate:
+                        access_term = "private";
+                        break;
+                    default:
+                        break;
+                }
+                kDebug() << "access_term=" << access_term.c_str();
+                if (!access_term.empty())
+                {
+                    if (inheritance_term.empty())
+                        name = access_term + " " + name;
+                    else
+                    {
+                        doc.add_boolean_term(term::XINHERITANCE + inheritance_term + "-" + access_term);
+                        name = inheritance_term + " " + access_term + " " + name;
+                    }
+                    // NOTE Also add inheritance term w/o 'virutal' specifier,
+                    // so "inh:public" for example will give results also for
+                    // 'virtual' inheritance...
+                    doc.add_boolean_term(term::XINHERITANCE + access_term);
+                }
+                kDebug() << "base name=" << name.c_str();
+                bases.emplace_back(std::move(name));
+            }
+#ifndef NDEBUG
+            else
+            {
+                kDebug(DEBUG_AREA) << "nullptr in a base class list or class name!?";
+            }
+#endif
         }
     }
-    // serialize bases list into a value slot
-    std::stringstream ss{std::ios_base::out | std::ios_base::binary};
-    boost::archive::binary_oarchive oa{ss};
-    oa << bases;
-    doc.add_value(value_slot::BASES, ss.str());
+    if (!bases.empty())
+    {
+        // serialize bases list into a value slot
+        std::stringstream ss{std::ios_base::out | std::ios_base::binary};
+        boost::archive::binary_oarchive oa{ss};
+        oa << bases;
+        doc.add_value(value_slot::BASES, ss.str());
+    }
 }
 
 }}}                                                         // namespace details, index, kate
