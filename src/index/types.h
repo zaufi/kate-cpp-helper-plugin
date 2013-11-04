@@ -92,4 +92,6 @@ private:
     };
 };
 
+constexpr Xapian::docid IVALID_DOCUMENT_ID = 0u;            ///< Value to indicate an invalid document
+
 }}                                                          // namespace index, kate

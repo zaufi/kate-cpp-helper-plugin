@@ -1465,10 +1465,11 @@ void CppHelperPluginView::searchResultActivated(const QModelIndex& index)
         appendSearchDetailsRow(i18nc("@label", "Type:"), details.m_type);
     if (details.m_bases)
     {
-        auto first = true;
-        for (auto& base : details.m_bases.get())
-            appendSearchDetailsRow(first ? i18nc("@label", "Base class:") : QString{" "}, base);
-            first = false;
+        const auto bases = details.m_bases.get().join(", ");
+        appendSearchDetailsRow(
+            i18ncp("@label", "Base class:", "Base classes:", details.m_bases.get().size())
+          , bases
+          );
     }
     if (details.m_arity)
         appendSearchDetailsRow(i18nc("@label", "Arity:"), QString::number(details.m_arity.get()), false);
@@ -1511,6 +1512,7 @@ inline void CppHelperPluginView::appendSearchDetailsRow(
   , const bool selectable
   )
 {
+    kDebug(DEBUG_AREA) << "GOT LABEL:" << label << ", value:" << value;
     auto* text = new QLabel{value};
     auto sizePolicy = QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Expanding};
     text->setSizePolicy(sizePolicy);

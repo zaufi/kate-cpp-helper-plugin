@@ -28,6 +28,7 @@
 // Project specific includes
 #include <src/index/combined_index.h>
 #include <src/index/database.h>
+#include <src/index/document.h>
 
 // Standard includes
 #include <KDE/KDebug>

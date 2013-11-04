@@ -27,6 +27,8 @@
 
 // Project specific includes
 #include <src/database_manager.h>
+#include <src/index/document.h>
+#include <src/index/document_extras.h>
 #include <src/index/indexer.h>
 #include <src/index/utils.h>
 #include <src/string_cast.h>

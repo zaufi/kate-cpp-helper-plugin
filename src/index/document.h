@@ -1,9 +1,9 @@
 /**
  * \file
  *
- * \brief Class \c kate::index::numeric_value_range_processor (interface)
+ * \brief Class \c kate::index::document (interface)
  *
- * \date Sun Nov  3 01:32:00 MSK 2013 -- Initial design
+ * \date Sun Nov  3 19:40:26 MSK 2013 -- Initial design
  */
 /*
  * Copyright (C) 2011-2013 Alex Turbov, all rights reserved.
@@ -29,44 +29,35 @@
 
 // Project specific includes
 #include <src/index/document_extras.h>
-#include <src/index/types.h>
 
 // Standard includes
-#include <xapian/queryparser.h>
+#include <xapian/document.h>
 
 namespace kate { namespace index {
 
 /**
- * \brief Custom value range processor for Xapian engine
- *
- * Implement a numeric range parser w/ prefix/suffix support.
- * A numeric parser shipped w/ Xapian can't have prefix and suffix
- * at the same time... But we want to have such a feature!
- *
+ * \brief Class \c document
  */
-class numeric_value_range_processor : public Xapian::ValueRangeProcessor
+class document : public Xapian::Document
 {
-  public:
-    /// Default constructor
-    explicit numeric_value_range_processor(
-        const value_slot slot
-      , const std::string& prefix = std::string()
-      , const std::string& value_prefix = std::string()
-      , const std::string& value_suffix = std::string()
-      )
-      : m_prefix{prefix + ":"}
-      , m_value_prefix{value_prefix}
-      , m_value_suffix{value_suffix}
-      , m_slot{slot}
-    {}
+public:
+    /// Defaulted default ctor
+    document() = default;
+    /// Conversion ctor from \c Xapian::Document
+    document(Xapian::Document d) : Xapian::Document{d} {}
+    /// Default copy ctor
+    document(const document&) = default;
+    /// Default copy-assign operator
+    document& operator=(const document&) = default;
 
-    virtual Xapian::valueno operator()(std::string&, std::string&) override;
-
-  private:
-    const std::string m_prefix;
-    const std::string m_value_prefix;
-    const std::string m_value_suffix;
-    const value_slot m_slot;
+    void add_value(const value_slot slot, const std::string& value)
+    {
+        Xapian::Document::add_value(Xapian::valueno(slot), value);
+    }
+    std::string get_value(const value_slot slot) const
+    {
+        return Xapian::Document::get_value(Xapian::valueno(slot));
+    }
 };
 
 }}                                                          // namespace index, kate

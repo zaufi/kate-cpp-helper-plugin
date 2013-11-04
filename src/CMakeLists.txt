@@ -14,6 +14,8 @@ set(LIBTEST_SOURCES
     index/database.cpp
     index/numeric_value_range_processor.cpp
     index/combined_index.cpp
+    index/details/worker.cpp
+    index/document_extras.cpp
     index/indexer.cpp
     index/search_result.cpp
     indexing_targets_list_model.cpp
@@ -27,6 +29,7 @@ set(LIBTEST_SOURCES
 
 qt4_wrap_cpp(
     LIBTEST_SOURCES_MOC
+    index/details/worker.h
     index/indexer.h
     indexing_targets_list_model.h
     indices_table_model.h

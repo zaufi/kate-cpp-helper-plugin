@@ -28,8 +28,7 @@
 #pragma once
 
 // Project specific includes
-#include <src/index/types.h>
-#include <src/header_files_cache.h>
+#include <src/index/details/database.h>
 
 // Standard includes
 #include <xapian/database.h>
@@ -37,129 +36,39 @@
 #include <stdexcept>
 #include <string>
 
-namespace kate { namespace index { namespace term {
-extern const std::string XDECL;
-extern const std::string XREF;
-extern const std::string XCONTAINER;
-extern const std::string XREDECLARATION;
-extern const std::string XKIND;
-extern const std::string XANONYMOUS;
-extern const std::string XSTATIC;
-extern const std::string XSCOPE;
-extern const std::string XTEMPLATE;
-extern const std::string XPOD;
-extern const std::string XBASE_CLASS;
-extern const std::string XIMPLICIT;
-}                                                           // namespace term
-
-enum class value_slot : Xapian::valueno
-{
-    NAME
-  , LINE
-  , COLUMN
-  , FILE
-  , SEMANTIC_CONTAINER
-  , LEXICAL_CONTAINER
-  , TYPE
-  , DBID
-  , KIND
-  , TEMPLATE
-  , FLAGS
-  , SIZEOF
-  , ALIGNOF
-  , VALUE
-  , ARITY
-  , BASES
-};
+namespace kate { namespace index {
 
 /// Exceptions group for database classes
 struct exception : public std::runtime_error
 {
     struct database_failure;
-    explicit exception(const std::string&);
+    explicit exception(const std::string& str)
+      : std::runtime_error(str)
+    {}
 };
-
-constexpr Xapian::docid IVALID_DOCUMENT_ID = 0u;            ///< Value to indecate invalid document
 
 struct exception::database_failure : public exception
 {
     database_failure(const std::string& str) : exception(str) {}
 };
 
-inline exception::exception(const std::string& str)
-  : std::runtime_error(str) {}
-
-namespace details {
-/**
- * \brief Base class for indexer databases
- *
- * This class have some common members and provide some basic methods to access them.
- */
-class common_base
-{
-public:
-    explicit common_base(const dbid db_id = 0) : m_id(db_id) {}
-
-    const HeaderFilesCache& headers_map() const;            ///< Access header files mapping cache (immutable)
-    dbid id() const;
-
-protected:
-    HeaderFilesCache m_files_cache;
-    dbid m_id;
-};
-
-inline const HeaderFilesCache& common_base::headers_map() const
-{
-    return m_files_cache;
-}
-
-inline dbid common_base::id() const
-{
-    return m_id;
-}
-
-}                                                           // namespace details
-
-/**
- * \brief Class \c document
- */
-class document : public Xapian::Document
-{
-public:
-    /// Defaulted default ctor
-    document() = default;
-    /// Conversion ctor from \c Xapian::Document
-    document(Xapian::Document d) : Xapian::Document{d} {}
-    /// Default copy ctor
-    document(const document&) = default;
-    /// Default copy-assign operator
-    document& operator=(const document&) = default;
-
-    void add_value(const value_slot slot, const std::string& value)
-    {
-        Xapian::Document::add_value(Xapian::valueno(slot), value);
-    }
-    std::string get_value(const value_slot slot) const
-    {
-        return Xapian::Document::get_value(Xapian::valueno(slot));
-    }
-};
 
 /// Read/write access to the indexer database
 namespace rw {
 /**
  * \brief Class \c database w/ read/write access
  */
-class database : public Xapian::WritableDatabase, public details::common_base
+class database : public Xapian::WritableDatabase, public details::database
 {
 public:
-    database(dbid, const std::string&);                     ///< Construct from a database path
+    /// Construct from a database path
+    database(dbid, const std::string&);
     virtual ~database();
 
-    HeaderFilesCache& headers_map();                        ///< Access header files mapping cache (mutable)
-
-    void commit();                                          ///< Commit recent changes to the DB
-    void add_value(value_slot, const std::string&);         ///< Add a value to a slot
+    /// Access header files mapping cache (mutable)
+    HeaderFilesCache& headers_map();
+    /// Commit recent changes to the DB
+    void commit();
 };
 
 inline HeaderFilesCache& database::headers_map()
@@ -174,7 +83,7 @@ namespace ro {
 /**
  * \brief Class \c database w/ read-only access
  */
-class database : public Xapian::Database, public details::common_base
+class database : public Xapian::Database, public details::database
 {
 public:
     /// Construct from DB path

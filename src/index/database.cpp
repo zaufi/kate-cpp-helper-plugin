@@ -31,23 +31,7 @@
 // Standard includes
 #include <KDE/KDebug>
 
-namespace kate { namespace index { namespace term {
-const std::string XDECL = "XDL";
-const std::string XREF = "XRF";
-const std::string XCONTAINER = "XCNT";
-const std::string XREDECLARATION = "XRDLy";
-const std::string XKIND = "XK";
-const std::string XANONYMOUS = "XAy";
-const std::string XSTATIC = "XSTy";
-const std::string XNAMESPACE = "XNS";
-const std::string XSCOPE = "XSC";
-const std::string XTEMPLATE = "XTP";
-const std::string XPOD = "XPODy";
-const std::string XBASE_CLASS = "XBS";
-const std::string XIMPLICIT = "XIy";
-}                                                           // namespace term
-
-namespace { namespace meta {
+namespace kate { namespace index { namespace { namespace meta {
 const std::string FILES_MAPPING = "HDRMAPCACHE";
 const std::string DB_ID = "DBID";
 }}                                                          // namespace meta, anonymous namespace
@@ -56,7 +40,7 @@ namespace rw {
 
 database::database(const dbid db_id, const std::string& path) try
   : Xapian::WritableDatabase{path, Xapian::DB_CREATE_OR_OPEN}
-  , details::common_base{db_id}
+  , details::database{db_id}
 {
 }
 catch (const Xapian::DatabaseError& e)
@@ -104,7 +88,7 @@ namespace ro {
  */
 database::database(const std::string& path) try
   : Xapian::Database{path}
-  , details::common_base{}
+  , details::database{}
 {
     // Get internal DB ID
     auto db_id_str = static_cast<Database* const>(this)->get_metadata(meta::DB_ID);
