@@ -27,6 +27,7 @@
 
 // Standard includes
 #include <KDE/KIcon>
+#include <QtGui/QLabel>
 #include <cassert>
 #include <map>
 
@@ -55,6 +56,19 @@ QVariant ClangCodeCompletionItem::data(
             result = int(100u - m_priority) * 10;
             break;
 #endif
+        case KTextEditor::CodeCompletionModel::IsExpandable:
+            result = !m_comment.isEmpty();
+            break;
+        case KTextEditor::CodeCompletionModel::ExpandingWidget:
+        {
+            auto* label = new QLabel{m_comment};
+            label->setWordWrap(true);
+            label->setAlignment(Qt::AlignLeft | Qt::AlignTop);
+            label->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
+            label->resize(label->minimumSizeHint());
+            result.setValue<QWidget*>(label);
+            break;
+        }
         case KTextEditor::CodeCompletionModel::CompletionRole:
             result = completionProperty();
             break;

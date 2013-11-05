@@ -241,7 +241,6 @@ QList<ClangCodeCompletionItem> TranslationUnit::completeAt(
   , const PluginConfiguration::sanitize_rules_list_type& sanitize_rules
   )
 {
-    QList<ClangCodeCompletionItem> completions;
     auto files = unsaved_files.get();
 #ifndef NDEBUG
     for (auto& item : files)
@@ -281,6 +280,7 @@ QList<ClangCodeCompletionItem> TranslationUnit::completeAt(
         appendDiagnostic(diag);
     }
 
+    QList<ClangCodeCompletionItem> completions;
     completions.reserve(res->NumResults);                   // Peallocate enough space for completion results
 
     // Lets look what we've got...
@@ -319,7 +319,7 @@ QList<ClangCodeCompletionItem> TranslationUnit::completeAt(
             else
                 text_after += text;
         };
-        bool skip_this_item = false;
+        auto skip_this_item = false;
         for (
             auto j = 0u
           , chunks = clang_getNumCompletionChunks(str)
@@ -362,7 +362,7 @@ QList<ClangCodeCompletionItem> TranslationUnit::completeAt(
                 {
                     auto ostr = clang_getCompletionChunkCompletionString(str, j);
                     for (
-                        unsigned oci = 0
+                        auto oci = 0u
                       , ocn = clang_getNumCompletionChunks(ostr)
                       ; oci < ocn
                       ; ++oci
@@ -440,6 +440,8 @@ QList<ClangCodeCompletionItem> TranslationUnit::completeAt(
         if (skip_this_item) continue;                       // No! Skip it!
 
         assert("Priority expected to be less than 100" && priority < 101u);
+
+        const auto comment = toString(clang::DCXString{clang_getCompletionBriefComment(str)});
         //
         completions.push_back({
             makeParentText(str, cursor_kind)
@@ -450,6 +452,7 @@ QList<ClangCodeCompletionItem> TranslationUnit::completeAt(
           , optional_placeholers_start_position
           , priority
           , cursor_kind
+          , comment
           , availability == CXAvailability_Deprecated
           });
     }

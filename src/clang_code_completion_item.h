@@ -49,8 +49,8 @@ public:
 
     /// Default constructor
     ClangCodeCompletionItem()
-      : m_priority(0)
-      , m_kind(CXCursor_UnexposedDecl)
+      : m_priority{0}
+      , m_kind{CXCursor_UnexposedDecl}
     {}
     /// Initialize all fields
     ClangCodeCompletionItem(
@@ -62,17 +62,19 @@ public:
       , const int optional_placeholders_pos
       , const unsigned priority
       , const CXCursorKind kind
-      , const bool is_deprecated = false
+      , const QString& comment
+      , const bool is_deprecated
       )
-      : m_parent(parent)
-      , m_before(before.trimmed())                          // types w/ '&' may have a space: kick it!
-      , m_text(text)
-      , m_after(after)
-      , m_placeholders(placeholders)
-      , m_optional_placeholders_pos(optional_placeholders_pos)
-      , m_priority(priority)
-      , m_kind(kind)
-      , m_deprecated(is_deprecated)
+      : m_parent{parent}
+      , m_before{before.trimmed()}                          // types w/ '&' may have a space: kick it!
+      , m_text{text}
+      , m_after{after}
+      , m_comment{comment}
+      , m_placeholders{placeholders}
+      , m_optional_placeholders_pos{optional_placeholders_pos}
+      , m_priority{priority}
+      , m_kind{kind}
+      , m_deprecated{is_deprecated}
     {
     }
 
@@ -98,12 +100,13 @@ private:
     QString renderPrefix() const;
     QString renderPlaceholders(const QString&) const;
 
-    static const int NO_OPTIONAL_PLACEHOLDERS = -1;
+    static const int NO_OPTIONAL_PLACEHOLDERS = {-1};
 
     QString m_parent;                                       ///< Parent context of the current completion item
     QString m_before;                                       ///< Everything \e before typed text (return type)
     QString m_text;                                         ///< Text to paste
     QString m_after;                                        ///< Everything \e after typed text (arguments)
+    QString m_comment;                                      ///< Brief comment if present
     QStringList m_placeholders;                             ///< Parameters to substitute
     int m_optional_placeholders_pos;                        ///< Position of the first optional placeholder
     unsigned m_priority;
