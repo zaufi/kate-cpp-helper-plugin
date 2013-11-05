@@ -516,8 +516,14 @@ QList<KTextEditor::HighlightInterface::AttributeBlock> CppHelperPlugin::highligh
 void CppHelperPlugin::updateUnsavedFiles()
 {
     for (auto* doc : application()->editor()->documents())
-        if (doc->isModified() && doc->url().isValid())
+    {
+        const auto is_suitable_document = doc->isModified()
+          && doc->url().isValid()
+          && isSuitableDocument(doc->mimeType(), doc->highlightingMode())
+          ;
+        if (is_suitable_document)
             m_unsaved_files_cache.update(doc->url(), doc->text());
+    }
     m_unsaved_files_cache.finalize_updating();
 }
 

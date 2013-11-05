@@ -1512,6 +1512,8 @@ void CppHelperPluginView::searchResultActivated(const QModelIndex& index)
         appendSearchDetailsRow(i18nc("@label", "Size:"), QString::number(details.m_sizeof.get()), false);
     if (details.m_alignof)
         appendSearchDetailsRow(i18nc("@label", "Align:"), QString::number(details.m_alignof.get()), false);
+    if (details.m_flags.m_redecl)
+        appendSearchDetailsRow(i18nc("@label", "Redeclaration:"), CHECK_MARK, false);
     if (details.m_flags.m_implicit)
         appendSearchDetailsRow(i18nc("@label", "Implicit:"), CHECK_MARK, false);
     if (details.m_flags.m_static)

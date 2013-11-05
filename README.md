@@ -209,7 +209,6 @@ TODO
 * <del>Upgrade plugin configuration (at least internal struct) to .kcfg</del> -- BAD IDEA!
   `kate` plugins can not use this feature cuz application class (plugins manager to be precise)
   do not designed for that...
-* Improve auto completion mode: do not try to complete if cursor positioned in a comment or string
 * Unfortunately `KCompletion` can't be used to complete search query (cuz it is designed to complete
   only one, very first, term) -- it would be nice to have terms completer anyway...
 

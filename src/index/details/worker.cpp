@@ -108,7 +108,6 @@ inline CXIdxClientContainer worker::update_client_container(ClientArgs&&... args
         end(m_containers)
       , new container_info{std::forward<ClientArgs>(args)...}
       );
-    kDebug(DEBUG_AREA) << "Make a new client container: ptr.get()=" << ptr.get();
     return CXIdxClientContainer(ptr.get());
 }
 
@@ -332,7 +331,10 @@ void worker::on_declaration(CXClientData client_data, const CXIdxDeclInfo* const
         const auto* const container = reinterpret_cast<const container_info* const>(
             clang_index_getClientContainer(info->lexicalContainer)
           );
-        doc.add_value(value_slot::LEXICAL_CONTAINER, docref::to_string(container->m_ref));
+        if (container)
+            doc.add_value(value_slot::LEXICAL_CONTAINER, docref::to_string(container->m_ref));
+        else
+            kDebug(DEBUG_AREA) << "No lexical container for" << name.c_str();
     }
 
     // Get more terms/slots to attach

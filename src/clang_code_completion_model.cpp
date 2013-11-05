@@ -62,7 +62,9 @@ bool ClangCodeCompletionModel::shouldStartCompletion(
     auto* iface = qobject_cast<KTextEditor::HighlightInterface*>(doc);
     if (iface)
     {
+#if 0
         kDebug(DEBUG_AREA) << "higlighting mode at" << pos << ':' << iface->highlightingModeAt(pos);
+#endif
         auto is_completion_needed = user_insertion
           && m_plugin->config().autoCompletions()
           && isSuitableDocumentAndHighlighting(doc->mimeType(), iface->highlightingModeAt(pos))

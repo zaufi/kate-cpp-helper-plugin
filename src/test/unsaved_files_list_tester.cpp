@@ -82,3 +82,15 @@ BOOST_AUTO_TEST_CASE(unsaved_files_list_test)
     }
 }
 
+BOOST_AUTO_TEST_CASE(unsaved_files_list_double_update_test)
+{
+    unsaved_files_list l;
+    l.update(KUrl{"/test1"}, "test1 content");
+    l.update(KUrl{"/test1"}, "test2 content");
+    {
+        auto f = l.get();
+        BOOST_CHECK_EQUAL(f.size(), 1u);
+        BOOST_CHECK((boost::equals(f[0].Filename, "/test1")));
+        BOOST_CHECK((boost::equals(f[0].Contents, "test2 content")));
+    }
+}

@@ -42,21 +42,36 @@ void unsaved_files_list::update(const KUrl& file, const QString& text)
     assert("Sanity check" && m_updating);
     assert("Sanity check" && !file.toLocalFile().isEmpty());
 
-    auto it = m_index_prev.find(file);
-    if (it == end(m_index_prev))
-    {
-        auto entry_it = m_unsaved_files.emplace(
-            end(m_unsaved_files)
-          , file.toLocalFile().toUtf8()
-          , text.toUtf8()
-          );
-        m_index.emplace(file, entry_it);
+    auto it = m_index.find(file);
+    if (it == end(m_index))                                 // Is it in a primary index already?
+    {                                                       // (prevent double update)
+        // No! Try to find it in a previous generation
+        it = m_index_prev.find(file);
+        if (it == end(m_index_prev))
+        {
+            // That is really new file: add content to the storage
+            auto entry_it = m_unsaved_files.emplace(
+                end(m_unsaved_files)
+              , file.toLocalFile().toUtf8()
+              , text.toUtf8()
+              );
+            // ... and update the primary index
+            m_index.emplace(file, entry_it);
+        }
+        else
+        {
+            // Ok, lets set a new content to previously existed file
+            auto tmp = text.toUtf8();
+            it->second->second.swap(tmp);
+            m_index.emplace(file, it->second);
+        }
     }
     else
     {
+        // Huh, file already in the new/updated index,
+        // so lets update the content again
         auto tmp = text.toUtf8();
         it->second->second.swap(tmp);
-        m_index.emplace(file, it->second);
     }
 }
 
@@ -66,10 +81,7 @@ void unsaved_files_list::finalize_updating()
     {
         auto existed_it = m_index.find(it->first);
         if (existed_it == end(m_index))
-        {
-            kDebug(DEBUG_AREA) << "UF Cache: Removing" << it->first;
             m_unsaved_files.erase(it->second);
-        }
     }
     m_index_prev.clear();
     m_updating = false;
@@ -77,17 +89,19 @@ void unsaved_files_list::finalize_updating()
 
 std::vector<CXUnsavedFile> unsaved_files_list::get() const
 {
-    std::vector<CXUnsavedFile> result;
-    result.resize(m_unsaved_files.size());
+    assert("u must call finalize_updating() before!" && !m_updating);
+
+    auto result = std::vector<CXUnsavedFile>{m_unsaved_files.size()};
 
     auto i = 0u;
-    for (auto it = begin(m_unsaved_files), last = end(m_unsaved_files); it != last; ++it)
+    for (auto it = begin(m_unsaved_files), last = end(m_unsaved_files); it != last; ++it, ++i)
     {
         result[i].Filename = it->first.constData();
         result[i].Contents = it->second.constData();
-        /// \note Fraking \c QByteArray has \c int as return type of \c size()! IDIOTS!
+        /// \note Fraking \c QByteArray has \c int as return type of \c size()! IDIOTS!?
         result[i].Length = unsigned(it->second.size());
     }
+    assert("Sanity check" && i == result.size());
     return result;
 }
 
@@ -96,6 +110,7 @@ void unsaved_files_list::initiate_updating()
     assert("Sanity check" && !m_updating && m_index_prev.empty());
     m_updating = true;
     swap(m_index, m_index_prev);
+    assert("Sanity check" && m_updating && m_index.empty());
 }
 
 }}                                                          // namespace clang, kate

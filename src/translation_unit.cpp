@@ -528,9 +528,7 @@ void TranslationUnit::reparse(const clang::unsaved_files_list& unsaved_files)
       , clang_defaultReparseOptions(m_unit)
       );
     if (result)
-    {
         throw Exception::ReparseFailure("It seems preparsed file is invalid");
-    }
 }
 
 /**

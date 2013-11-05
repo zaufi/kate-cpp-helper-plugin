@@ -75,6 +75,8 @@ public:
 
 private:
     typedef std::list<std::pair<QByteArray, QByteArray>> list_type;
+    /// \todo Maybe better to have a sorted vector of pairs:
+    /// plain C string (filename) to iterator into the list?
     typedef std::map<KUrl, list_type::iterator> uri_index_type;
 
     void initiate_updating();
