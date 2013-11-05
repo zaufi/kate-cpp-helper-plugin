@@ -40,8 +40,8 @@
 // Standard includes
 #include <boost/filesystem/path.hpp>
 #include <boost/uuid/uuid.hpp>
-#include <KDE/KUrl>
 #include <KDE/KTextEditor/Cursor>
+#include <KDE/KUrl>
 #include <QtCore/QObject>
 #include <QtCore/QStringList>
 #include <memory>

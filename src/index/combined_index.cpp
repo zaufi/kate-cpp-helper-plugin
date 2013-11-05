@@ -38,7 +38,10 @@
 #include <xapian/enquire.h>
 
 namespace kate { namespace index {
-
+/**
+ * \attention If u r going to modify this constructor somehow,
+ * make sure \c KCompletion model also modified accordingly.
+ */
 combined_index::combined_index()
   : m_arity_processor{value_slot::ARITY, "arity"}
   , m_size_processor{value_slot::SIZEOF, "size"}
