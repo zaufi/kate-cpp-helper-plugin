@@ -736,7 +736,8 @@ void DatabaseManager::startSearch(QString query)
                 continue;
             }
             auto index_id = index::deserialize<index::dbid>(tmp_str);
-            auto& index = findIndexByID(index_id);
+            const auto& state = findIndexByID(index_id);
+            const auto& index = *state.m_db;
 
             // Get kind
             tmp_str = doc.get_value(index::value_slot::KIND);
@@ -744,6 +745,7 @@ void DatabaseManager::startSearch(QString query)
 
             // Form a search result item
             auto result = index::search_result{index::deserialize(tmp_str)};
+            result.m_db_name = state.m_options->name();
 
             // Get source file ID
             tmp_str = doc.get_value(index::value_slot::FILE);
@@ -765,12 +767,23 @@ void DatabaseManager::startSearch(QString query)
               );
 
             // Get entity name
-            auto name = doc.get_value(index::value_slot::NAME);
-            result.m_name = name.empty() ? ANONYMOUS : string_cast<QString>(name);
+            {
+                const auto& name = doc.get_value(index::value_slot::NAME);
+                result.m_name = name.empty() ? ANONYMOUS : string_cast<QString>(name);
+            }
 
             // Get entity type
-            auto type = doc.get_value(index::value_slot::TYPE);
-            result.m_type = type.empty() ? QString{} : string_cast<QString>(type);
+            {
+                const auto& type = doc.get_value(index::value_slot::TYPE);
+                result.m_type = type.empty() ? QString{} : string_cast<QString>(type);
+            }
+
+            // Get parent scope
+            {
+                const auto& scope = doc.get_value(index::value_slot::SCOPE);
+                if (!scope.empty())
+                    result.m_scope = string_cast<QString>(scope);
+            }
 
             // Get some other props
             {
@@ -808,6 +821,14 @@ void DatabaseManager::startSearch(QString query)
                     result.m_arity = static_cast<int>(Xapian::sortable_unserialise(str));
             }
             {
+                const auto& str = doc.get_value(index::value_slot::ACCESS);
+                if (!str.empty())
+                {
+                    const auto value = index::deserialize<unsigned>(str);
+                    result.m_access = CX_CXXAccessSpecifier(value);
+                }
+            }
+            {
                 const auto& str = doc.get_value(index::value_slot::BASES);
                 if (!str.empty())
                 {
@@ -843,7 +864,7 @@ clang::location DatabaseManager::getSearchResultLocation(const int row) const
     return clang::location{sr.m_file, sr.m_line, sr.m_column};
 }
 
-const index::ro::database& DatabaseManager::findIndexByID(const index::dbid id) const
+auto DatabaseManager::findIndexByID(const index::dbid id) const -> const database_state&
 {
     auto it = std::find_if(
         begin(m_collections)
@@ -859,7 +880,7 @@ const index::ro::database& DatabaseManager::findIndexByID(const index::dbid id) 
         }
       );
     assert("Sanity check" && it != end(m_collections));
-    return *(it->m_db);
+    return *it;
 }
 
 void DatabaseManager::reportError(const QString& prefix, const int index, const bool show_popup)

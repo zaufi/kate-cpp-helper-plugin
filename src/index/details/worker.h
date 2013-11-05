@@ -124,14 +124,4 @@ private:
     std::atomic<bool> m_is_cancelled;
 };
 
-template <typename... ClientArgs>
-inline CXIdxClientContainer worker::update_client_container(ClientArgs&&... args)
-{
-    auto& ptr = *m_containers.emplace(
-        end(m_containers)
-      , new container_info{std::forward<ClientArgs>(args)...}
-      );
-    return CXIdxClientContainer(ptr.get());
-}
-
 }}}                                                         // namespace details, index, kate

@@ -71,7 +71,9 @@ struct search_result
     QString m_name;                                         ///< Symbol's name
     QString m_type;                                         ///< Symbol's type
     QString m_file;                                         ///< Filename of a declaration
+    QString m_db_name;                                      ///< Name of the indexed collection of this result
     boost::optional<QStringList> m_bases;                   ///< List of base classes
+    boost::optional<QString> m_scope;                       ///< Full qualified parent scope
     boost::optional<long long> m_value;                     ///< Value depended on a symbol's kind
     boost::optional<std::size_t> m_sizeof;
     boost::optional<std::size_t> m_alignof;
@@ -81,6 +83,7 @@ struct search_result
     int m_column = {-1};
     kind m_kind;
     CXIdxEntityCXXTemplateKind m_template_kind = {CXIdxEntity_NonTemplate};
+    CX_CXXAccessSpecifier m_access = {CX_CXXInvalidAccessSpecifier};
     flags m_flags;
 
     explicit search_result(const kind k)

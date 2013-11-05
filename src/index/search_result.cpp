@@ -39,11 +39,14 @@ search_result::search_result(search_result&& other) noexcept
   , m_column{other.m_column}
   , m_kind{other.m_kind}
   , m_template_kind{other.m_template_kind}
+  , m_access{other.m_access}
 {
     m_name.swap(other.m_name);
     m_type.swap(other.m_type);
     m_file.swap(other.m_file);
+    m_db_name.swap(other.m_db_name);
     m_bases.swap(other.m_bases);
+    m_scope.swap(other.m_scope);
     m_value.swap(other.m_value);
     m_sizeof.swap(other.m_sizeof);
     m_alignof.swap(other.m_alignof);
@@ -57,7 +60,9 @@ search_result& search_result::operator=(search_result&& other) noexcept
     m_name.swap(other.m_name);
     m_type.swap(other.m_type);
     m_file.swap(other.m_file);
+    m_db_name.swap(other.m_db_name);
     m_bases.swap(other.m_bases);
+    m_scope.swap(other.m_scope);
     m_value.swap(other.m_value);
     m_sizeof.swap(other.m_sizeof);
     m_alignof.swap(other.m_alignof);
@@ -66,6 +71,7 @@ search_result& search_result::operator=(search_result&& other) noexcept
     m_column = other.m_column;
     m_kind = other.m_kind;
     m_template_kind = other.m_template_kind;
+    m_access = other.m_access;
     m_flags.m_flags_as_int = other.m_flags.m_flags_as_int;
     return *this;
 }

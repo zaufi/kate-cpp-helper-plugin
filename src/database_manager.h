@@ -167,7 +167,7 @@ private:
     bool isEnabled(int) const;
     void renameCollection(int, const QString&);
     void reportError(const QString& = QString{}, int = -1, bool = false);
-    const index::ro::database& findIndexByID(const index::dbid) const;
+    const database_state& findIndexByID(const index::dbid) const;
 
     KUrl m_base_dir;
     IndicesTableModel m_indices_model;
@@ -211,6 +211,7 @@ inline void DatabaseManager::setCompilerOptions(clang::compiler_options&& option
 {
     m_compiler_options = std::move(options);
 }
+
 
 }                                                           // namespace kate
 // kate: hl C++11/Qt4;

@@ -1463,6 +1463,28 @@ void CppHelperPluginView::searchResultActivated(const QModelIndex& index)
     appendSearchDetailsRow(i18nc("@label", "Location:"), location, false);
     if (!details.m_type.isEmpty())
         appendSearchDetailsRow(i18nc("@label", "Type:"), details.m_type);
+    if (details.m_scope)
+        appendSearchDetailsRow(i18nc("@label", "Scope:"), details.m_scope.get());
+    else
+        appendSearchDetailsRow(i18nc("@label", "Scope:"), QString{"global"});
+    if (details.m_access != CX_CXXInvalidAccessSpecifier)
+    {
+        switch (details.m_access)
+        {
+            case CX_CXXPublic:
+                appendSearchDetailsRow(i18nc("@label", "Visibility:"), QString{"public"});
+                break;
+            case CX_CXXProtected:
+                appendSearchDetailsRow(i18nc("@label", "Visibility:"), QString{"protected"});
+                break;
+            case CX_CXXPrivate:
+                appendSearchDetailsRow(i18nc("@label", "Visibility:"), QString{"private"});
+                break;
+            default:
+                assert(!"Invalid value of CX_CXXInvalidAccessSpecifier");
+                break;
+        }
+    }
     if (details.m_bases)
     {
         const auto bases = details.m_bases.get().join(", ");
@@ -1470,6 +1492,19 @@ void CppHelperPluginView::searchResultActivated(const QModelIndex& index)
             i18ncp("@label", "Base class:", "Base classes:", details.m_bases.get().size())
           , bases
           );
+    }
+    switch (details.m_kind)
+    {
+        case index::kind::ENUM_CONSTANT:
+            assert("Sanity check" && details.m_value);
+            appendSearchDetailsRow(i18nc("@label", "Value:"), QString::number(details.m_value.get()));
+            break;
+        case index::kind::BITFIELD:
+            assert("Sanity check" && details.m_value);
+            appendSearchDetailsRow(i18nc("@label", "Width:"), QString::number(details.m_value.get()));
+            break;
+        default:
+            break;
     }
     if (details.m_arity)
         appendSearchDetailsRow(i18nc("@label", "Arity:"), QString::number(details.m_arity.get()), false);
@@ -1488,19 +1523,7 @@ void CppHelperPluginView::searchResultActivated(const QModelIndex& index)
     if (details.m_flags.m_pod)
         appendSearchDetailsRow(i18nc("@label", "POD:"), CHECK_MARK, false);
 
-    switch (details.m_kind)
-    {
-        case index::kind::ENUM_CONSTANT:
-            assert("Sanity check" && details.m_value);
-            appendSearchDetailsRow(i18nc("@label", "Value:"), QString::number(details.m_value.get()));
-            break;
-        case index::kind::BITFIELD:
-            assert("Sanity check" && details.m_value);
-            appendSearchDetailsRow(i18nc("@label", "Width:"), QString::number(details.m_value.get()));
-            break;
-        default:
-            break;
-    }
+    appendSearchDetailsRow(i18nc("@label", "Found in:"), details.m_db_name);
 
     // Make it visible again
     m_tool_view_interior->details->blockSignals(false);
@@ -1512,7 +1535,6 @@ inline void CppHelperPluginView::appendSearchDetailsRow(
   , const bool selectable
   )
 {
-    kDebug(DEBUG_AREA) << "GOT LABEL:" << label << ", value:" << value;
     auto* text = new QLabel{value};
     auto sizePolicy = QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Expanding};
     text->setSizePolicy(sizePolicy);

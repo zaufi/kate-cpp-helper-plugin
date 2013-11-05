@@ -37,7 +37,6 @@ namespace kate { namespace index { namespace term {
 extern const std::string XACCESS;
 extern const std::string XANONYMOUS;
 extern const std::string XBASE_CLASS;
-extern const std::string XCONTAINER;
 extern const std::string XDECL;
 extern const std::string XIMPLICIT;
 extern const std::string XINHERITANCE;
@@ -64,6 +63,7 @@ enum class value_slot : Xapian::valueno
   , LEXICAL_CONTAINER
   , LINE
   , NAME
+  , SCOPE
   , SEMANTIC_CONTAINER
   , SIZEOF
   , TEMPLATE

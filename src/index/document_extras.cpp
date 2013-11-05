@@ -32,16 +32,15 @@
 
 namespace kate { namespace index { namespace term {
 const std::string XACCESS = "XC";
-const std::string XANONYMOUS = "XAy";
+const std::string XANONYMOUS = "XA";
 const std::string XBASE_CLASS = "XBC";
-const std::string XCONTAINER = "XCNT";
 const std::string XDECL = "XDL";
-const std::string XIMPLICIT = "XIy";
+const std::string XIMPLICIT = "XI";
 const std::string XINHERITANCE = "XH";
 const std::string XKIND = "XK";
 const std::string XNAMESPACE = "XNS";
-const std::string XPOD = "XPODy";
-const std::string XREDECLARATION = "XRDLy";
+const std::string XPOD = "XPOD";
+const std::string XREDECLARATION = "XRDL";
 const std::string XREF = "XRF";
 const std::string XSCOPE = "XSC";
 const std::string XSTATIC = "XSTy";

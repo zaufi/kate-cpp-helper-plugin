@@ -101,6 +101,17 @@ void worker::process()
     Q_EMIT(finished());
 }
 
+template <typename... ClientArgs>
+inline CXIdxClientContainer worker::update_client_container(ClientArgs&&... args)
+{
+    auto& ptr = *m_containers.emplace(
+        end(m_containers)
+      , new container_info{std::forward<ClientArgs>(args)...}
+      );
+    kDebug(DEBUG_AREA) << "Make a new client container: ptr.get()=" << ptr.get();
+    return CXIdxClientContainer(ptr.get());
+}
+
 void worker::handle_file(const QString& filename)
 {
     Q_EMIT(indexing_uri(filename));
@@ -208,7 +219,7 @@ void worker::on_diagnostic_cb(CXClientData, CXDiagnosticSet, void*)
 
 }
 
-CXIdxClientFile worker::on_entering_main_file(CXClientData client_data, CXFile file, void*)
+CXIdxClientFile worker::on_entering_main_file(CXClientData, CXFile file, void*)
 {
     return static_cast<CXIdxClientFile>(file);
 }
@@ -230,6 +241,7 @@ CXIdxClientASTFile worker::on_include_ast_file(CXClientData client_data, const C
 CXIdxClientContainer worker::on_translation_unit(CXClientData client_data, void*)
 {
     auto* const wrk = static_cast<worker*>(client_data);
+    kDebug() << "Entering TU";
     return CXIdxClientContainer(wrk->update_client_container(docref{}, std::string{}, std::string{}));
 }
 
@@ -286,35 +298,42 @@ void worker::on_declaration(CXClientData client_data, const CXIdxDeclInfo* const
     }
     else
     {
-        doc.add_boolean_term(term::XANONYMOUS);
+        doc.add_boolean_term(term::XANONYMOUS + "y");
     }
     doc.add_value(value_slot::LINE, Xapian::sortable_serialise(loc.line()));
     doc.add_value(value_slot::COLUMN, Xapian::sortable_serialise(loc.column()));
     doc.add_value(value_slot::FILE, Xapian::sortable_serialise(file_id));
     const auto database_id = wrk->m_indexer->m_db.id();
     doc.add_value(value_slot::DBID, serialize(database_id));
-    auto qname = std::string{};
+    auto parent_qname = std::string{};
     if (info->semanticContainer)
     {
-        const auto* const container = reinterpret_cast<const container_info* const>(info->semanticContainer);
-#if 0
-        if (container->m_name.empty())
-            qname = name;
+        const auto* const container = reinterpret_cast<const container_info* const>(
+            clang_index_getClientContainer(info->semanticContainer)
+          );
+        if (container)
+        {
+            doc.add_value(value_slot::SEMANTIC_CONTAINER, docref::to_string(container->m_ref));
+            parent_qname = container->m_qname;
+            if (!parent_qname.empty())
+            {
+                doc.add_boolean_term(term::XSCOPE + container->m_name);
+                doc.add_boolean_term(term::XSCOPE + parent_qname);
+                doc.add_value(value_slot::SCOPE, parent_qname);
+            }
+        }
         else
-            qname = container->m_qname + "::" + name;
-        doc.add_boolean_term(term::XSCOPE + name);
-        doc.add_boolean_term(term::XSCOPE + qname);
-        kDebug(DEBUG_AREA) << "qname=" << qname.c_str();
-#endif
-        doc.add_value(value_slot::SEMANTIC_CONTAINER, docref::to_string(container->m_ref));
+        {
+            kDebug(DEBUG_AREA) << "No semantic container for" << name.c_str();
+        }
     }
     if (info->lexicalContainer)
     {
-        const auto* const container = reinterpret_cast<const container_info* const>(info->lexicalContainer);
+        const auto* const container = reinterpret_cast<const container_info* const>(
+            clang_index_getClientContainer(info->lexicalContainer)
+          );
         doc.add_value(value_slot::LEXICAL_CONTAINER, docref::to_string(container->m_ref));
     }
-    if (info->declAsContainer)
-        doc.add_boolean_term(term::XCONTAINER);             /// \todo Does it really needed?
 
     // Get more terms/slots to attach
     auto type_flags = update_document_with_kind(info, doc);
@@ -339,7 +358,7 @@ void worker::on_declaration(CXClientData client_data, const CXIdxDeclInfo* const
             // Check some type properties
             if (clang_isPODType(ct))
             {
-                doc.add_boolean_term(term::XPOD);
+                doc.add_boolean_term(term::XPOD + "y");
                 type_flags.m_pod = true;
             }
             if (clang_isConstQualifiedType(ct))
@@ -359,11 +378,34 @@ void worker::on_declaration(CXClientData client_data, const CXIdxDeclInfo* const
             update_document_with_base_classes(info, doc);
     }
 
+    // Try to get access specifier for a declaration
+    {
+        const auto access = clang_getCXXAccessSpecifier(info->cursor);
+        switch (access)
+        {
+            case CX_CXXPublic:
+                doc.add_boolean_term(term::XACCESS + "public");
+                doc.add_value(value_slot::ACCESS, serialize(unsigned(access)));
+                break;
+            case CX_CXXProtected:
+                doc.add_boolean_term(term::XACCESS + "protected");
+                doc.add_value(value_slot::ACCESS, serialize(unsigned(access)));
+                break;
+            case CX_CXXPrivate:
+                doc.add_boolean_term(term::XACCESS + "private");
+                doc.add_value(value_slot::ACCESS, serialize(unsigned(access)));
+                break;
+            case CX_CXXInvalidAccessSpecifier:
+            default:
+                break;
+        }
+    }
+
     if ((type_flags.m_redecl = bool(info->isRedeclaration)))
-        doc.add_boolean_term(term::XREDECLARATION);
+        doc.add_boolean_term(term::XREDECLARATION + "y");
 
     if ((type_flags.m_implicit = bool(info->isImplicit)))
-        doc.add_boolean_term(term::XIMPLICIT);
+        doc.add_boolean_term(term::XIMPLICIT + "y");
 
     // Attach collected type flags finally
     if (type_flags.m_flags_as_int)
@@ -377,9 +419,13 @@ void worker::on_declaration(CXClientData client_data, const CXIdxDeclInfo* const
     // Make a new container if necessary
     if (info->declAsContainer)
     {
+        if (parent_qname.empty())
+            parent_qname = name;
+        else
+            parent_qname += "::" + name;
         clang_index_setClientContainer(
             info->declAsContainer
-          , wrk->update_client_container(ref, name, qname)
+          , wrk->update_client_container(ref, name, parent_qname)
           );
     }
 }
@@ -452,7 +498,7 @@ search_result::flags worker::update_document_with_kind(const CXIdxDeclInfo* info
             update_document_with_template_kind(info->entityInfo->templateKind, doc);
             break;
         case CXIdxEntity_CXXStaticMethod:
-            doc.add_boolean_term(term::XSTATIC);
+            doc.add_boolean_term(term::XSTATIC + "y");
             type_flags.m_static = true;
             // ATTENTION Fall into the next (CXIdxEntity_CXXInstanceMethod) case...
         case CXIdxEntity_CXXInstanceMethod:
@@ -495,7 +541,7 @@ search_result::flags worker::update_document_with_kind(const CXIdxDeclInfo* info
             break;
         }
         case CXIdxEntity_CXXStaticVariable:
-            doc.add_boolean_term(term::XSTATIC);
+            doc.add_boolean_term(term::XSTATIC + "y");
             type_flags.m_static = true;
             // ATTENTION Fall into the next (CXIdxEntity_Field) case...
         case CXIdxEntity_Field:
@@ -589,12 +635,9 @@ void worker::update_document_with_base_classes(const CXIdxDeclInfo* info, docume
 
                 auto inheritance_term = std::string{};
                 const auto is_virtual = clang_isVirtualBase(class_info->bases[i]->cursor);
-                kDebug() << "is_virtual=" << is_virtual;
                 if (is_virtual)
                     inheritance_term = "virtual";
-                kDebug() << "inheritance_term=" << inheritance_term.c_str();
                 const auto access = clang_getCXXAccessSpecifier(class_info->bases[i]->cursor);
-                kDebug() << "access=" << access;
                 auto access_term = std::string{};
                 switch (access)
                 {
@@ -610,7 +653,6 @@ void worker::update_document_with_base_classes(const CXIdxDeclInfo* info, docume
                     default:
                         break;
                 }
-                kDebug() << "access_term=" << access_term.c_str();
                 if (!access_term.empty())
                 {
                     if (inheritance_term.empty())
@@ -625,7 +667,6 @@ void worker::update_document_with_base_classes(const CXIdxDeclInfo* info, docume
                     // 'virtual' inheritance...
                     doc.add_boolean_term(term::XINHERITANCE + access_term);
                 }
-                kDebug() << "base name=" << name.c_str();
                 bases.emplace_back(std::move(name));
             }
 #ifndef NDEBUG

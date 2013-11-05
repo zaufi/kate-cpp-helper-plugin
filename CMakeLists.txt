@@ -9,9 +9,9 @@ cmake_minimum_required(VERSION 2.6)
 #---------------------------------------------------------
 project(KateCppHelperPlugin C CXX)
 
-set(VERSION_MAJOR 0)
-set(VERSION_MINOR 9)
-set(VERSION_PATCH 6)
+set(VERSION_MAJOR 1)
+set(VERSION_MINOR 0)
+set(VERSION_PATCH 0)
 set(VERSION_STRING ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/modules" ${CMAKE_MODULE_PATH})
 
