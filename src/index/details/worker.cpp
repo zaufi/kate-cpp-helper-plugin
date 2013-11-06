@@ -431,6 +431,7 @@ void worker::on_declaration(CXClientData client_data, const CXIdxDeclInfo* const
     }
 }
 
+/// \todo Deduplicate code w/ \c on_declaration
 void worker::on_declaration_reference(CXClientData client_data, const CXIdxEntityRefInfo* const info)
 {
     auto loc = clang::location{info->loc};
@@ -443,10 +444,10 @@ void worker::on_declaration_reference(CXClientData client_data, const CXIdxEntit
     if (wrk->m_seen_declarations.find(decl_loc) != end(wrk->m_seen_declarations))
         return;
 
-    /// \note Unnamed parameters and anonymous namespaces/classes/structs/enums/unions
-    /// have an empty name!
+    /// \todo Are empty names possible?
     /// \todo Remove possible spaces from \c name?
     auto name = string_cast<std::string>(info->referencedEntity->name);
+    assert("FIXME: Empty reference name detected" && !name.empty());
 
     auto ct = clang_getCursorType(info->cursor);
     const auto k = clang::kind_of(ct);
@@ -457,6 +458,39 @@ void worker::on_declaration_reference(CXClientData client_data, const CXIdxEntit
     // Create a new document for declaration and attach all required value slots and terms
     auto doc = document{};
 
+    // Add terms related to name
+    doc.add_posting(name, make_term_position(loc));
+    doc.add_boolean_term(term::XREF + name);                // Mark the document w/ XREF prefixed term
+
+    // Add location terms
+    doc.add_value(value_slot::LINE, Xapian::sortable_serialise(loc.line()));
+    doc.add_value(value_slot::COLUMN, Xapian::sortable_serialise(loc.column()));
+    doc.add_value(value_slot::FILE, Xapian::sortable_serialise(file_id));
+    const auto database_id = wrk->m_indexer->m_db.id();
+    doc.add_value(value_slot::DBID, serialize(database_id));
+
+    if (info->container)
+    {
+        const auto* const container = reinterpret_cast<const container_info* const>(
+            clang_index_getClientContainer(info->container)
+          );
+        if (container)
+        {
+            doc.add_value(value_slot::LEXICAL_CONTAINER, docref::to_string(container->m_ref));
+            const auto& parent_qname = container->m_qname;
+            kDebug(DEBUG_AREA) << "Found parent container:" << parent_qname.c_str();
+            if (!parent_qname.empty())
+            {
+                doc.add_boolean_term(term::XSCOPE + container->m_name);
+                doc.add_boolean_term(term::XSCOPE + parent_qname);
+                doc.add_value(value_slot::SCOPE, parent_qname);
+            }
+        }
+        else
+        {
+            kDebug(DEBUG_AREA) << "No parent container for" << name.c_str();
+        }
+    }
 }
 
 search_result::flags worker::update_document_with_kind(const CXIdxDeclInfo* info, document& doc)
