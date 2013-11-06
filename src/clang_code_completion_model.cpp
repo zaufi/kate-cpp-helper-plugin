@@ -31,7 +31,7 @@
 // Standard includes
 #include <KDE/KTextEditor/Document>
 #include <KDE/KTextEditor/HighlightInterface>
-#include <KDE/KTextEditor/TemplateInterface>
+#include <KDE/KTextEditor/TemplateInterface2>
 #include <KDE/KTextEditor/View>
 #include <KDE/KLocalizedString>
 #include <algorithm>
@@ -87,7 +87,7 @@ void ClangCodeCompletionModel::completionInvoked(
 {
     m_current_view = view;
     auto* doc = view->document();
-    auto url = doc->url();
+    const auto& url = doc->url();
     if (!url.isValid() || url.isEmpty())
     {
         /// \todo Turn into a popup
@@ -208,7 +208,11 @@ QModelIndex ClangCodeCompletionModel::parent(const QModelIndex& index) const
     return createIndex(index.internalId(), 0, Level::GROUP);
 }
 
-QModelIndex ClangCodeCompletionModel::index(int row, int column, const QModelIndex& parent) const
+QModelIndex ClangCodeCompletionModel::index(
+    const int row
+  , const int column
+  , const QModelIndex& parent
+  ) const
 {
     if (!parent.isValid())                                  // Is invisible root node?
     {
@@ -228,7 +232,7 @@ QModelIndex ClangCodeCompletionModel::index(int row, int column, const QModelInd
     return QModelIndex();
 }
 
-QVariant ClangCodeCompletionModel::data(const QModelIndex& index, int role) const
+QVariant ClangCodeCompletionModel::data(const QModelIndex& index, const int role) const
 {
     if (!index.isValid())
         return QVariant();                                  // Return nothing for invalid index
@@ -240,7 +244,7 @@ QVariant ClangCodeCompletionModel::data(const QModelIndex& index, int role) cons
     return getItemData(index, role);
 }
 
-QVariant ClangCodeCompletionModel::getGroupData(const QModelIndex& index, int role) const
+QVariant ClangCodeCompletionModel::getGroupData(const QModelIndex& index, const int role) const
 {
     switch (role)
     {
@@ -266,7 +270,7 @@ QVariant ClangCodeCompletionModel::getGroupData(const QModelIndex& index, int ro
     return QVariant();
 }
 
-QVariant ClangCodeCompletionModel::getItemData(const QModelIndex& index, int role) const
+QVariant ClangCodeCompletionModel::getItemData(const QModelIndex& index, const int role) const
 {
     assert(
         "ref to parent group is invalid!"
@@ -292,7 +296,7 @@ QVariant ClangCodeCompletionModel::getItemData(const QModelIndex& index, int rol
     return result;
 }
 
-QVariant ClangCodeCompletionModel::getItemHighlightData(const QModelIndex& index, int role) const
+QVariant ClangCodeCompletionModel::getItemHighlightData(const QModelIndex& index, const int role) const
 {
     switch (role)
     {
@@ -391,7 +395,7 @@ void ClangCodeCompletionModel::executeCompletionItem2(
       && unsigned(index.row()) < m_groups[index.internalId()].second.m_completions.size()
       );
 
-    auto* template_iface = qobject_cast<KTextEditor::TemplateInterface*>(m_current_view);
+    auto* template_iface = qobject_cast<KTextEditor::TemplateInterface2*>(m_current_view);
     if (template_iface)
     {
         kDebug(DEBUG_AREA) << "TemplateInterface available for a view" << m_current_view;
@@ -414,7 +418,7 @@ void ClangCodeCompletionModel::executeCompletionItem2(
             }
         }
         doc->removeText(range);
-        template_iface->insertTemplateText(range.start(), result.m_tpl, result.m_values);
+        template_iface->insertTemplateText(range.start(), result.m_tpl, result.m_values, nullptr);
     }
     else
     {

@@ -349,7 +349,11 @@ QList<ClangCodeCompletionItem> TranslationUnit::completeAt(
                     auto p = sanitize(text, sanitize_rules);// Pipe given piece of text through sanitizer
                     if (p.first)
                     {
-                        appender("%" + QString::number(placeholders.size() + 1) + "%");
+                        appender(
+                            QLatin1String{"%"}
+                          + QString::number(placeholders.size() + 1)
+                          + QLatin1String{"%"}
+                          );
                         placeholders.push_back(p.second);
                     }
                     else                                    // Go for next completion item
@@ -376,7 +380,11 @@ QList<ClangCodeCompletionItem> TranslationUnit::completeAt(
                             auto okind = clang::kind_of(ostr, oci);
                             if (okind == CXCompletionChunk_Placeholder)
                             {
-                                appender("%" + QString::number(placeholders.size() + 1) + "%");
+                                appender(
+                                    QLatin1String{"%"}
+                                  + QString::number(placeholders.size() + 1)
+                                  + QLatin1String{"%"}
+                                  );
                                 placeholders.push_back(p.second);
                                 optional_placeholers_start_position = placeholders.size();
                             }
@@ -470,7 +478,7 @@ QString TranslationUnit::makeParentText(CXCompletionString str, const CXCursorKi
     const auto parent_cstr = clang_getCString(parent_clstr);
     if (parent_cstr)
     {
-        const auto parent_str = QString(parent_cstr).trimmed();
+        const auto parent_str = QString{parent_cstr}.trimmed();
         if (parent_str.isEmpty())
             return GLOBAL_NS_GROUP_STR;
         QString prefix;

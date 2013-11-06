@@ -294,18 +294,18 @@ auto ClangCodeCompletionItem::getCompletionTemplate() const -> CompletionTemplat
     auto i = 0u;
     for (const auto& p : m_placeholders)
     {
-        const auto fmt = QString{'%' + QString::number(++i) + '%'};
+        const auto fmt = QString{QLatin1String{"%"} + QString::number(++i) + QLatin1String{"%"}};
         auto pos = tpl.indexOf(fmt);
         if (pos != -1)
         {
-            auto arg = QLatin1String("arg") + QString::number(i);
-            auto placeholder = QLatin1String("${") + arg + '}';
-            tpl = tpl.replace(
-                pos
-              , fmt.length()
-              , placeholder
-              );
+            auto arg = QString{QLatin1String{"arg"} + QString::number(i)};
+            auto placeholder = QString{QLatin1String{"${"} + arg + QString{"}"}};
+            tpl = tpl.replace(pos, fmt.length(), placeholder);
             values[arg] = p;
+        }
+        else
+        {
+            assert(!"Sanity check");
         }
     }
 #if 0
