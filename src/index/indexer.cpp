@@ -53,11 +53,11 @@ indexer::~indexer()
 
 void indexer::start()
 {
-    auto* t = new QThread{};
-    auto* w = new details::worker{this};
+    auto* const t = new QThread{};
+    auto* const w = new details::worker{this};
     connect(w, SIGNAL(error(clang::location, QString)), this, SLOT(error_slot(clang::location, QString)));
     connect(w, SIGNAL(indexing_uri(QString)), this, SLOT(indexing_uri_slot(QString)));
-    connect(w, SIGNAL(finished()), this, SLOT(finished_slot()));
+    connect(w, SIGNAL(finished()), this, SLOT(worker_finished_slot()));
     connect(this, SIGNAL(stopping()), w, SLOT(request_cancel()));
 
     connect(w, SIGNAL(finished()), t, SLOT(quit()));
@@ -65,6 +65,7 @@ void indexer::start()
 
     connect(t, SIGNAL(started()), w, SLOT(process()));
     connect(t, SIGNAL(finished()), t, SLOT(deleteLater()));
+    connect(t, SIGNAL(finished()), this, SLOT(thread_finished_slot()));
     w->moveToThread(t);
     t->start();
     m_worker_thread.reset(t);
@@ -76,18 +77,24 @@ void indexer::stop()
     Q_EMIT(stopping());
 }
 
-void indexer::error_slot(clang::location loc, QString str)
+void indexer::error_slot(clang::location loc, const QString str)
 {
     Q_EMIT(error(loc, str));
 }
 
-void indexer::finished_slot()
+void indexer::worker_finished_slot()
 {
-    m_worker_thread = nullptr;
+    m_worker_thread->quit();
+}
+
+void indexer::thread_finished_slot()
+{
+    m_worker_thread->wait();
+    m_worker_thread.reset();
     Q_EMIT(finished());
 }
 
-void indexer::indexing_uri_slot(QString file)
+void indexer::indexing_uri_slot(const QString file)
 {
     Q_EMIT(indexing_uri(file));
 }

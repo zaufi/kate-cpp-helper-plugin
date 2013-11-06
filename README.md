@@ -164,7 +164,7 @@ TODO
 * <del>Add autocompleter for `#include` files</del> [done]
 * <del>Handle multiple matches</del> [done]
 * <del>Passive popups if nothing found</del> [done]
-* Handle #include files w/ relative path
+* Handle #include files w/ relative path (investigate the "problem")
 * Use `Shift+F10` to go back in stack (?)
 * <del>Form an `#include` directive w/ filename currently active in a clipboard</del> [done]
 * <del>List of currently `#included` files in a dialog and/or menu</del> [done]
@@ -174,7 +174,7 @@ TODO
   based on configured include paths by partial name match...
 * <del>Add view to explore a tree of `#included` files</del> [done someway]
 * <del>Add option(s) to include/exclude files from completion list</del> [exclusion list of extensions done]
-* Issue a warning if /proc/sys/fs/inotify/max_user_watches is not high enough
+* Issue a warning if `/proc/sys/fs/inotify/max_user_watches` is not high enough
 * Use `KUrl` for files and dirs instead of `QStrings` [code review requried]
 * <del>Clean `std::enable_if` and `boost::enable_if` from return value and parameters</del> [use sanitizers]
 * Use compilation database if possible. [what to do w/ headers which are not in there?]
@@ -199,9 +199,10 @@ TODO
 * <del>Add icons to completion types</del> [done for prefix-less layout]
 * Get/show list of possible exceptions in particular function call
 * Highlight interior of user specified `#ifdefs` (like `__linux__`, `__WIN32__`, etc) w/ a user specified color
-* Try to get a location for completion item and show it as suffix in a completion list
+* Try to get a location for completion item and show it <del>as suffix in a completion list</del>
+  in the expandable part of completion item
 * Add ptr/ref/const/etc to a type under cursor (by a hot-key). maybe better to implement as Python plugin for kate?
-* Show a real type of typedefs (as a tooltip?)
+* <del>Show a real type of typedefs (as a tooltip?)</del> In symbol details pane
 * Render class layout according sizeof/align of of all bases and members
 * Provide Python bindings to indexing and C++ parsing, so they can be used from kate/pate plugins
 * Group #include completion items by directory
@@ -211,6 +212,18 @@ TODO
   do not designed for that...
 * Unfortunately `KCompletion` can't be used to complete search query (cuz it is designed to complete
   only one, very first, term) -- it would be nice to have terms completer anyway...
+* Index comments from source code
+* Add terms for overloads
+* Add terms for symbols' linkage kind
+* Add value slot for offsetof(member)
+* Add terms for arrays (and possible value slots)
+* Add terms for variadic functions
+* Add terms for function result type
+* Add terms for calling conversion
+* Handle attributes
+* Add terms for 'noexcept'
+* How to deal w/ 'redeclarations' of namespaces?
+* Add terms for deprecated symbols (and platform availability)
 
 
 See Also

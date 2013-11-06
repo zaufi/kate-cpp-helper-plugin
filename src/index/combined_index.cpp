@@ -65,10 +65,12 @@ combined_index::combined_index()
     m_qp.add_boolean_prefix("decl", term::XDECL);
     m_qp.add_boolean_prefix("kind", term::XKIND);
     m_qp.add_boolean_prefix("pod", term::XPOD);
-    m_qp.add_boolean_prefix("redecl", term::XREDECLARATION);
+    m_qp.add_boolean_prefix("def", term::XREDECLARATION);
+    m_qp.add_boolean_prefix("ref", term::XREF);
     m_qp.add_boolean_prefix("scope", term::XSCOPE);
     m_qp.add_boolean_prefix("static", term::XSTATIC);
     m_qp.add_boolean_prefix("template", term::XTEMPLATE);
+    m_qp.add_boolean_prefix("virtual", term::XVIRTUAL);
 }
 
 std::vector<document> combined_index::search(

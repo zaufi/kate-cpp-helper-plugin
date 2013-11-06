@@ -55,6 +55,7 @@ struct search_result
             struct
             {
                 bool m_static    : 1;                       ///< Symbol has \c static modifier
+                bool m_virtual   : 1;                       ///< Symbol (function) has dynamic linkage
                 bool m_const     : 1;                       ///< Symbol has \c const  modifier
                 bool m_volatile  : 1;                       ///< Symbol has \c m_volatile modifier
                 bool m_pod       : 1;                       ///< Symbol is a POD

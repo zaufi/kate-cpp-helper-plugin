@@ -56,9 +56,9 @@ database::~database()
         set_metadata(meta::DB_ID, serialize(id()));
         set_metadata(meta::FILES_MAPPING, headers_map().storeToString());
     }
-    catch (...)
+    catch (const Xapian::DatabaseError& e)
     {
-        kDebug(DEBUG_AREA) << "Fail to store DB meta";
+        kDebug(DEBUG_AREA) << "Fail to store DB meta:" << e.get_msg().c_str();
     }
     commit();
 }
@@ -70,10 +70,10 @@ void database::commit()
         kDebug(DEBUG_AREA) << "Commiting DB changes...";
         Xapian::WritableDatabase::commit();
     }
-    catch (...)
+    catch (const Xapian::DatabaseError& e)
     {
         /// \todo Handle errors (some of them are recoverable...)
-        kDebug(DEBUG_AREA) << "Fail to commit";
+        kDebug(DEBUG_AREA) << "Fail to commit:" << e.get_msg().c_str();
     }
 }
 

@@ -47,6 +47,7 @@ extern const std::string XREF;
 extern const std::string XSCOPE;
 extern const std::string XSTATIC;
 extern const std::string XTEMPLATE;
+extern const std::string XVIRTUAL;
 }                                                           // namespace term
 
 enum class value_slot : Xapian::valueno

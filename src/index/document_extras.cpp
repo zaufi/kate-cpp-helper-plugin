@@ -45,4 +45,5 @@ const std::string XREF = "XRF";
 const std::string XSCOPE = "XSC";
 const std::string XSTATIC = "XSTy";
 const std::string XTEMPLATE = "XTP";
+const std::string XVIRTUAL = "XV";
 }}}                                                         // namespace term, index, kate

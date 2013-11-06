@@ -96,9 +96,8 @@ void worker::process()
     for (const auto& target : m_indexer->m_targets)
         if (dispatch_target(target))
             break;
-    kDebug(DEBUG_AREA) << "Indexer thread has finished";
-    m_indexer->m_db.commit();
     Q_EMIT(finished());
+    kDebug(DEBUG_AREA) << "Indexer thread has finished";
 }
 
 template <typename... ClientArgs>
@@ -113,6 +112,7 @@ inline CXIdxClientContainer worker::update_client_container(ClientArgs&&... args
 
 void worker::handle_file(const QString& filename)
 {
+    kDebug(DEBUG_AREA) << "Indexing:" << filename;
     Q_EMIT(indexing_uri(filename));
 
     clang::DCXIndexAction action = {clang_IndexAction_create(m_indexer->m_index)};
@@ -240,7 +240,6 @@ CXIdxClientASTFile worker::on_include_ast_file(CXClientData client_data, const C
 CXIdxClientContainer worker::on_translation_unit(CXClientData client_data, void*)
 {
     auto* const wrk = static_cast<worker*>(client_data);
-    kDebug() << "Entering TU";
     return CXIdxClientContainer(wrk->update_client_container(docref{}, std::string{}, std::string{}));
 }
 
@@ -434,9 +433,30 @@ void worker::on_declaration(CXClientData client_data, const CXIdxDeclInfo* const
 
 void worker::on_declaration_reference(CXClientData client_data, const CXIdxEntityRefInfo* const info)
 {
+    auto loc = clang::location{info->loc};
+    // Make sure we've not seen it yet
     auto* const wrk = static_cast<worker*>(client_data);
-    Q_UNUSED(wrk);
-    Q_UNUSED(info);
+    auto file_id = wrk->m_indexer->m_db.headers_map()[loc.file().toLocalFile()];
+    auto decl_loc = declaration_location{file_id, loc.line(), loc.column()};
+    /// \todo Track all locations for namespaces and then update
+    /// the only document w/ them...
+    if (wrk->m_seen_declarations.find(decl_loc) != end(wrk->m_seen_declarations))
+        return;
+
+    /// \note Unnamed parameters and anonymous namespaces/classes/structs/enums/unions
+    /// have an empty name!
+    /// \todo Remove possible spaces from \c name?
+    auto name = string_cast<std::string>(info->referencedEntity->name);
+
+    auto ct = clang_getCursorType(info->cursor);
+    const auto k = clang::kind_of(ct);
+    const auto t = toString(clang::DCXString{clang_getTypeSpelling(ct)});
+
+    kDebug() << "found reference: name=" << name.c_str() << ", kind=" << clang::toString(k) << ", type=" << t;
+
+    // Create a new document for declaration and attach all required value slots and terms
+    auto doc = document{};
+
 }
 
 search_result::flags worker::update_document_with_kind(const CXIdxDeclInfo* info, document& doc)
@@ -508,6 +528,11 @@ search_result::flags worker::update_document_with_kind(const CXIdxDeclInfo* info
             doc.add_boolean_term(term::XKIND + "method");
             doc.add_value(value_slot::KIND, serialize(kind::METHOD));
             update_document_with_template_kind(info->entityInfo->templateKind, doc);
+            if (clang_CXXMethod_isVirtual(info->cursor))
+            {
+                doc.add_boolean_term(term::XVIRTUAL + "y");
+                type_flags.m_virtual = true;
+            }
             break;
         case CXIdxEntity_CXXConstructor:
             doc.add_boolean_term(term::XKIND + "fn");
@@ -519,12 +544,22 @@ search_result::flags worker::update_document_with_kind(const CXIdxDeclInfo* info
             doc.add_boolean_term(term::XKIND + "fn");
             doc.add_boolean_term(term::XKIND + "dtor");
             doc.add_value(value_slot::KIND, serialize(kind::DESTRUCTOR));
+            if (clang_CXXMethod_isVirtual(info->cursor))
+            {
+                doc.add_boolean_term(term::XVIRTUAL + "y");
+                type_flags.m_virtual = true;
+            }
             break;
         case CXIdxEntity_CXXConversionFunction:
             doc.add_boolean_term(term::XKIND + "fn");
             doc.add_boolean_term(term::XKIND + "conversion");
             doc.add_value(value_slot::KIND, serialize(kind::CONVERSTION));
             update_document_with_template_kind(info->entityInfo->templateKind, doc);
+            if (clang_CXXMethod_isVirtual(info->cursor))
+            {
+                doc.add_boolean_term(term::XVIRTUAL + "y");
+                type_flags.m_virtual = true;
+            }
             break;
         case CXIdxEntity_Variable:
         {

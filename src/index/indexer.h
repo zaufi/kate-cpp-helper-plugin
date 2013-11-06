@@ -79,7 +79,8 @@ public Q_SLOTS:
 
 private Q_SLOTS:
     void indexing_uri_slot(QString);
-    void finished_slot();
+    void worker_finished_slot();
+    void thread_finished_slot();
     void error_slot(clang::location, QString);
 
 Q_SIGNALS:
