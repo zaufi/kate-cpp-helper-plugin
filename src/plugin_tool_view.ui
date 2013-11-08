@@ -147,7 +147,7 @@
             <widget class="KLineEdit" name="searchQuery"/>
            </item>
            <item>
-            <widget class="QTableView" name="searchResults">
+            <widget class="QTreeView" name="searchResults">
              <property name="sizePolicy">
               <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
                <horstretch>0</horstretch>
@@ -166,18 +166,15 @@
              <property name="selectionBehavior">
               <enum>QAbstractItemView::SelectRows</enum>
              </property>
-             <property name="showGrid">
+             <property name="rootIsDecorated">
               <bool>false</bool>
              </property>
-             <property name="sortingEnabled">
-              <bool>true</bool>
-             </property>
-             <attribute name="horizontalHeaderStretchLastSection">
-              <bool>true</bool>
-             </attribute>
-             <attribute name="verticalHeaderVisible">
+             <property name="itemsExpandable">
               <bool>false</bool>
-             </attribute>
+             </property>
+             <property name="expandsOnDoubleClick">
+              <bool>false</bool>
+             </property>
             </widget>
            </item>
           </layout>
@@ -231,7 +228,7 @@
             </widget>
            </item>
            <item>
-            <widget class="QTableView" name="databases">
+            <widget class="QTreeView" name="databases">
              <property name="toolTip">
               <string>List of available index collections</string>
              </property>
@@ -241,21 +238,18 @@
              <property name="showDropIndicator" stdset="0">
               <bool>false</bool>
              </property>
-             <property name="sortingEnabled">
+             <property name="rootIsDecorated">
+              <bool>false</bool>
+             </property>
+             <property name="itemsExpandable">
+              <bool>false</bool>
+             </property>
+             <property name="headerHidden">
               <bool>true</bool>
              </property>
-             <attribute name="horizontalHeaderVisible">
+             <property name="expandsOnDoubleClick">
               <bool>false</bool>
-             </attribute>
-             <attribute name="horizontalHeaderCascadingSectionResizes">
-              <bool>true</bool>
-             </attribute>
-             <attribute name="horizontalHeaderStretchLastSection">
-              <bool>true</bool>
-             </attribute>
-             <attribute name="verticalHeaderVisible">
-              <bool>false</bool>
-             </attribute>
+             </property>
             </widget>
            </item>
            <item>

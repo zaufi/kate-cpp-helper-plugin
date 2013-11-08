@@ -36,8 +36,7 @@
 namespace kate {
 
 IndicesTableModel::IndicesTableModel(DatabaseManager& db_mgr)
-  : QAbstractTableModel(nullptr)
-  , m_db_mgr(db_mgr)
+  : m_db_mgr(db_mgr)
 {
 }
 
@@ -49,6 +48,22 @@ int IndicesTableModel::rowCount(const QModelIndex&) const
 int IndicesTableModel::columnCount(const QModelIndex&) const
 {
     return column::last__;
+}
+
+QModelIndex IndicesTableModel::index(
+    const int row
+  , const int col
+  , const QModelIndex& parent
+  ) const
+{
+    if (!parent.isValid() && std::size_t(row) < m_db_mgr.m_collections.size() && col < column::last__)
+        return createIndex(row, col, 0);
+    return QModelIndex();
+}
+
+QModelIndex IndicesTableModel::parent(const QModelIndex&) const
+{
+    return QModelIndex();
 }
 
 QVariant IndicesTableModel::data(const QModelIndex& index, const int role) const

@@ -90,11 +90,11 @@ public:
     };
 
     /// Obtain a table model for currently configured indices
-    QAbstractTableModel* getDatabasesTableModel();
+    QAbstractItemModel* getDatabasesTableModel();
     /// Obtain a list model for currently configured targets
     QAbstractListModel* getTargetsListModel();
     /// Obtain a table model for search results
-    QAbstractTableModel* getSearchResultsTableModel();
+    QAbstractItemModel* getSearchResultsTableModel();
 
     /// Reset everything using this params
     void reset(const std::set<boost::uuids::uuid>&, const KUrl& = DatabaseManager::getDefaultBaseDir());
@@ -192,7 +192,7 @@ inline DatabaseManager::exception::exception(const std::string& str)
   : std::runtime_error(str)
 {}
 
-inline QAbstractTableModel* DatabaseManager::getDatabasesTableModel()
+inline QAbstractItemModel* DatabaseManager::getDatabasesTableModel()
 {
     return &m_indices_model;
 }
@@ -202,7 +202,7 @@ inline QAbstractListModel* DatabaseManager::getTargetsListModel()
     return &m_targets_model;
 }
 
-inline QAbstractTableModel* DatabaseManager::getSearchResultsTableModel()
+inline QAbstractItemModel* DatabaseManager::getSearchResultsTableModel()
 {
     return &m_search_results_model;
 }

@@ -491,6 +491,11 @@ void worker::on_declaration_reference(CXClientData client_data, const CXIdxEntit
             kDebug(DEBUG_AREA) << "No parent container for" << name.c_str();
         }
     }
+
+    // Add the document to the DB finally
+    auto document_id = wrk->m_indexer->m_db.add_document(doc);
+    auto ref = docref{database_id, document_id};
+    wrk->m_seen_declarations[decl_loc] = ref;               // Mark it as seen reference
 }
 
 search_result::flags worker::update_document_with_kind(const CXIdxDeclInfo* info, document& doc)

@@ -30,7 +30,7 @@
 // Project specific includes
 
 // Standard includes
-#include <QtCore/QAbstractTableModel>
+#include <QtCore/QAbstractItemModel>
 #include <memory>
 
 namespace kate {
@@ -43,7 +43,7 @@ class DatabaseManager;                                      // fwd decl
  * Only \c DatabaseManager can make a new instances of this class
  *
  */
-class IndicesTableModel : public QAbstractTableModel
+class IndicesTableModel : public QAbstractItemModel
 {
     Q_OBJECT
 
@@ -54,6 +54,8 @@ public:
     //BEGIN QAbstractItemModel interface
     virtual int columnCount(const QModelIndex&) const override;
     virtual int rowCount(const QModelIndex&) const override;
+    virtual QModelIndex index(int, int, const QModelIndex&) const override;
+    virtual QModelIndex parent(const QModelIndex&) const override;
     virtual QVariant data(const QModelIndex&, int) const override;
 #if 0
     virtual QVariant headerData(int, Qt::Orientation, int) const override;

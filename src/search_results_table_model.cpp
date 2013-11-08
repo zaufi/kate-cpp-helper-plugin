@@ -35,8 +35,7 @@
 namespace kate {
 
 SearchResultsTableModel::SearchResultsTableModel(DatabaseManager& db_mgr)
-  : QAbstractTableModel(nullptr)
-  , m_db_mgr(db_mgr)
+  : m_db_mgr(db_mgr)
 {
 }
 
@@ -48,6 +47,22 @@ int SearchResultsTableModel::columnCount(const QModelIndex&) const
 int SearchResultsTableModel::rowCount(const QModelIndex&) const
 {
     return m_results.size();
+}
+
+QModelIndex SearchResultsTableModel::index(
+    const int row
+  , const int col
+  , const QModelIndex& parent
+  ) const
+{
+    if (!parent.isValid() && std::size_t(row) < m_results.size() && col < column::last__)
+        return createIndex(row, col, 0);
+    return QModelIndex();
+}
+
+QModelIndex SearchResultsTableModel::parent(const QModelIndex&) const
+{
+    return QModelIndex();
 }
 
 QVariant SearchResultsTableModel::data(const QModelIndex& index, const int role) const
@@ -104,9 +119,9 @@ QVariant SearchResultsTableModel::headerData(
             switch (section)
             {
                 case column::KIND:
-                    return QString{i18nc("@title:row", "Kind")};
+                    return QString{i18nc("@title:column", "Kind")};
                 case column::NAME:
-                    return QString{i18nc("@title:row", "Name")};
+                    return QString{i18nc("@title:column", "Name")};
                 default:
                     break;
             }

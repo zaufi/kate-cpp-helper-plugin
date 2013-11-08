@@ -1442,7 +1442,7 @@ void CppHelperPluginView::startSearch()
 void CppHelperPluginView::searchResultsUpdated()
 {
     m_tool_view_interior->searchResults->setVisible(false);
-    m_tool_view_interior->searchResults->resizeColumnsToContents();
+    m_tool_view_interior->searchResults->resizeColumnToContents(0);
     m_tool_view_interior->searchResults->setVisible(true);
 }
 
