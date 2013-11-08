@@ -9,8 +9,7 @@ Version 1.0.0
   all non templated public function-members of `some` class, one may type:  
 
         base:some access:public kind:method NOT template:y
-
-* extract doxygen comment for completion items and show it as a tip (when `Alt` pressed)
+* extract doxygen comments for completion items and show it as a tip, when `Alt` modifier pressed
 * use `KTextEditor::TemplateInterface2` when substitute completion item into a document
 * improve completion for unsaved files
 * A LOT of refactorings to improve stability/maintainability
