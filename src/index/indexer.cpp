@@ -55,7 +55,7 @@ void indexer::start()
 {
     auto* const t = new QThread{};
     auto* const w = new details::worker{this};
-    connect(w, SIGNAL(error(clang::location, QString)), this, SLOT(error_slot(clang::location, QString)));
+    connect(w, SIGNAL(message(clang::diagnostic_message)), this, SLOT(message_slot(clang::diagnostic_message)));
     connect(w, SIGNAL(indexing_uri(QString)), this, SLOT(indexing_uri_slot(QString)));
     connect(w, SIGNAL(finished()), this, SLOT(worker_finished_slot()));
     connect(this, SIGNAL(stopping()), w, SLOT(request_cancel()));
@@ -77,9 +77,9 @@ void indexer::stop()
     Q_EMIT(stopping());
 }
 
-void indexer::error_slot(clang::location loc, const QString str)
+void indexer::message_slot(clang::diagnostic_message msg)
 {
-    Q_EMIT(error(loc, str));
+    Q_EMIT(message(msg));
 }
 
 void indexer::worker_finished_slot()

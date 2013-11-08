@@ -29,7 +29,7 @@
 
 // Project specific includes
 #include <src/clang/disposable.h>
-#include <src/clang/location.h>
+#include <src/clang/diagnostic_message.h>
 #include <src/index/database.h>
 #include <src/index/search_result.h>
 #include <src/index/types.h>
@@ -81,12 +81,12 @@ private Q_SLOTS:
     void indexing_uri_slot(QString);
     void worker_finished_slot();
     void thread_finished_slot();
-    void error_slot(clang::location, QString);
+    void message_slot(clang::diagnostic_message);
 
 Q_SIGNALS:
     void indexing_uri(QString);
     void finished();
-    void error(clang::location, QString);
+    void message(clang::diagnostic_message);
     void stopping();
 
 private:

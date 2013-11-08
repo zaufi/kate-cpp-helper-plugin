@@ -67,12 +67,12 @@ QVariant DiagnosticMessagesModel::data(const QModelIndex& index, const int role)
         case Qt::ForegroundRole:
             switch (m_records[index.row()].m_type)
             {
-                case DiagnosticMessagesModel::Record::type::error:
+                case clang::diagnostic_message::type::error:
                     return QBrush(Qt::red);
-                case DiagnosticMessagesModel::Record::type::warning:
+                case clang::diagnostic_message::type::warning:
                     return QBrush(Qt::yellow);
-                case DiagnosticMessagesModel::Record::type::info:
-                case DiagnosticMessagesModel::Record::type::debug:
+                case clang::diagnostic_message::type::info:
+                case clang::diagnostic_message::type::debug:
                 default:
                     break;
             }

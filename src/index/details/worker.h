@@ -28,7 +28,7 @@
 #pragma once
 
 // Project specific includes
-#include <src/clang/location.h>
+#include <src/clang/diagnostic_message.h>
 #include <src/index/details/container_info.h>
 #include <src/index/search_result.h>
 
@@ -75,7 +75,7 @@ public Q_SLOTS:
 
 Q_SIGNALS:
     void indexing_uri(QString);
-    void error(clang::location, QString);
+    void message(clang::diagnostic_message);
     void finished();
 
 private:

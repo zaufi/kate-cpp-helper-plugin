@@ -71,6 +71,7 @@ CppHelperPlugin::CppHelperPlugin(
     // Register few types inQt meta-types system, so later we can use them
     // in signal/slots...
     qRegisterMetaType<clang::location>("clang::location");
+    qRegisterMetaType<clang::diagnostic_message>("clang::diagnostic_message");
 
     // Connect self to configuration updates
     connect(
@@ -184,9 +185,9 @@ Kate::PluginView* CppHelperPlugin::createView(Kate::MainWindow* parent)
     // Connect view to diagnostic messages emit by this instance
     connect(
         this
-      , SIGNAL(diagnosticMessage(DiagnosticMessagesModel::Record))
+      , SIGNAL(diagnosticMessage(clang::diagnostic_message))
       , view
-      , SLOT(addDiagnosticMessage(DiagnosticMessagesModel::Record))
+      , SLOT(addDiagnosticMessage(clang::diagnostic_message))
       );
     return view;
 }
@@ -265,9 +266,9 @@ void CppHelperPlugin::deletedPath(const QString& path)
 void CppHelperPlugin::invalidateTranslationUnits()
 {
     addDiagnosticMessage(
-        DiagnosticMessagesModel::Record{
+        clang::diagnostic_message{
             QString{"Compiler options had changed, invalidating translation units..."}
-          , DiagnosticMessagesModel::Record::type::info
+          , clang::diagnostic_message::type::info
           }
       );
     m_units.clear();
@@ -371,9 +372,9 @@ void CppHelperPlugin::makePCHFile(const KUrl& filename)
     try
     {
         addDiagnosticMessage(
-            DiagnosticMessagesModel::Record{
+            clang::diagnostic_message{
                 QString{"Rebuilding PCH file: %1"}.arg(pch_file_name)
-              , DiagnosticMessagesModel::Record::type::info
+              , clang::diagnostic_message::type::info
               }
           );
         kDebug(DEBUG_AREA) << "Going to produce a PCH file" << pch_file_name
@@ -391,9 +392,9 @@ void CppHelperPlugin::makePCHFile(const KUrl& filename)
     catch (const TranslationUnit::Exception::ParseFailure& e)
     {
         addDiagnosticMessage(
-            DiagnosticMessagesModel::Record{
+            clang::diagnostic_message{
                 QString{"PCH file parse failure: %1"}.arg(e.what())
-              , DiagnosticMessagesModel::Record::type::error
+              , clang::diagnostic_message::type::error
               }
           );
         /// \todo Add an option to disable code completion w/o PCH file?
@@ -401,18 +402,18 @@ void CppHelperPlugin::makePCHFile(const KUrl& filename)
     catch (const TranslationUnit::Exception::SaveFailure& e)
     {
         addDiagnosticMessage(
-            DiagnosticMessagesModel::Record{
+            clang::diagnostic_message{
                 QString{"Fail to store PCH file: %1"}.arg(e.what())
-              , DiagnosticMessagesModel::Record::type::error
+              , clang::diagnostic_message::type::error
               }
           );
     }
     catch (const TranslationUnit::Exception& e)
     {
         addDiagnosticMessage(
-            DiagnosticMessagesModel::Record(
+            clang::diagnostic_message(
                 QString{"PCH file failure: %1"}.arg(e.what())
-              , DiagnosticMessagesModel::Record::type::error
+              , clang::diagnostic_message::type::error
               )
           );
     }
@@ -437,9 +438,9 @@ void CppHelperPlugin::buildPCHIfAbsent(const bool force_rebuild)
     if (config().precompiledHeaderFile().isEmpty())
     {
         addDiagnosticMessage(
-            DiagnosticMessagesModel::Record{
+            clang::diagnostic_message{
                 QString{"No PCH file configured! Code completion maybe slooow!"}
-              , DiagnosticMessagesModel::Record::type::warning
+              , clang::diagnostic_message::type::warning
               }
           );
         kDebug(DEBUG_AREA) << "No PCH file configured! Code completion maybe slooow!";
@@ -456,9 +457,9 @@ void CppHelperPlugin::buildPCHIfAbsent(const bool force_rebuild)
     {
         config().setPrecompiledFile(pch_file_name);         // Ok, file exists!
         addDiagnosticMessage(
-            DiagnosticMessagesModel::Record{
+            clang::diagnostic_message{
                 QString{"Using PCH file: %1"}.arg(pch_file_name)
-              , DiagnosticMessagesModel::Record::type::info
+              , clang::diagnostic_message::type::info
               }
           );
     }
@@ -559,9 +560,9 @@ TranslationUnit& CppHelperPlugin::getTranslationUnitByDocumentImpl(
     if (!unit)
     {
         addDiagnosticMessage(
-            DiagnosticMessagesModel::Record{
+            clang::diagnostic_message{
                 QString{"Parsing %1"}.arg(doc->url().toLocalFile())
-              , DiagnosticMessagesModel::Record::type::info
+              , clang::diagnostic_message::type::info
               }
           );
         // No! Need to create one...
@@ -583,7 +584,7 @@ TranslationUnit& CppHelperPlugin::getTranslationUnitByDocumentImpl(
     return *unit;
 }
 
-void CppHelperPlugin::addDiagnosticMessage(const DiagnosticMessagesModel::Record record)
+void CppHelperPlugin::addDiagnosticMessage(const clang::diagnostic_message record)
 {
     Q_EMIT(diagnosticMessage(record));
 }

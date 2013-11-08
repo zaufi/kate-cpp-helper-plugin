@@ -141,12 +141,19 @@ void worker::handle_file(const QString& filename)
       , clang_defaultEditingTranslationUnitOptions()        /// \todo Use TranslationUnit class
       );
     if (result)
+    {
         Q_EMIT(
-            error(
+            message({
                 clang::location{}
-              , i18nc("@info/plain", "Indexing of <filename>%1</filename> finished with errors", filename)
-              )
+              , i18nc(
+                    "@info/plain"
+                  , "Indexing of <filename>%1</filename> finished with errors"
+                  , filename
+                  )
+              , clang::diagnostic_message::type::error
+              })
           );
+    }
 }
 
 void worker::handle_directory(const QString& directory)
@@ -213,9 +220,54 @@ int worker::on_abort_cb(CXClientData, void*)
     return 0;
 }
 
-void worker::on_diagnostic_cb(CXClientData, CXDiagnosticSet, void*)
+void worker::on_diagnostic_cb(CXClientData client_data, CXDiagnosticSet diagnostics, void*)
 {
+    auto* const wrk = static_cast<worker*>(client_data);
+    for (auto i = 0u, num = clang_getNumDiagnosticsInSet(diagnostics); i < num; ++i)
+    {
+        clang::DCXDiagnostic diag = {clang_getDiagnosticInSet(diagnostics, i)};
+        const auto severity = clang_getDiagnosticSeverity(diag);
+        if (severity == CXDiagnostic_Ignored)
+            continue;
 
+        // Get record type
+        clang::diagnostic_message::type type;
+        switch (severity)
+        {
+            case CXDiagnostic_Note:
+                type = clang::diagnostic_message::type::info;
+                break;
+            case CXDiagnostic_Warning:
+                type = clang::diagnostic_message::type::warning;
+                break;
+            case CXDiagnostic_Error:
+            case CXDiagnostic_Fatal:
+                type = clang::diagnostic_message::type::error;
+                break;
+            default:
+                assert(!"Unexpected severity level! Code review required!");
+        }
+
+        // Get location
+        clang::location loc;
+        /// \attention \c Notes have no location attached!?
+        if (severity != CXDiagnostic_Note)
+        {
+            try
+            {
+                loc = {clang_getDiagnosticLocation(diag)};
+            }
+            catch (std::exception& e)
+            {
+                kDebug(DEBUG_AREA) << "indexer diag.fmt: Can't get diagnostic location";
+            }
+        }
+        Q_EMIT(
+            wrk->message(
+                {std::move(loc), clang::toString(clang_getDiagnosticSpelling(diag)), type}
+              )
+          );
+    }
 }
 
 CXIdxClientFile worker::on_entering_main_file(CXClientData, CXFile file, void*)

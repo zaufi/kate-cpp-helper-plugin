@@ -556,18 +556,18 @@ void TranslationUnit::appendDiagnostic(const CXDiagnostic& diag)
     kDebug(DEBUG_AREA) << "TU diagnostic severity level: " << severity;
 
     // Get record type
-    DiagnosticMessagesModel::Record::type type;
+    clang::diagnostic_message::type type;
     switch (severity)
     {
         case CXDiagnostic_Note:
-            type = DiagnosticMessagesModel::Record::type::info;
+            type = clang::diagnostic_message::type::info;
             break;
         case CXDiagnostic_Warning:
-            type = DiagnosticMessagesModel::Record::type::warning;
+            type = clang::diagnostic_message::type::warning;
             break;
         case CXDiagnostic_Error:
         case CXDiagnostic_Fatal:
-            type = DiagnosticMessagesModel::Record::type::error;
+            type = clang::diagnostic_message::type::error;
             break;
         default:
             assert(!"Unexpected severity level! Code review required!");

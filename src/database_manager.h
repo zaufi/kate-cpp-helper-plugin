@@ -118,13 +118,13 @@ public Q_SLOTS:
     void addNewTarget();
     void removeCurrentTarget();
     void reportCurrentFile(QString);
-    void reportIndexingError(clang::location, QString);
+    void reportIndexingError(clang::diagnostic_message);
     void indexLocalsToggled(bool);
     void indexImplicitsToggled(bool);
 
 Q_SIGNALS:
     void indexStatusChanged(const QString&, bool);
-    void diagnosticMessage(DiagnosticMessagesModel::Record);
+    void diagnosticMessage(clang::diagnostic_message);
     void reindexingStarted(const QString&);
     void reindexingFinished(const QString&);
     void setIndexLocalsChecked(bool);

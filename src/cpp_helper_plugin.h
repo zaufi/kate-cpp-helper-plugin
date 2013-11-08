@@ -108,10 +108,10 @@ public:
     void updateUnsavedFiles();
     TranslationUnit& getTranslationUnitByDocument(KTextEditor::Document*, bool = true);
     DocumentInfo& getDocumentInfo(KTextEditor::Document*);
-    void addDiagnosticMessage(DiagnosticMessagesModel::Record);
+    void addDiagnosticMessage(clang::diagnostic_message);
 
 Q_SIGNALS:
-    void diagnosticMessage(DiagnosticMessagesModel::Record);
+    void diagnosticMessage(clang::diagnostic_message);
 
 public Q_SLOTS:
     void updateDocumentInfo(KTextEditor::Document*);

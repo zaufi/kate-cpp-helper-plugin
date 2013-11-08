@@ -104,10 +104,10 @@ void ClangCodeCompletionModel::completionInvoked(
         auto& unit = m_plugin->getTranslationUnitByDocument(doc);
         // Show some SPAM in a tool view
         m_diagnostic_model.append(
-            DiagnosticMessagesModel::Record{
+            clang::diagnostic_message{
                 clang::location{doc->url(), range.start().line() + 1, range.start().column() + 1}
               , "Completion point"
-              , DiagnosticMessagesModel::Record::type::debug
+              , clang::diagnostic_message::type::debug
               }
           );
         // Obtain diagnostic if any
@@ -165,9 +165,9 @@ void ClangCodeCompletionModel::completionInvoked(
     catch (const TranslationUnit::Exception& e)
     {
         m_diagnostic_model.append(
-            DiagnosticMessagesModel::Record(
+            clang::diagnostic_message(
                 QString("Fail to make a code completion: %1").arg(e.what())
-              , DiagnosticMessagesModel::Record::type::error
+              , clang::diagnostic_message::type::error
               )
           );
     }

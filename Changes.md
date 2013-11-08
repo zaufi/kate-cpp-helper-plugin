@@ -1,13 +1,32 @@
 Changes
 =======
 
+Version 1.0.0
+-------------
+
+* introduce source code indexer and full featured search facility. It allows to form
+  various queries to the indexed collection and do flexible search. For example to find
+  all non templated public function-members of `some` class one may type:  
+        base:some access:public kind:method NOT template:y
+* extract doxygen comment for completion items and show it as a tip (when `Alt` pressed)
+* use `KTextEditor::TemplateInterface2` when substitute completion item into a document
+* improve completion for unsaved files
+* A LOT of refactorings to improve stability/maintainability
+* save/restore tool view layout
+
+Version 0.9.6
+-------------
+
+* fix for typo in completion results layout introduced in 0.9.5
+* few internal refactorngs to simplify code (before next big feature ;-)
+
 Version 0.9.5
 -------------
 
 * add (a little) option to control completions list layout
 * translation unit and completion flags are reviewed (benchmarks still needed)
 * fix LLVM/Clang detection for Debian
-* add target to produce a ``.deb`` package (make `make kate-cpp-helper-plugin-deb-package`)
+* add target to produce a `.deb` package (make `make kate-cpp-helper-plugin-deb-package`)
 * close issue #10: no package w/ required headers in recent Debian/Ubuntu
 
 Version 0.9.4

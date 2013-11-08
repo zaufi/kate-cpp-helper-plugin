@@ -28,7 +28,7 @@
 #pragma once
 
 // Project specific includes
-#include <src/clang/location.h>
+#include <src/clang/diagnostic_message.h>
 
 // Standard includes
 #include <QtCore/QAbstractListModel>
@@ -48,44 +48,6 @@ class DiagnosticMessagesModel : public QAbstractListModel
     Q_OBJECT
 
 public:
-    /**
-     * Structure to hold info about diagnostic message
-     *
-     * \note Qt4 has a problem w/ rvalue references in signal/slots,
-     * so default copy ctor and assign operator needed :(
-     */
-    struct Record
-    {
-        enum class type
-        {
-            debug
-          , info
-          , warning
-          , error
-          , cutset
-        };
-        clang::location m_location;                         ///< Location in source code
-        QString m_text;                                     ///< Diagnostic message text
-        type m_type;                                        ///< Type of the record
-
-        /// \c record class must be default constructible
-        Record() = default;
-        /// Make a \c record from parts
-        Record(clang::location&&, QString&&, type) noexcept;
-        /// Make a \c record w/ message and given type (and empty location)
-        Record(const QString&, type) noexcept;
-        /// Make a \c record w/ message and given type (and empty location)
-        Record(QString&&, type) noexcept;
-        /// Move ctor
-        Record(Record&&) noexcept;
-        /// Move-assign operator
-        Record& operator=(Record&&) noexcept;
-        /// Default copy ctor
-        Record(const Record&) = default;
-        /// Default copy-assign operator
-        Record& operator=(const Record&) = default;
-    };
-
     /// Default constructor
     DiagnosticMessagesModel() = default;
 
@@ -104,7 +66,7 @@ public:
     /// \name Records manipulation
     //@{
     /// Append a diagnostic record to the model
-    void append(Record&&);
+    void append(clang::diagnostic_message&&);
     /// Append a diagnostic record to the model (bulk version)
     template <typename Iter>
     void append(Iter, Iter);
@@ -114,50 +76,8 @@ public Q_SLOTS:
     void clear();
 
 private:
-    std::deque<Record> m_records;                           ///< Stored records
+    std::deque<clang::diagnostic_message> m_records;        ///< Stored records
 };
-
-inline DiagnosticMessagesModel::Record::Record(const QString& text, Record::type type) noexcept
-  : m_text(text)
-  , m_type(type)
-{
-}
-
-inline DiagnosticMessagesModel::Record::Record(QString&& text, Record::type type) noexcept
-  : m_type(type)
-{
-    m_text.swap(text);
-}
-
-inline DiagnosticMessagesModel::Record::Record(
-    clang::location&& loc
-  , QString&& text
-  , const Record::type type
-  ) noexcept
-  : m_location(std::move(loc))
-  , m_type(type)
-{
-    m_text.swap(text);
-}
-
-inline DiagnosticMessagesModel::Record::Record(Record&& other) noexcept
-  : m_location(std::move(other.m_location))
-  , m_type(other.m_type)
-{
-    m_text.swap(other.m_text);
-}
-
-inline auto DiagnosticMessagesModel::Record::operator=(Record&& other) noexcept -> Record&
-{
-    if (&other != this)
-    {
-        m_location = std::move(other.m_location);
-        m_text.swap(other.m_text);
-        m_type = other.m_type;
-    }
-    return *this;
-}
-
 
 inline clang::location DiagnosticMessagesModel::getLocationByIndex(const QModelIndex& index) const
 {
@@ -167,7 +87,7 @@ inline clang::location DiagnosticMessagesModel::getLocationByIndex(const QModelI
 /**
  * \attention Qt4 has a problem w/ rvalue references in signal/slots ;(
  */
-inline void DiagnosticMessagesModel::append(Record&& record)
+inline void DiagnosticMessagesModel::append(clang::diagnostic_message&& record)
 {
     beginInsertRows(QModelIndex(), m_records.size(), m_records.size());
     m_records.emplace_back(std::move(record));

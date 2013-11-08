@@ -81,7 +81,7 @@ public:
     //@}
 
 public Q_SLOTS:
-    void addDiagnosticMessage(DiagnosticMessagesModel::Record);
+    void addDiagnosticMessage(clang::diagnostic_message);
 
 private Q_SLOTS:
     /// Open a single document

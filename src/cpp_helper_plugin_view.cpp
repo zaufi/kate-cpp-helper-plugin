@@ -299,9 +299,9 @@ CppHelperPluginView::CppHelperPluginView(
       );
     connect(
         &m_plugin->databaseManager()
-      , SIGNAL(diagnosticMessage(DiagnosticMessagesModel::Record))
+      , SIGNAL(diagnosticMessage(clang::diagnostic_message))
       , this
-      , SLOT(addDiagnosticMessage(DiagnosticMessagesModel::Record))
+      , SLOT(addDiagnosticMessage(clang::diagnostic_message))
       );
     connect(
         &m_plugin->databaseManager()
@@ -349,7 +349,7 @@ void CppHelperPluginView::writeSessionConfig(KConfigBase* config, const QString&
     scg.sync();
 }
 
-void CppHelperPluginView::addDiagnosticMessage(DiagnosticMessagesModel::Record record)
+void CppHelperPluginView::addDiagnosticMessage(clang::diagnostic_message record)
 {
     m_diagnostic_data.append(std::move(record));
 }
@@ -1414,7 +1414,7 @@ void CppHelperPluginView::updateCppActionsAvailability(const bool enable_cpp_spe
 void CppHelperPluginView::reindexingStarted(const QString& msg)
 {
     addDiagnosticMessage(
-        DiagnosticMessagesModel::Record{msg, DiagnosticMessagesModel::Record::type::info}
+        clang::diagnostic_message{msg, clang::diagnostic_message::type::info}
       );
     // Disable rebuild index button
     m_tool_view_interior->reindexDatabase->setEnabled(false);
@@ -1424,7 +1424,7 @@ void CppHelperPluginView::reindexingStarted(const QString& msg)
 void CppHelperPluginView::reindexingFinished(const QString& msg)
 {
     addDiagnosticMessage(
-        DiagnosticMessagesModel::Record{msg, DiagnosticMessagesModel::Record::type::info}
+        clang::diagnostic_message{msg, clang::diagnostic_message::type::info}
       );
     // Enable rebuild index button
     m_tool_view_interior->reindexDatabase->setEnabled(true);

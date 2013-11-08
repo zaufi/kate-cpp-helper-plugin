@@ -55,7 +55,7 @@ public:
 
         explicit Exception(const std::string&);
     };
-    typedef std::vector<DiagnosticMessagesModel::Record> records_list_type;
+    typedef std::vector<clang::diagnostic_message> records_list_type;
     /// Make a translation unit from a previously serialized file (PCH)
     TranslationUnit(CXIndex, const KUrl&);
 #if 0

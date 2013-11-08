@@ -140,9 +140,9 @@ void DatabaseManager::reset(const std::set<boost::uuids::uuid>& enabled_list, co
         {
             kDebug(DEBUG_AREA) << "found manifest:" << it->path().c_str();
             {
-                auto report = DiagnosticMessagesModel::Record{
+                auto report = clang::diagnostic_message{
                     i18nc("@info/plain", "found manifest: %1", it->path().c_str())
-                  , DiagnosticMessagesModel::Record::type::debug
+                  , clang::diagnostic_message::type::debug
                   };
                 Q_EMIT(diagnosticMessage(report));
             }
@@ -696,21 +696,16 @@ KUrl DatabaseManager::getDefaultBaseDir()
 
 void DatabaseManager::reportCurrentFile(QString msg)
 {
-    auto report = DiagnosticMessagesModel::Record{
+    auto report = clang::diagnostic_message{
         i18nc("@info/plain", "  indexing %1 ...", msg)
-      , DiagnosticMessagesModel::Record::type::info
+      , clang::diagnostic_message::type::info
       };
     Q_EMIT(diagnosticMessage(report));
 }
 
-void DatabaseManager::reportIndexingError(clang::location loc, QString msg)
+void DatabaseManager::reportIndexingError(clang::diagnostic_message msg)
 {
-    auto report = DiagnosticMessagesModel::Record{
-        std::move(loc)
-      , std::move(msg)
-      , DiagnosticMessagesModel::Record::type::error
-      };
-    Q_EMIT(diagnosticMessage(report));
+    Q_EMIT(diagnosticMessage(msg));
 }
 
 /**
@@ -913,9 +908,9 @@ void DatabaseManager::reportError(const QString& prefix, const int index, const 
         else
             msg = e.what();
         //
-        auto report = DiagnosticMessagesModel::Record{
+        auto report = clang::diagnostic_message{
             msg
-          , DiagnosticMessagesModel::Record::type::error
+          , clang::diagnostic_message::type::error
           };
         Q_EMIT(diagnosticMessage(report));
         kDebug(DEBUG_AREA) << msg;
