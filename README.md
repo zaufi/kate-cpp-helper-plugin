@@ -29,8 +29,8 @@ Requirements
 * C++11 compatible compiler (gcc >= 4.8 recommended)
 * [clang](http://clang.llvm.org) >= 3.3
 * [cmake](http://cmake.org) >= 2.8
-* [Kate](http://kate-editor.org) editor version >= 2.9.
-* [boost](http://boost.org) library >= 1.42 required since version 0.8.7
+* [Kate](http://kate-editor.org) editor version >= 3.11
+* [boost](http://boost.org) library >= 1.53 required since version 0.8.7
 * [xapian](http://xapian.org) library >= 1.2.12 required since version 1.0
 
 Installation

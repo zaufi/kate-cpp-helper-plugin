@@ -473,9 +473,9 @@ void DatabaseManager::rebuildCurrentIndex()
       );
     connect(
         m_indexer.get()
-      , SIGNAL(error(clang::location, QString))
+      , SIGNAL(message(clang::diagnostic_message))
       , this
-      , SLOT(reportIndexingError(clang::location, QString))
+      , SLOT(reportIndexingError(clang::diagnostic_message))
       );
     m_indices_model.refreshRow(m_indexing_in_progress = m_last_selected_index);
 
@@ -616,6 +616,7 @@ void DatabaseManager::addNewTarget()
                 m_collections[m_last_selected_index].m_options->setTargets(targets);
             }
           );
+        Q_UNUSED(sz);
         assert("Sanity check" && targets.size() == sz + 1);
         m_last_selected_target = targets.size() - 1;
         state.m_options->writeConfig();
@@ -638,6 +639,7 @@ void DatabaseManager::removeCurrentTarget()
     auto& state = m_collections[m_last_selected_index];
     auto targets = state.m_options->targets();
     const auto sz = targets.size();
+    Q_UNUSED(sz);
     assert("Index is out of range" && m_last_selected_target < sz);
 
     kDebug(DEBUG_AREA) << "Remove target [" << state.m_options->name() << "]: " << targets[m_last_selected_target];

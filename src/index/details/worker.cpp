@@ -246,6 +246,10 @@ void worker::on_diagnostic_cb(CXClientData client_data, CXDiagnosticSet diagnost
                 break;
             default:
                 assert(!"Unexpected severity level! Code review required!");
+                // NOTE Fake assign to suppress warning. Normally this
+                // code is unreachable
+                type = clang::diagnostic_message::type::debug;
+                break;
         }
 
         // Get location
@@ -262,9 +266,10 @@ void worker::on_diagnostic_cb(CXClientData client_data, CXDiagnosticSet diagnost
                 kDebug(DEBUG_AREA) << "indexer diag.fmt: Can't get diagnostic location";
             }
         }
+        auto msg = clang::toString(clang_getDiagnosticSpelling(diag));
         Q_EMIT(
             wrk->message(
-                {std::move(loc), clang::toString(clang_getDiagnosticSpelling(diag)), type}
+                {std::move(loc), std::move(msg), type}
               )
           );
     }

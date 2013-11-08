@@ -61,7 +61,7 @@ endforeach()
 
 find_library(KATE_INTERFACES_LIB NAMES libkateinterfaces.so libkateinterfaces.so.4)
 
-find_package(LibClang 3.0 REQUIRED)
+find_package(LibClang 3.3 REQUIRED)
 
 # find boost
 set(NEEDED_BOOST_COMPONENTS
@@ -78,7 +78,7 @@ else()
     message(STATUS "Unit tests disabled")
 endif()
 
-find_package(Boost 1.42 REQUIRED COMPONENTS ${NEEDED_BOOST_COMPONENTS})
+find_package(Boost 1.53 REQUIRED COMPONENTS ${NEEDED_BOOST_COMPONENTS})
 
 if (NOT Boost_UNIT_TEST_FRAMEWORK_LIBRARY)
     message(STATUS "Unit tests disabled")
@@ -87,7 +87,7 @@ else()
     include(AddBoostTests)
 endif()
 
-find_package(Xapian REQUIRED)
+find_package(Xapian 1.2.12 REQUIRED)
 message(STATUS "Found Xapian library: ${XAPIAN_LIBRARIES}")
 
 #---------------------------------------------------------
@@ -209,9 +209,9 @@ add_package(
     SECTION "editors"
     DEPENDS
         "libstdc++6"
-        "libkatepartinterfaces4"
-        "libkateinterfaces4"
-        "libclang1"
+        "libclang1 >= 3.3"
+        "libxapian22"
+        "kate"
     REPLACES "kate-cpp-helper-plugin${CPACK_BUILD_FLAVOUR} (<= ${VERSION_STRING})"
   )
 

@@ -78,18 +78,18 @@ struct diagnostic_message
 
 inline diagnostic_message::diagnostic_message(
     const QString& text
-  , diagnostic_message::type type
+  , diagnostic_message::type t
   ) noexcept
   : m_text(text)
-  , m_type(type)
+  , m_type(t)
 {
 }
 
 inline diagnostic_message::diagnostic_message(
     QString&& text
-  , diagnostic_message::type type
+  , diagnostic_message::type t
   ) noexcept
-  : m_type(type)
+  : m_type(t)
 {
     m_text.swap(text);
 }
@@ -97,10 +97,10 @@ inline diagnostic_message::diagnostic_message(
 inline diagnostic_message::diagnostic_message(
     location&& loc
   , QString&& text
-  , const diagnostic_message::type type
+  , const diagnostic_message::type t
   ) noexcept
   : m_location(std::move(loc))
-  , m_type(type)
+  , m_type(t)
 {
     m_text.swap(text);
 }

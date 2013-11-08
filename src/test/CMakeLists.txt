@@ -77,16 +77,4 @@ target_link_libraries(
     ${LIBCLANG_LIBRARY}
   )
 
-#
-# Make a symbolic link to data directory
-# (convinient for testing purposes)
-#
-if(NOT EXISTS ${CMAKE_BINARY_DIR}/src/test/data)
-    file(RELATIVE_PATH _dst_data_link "${CMAKE_BINARY_DIR}/src/test" "${CMAKE_SOURCE_DIR}/src/test/data" )
-    execute_process(
-        COMMAND ${CMAKE_COMMAND} -E create_symlink "${_dst_data_link}" data
-        WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/src/test"
-      )
-endif()
-
 configure_file(data/test_manifest.in data/fake.db/manifest)

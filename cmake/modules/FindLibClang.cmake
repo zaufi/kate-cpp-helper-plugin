@@ -18,12 +18,10 @@
 
 include(FindPackageHandleStandardArgs)
 
-# NOTE In gentoo clang library placed into /usr/lib64/llvm,
-# so to find it `llvm-config` required
-# But in Ubuntu 12.10 libclang.so placed into /usr/lib...
+# Use `llvm-config` to locate libclang.so
 find_program(
     LLVM_CONFIG_EXECUTABLE
-    llvm-config
+    llvm-config-3.3 llvm-config
   )
 if (LLVM_CONFIG_EXECUTABLE)
     message(STATUS "Found LLVM configuration tool: ${LLVM_CONFIG_EXECUTABLE}")
@@ -79,6 +77,6 @@ find_package_handle_standard_args(
 
 # X-Chewy-RepoBase: https://raw.github.com/mutanabbi/chewy-cmake-rep/master/
 # X-Chewy-Path: FindLibClang.cmake
-# X-Chewy-Version: 1.3
+# X-Chewy-Version: 1.4
 # X-Chewy-Description: Find clang C API library
 # X-Chewy-AddonFile: libclang_get_version.cpp
