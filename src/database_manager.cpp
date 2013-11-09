@@ -123,7 +123,6 @@ void DatabaseManager::reset(const std::set<boost::uuids::uuid>& enabled_list, co
 
     /// Initialize vital members
     m_base_dir = base_dir;
-    m_enabled_list = enabled_list;
 
     kDebug(DEBUG_AREA) << "Use indexer DB path:" << base_dir.toLocalFile();
     // NOTE Qt4 lacks a recursive directory iterator, so use
@@ -150,7 +149,7 @@ void DatabaseManager::reset(const std::set<boost::uuids::uuid>& enabled_list, co
             auto state = tryLoadDatabaseMeta(it->path());
             assert("Sanity check" && state.m_options);
             bool is_enabled = false;
-            if (m_enabled_list.find(state.m_id) != end(m_enabled_list))
+            if (enabled_list.find(state.m_id) != end(enabled_list))
             {
                 const auto& db_path = state.m_options->path().toUtf8().constData();
                 try
@@ -170,19 +169,25 @@ void DatabaseManager::reset(const std::set<boost::uuids::uuid>& enabled_list, co
                 state.m_status = database_state::status::unknown;
             }
             state.m_enabled = is_enabled;
+            const auto db_id = state.m_id;
             m_collections.emplace_back(std::move(state));
             if (is_enabled)
             {
                 m_search_db.add_index(m_collections.back().m_db.get());
-                Q_EMIT(indexStatusChanged(index::toString(state.m_id), true));
+                m_enabled_list.insert(db_id);
+                Q_EMIT(indexStatusChanged(index::toString(db_id), true));
             }
             else
             {
-                Q_EMIT(indexStatusChanged(index::toString(state.m_id), false));
+                Q_EMIT(indexStatusChanged(index::toString(db_id), false));
             }
+            assert("Sanity check" && m_search_db.used_indices() == m_enabled_list.size());
         }
     }
-    /// \todo Get rid of not-found indices? REALLY!
+    /// \note Get rid of not-found indices (from config file)
+    for (const auto& id : enabled_list)
+        if (m_enabled_list.find(id) == end(m_enabled_list))
+            Q_EMIT(indexStatusChanged(index::toString(id), false));
 }
 
 /// \todo Doesn't looks good/efficient...
@@ -242,6 +247,7 @@ void DatabaseManager::enable(const int idx, const bool flag)
     }
     state.m_enabled = flag;
     Q_EMIT(indexStatusChanged(index::toString(state.m_id), flag));
+    assert("Sanity check" && m_search_db.used_indices() == m_enabled_list.size());
 }
 
 void DatabaseManager::createNewIndex()
@@ -373,7 +379,11 @@ void DatabaseManager::removeCurrentIndex()
 
 void DatabaseManager::stopIndexer()
 {
-
+    if (m_indexing_in_progress != -1)
+    {
+        assert("Sanity check" && m_indexer);
+        m_indexer->stop();
+    }
 }
 
 void DatabaseManager::rebuildCurrentIndex()
@@ -716,6 +726,17 @@ void DatabaseManager::reportIndexingError(clang::diagnostic_message msg)
  */
 void DatabaseManager::startSearch(QString query)
 {
+    assert("Sanity check" && m_search_db.used_indices() == m_enabled_list.size());
+    if (m_enabled_list.empty())
+    {
+        KPassivePopup::message(
+            i18nc("@title:window", "Error")
+          , i18nc("@info:tooltip", "No indexed collections selected")
+            /// \todo WTF?! \c nullptr can't be used here!?
+          , reinterpret_cast<QWidget*>(0)
+          );
+        return;
+    }
     try
     {
         auto documents = m_search_db.search(query);

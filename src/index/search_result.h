@@ -60,7 +60,8 @@ struct search_result
                 bool m_volatile  : 1;                       ///< Symbol has \c m_volatile modifier
                 bool m_pod       : 1;                       ///< Symbol is a POD
                 bool m_bit_field : 1;                       ///< Symbol is a bit-field
-                bool m_redecl    : 1;                       ///< Is redeclaration?
+                bool m_decl      : 1;                       ///< Is declaration? (or reference/usage to/of smth)
+                bool m_redecl    : 1;                       ///< Is redeclaration? (definition)
                 bool m_implicit  : 1;                       ///< Is implicit?
             };
         };

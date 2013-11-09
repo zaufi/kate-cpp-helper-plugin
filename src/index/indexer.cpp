@@ -79,7 +79,6 @@ void indexer::stop()
 
 void indexer::message_slot(clang::diagnostic_message msg)
 {
-    kDebug() << "FORWARDING msg=" << msg.m_text;
     Q_EMIT(message(msg));
 }
 

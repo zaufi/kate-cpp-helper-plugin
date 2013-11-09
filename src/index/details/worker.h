@@ -113,7 +113,8 @@ private:
     static CXIdxClientContainer on_translation_unit(CXClientData, void*);
     static void on_declaration(CXClientData, const CXIdxDeclInfo*);
     static void on_declaration_reference(CXClientData, const CXIdxEntityRefInfo*);
-    static search_result::flags update_document_with_kind(const CXIdxDeclInfo*, document&);
+    static search_result::flags update_decl_document_with_kind(const CXIdxDeclInfo*, document&);
+    static search_result::flags update_ref_document_with_kind(const CXIdxEntityRefInfo*, document&);
     static void update_document_with_template_kind(CXIdxEntityCXXTemplateKind, document&);
     static void update_document_with_type_size(const CXIdxDeclInfo*, document&);
     static void update_document_with_base_classes(const CXIdxDeclInfo*, document&);

@@ -6,7 +6,7 @@ Version 1.0.0
 
 * introduce source code indexer and full featured search facility. It allows to form
   various queries to the indexed collection and do flexible search. For example, to find
-  all non templated public function-members of `some` class, one may type:  
+  all non templated public members-functions of `some` class, one may type:  
 
         base:some access:public kind:method NOT template:y
 * extract doxygen comments for completion items and show it as a tip, when `Alt` modifier pressed

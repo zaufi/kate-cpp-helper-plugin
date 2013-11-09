@@ -63,8 +63,10 @@ public:
     /// Search over all connected indices
     std::vector<document> search(const QString&, doccount = 0, doccount = 2000);
 
-    void add_index(ro::database*);
-    void remove_index(ro::database*);
+    void add_index(ro::database*);                          ///< Add index to a list of used
+    void remove_index(ro::database*);                       ///< Remove index from search
+
+    std::size_t used_indices() const;                       ///< Get count of used indices
 
 private:
     void recombine_database();
@@ -79,5 +81,10 @@ private:
     numeric_value_range_processor m_column_processor;
     Xapian::QueryParser m_qp;
 };
+
+inline std::size_t combined_index::used_indices() const
+{
+    return m_db_list.size();
+}
 
 }}                                                          // namespace index, kate

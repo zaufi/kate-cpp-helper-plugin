@@ -3,7 +3,7 @@
 #
 
 #=============================================================================
-# Copyright 2012 by Alex Turbov <i.zaufi@gmail.com>
+# Copyright 2012-2013 by Alex Turbov <i.zaufi@gmail.com>
 #
 # Distributed under the OSI-approved BSD License (the "License");
 # see accompanying file LICENSE for details.
@@ -18,12 +18,28 @@
 
 include(FindPackageHandleStandardArgs)
 
+if(LibClang_FIND_VERSION_EXACT)
+    if(LibClang_FIND_VERSION_MAJOR AND LibClang_FIND_VERSION_MINOR)
+        set(_llvm_config_programs llvm-config-${LibClang_FIND_VERSION_MAJOR}.${LibClang_FIND_VERSION_MINOR})
+    else()
+        message(FATAL_ERROR "EXACT version mutch requested, but no version specified!")
+    endif()
+else()
+    set(_llvm_config_programs
+        llvm-config-3.4
+        llvm-config-3.3
+        llvm-config-3.2
+        llvm-config-3.1
+        llvm-config-3.0
+      )
+endif()
+
 # Use `llvm-config` to locate libclang.so
 find_program(
     LLVM_CONFIG_EXECUTABLE
-    llvm-config-3.3 llvm-config
+    ${_llvm_config_programs} llvm-config
   )
-if (LLVM_CONFIG_EXECUTABLE)
+if(LLVM_CONFIG_EXECUTABLE)
     message(STATUS "Found LLVM configuration tool: ${LLVM_CONFIG_EXECUTABLE}")
 
     # Get LLVM library dir
@@ -77,6 +93,6 @@ find_package_handle_standard_args(
 
 # X-Chewy-RepoBase: https://raw.github.com/mutanabbi/chewy-cmake-rep/master/
 # X-Chewy-Path: FindLibClang.cmake
-# X-Chewy-Version: 1.4
+# X-Chewy-Version: 1.5
 # X-Chewy-Description: Find clang C API library
 # X-Chewy-AddonFile: libclang_get_version.cpp

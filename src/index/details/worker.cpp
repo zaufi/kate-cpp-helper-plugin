@@ -394,7 +394,8 @@ void worker::on_declaration(CXClientData client_data, const CXIdxDeclInfo* const
     }
 
     // Get more terms/slots to attach
-    auto type_flags = update_document_with_kind(info, doc);
+    auto type_flags = update_decl_document_with_kind(info, doc);
+    type_flags.m_decl = true;
 
     // Attach symbol type. Get aliased type for typedefs, get underlaid type for enums.
     {
@@ -518,6 +519,7 @@ void worker::on_declaration_reference(CXClientData client_data, const CXIdxEntit
     // Add terms related to name
     doc.add_posting(name, make_term_position(loc));
     doc.add_boolean_term(term::XREF + name);                // Mark the document w/ XREF prefixed term
+    doc.add_value(value_slot::NAME, name);
 
     // Add location terms
     doc.add_value(value_slot::LINE, Xapian::sortable_serialise(loc.line()));
@@ -549,13 +551,21 @@ void worker::on_declaration_reference(CXClientData client_data, const CXIdxEntit
         }
     }
 
+    auto type_flags = update_ref_document_with_kind(info, doc);
+    // Attach collected type flags finally
+    if (type_flags.m_flags_as_int)
+        doc.add_value(value_slot::FLAGS, serialize(type_flags.m_flags_as_int));
+
     // Add the document to the DB finally
     auto document_id = wrk->m_indexer->m_db.add_document(doc);
     auto ref = docref{database_id, document_id};
     wrk->m_seen_declarations[decl_loc] = ref;               // Mark it as seen reference
 }
 
-search_result::flags worker::update_document_with_kind(const CXIdxDeclInfo* info, document& doc)
+search_result::flags worker::update_decl_document_with_kind(
+    const CXIdxDeclInfo* const info
+  , document& doc
+  )
 {
     auto type_flags = search_result::flags{};
 
@@ -692,6 +702,142 @@ search_result::flags worker::update_document_with_kind(const CXIdxDeclInfo* info
                 doc.add_value(value_slot::KIND, serialize(kind::FIELD));
                 update_document_with_type_size(info, doc);
             }
+            break;
+        default:
+            break;
+    }
+    return type_flags;
+}
+
+search_result::flags worker::update_ref_document_with_kind(
+    const CXIdxEntityRefInfo* const info
+  , document& doc
+  )
+{
+    auto type_flags = search_result::flags{};
+
+    switch (clang::kind_of(*info->referencedEntity))
+    {
+        case CXIdxEntity_CXXNamespace:
+            doc.add_boolean_term(term::XKIND + "ns");
+            doc.add_value(value_slot::KIND, serialize(kind::NAMESPACE));
+            break;
+        case CXIdxEntity_CXXNamespaceAlias:
+            doc.add_boolean_term(term::XKIND + "ns-alias");
+            doc.add_value(value_slot::KIND, serialize(kind::NAMESPACE_ALIAS));
+            break;
+        case CXIdxEntity_Typedef:
+            doc.add_boolean_term(term::XKIND + "typedef");
+            doc.add_value(value_slot::KIND, serialize(kind::TYPEDEF));
+            break;
+        case CXIdxEntity_CXXTypeAlias:
+            doc.add_boolean_term(term::XKIND + "type-alias");
+            doc.add_value(value_slot::KIND, serialize(kind::TYPE_ALIAS));
+            update_document_with_template_kind(info->referencedEntity->templateKind, doc);
+            break;
+        case CXIdxEntity_Struct:
+            doc.add_boolean_term(term::XKIND + "struct");
+            doc.add_value(value_slot::KIND, serialize(kind::STRUCT));
+            update_document_with_template_kind(info->referencedEntity->templateKind, doc);
+            break;
+        case CXIdxEntity_CXXClass:
+            doc.add_boolean_term(term::XKIND + "class");
+            doc.add_value(value_slot::KIND, serialize(kind::CLASS));
+            update_document_with_template_kind(info->referencedEntity->templateKind, doc);
+            break;
+        case CXIdxEntity_Union:
+            doc.add_boolean_term(term::XKIND + "union");
+            doc.add_value(value_slot::KIND, serialize(kind::UNION));
+            break;
+        case CXIdxEntity_Enum:
+            doc.add_boolean_term(term::XKIND + "enum");
+            doc.add_value(value_slot::KIND, serialize(kind::ENUM));
+            break;
+        case CXIdxEntity_EnumConstant:
+        {
+            doc.add_boolean_term(term::XKIND + "enum-const");
+            doc.add_value(value_slot::KIND, serialize(kind::ENUM_CONSTANT));
+            const auto value = clang_getEnumConstantDeclValue(info->cursor);
+            doc.add_value(value_slot::VALUE, Xapian::sortable_serialise(value));
+            break;
+        }
+        case CXIdxEntity_Function:
+            doc.add_boolean_term(term::XKIND + "fn");
+            doc.add_value(value_slot::KIND, serialize(kind::FUNCTION));
+            update_document_with_template_kind(info->referencedEntity->templateKind, doc);
+            break;
+        case CXIdxEntity_CXXStaticMethod:
+            doc.add_boolean_term(term::XSTATIC + "y");
+            type_flags.m_static = true;
+            // ATTENTION Fall into the next (CXIdxEntity_CXXInstanceMethod) case...
+        case CXIdxEntity_CXXInstanceMethod:
+            doc.add_boolean_term(term::XKIND + "fn");
+            doc.add_boolean_term(term::XKIND + "method");
+            doc.add_value(value_slot::KIND, serialize(kind::METHOD));
+            update_document_with_template_kind(info->referencedEntity->templateKind, doc);
+            if (clang_CXXMethod_isVirtual(info->cursor))
+            {
+                doc.add_boolean_term(term::XVIRTUAL + "y");
+                type_flags.m_virtual = true;
+            }
+            break;
+        case CXIdxEntity_CXXConstructor:
+            doc.add_boolean_term(term::XKIND + "fn");
+            doc.add_boolean_term(term::XKIND + "ctor");
+            doc.add_value(value_slot::KIND, serialize(kind::CONSTRUCTOR));
+            update_document_with_template_kind(info->referencedEntity->templateKind, doc);
+            break;
+        case CXIdxEntity_CXXDestructor:
+            doc.add_boolean_term(term::XKIND + "fn");
+            doc.add_boolean_term(term::XKIND + "dtor");
+            doc.add_value(value_slot::KIND, serialize(kind::DESTRUCTOR));
+            if (clang_CXXMethod_isVirtual(info->cursor))
+            {
+                doc.add_boolean_term(term::XVIRTUAL + "y");
+                type_flags.m_virtual = true;
+            }
+            break;
+        case CXIdxEntity_CXXConversionFunction:
+            doc.add_boolean_term(term::XKIND + "fn");
+            doc.add_boolean_term(term::XKIND + "conversion");
+            doc.add_value(value_slot::KIND, serialize(kind::CONVERSTION));
+            update_document_with_template_kind(info->referencedEntity->templateKind, doc);
+            if (clang_CXXMethod_isVirtual(info->cursor))
+            {
+                doc.add_boolean_term(term::XVIRTUAL + "y");
+                type_flags.m_virtual = true;
+            }
+            break;
+        case CXIdxEntity_Variable:
+        {
+            auto cursor_kind = clang::kind_of(info->cursor);
+            if (cursor_kind == CXCursor_ParmDecl)
+            {
+                doc.add_boolean_term(term::XKIND + "param");
+                doc.add_value(value_slot::KIND, serialize(kind::PARAMETER));
+            }
+            else
+            {
+                doc.add_boolean_term(term::XKIND + "var");
+                doc.add_value(value_slot::KIND, serialize(kind::VARIABLE));
+            }
+            break;
+        }
+        case CXIdxEntity_CXXStaticVariable:
+            doc.add_boolean_term(term::XSTATIC + "y");
+            type_flags.m_static = true;
+            // ATTENTION Fall into the next (CXIdxEntity_Field) case...
+        case CXIdxEntity_Field:
+            doc.add_boolean_term(term::XKIND + "field");
+            if (clang_Cursor_isBitField(info->cursor))
+            {
+                doc.add_boolean_term(term::XKIND + "bitfield");
+                doc.add_value(value_slot::KIND, serialize(kind::BITFIELD));
+                const auto width = clang_getFieldDeclBitWidth(info->cursor);
+                doc.add_value(value_slot::VALUE, Xapian::sortable_serialise(width));
+                type_flags.m_bit_field = true;
+            }
+            else doc.add_value(value_slot::KIND, serialize(kind::FIELD));
             break;
         default:
             break;

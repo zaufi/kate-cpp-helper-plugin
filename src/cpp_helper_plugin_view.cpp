@@ -1463,6 +1463,14 @@ void CppHelperPluginView::searchResultActivated(const QModelIndex& index)
     appendSearchDetailsRow(i18nc("@label", "Location:"), location, false);
     if (!details.m_type.isEmpty())
         appendSearchDetailsRow(i18nc("@label", "Type:"), details.m_type);
+    if (details.m_flags.m_decl)
+        appendSearchDetailsRow(i18nc("@label", "Declaration:"), CHECK_MARK, false);
+    else
+        appendSearchDetailsRow(i18nc("@label", "Reference:"), CHECK_MARK, false);
+    if (details.m_flags.m_redecl)
+        appendSearchDetailsRow(i18nc("@label", "Definition:"), CHECK_MARK, false);
+    if (details.m_flags.m_implicit)
+        appendSearchDetailsRow(i18nc("@label", "Implicit:"), CHECK_MARK, false);
     if (details.m_scope)
         appendSearchDetailsRow(i18nc("@label", "Scope:"), details.m_scope.get());
     else
@@ -1514,10 +1522,6 @@ void CppHelperPluginView::searchResultActivated(const QModelIndex& index)
         appendSearchDetailsRow(i18nc("@label", "Align:"), QString::number(details.m_alignof.get()), false);
     if (details.m_flags.m_virtual)
         appendSearchDetailsRow(i18nc("@label means C++ virtual function-member", "Virtual:"), CHECK_MARK, false);
-    if (details.m_flags.m_redecl)
-        appendSearchDetailsRow(i18nc("@label", "Definition:"), CHECK_MARK, false);
-    if (details.m_flags.m_implicit)
-        appendSearchDetailsRow(i18nc("@label", "Implicit:"), CHECK_MARK, false);
     if (details.m_flags.m_static)
         appendSearchDetailsRow(i18nc("@label", "Static:"), CHECK_MARK, false);
     if (details.m_flags.m_const)
