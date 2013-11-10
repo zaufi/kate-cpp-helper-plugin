@@ -199,6 +199,81 @@ void fail_parser_test(const bool f)
         BOOST_CHECK_EQUAL(r.m_range.end().column(), -1);
         BOOST_CHECK_EQUAL(r.m_is_complete, false);
     }
+    {
+        kate::IncludeParseResult r = parseIncludeDirective("#include\"", f);
+        BOOST_CHECK_EQUAL(r.m_range.start().column(), -1);
+        BOOST_CHECK_EQUAL(r.m_range.end().column(), -1);
+        BOOST_CHECK_EQUAL(r.m_is_complete, false);
+    }
+}
+
+void ok_include_local_parser_test(const bool f)
+{
+    BOOST_TEST_MESSAGE("Testing parser w/ strict flag: " << f);
+    {
+        kate::IncludeParseResult r = parseIncludeDirective("#include \"foo.h\"", f);
+        BOOST_CHECK_EQUAL(r.m_range.start().column(), 10);
+        BOOST_CHECK_EQUAL(r.m_range.end().column(), 15);
+        BOOST_CHECK_EQUAL(r.m_is_complete, true);
+    }
+    {
+        kate::IncludeParseResult r = parseIncludeDirective("#  include \"foo.h\"", f);
+        BOOST_CHECK_EQUAL(r.m_range.start().column(), 12);
+        BOOST_CHECK_EQUAL(r.m_range.end().column(), 17);
+        BOOST_CHECK_EQUAL(r.m_is_complete, true);
+    }
+    {
+        kate::IncludeParseResult r = parseIncludeDirective("  #  include \"foo.h\"", f);
+        BOOST_CHECK_EQUAL(r.m_range.start().column(), 14);
+        BOOST_CHECK_EQUAL(r.m_range.end().column(), 19);
+        BOOST_CHECK_EQUAL(r.m_is_complete, true);
+    }
+    {
+        kate::IncludeParseResult r = parseIncludeDirective("  #include \"foo.h\"", f);
+        BOOST_CHECK_EQUAL(r.m_range.start().column(), 12);
+        BOOST_CHECK_EQUAL(r.m_range.end().column(), 17);
+        BOOST_CHECK_EQUAL(r.m_is_complete, true);
+    }
+    {
+        kate::IncludeParseResult r = parseIncludeDirective("#include \"foo.h\"  ", f);
+        BOOST_CHECK_EQUAL(r.m_range.start().column(), 10);
+        BOOST_CHECK_EQUAL(r.m_range.end().column(), 15);
+        BOOST_CHECK_EQUAL(r.m_is_complete, true);
+    }
+    {
+        kate::IncludeParseResult r = parseIncludeDirective("#include \"foo.h\"  // comment", f);
+        BOOST_CHECK_EQUAL(r.m_range.start().column(), 10);
+        BOOST_CHECK_EQUAL(r.m_range.end().column(), 15);
+        BOOST_CHECK_EQUAL(r.m_is_complete, true);
+    }
+    {
+        kate::IncludeParseResult r = parseIncludeDirective("#include \"", f);
+        if (f)
+        {
+            BOOST_CHECK_EQUAL(r.m_range.start().column(), -1);
+            BOOST_CHECK_EQUAL(r.m_range.end().column(), -1);
+        }
+        else
+        {
+            BOOST_CHECK_EQUAL(r.m_range.start().column(), 10);
+            BOOST_CHECK_EQUAL(r.m_range.end().column(), 10);
+        }
+        BOOST_CHECK_EQUAL(r.m_is_complete, false);
+    }
+    {
+        kate::IncludeParseResult r = parseIncludeDirective("#include \"f", f);
+        if (f)
+        {
+            BOOST_CHECK_EQUAL(r.m_range.start().column(), -1);
+            BOOST_CHECK_EQUAL(r.m_range.end().column(), -1);
+        }
+        else
+        {
+            BOOST_CHECK_EQUAL(r.m_range.start().column(), 10);
+            BOOST_CHECK_EQUAL(r.m_range.end().column(), 11);
+        }
+        BOOST_CHECK_EQUAL(r.m_is_complete, false);
+    }
 }
 }                                                           // anonymous namespace
 
@@ -206,6 +281,12 @@ BOOST_AUTO_TEST_CASE(parse_ok_test)
 {
     ok_parser_test(false);
     ok_parser_test(true);
+}
+
+BOOST_AUTO_TEST_CASE(local_parse_ok_test)
+{
+    ok_include_local_parser_test(false);
+    ok_include_local_parser_test(true);
 }
 
 BOOST_AUTO_TEST_CASE(parse_failures_test)

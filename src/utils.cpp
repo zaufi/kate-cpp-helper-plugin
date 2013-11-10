@@ -31,6 +31,9 @@
 #include <cassert>
 #include <vector>
 
+/// \internal Turn debug SPAM from \c #include parser
+#define ENABLE_INCLUDE_PARSER_SPAM 0
+
 namespace kate { namespace {
 const char* const INCLUDE_STR = "include";
 const std::vector<QString> SUITABLE_DOCUMENT_TYPES = {
@@ -60,7 +63,7 @@ const std::vector<QString> SUITABLE_HIGHLIGHT_TYPES = {
  */
 IncludeParseResult parseIncludeDirective(const QString& line, const bool strict)
 {
-#if 0
+#if ENABLE_INCLUDE_PARSER_SPAM
     kDebug(DEBUG_AREA) << "text2parse=" << line << ", strict=" << strict;
 #endif
 
@@ -78,7 +81,7 @@ IncludeParseResult parseIncludeDirective(const QString& line, const bool strict)
 
     // Perpare 'default' result
     IncludeParseResult result;
-    result.m_range = KTextEditor::Range(-1, -1, -1, -1);
+    result.m_range = KTextEditor::Range::invalid();
     result.m_type = IncludeStyle::unknown;
     result.m_is_complete = false;
 
@@ -99,7 +102,7 @@ IncludeParseResult parseIncludeDirective(const QString& line, const bool strict)
                         state = foundHash;
                         continue;
                     }
-#if 0
+#if ENABLE_INCLUDE_PARSER_SPAM
                     kDebug(DEBUG_AREA) << "pase failure: smth other than '#' first char in a line";
 #endif
                     return result;                          // Error: smth other than '#' first char in a line
@@ -114,7 +117,7 @@ IncludeParseResult parseIncludeDirective(const QString& line, const bool strict)
             case checkInclude:
                 if (INCLUDE_STR[tmp++] != line[pos])
                 {
-#if 0
+#if ENABLE_INCLUDE_PARSER_SPAM
                     kDebug(DEBUG_AREA) << "pase failure: is not 'include' after '#'";
 #endif
                     return result;                          // Error: is not 'include' after '#'
@@ -128,7 +131,7 @@ IncludeParseResult parseIncludeDirective(const QString& line, const bool strict)
                     state = skipOptionalSpaces;
                     continue;
                 }
-#if 0
+#if ENABLE_INCLUDE_PARSER_SPAM
                 kDebug(DEBUG_AREA) << "pase failure: is not no space after '#include'";
 #endif
                 return result;                              // Error: no space after '#include'
@@ -148,7 +151,7 @@ IncludeParseResult parseIncludeDirective(const QString& line, const bool strict)
                 }
                 else
                 {
-#if 0
+#if ENABLE_INCLUDE_PARSER_SPAM
                     kDebug(DEBUG_AREA) << "pase failure: not a valid open char";
 #endif
                     return result;
@@ -163,6 +166,14 @@ IncludeParseResult parseIncludeDirective(const QString& line, const bool strict)
             case findCloseChar:
                 if (line[pos] == close)
                 {
+                    // Do not allow empty range between open and close char in strict mode
+                    if (start == pos && strict)
+                    {
+#if ENABLE_INCLUDE_PARSER_SPAM
+                        kDebug(DEBUG_AREA) << "pase failure: empty filename";
+#endif
+                        return result;                      // in strict mode return false for incomplete #include
+                    }
                     result.m_is_complete = true;            // Found close char! #include complete...
                     state = stop;
                     end = pos;
@@ -171,7 +182,7 @@ IncludeParseResult parseIncludeDirective(const QString& line, const bool strict)
                 {
                     if (strict)
                     {
-#if 0
+#if ENABLE_INCLUDE_PARSER_SPAM
                         kDebug(DEBUG_AREA) << "pase failure: space before close char met";
 #endif
                         return result;                      // in strict mode return false for incomplete #include
@@ -191,14 +202,14 @@ IncludeParseResult parseIncludeDirective(const QString& line, const bool strict)
         case foundOpenChar:
             if (!strict)
                 result.m_range = KTextEditor::Range(0, line.length(), 0, line.length());
-#if 0
+#if ENABLE_INCLUDE_PARSER_SPAM
             kDebug(DEBUG_AREA) << "pase failure: EOL after open char";
 #endif
             break;
         case findCloseChar:
             if (!strict)
                 result.m_range = KTextEditor::Range(0, start, 0, line.length());
-#if 0
+#if ENABLE_INCLUDE_PARSER_SPAM
             kDebug(DEBUG_AREA) << "pase failure: EOL before close char";
 #endif
             break;
@@ -214,7 +225,7 @@ IncludeParseResult parseIncludeDirective(const QString& line, const bool strict)
         default:
             assert(!"Parsing FSM broken!");
     }
-#if 0
+#if ENABLE_INCLUDE_PARSER_SPAM
     kDebug(DEBUG_AREA) << "result-range=" << result.m_range << ", is_complete=" << result.m_is_complete;
 #endif
     return result;
