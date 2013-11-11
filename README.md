@@ -224,7 +224,7 @@ TODO
 * Add terms for 'noexcept'
 * How to deal w/ 'redeclarations' of namespaces?
 * Add terms for deprecated symbols (and platform availability)
-
+* Find crash after some DB gets enabled after reindexing
 
 See Also
 ========

@@ -247,6 +247,7 @@ void DatabaseManager::enable(const int idx, const bool flag)
     }
     state.m_enabled = flag;
     Q_EMIT(indexStatusChanged(index::toString(state.m_id), flag));
+    kDebug() << "active indices: combined=" << m_search_db.used_indices() << ", cfg=" << m_enabled_list.size();
     assert("Sanity check" && m_search_db.used_indices() == m_enabled_list.size());
 }
 

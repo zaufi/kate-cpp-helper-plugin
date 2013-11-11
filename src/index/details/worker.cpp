@@ -277,11 +277,18 @@ void worker::on_diagnostic_cb(CXClientData client_data, CXDiagnosticSet diagnost
 
 CXIdxClientFile worker::on_entering_main_file(CXClientData, CXFile file, void*)
 {
+    auto filename = clang::toString(file);
+    kDebug() << "Entering main file: filename=" << filename;
     return static_cast<CXIdxClientFile>(file);
 }
 
 CXIdxClientFile worker::on_include_file(CXClientData client_data, const CXIdxIncludedFileInfo* info)
 {
+    char open = info->isAngled ? '<' : '"';
+    char close = info->isAngled ? '>' : '"';
+    kDebug(DEBUG_AREA) << "#include "
+        << open << info->filename << close
+        << " at line " << clang::location(info->hashLoc).line();
     auto* const wrk = static_cast<worker*>(client_data);
     Q_UNUSED(wrk);
     return static_cast<CXIdxClientFile>(info->file);
@@ -302,7 +309,22 @@ CXIdxClientContainer worker::on_translation_unit(CXClientData client_data, void*
 
 void worker::on_declaration(CXClientData client_data, const CXIdxDeclInfo* const info)
 {
-    auto loc = clang::location{info->loc};
+    clang::location loc;
+    try
+    {
+      loc = clang::location{info->loc};
+    }
+    catch (...)
+    {
+        auto name = string_cast<std::string>(info->entityInfo->name);
+        CXIdxClientFile file;
+        unsigned line;
+        unsigned column;
+        unsigned offset;
+        clang_indexLoc_getFileLocation(info->loc, &file, nullptr, &line, &column, &offset);
+
+        kDebug() << "DECLARATION W/O LOCATION: name=" << name.c_str() << ", line=" << line << ", col=" << column;
+    }
     // Make sure we've not seen it yet
     auto* const wrk = static_cast<worker*>(client_data);
     auto file_id = wrk->m_indexer->m_db.headers_map()[loc.file().toLocalFile()];
@@ -377,10 +399,12 @@ void worker::on_declaration(CXClientData client_data, const CXIdxDeclInfo* const
                 doc.add_value(value_slot::SCOPE, parent_qname);
             }
         }
+#if 0
         else
         {
             kDebug(DEBUG_AREA) << "No semantic container for" << name.c_str();
         }
+#endif
     }
     if (info->lexicalContainer)
     {
@@ -389,8 +413,10 @@ void worker::on_declaration(CXClientData client_data, const CXIdxDeclInfo* const
           );
         if (container)
             doc.add_value(value_slot::LEXICAL_CONTAINER, docref::to_string(container->m_ref));
+#if 0
         else
             kDebug(DEBUG_AREA) << "No lexical container for" << name.c_str();
+#endif
     }
 
     // Get more terms/slots to attach
@@ -492,7 +518,22 @@ void worker::on_declaration(CXClientData client_data, const CXIdxDeclInfo* const
 /// \todo Deduplicate code w/ \c on_declaration
 void worker::on_declaration_reference(CXClientData client_data, const CXIdxEntityRefInfo* const info)
 {
-    auto loc = clang::location{info->loc};
+    clang::location loc;
+    try
+    {
+        loc = clang::location{info->loc};
+    }
+    catch (...)
+    {
+        auto name = string_cast<std::string>(info->referencedEntity->name);
+        CXIdxClientFile file;
+        unsigned line;
+        unsigned column;
+        unsigned offset;
+        clang_indexLoc_getFileLocation(info->loc, &file, nullptr, &line, &column, &offset);
+
+        kDebug() << "REFERENE W/O LOCATION: name=" << name.c_str() << ", line=" << line << ", col=" << column;
+    }
     // Make sure we've not seen it yet
     auto* const wrk = static_cast<worker*>(client_data);
     auto file_id = wrk->m_indexer->m_db.headers_map()[loc.file().toLocalFile()];
@@ -511,7 +552,9 @@ void worker::on_declaration_reference(CXClientData client_data, const CXIdxEntit
     const auto k = clang::kind_of(ct);
     const auto t = toString(clang::DCXString{clang_getTypeSpelling(ct)});
 
+#if 0
     kDebug() << "found reference: name=" << name.c_str() << ", kind=" << clang::toString(k) << ", type=" << t;
+#endif
 
     // Create a new document for declaration and attach all required value slots and terms
     auto doc = document{};
@@ -537,7 +580,9 @@ void worker::on_declaration_reference(CXClientData client_data, const CXIdxEntit
         {
             doc.add_value(value_slot::LEXICAL_CONTAINER, docref::to_string(container->m_ref));
             const auto& parent_qname = container->m_qname;
+#if 0
             kDebug(DEBUG_AREA) << "Found parent container:" << parent_qname.c_str();
+#endif
             if (!parent_qname.empty())
             {
                 doc.add_boolean_term(term::XSCOPE + container->m_name);
@@ -545,10 +590,12 @@ void worker::on_declaration_reference(CXClientData client_data, const CXIdxEntit
                 doc.add_value(value_slot::SCOPE, parent_qname);
             }
         }
+#if 0
         else
         {
             kDebug(DEBUG_AREA) << "No parent container for" << name.c_str();
         }
+#endif
     }
 
     auto type_flags = update_ref_document_with_kind(info, doc);
