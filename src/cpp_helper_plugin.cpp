@@ -82,7 +82,7 @@ CppHelperPlugin::CppHelperPlugin(
       );
     connect(
         &m_config
-      , SIGNAL(compilerOptionsChanged())
+      , SIGNAL(clangOptionsChanged())
       , this
       , SLOT(invalidateTranslationUnits())
       );
@@ -108,7 +108,7 @@ CppHelperPlugin::CppHelperPlugin(
       );
     connect(
         &m_config
-      , SIGNAL(compilerOptionsChanged())
+      , SIGNAL(clangOptionsChanged())
       , &m_db_mgr
       , SLOT(propagateCompilerOptionsToIndexer())
       );
