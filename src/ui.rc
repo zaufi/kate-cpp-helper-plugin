@@ -8,7 +8,6 @@
         <Menu name="edit" noMerge="1"><text>&amp;Edit</text>
             <Action name="edit_copy_include" group="edit_paste_merge"/>
         </Menu>
-
     </MenuBar>
     <Menu name="ktexteditor_popup" noMerge="1">
         <Action name="popup_cpphelper"/>
