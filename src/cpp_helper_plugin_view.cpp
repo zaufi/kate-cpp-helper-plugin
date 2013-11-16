@@ -79,9 +79,7 @@ CppHelperPluginView::CppHelperPluginView(
   : Kate::PluginView(mw)
   , Kate::XMLGUIClient(data)
   , m_plugin(plugin)
-  , m_open_header(actionCollection()->addAction("file_open_included_header"))
   , m_copy_include(actionCollection()->addAction("edit_copy_include"))
-  , m_switch(actionCollection()->addAction("file_open_switch_iface_impl"))
   , m_tool_view(
         mw->createToolView(
             plugin
@@ -102,13 +100,18 @@ CppHelperPluginView::CppHelperPluginView(
     assert("Sanity check" && m_tool_view);
 
     //BEGIN Setup plugin actions
-    m_open_header->setText(i18n("Open Header Under Cursor"));
-    m_open_header->setShortcut(QKeySequence(Qt::Key_F10));
-    connect(m_open_header, SIGNAL(triggered(bool)), this, SLOT(openHeader()));
-
-    m_switch->setText(i18n("Open Header/Implementation"));
-    m_switch->setShortcut(QKeySequence(Qt::Key_F12));
-    connect(m_switch, SIGNAL(triggered(bool)), this, SLOT(switchIfaceImpl()));
+    {
+        auto* const open_header = actionCollection()->addAction("file_open_included_header");
+        open_header->setText(i18n("Open Header Under Cursor"));
+        open_header->setShortcut(QKeySequence(Qt::Key_F10));
+        connect(open_header, SIGNAL(triggered(bool)), this, SLOT(openHeader()));
+    }
+    {
+        auto* const switch_impl = actionCollection()->addAction("file_open_switch_iface_impl");
+        switch_impl->setText(i18n("Open Header/Implementation"));
+        switch_impl->setShortcut(QKeySequence(Qt::Key_F12));
+        connect(switch_impl, SIGNAL(triggered(bool)), this, SLOT(switchIfaceImpl()));
+    }
 
     m_copy_include->setText(i18n("Copy #include to Clipboard"));
     m_copy_include->setShortcut(QKeySequence(Qt::SHIFT + Qt::Key_F10));
@@ -1403,12 +1406,17 @@ void CppHelperPluginView::updateCppActionsAvailability()
 void CppHelperPluginView::updateCppActionsAvailability(const bool enable_cpp_specific_actions)
 {
     kDebug(DEBUG_AREA) << "Enable C++ specific actions:" << enable_cpp_specific_actions;
-    m_open_header->setEnabled(enable_cpp_specific_actions);
     m_tool_view_interior->updateButton->setEnabled(enable_cpp_specific_actions);
     if (enable_cpp_specific_actions)
+    {
         m_copy_include->setText(i18n("Copy #include to Clipboard"));
+        stateChanged("cpp_actions_enabled");
+    }
     else
+    {
         m_copy_include->setText(i18n("Copy File URI to Clipboard"));
+        stateChanged("cpp_actions_enabled", KXMLGUIClient::StateReverse);
+    }
 }
 
 void CppHelperPluginView::reindexingStarted(const QString& msg)
