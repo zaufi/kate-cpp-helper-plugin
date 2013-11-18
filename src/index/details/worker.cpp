@@ -532,7 +532,7 @@ void worker::on_declaration_reference(CXClientData client_data, const CXIdxEntit
         unsigned offset;
         clang_indexLoc_getFileLocation(info->loc, &file, nullptr, &line, &column, &offset);
 
-        kDebug() << "REFERENE W/O LOCATION: name=" << name.c_str() << ", line=" << line << ", col=" << column;
+        kDebug() << "REFERENCE W/O LOCATION: name=" << name.c_str() << ", line=" << line << ", col=" << column;
     }
     // Make sure we've not seen it yet
     auto* const wrk = static_cast<worker*>(client_data);

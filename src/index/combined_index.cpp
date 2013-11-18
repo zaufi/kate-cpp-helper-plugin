@@ -120,6 +120,7 @@ void combined_index::add_index(ro::database* ptr)
         recombine_database();
         m_db_list.emplace_back(ptr);
         m_compound_db->add_database(*ptr);
+        kDebug(DEBUG_AREA) << "add index to search:" << ptr->id() << ":" << m_db_list.size();
     }
 }
 
@@ -130,6 +131,7 @@ void combined_index::remove_index(ro::database* ptr)
     {
         m_db_list.erase(it);
         m_compound_db.reset();
+        kDebug(DEBUG_AREA) << "remove index from search:" << ptr->id() << ":" << m_db_list.size();
     }
 }
 

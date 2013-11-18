@@ -225,7 +225,7 @@ TODO
 * How to deal w/ 'redeclarations' of namespaces?
 * Add terms for deprecated symbols (and platform availability)
 * Find crash after some DB gets enabled after reindexing
-* Use actions w/ states (see KXMLGUIClient)
+* <del>Use actions w/ states (see KXMLGUIClient)</del>
 
 See Also
 ========

@@ -142,9 +142,7 @@ private:
     void applyToolViewInteriorWidths();
 
     CppHelperPlugin* m_plugin;                              ///< Parent plugin
-    KAction* m_open_header;                                 ///< <em>Open header</em> action
     KAction* m_copy_include;                                ///< <em>Copy #include to clipboard</em> action
-    KAction* m_switch;                                      ///< <em>Open implementation/header</em> action
     DiagnosticMessagesModel m_diagnostic_data;              ///< Storage (model) for diagnostic messages
     std::unique_ptr<QWidget> m_tool_view;                   ///< A tool-view widget of this plugin
     Ui_PluginToolViewWidget* const m_tool_view_interior;    ///< Interior widget of a tool-view

@@ -247,7 +247,6 @@ void DatabaseManager::enable(const int idx, const bool flag)
     }
     state.m_enabled = flag;
     Q_EMIT(indexStatusChanged(index::toString(state.m_id), flag));
-    kDebug() << "active indices: combined=" << m_search_db.used_indices() << ", cfg=" << m_enabled_list.size();
     assert("Sanity check" && m_search_db.used_indices() == m_enabled_list.size());
 }
 
@@ -378,15 +377,6 @@ void DatabaseManager::removeCurrentIndex()
     }
 }
 
-void DatabaseManager::stopIndexer()
-{
-    if (m_indexing_in_progress != -1)
-    {
-        assert("Sanity check" && m_indexer);
-        m_indexer->stop();
-    }
-}
-
 void DatabaseManager::rebuildCurrentIndex()
 {
     // Check if any index has been selected, and no other reindexing in progress
@@ -491,12 +481,24 @@ void DatabaseManager::rebuildCurrentIndex()
     m_indices_model.refreshRow(m_indexing_in_progress = m_last_selected_index);
 
     // Shutdown possible opened DB and change status
-    m_search_db.remove_index(state.m_db.get());
+    if (state.m_enabled)
+        m_search_db.remove_index(state.m_db.get());
+    assert("Sanity check" && m_search_db.used_indices() == m_enabled_list.size());
     state.m_db.reset();
     state.m_status = database_state::status::reindexing;
 
+
     // Go!
     m_indexer->start();
+}
+
+void DatabaseManager::stopIndexer()
+{
+    if (m_indexing_in_progress != -1)
+    {
+        assert("Sanity check" && m_indexer);
+        m_indexer->stop();
+    }
 }
 
 void DatabaseManager::rebuildFinished()
@@ -547,7 +549,9 @@ void DatabaseManager::rebuildFinished()
     try
     {
         state.m_db.reset(new index::ro::database{db_path.string()});
-        m_search_db.add_index(state.m_db.get());
+        if (state.m_enabled)
+            m_search_db.add_index(state.m_db.get());
+        assert("Sanity check" && m_search_db.used_indices() == m_enabled_list.size());
         state.m_status = database_state::status::ok;
     }
     catch (...)
