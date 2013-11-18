@@ -482,11 +482,13 @@ void DatabaseManager::rebuildCurrentIndex()
 
     // Shutdown possible opened DB and change status
     if (state.m_enabled)
+    {
         m_search_db.remove_index(state.m_db.get());
+        m_enabled_list.erase(state.m_id);                   // Remove temporarily from enabled list
+    }
     assert("Sanity check" && m_search_db.used_indices() == m_enabled_list.size());
     state.m_db.reset();
     state.m_status = database_state::status::reindexing;
-
 
     // Go!
     m_indexer->start();
@@ -550,7 +552,10 @@ void DatabaseManager::rebuildFinished()
     {
         state.m_db.reset(new index::ro::database{db_path.string()});
         if (state.m_enabled)
+        {
             m_search_db.add_index(state.m_db.get());
+            m_enabled_list.insert(state.m_id);
+        }
         assert("Sanity check" && m_search_db.used_indices() == m_enabled_list.size());
         state.m_status = database_state::status::ok;
     }

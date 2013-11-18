@@ -284,11 +284,13 @@ CXIdxClientFile worker::on_entering_main_file(CXClientData, CXFile file, void*)
 
 CXIdxClientFile worker::on_include_file(CXClientData client_data, const CXIdxIncludedFileInfo* info)
 {
+#if 0
     char open = info->isAngled ? '<' : '"';
     char close = info->isAngled ? '>' : '"';
     kDebug(DEBUG_AREA) << "#include "
         << open << info->filename << close
         << " at line " << clang::location(info->hashLoc).line();
+#endif
     auto* const wrk = static_cast<worker*>(client_data);
     Q_UNUSED(wrk);
     return static_cast<CXIdxClientFile>(info->file);
@@ -362,15 +364,18 @@ void worker::on_declaration(CXClientData client_data, const CXIdxDeclInfo* const
             const auto tpos = name.find('<');
             if (tpos != std::string::npos && boost::ends_with(name, ">"))
                 name.erase(tpos);
+#if 0
 #ifndef NDEBUG
             if (!boost::equal(before, name))
                 kDebug() << "name cleaner: " << before.c_str() << " --> " << name.c_str();
+#endif
 #endif
         }
         // NOTE Add terms w/ possible stripped name, but have a full name
         // at value slots
         doc.add_posting(name, make_term_position(loc));
         doc.add_boolean_term(term::XDECL + name);           // Mark the document w/ XDECL prefixed term
+        // NOTE Add an original name to the value slot!
         doc.add_value(value_slot::NAME, info->entityInfo->name);
     }
     else
@@ -549,10 +554,10 @@ void worker::on_declaration_reference(CXClientData client_data, const CXIdxEntit
     assert("FIXME: Empty reference name detected" && !name.empty());
 
     auto ct = clang_getCursorType(info->cursor);
-    const auto k = clang::kind_of(ct);
     const auto t = toString(clang::DCXString{clang_getTypeSpelling(ct)});
 
 #if 0
+    const auto k = clang::kind_of(ct);
     kDebug() << "found reference: name=" << name.c_str() << ", kind=" << clang::toString(k) << ", type=" << t;
 #endif
 
