@@ -226,6 +226,7 @@ TODO
 * Add terms for deprecated symbols (and platform availability)
 * Find crash after some DB gets enabled after reindexing
 * <del>Use actions w/ states (see KXMLGUIClient)</del>
+* Normalize file names when add to the cache on indexing
 
 See Also
 ========

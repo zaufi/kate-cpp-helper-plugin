@@ -731,7 +731,14 @@ search_result::flags worker::update_decl_document_with_kind(
             {
                 doc.add_boolean_term(term::XKIND + "var");
                 doc.add_value(value_slot::KIND, serialize(kind::VARIABLE));
+                /// \bug clang 3.3 (at lest! other version I guess also affected)
+                /// some times (noticed for <tt>auto& variable</tt>) may crash
+                /// on getting \c sizeof type of the cursor... so do not evn try
+                /// do get it...
+                /// \todo Bug investigation required.
+#if 0
                 update_document_with_type_size(info, doc);
+#endif
             }
             break;
         }
@@ -935,9 +942,10 @@ void worker::update_document_with_type_size(
   , document& doc
   )
 {
+    auto ck = clang::kind_of(info->cursor);
     auto ct = clang_getCursorType(info->cursor);
     const auto k = clang::kind_of(ct);
-    if (k != CXType_Invalid && k != CXType_Unexposed)
+    if (k != CXType_Invalid && k != CXType_Unexposed && !clang_isReference(ck))
     {
         // Get sizeof
         const auto size = clang_Type_getSizeOf(ct);
@@ -947,6 +955,7 @@ void worker::update_document_with_type_size(
         const auto align = clang_Type_getAlignOf(ct);
         if (0 < align)
             doc.add_value(value_slot::ALIGNOF, Xapian::sortable_serialise(align));
+        /// \todo Get offset of, if applicable
     }
 }
 

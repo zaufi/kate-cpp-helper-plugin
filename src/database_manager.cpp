@@ -39,6 +39,7 @@
 #include <boost/serialization/list.hpp>
 #include <boost/serialization/string.hpp>
 #include <boost/uuid/random_generator.hpp>
+#include <boost/uuid/uuid_io.hpp>
 #include <KDE/KDebug>
 #include <KDE/KDirSelectDialog>
 #include <KDE/KGlobal>
@@ -148,6 +149,30 @@ void DatabaseManager::reset(const std::set<boost::uuids::uuid>& enabled_list, co
             /// \todo Handle errors
             auto state = tryLoadDatabaseMeta(it->path());
             assert("Sanity check" && state.m_options);
+            // Prevent DB index w/ same ID
+            {
+                auto prev_it = std::find_if(
+                    begin(m_collections)
+                  , end(m_collections)
+                  , [&state](const collections_type::value_type& s)
+                    {
+                        return s.m_id == state.m_id;
+                    }
+                  );
+                if (prev_it != end(m_collections))
+                {
+                    kError(DEBUG_AREA) << "ATTENTION: Non unique UUID found: "
+                      << to_string(state.m_id).c_str() << '@'
+                      << it->path().c_str()
+                      ;
+                    auto report = clang::diagnostic_message{
+                        i18nc("@info/plain", "found manifest w/ non unique UUID: %1", it->path().c_str())
+                      , clang::diagnostic_message::type::debug
+                      };
+                    Q_EMIT(diagnosticMessage(report));
+                    continue;
+                }
+            }
             bool is_enabled = false;
             if (enabled_list.find(state.m_id) != end(enabled_list))
             {

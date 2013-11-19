@@ -45,7 +45,7 @@
 
 namespace {
 const std::string SAMPLE_UUID = "70b9b979-c3c7-4837-a58f-cb7e9461da39";
-const boost::uuids::string_generator UUID_PARSER;
+const boost::uuids::string_generator UUID_PARSER = {};
 }                                                           // anonymous namespace
 
 using namespace kate::index;

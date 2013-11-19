@@ -155,7 +155,12 @@ Xapian::Query combined_index::parse_query(const std::string& query_str)
     Xapian::Query query;
     try
     {
-        query = m_qp.parse_query(query_str);
+        query = m_qp.parse_query(
+            query_str
+          , Xapian::QueryParser::FLAG_BOOLEAN
+            | Xapian::QueryParser::FLAG_WILDCARD
+            | Xapian::QueryParser::FLAG_LOVEHATE
+          );
     }
     catch (const Xapian::QueryParserError& e)
     {

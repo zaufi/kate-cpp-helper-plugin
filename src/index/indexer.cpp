@@ -67,6 +67,7 @@ void indexer::start()
     connect(t, SIGNAL(finished()), t, SLOT(deleteLater()));
     connect(t, SIGNAL(finished()), this, SLOT(thread_finished_slot()));
     w->moveToThread(t);
+    t->setObjectName("Indexer");
     t->start();
     m_worker_thread.reset(t);
 }
