@@ -2,7 +2,9 @@
 # Copyright 2012-2013 by Alex Turbov <i.zaufi@gmail.com>
 #
 
-cmake_minimum_required(VERSION 2.6)
+# TODO I don't know a minimum required version...
+# Please provide some feedback, if lesser works for you.
+cmake_minimum_required(VERSION 2.8)
 
 #---------------------------------------------------------
 # Section: Init cmake
@@ -61,6 +63,8 @@ endforeach()
 
 find_library(KATE_INTERFACES_LIB NAMES libkateinterfaces.so libkateinterfaces.so.4)
 
+# TODO I don't know a minimum required version...
+# Please provide some feedback, if lesser works for you.
 find_package(LibClang 3.3 REQUIRED)
 
 # find boost
@@ -72,21 +76,26 @@ set(NEEDED_BOOST_COMPONENTS
 # NOTE I see no way to make unit tests optional for release mode
 # BUILD_TESTING will always turned ON... so caller have to disable
 # it explicitly if required.
-if (BUILD_TESTING)
+if(BUILD_TESTING)
     set(NEEDED_BOOST_COMPONENTS ${NEEDED_BOOST_COMPONENTS} unit_test_framework)
 else()
     message(STATUS "Unit tests disabled")
 endif()
 
-find_package(Boost 1.53 REQUIRED COMPONENTS ${NEEDED_BOOST_COMPONENTS})
+# TODO I don't know a minimum required version...
+# Please provide some feedback, if lesser works for you.
+# ATTENTION 1.49 should be quite enough
+find_package(Boost 1.49 REQUIRED COMPONENTS ${NEEDED_BOOST_COMPONENTS})
 
-if (NOT Boost_UNIT_TEST_FRAMEWORK_LIBRARY)
+if(NOT Boost_UNIT_TEST_FRAMEWORK_LIBRARY)
     message(STATUS "Unit tests disabled")
     set(BUILD_TESTING OFF)
 else()
     include(AddBoostTests)
 endif()
 
+# TODO I don't know a minimum required version...
+# Please provide some feedback, if lesser works for you.
 find_package(Xapian 1.2.12 REQUIRED)
 message(STATUS "Found Xapian library: ${XAPIAN_LIBRARIES}")
 
@@ -103,20 +112,32 @@ include_directories(
     ${LLVM_INCLUDEDIR}
     ${XAPIAN_INCLUDE_DIR}
   )
+
 if(_need_to_include_kate_interfaces)
-    if("${KDE_VERSION}" VERSION_LESS 4.10)
-        message(FATAL_ERROR "KDE >=4.10.x required to build this package")
+    if("${KDE_VERSION}" VERSION_LESS 4.8)
+        message(FATAL_ERROR "KDE >=4.8.x required to build this package")
+    elseif("${KDE_VERSION}" VERSION_LESS 4.10)
+        set(_use_kate_iface_ver "${KDE_VERSION_MAJOR}.${KDE_VERSION_MINOR}")
+    else()
+        set(_use_kate_iface_ver "latest")
     endif()
     include_directories(
-        ${PROJECT_SOURCE_DIR}/third_party/kde${KDE_VERSION_MAJOR}-kate-interfaces
+        ${PROJECT_SOURCE_DIR}/third_party/kde${KDE_VERSION_MAJOR}-kate-interfaces/${_use_kate_iface_ver}
       )
-    message(STATUS "Use internal kate developer interface files for KDE/kate ${KDE_VERSION}")
+    if(_use_kate_iface_ver STREQUAL "latest")
+        set(_use_kate_iface_ver ">=4.10")
+    else()
+        set(_use_kate_iface_ver "=${_use_kate_iface_ver}")
+    endif()
+    message(STATUS "Use bundled kate interface files for KDE/kate ${_use_kate_iface_ver}")
 endif()
 
 # Set generic compiler flags: turn ON C++11 (C++03 is suxx)...
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS "4.7.0")
-        set(CXX11_FLAG "-std=c++0x")
+    # TODO I don't know a minimum required version...
+    # Please provide some feedback, if lesser works for you.
+    if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS "4.8.0")
+        message(FATAL_ERROR "GNU gcc >=4.8.0 is required to build this package")
     else()
         set(CXX11_FLAG "-std=c++11")
     endif()

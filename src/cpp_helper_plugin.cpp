@@ -109,7 +109,7 @@ CppHelperPlugin::CppHelperPlugin(
     connect(
         &m_config
       , SIGNAL(clangOptionsChanged())
-      , &m_db_mgr
+      , this
       , SLOT(propagateCompilerOptionsToIndexer())
       );
 }
