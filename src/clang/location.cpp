@@ -30,6 +30,7 @@
 #include <src/clang/disposable.h>
 
 // Standard includes
+#include <cassert>
 
 namespace kate { namespace clang {
 
@@ -46,6 +47,8 @@ location::location(const CXIdxLoc loc)
         throw exception::invalid("No index file has attached to a source location");
     DCXString filename = {clang_getFileName(static_cast<CXFile>(file))};
     m_file = clang_getCString(filename);
+    assert("Sanity check" && m_file.isValid() && !m_file.isEmpty());
+    m_file.cleanPath();
     m_line = line;
     m_column = column;
     m_offset = offset;
@@ -62,6 +65,8 @@ location::location(const CXSourceLocation loc)
         throw exception::invalid("No file has attached to a source location");
     DCXString filename = {clang_getFileName(static_cast<CXFile>(file))};
     m_file = clang_getCString(filename);
+    assert("Sanity check" && m_file.isValid() && !m_file.isEmpty());
+    m_file.cleanPath();
     m_line = line;
     m_column = column;
     m_offset = offset;

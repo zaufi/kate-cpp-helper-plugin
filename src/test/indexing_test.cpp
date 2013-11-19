@@ -40,6 +40,7 @@
 #include <fstream>
 #include <memory>
 #include <string>
+#include <vector>
 
 using namespace kate;
 using namespace kate::clang;

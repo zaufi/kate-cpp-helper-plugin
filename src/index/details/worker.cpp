@@ -313,7 +313,7 @@ void worker::on_declaration(CXClientData client_data, const CXIdxDeclInfo* const
     clang::location loc;
     try
     {
-      loc = clang::location{info->loc};
+        loc = clang::location{info->loc};
     }
     catch (...)
     {
@@ -323,8 +323,8 @@ void worker::on_declaration(CXClientData client_data, const CXIdxDeclInfo* const
         unsigned column;
         unsigned offset;
         clang_indexLoc_getFileLocation(info->loc, &file, nullptr, &line, &column, &offset);
-
         kDebug() << "DECLARATION W/O LOCATION: name=" << name.c_str() << ", line=" << line << ", col=" << column;
+        return;
     }
     // Make sure we've not seen it yet
     auto* const wrk = static_cast<worker*>(client_data);
@@ -372,7 +372,11 @@ void worker::on_declaration(CXClientData client_data, const CXIdxDeclInfo* const
         }
         // NOTE Add terms w/ possible stripped name, but have a full name
         // at value slots
+#if 0
         doc.add_posting(name, make_term_position(loc));
+#else
+        doc.add_term(boost::to_lower_copy(name));
+#endif
         doc.add_boolean_term(term::XDECL + name);           // Mark the document w/ XDECL prefixed term
         // NOTE Add an original name to the value slot!
         doc.add_value(value_slot::NAME, info->entityInfo->name);
@@ -535,8 +539,8 @@ void worker::on_declaration_reference(CXClientData client_data, const CXIdxEntit
         unsigned column;
         unsigned offset;
         clang_indexLoc_getFileLocation(info->loc, &file, nullptr, &line, &column, &offset);
-
         kDebug() << "REFERENCE W/O LOCATION: name=" << name.c_str() << ", line=" << line << ", col=" << column;
+        return;
     }
     // Make sure we've not seen it yet
     auto* const wrk = static_cast<worker*>(client_data);
@@ -564,7 +568,11 @@ void worker::on_declaration_reference(CXClientData client_data, const CXIdxEntit
     auto doc = document{};
 
     // Add terms related to name
+#if 0
     doc.add_posting(name, make_term_position(loc));
+#else
+    doc.add_term(boost::to_lower_copy(name));
+#endif
     doc.add_boolean_term(term::XREF + name);                // Mark the document w/ XREF prefixed term
     doc.add_value(value_slot::NAME, name);
 

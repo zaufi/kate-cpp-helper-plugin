@@ -8,7 +8,7 @@ Version 1.0.0
   various queries to the indexed collection and do flexible search. For example, to find
   all non templated public members-functions of `some` class, one may type:  
 
-        base:some access:public kind:method NOT template:y
+        scope:some access:public kind:method NOT template:y
 * extract doxygen comments for completion items and show it as a tip, when `Alt` modifier pressed
 * use `KTextEditor::TemplateInterface2` when substitute completion item into a document
 * improve completion for unsaved files

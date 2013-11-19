@@ -20,7 +20,7 @@ in your sources. Here is also few little cute things:
 * highlight `#include` lines if header not found in configured locations or found in multiple times
 * monitor configured directories for header files
 
-Since version 0.6 I've added a code completion based on clang API and decide to rename _Kate Include Helper_
+Since version 0.6 I've added a code completion based on clang API and decided to rename _Kate Include Helper_
 into _Kate C++ Helper Plugin_.
 
 Version 1.0 has a source code indexer and powerful search facility.
@@ -136,9 +136,10 @@ TODO
 * Add terms for deprecated symbols (and platform availability)
 * <del>Find crash after some DB gets enabled after reindexing</del>
 * <del>Use actions w/ states (see KXMLGUIClient)</del>
-* Normalize file names when add to the cache on indexing
+* <del>Normalize file names when add to the cache on indexing</del>
 * Split `#include` completions into a __system__ and __session__? (controlled via config option)
 * Add search options
+* Add more indexing threads and control their count
 
 See Also
 ========

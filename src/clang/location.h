@@ -97,6 +97,7 @@ inline location::location(KUrl&& file, const int line, const int column)
   , m_offset(-1)
 {
     m_file.swap(file);
+    m_file.cleanPath();
 }
 
 /// \note Delegating constructors require gcc >= 4.7
@@ -112,6 +113,7 @@ inline location::location(location&& other) noexcept
   , m_offset(other.m_offset)
 {
     m_file.swap(other.m_file);
+    m_file.cleanPath();
 }
 
 inline location& location::operator=(location&& other) noexcept
@@ -119,6 +121,7 @@ inline location& location::operator=(location&& other) noexcept
     if (&other != this)
     {
         m_file.swap(other.m_file);
+        m_file.cleanPath();
         m_line = other.m_line;
         m_column = other.m_column;
         m_offset = other.m_offset;
@@ -171,4 +174,3 @@ inline std::ostream& operator<<(std::ostream& os, const location& l)
 }}                                                          // namespace clang, kate
 
 Q_DECLARE_METATYPE(kate::clang::location);
-

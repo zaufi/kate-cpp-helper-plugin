@@ -29,6 +29,8 @@
 
 // Project specific includes
 #include <src/clang/disposable.h>
+#include <src/clang/kind_of.h>
+#include <src/clang/location.h>
 
 // Standard includes
 #include <QtCore/QDebug>

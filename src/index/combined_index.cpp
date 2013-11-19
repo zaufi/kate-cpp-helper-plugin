@@ -67,6 +67,9 @@ combined_index::combined_index()
     m_qp.add_boolean_prefix("static", term::XSTATIC);
     m_qp.add_boolean_prefix("template", term::XTEMPLATE);
     m_qp.add_boolean_prefix("virtual", term::XVIRTUAL);
+
+    // Set some options
+    m_qp.set_stemming_strategy(Xapian::QueryParser::STEM_NONE);
 }
 
 std::vector<document> combined_index::search(
@@ -93,7 +96,7 @@ std::vector<document> combined_index::search(
         auto enquire = Xapian::Enquire{*m_compound_db};     // NOTE May throw only if DB instance is uninitialized
         enquire.set_query(query);
         enquire.set_sort_by_relevance();
-        matches = enquire.get_mset(start, maxitems);
+        matches = enquire.get_mset(start, maxitems, 100000);
     }
     catch (const Xapian::Error& e)
     {
@@ -154,8 +157,12 @@ Xapian::Query combined_index::parse_query(const std::string& query_str)
         query = m_qp.parse_query(
             query_str
           , Xapian::QueryParser::FLAG_BOOLEAN
-            | Xapian::QueryParser::FLAG_WILDCARD
-            | Xapian::QueryParser::FLAG_LOVEHATE
+          | Xapian::QueryParser::FLAG_LOVEHATE
+#if 0
+          | Xapian::QueryParser::FLAG_PHRASE
+#endif
+          | Xapian::QueryParser::FLAG_PURE_NOT
+          | Xapian::QueryParser::FLAG_WILDCARD
           );
     }
     catch (const Xapian::QueryParserError& e)

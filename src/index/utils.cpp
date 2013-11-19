@@ -35,7 +35,7 @@
 #include <cassert>
 
 namespace kate { namespace index { namespace {
-const boost::uuids::string_generator UUID_PARSER;
+const boost::uuids::string_generator UUID_PARSER = {};
 }                                                           // anonymous namespace
 
 dbid make_dbid(const boost::uuids::uuid& uuid)
