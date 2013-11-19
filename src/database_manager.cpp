@@ -52,7 +52,6 @@
 #include <QtCore/QDir>
 #include <QtCore/QFileInfo>
 #include <QtGui/QStringListModel>
-#include <xapian/queryparser.h>
 
 namespace kate { namespace {
 /// \attention Make sure this path replaced everywhre in case of changes

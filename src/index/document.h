@@ -31,7 +31,6 @@
 #include <src/index/document_extras.h>
 
 // Standard includes
-#include <xapian/document.h>
 
 namespace kate { namespace index {
 

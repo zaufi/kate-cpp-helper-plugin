@@ -31,8 +31,7 @@
 #include <src/index/details/database.h>
 
 // Standard includes
-#include <xapian/database.h>
-#include <xapian/error.h>
+#include <xapian.h>
 #include <stdexcept>
 #include <string>
 

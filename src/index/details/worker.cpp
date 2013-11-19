@@ -47,8 +47,7 @@
 #include <QtCore/QCoreApplication>
 #include <QtCore/QFileInfo>
 #include <QtCore/QDirIterator>
-#include <xapian/document.h>
-#include <xapian/queryparser.h>
+#include <xapian.h>
 #include <set>
 
 namespace kate { namespace index { namespace details { namespace {

@@ -31,7 +31,7 @@
 #include <src/index/serialize.h>
 
 // Standard includes
-#include <xapian/types.h>
+#include <xapian.h>
 #include <cstdint>
 #include <string>
 

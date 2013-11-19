@@ -32,10 +32,6 @@
 
 // Standard includes
 #include <KDE/KDebug>
-#include <xapian/database.h>
-#include <xapian/query.h>
-#include <xapian/queryparser.h>
-#include <xapian/enquire.h>
 
 namespace kate { namespace index {
 /**

@@ -32,7 +32,6 @@
 #include <src/index/types.h>
 
 // Standard includes
-#include <xapian/queryparser.h>
 
 namespace kate { namespace index {
 

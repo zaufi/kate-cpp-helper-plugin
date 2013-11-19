@@ -30,7 +30,7 @@
 // Project specific includes
 
 // Standard includes
-#include <xapian/types.h>
+#include <xapian.h>
 #include <string>
 
 namespace kate { namespace index { namespace term {
