@@ -13,13 +13,15 @@ Version 1.0.0
 * use `KTextEditor::TemplateInterface2` when substitute completion item into a document
 * improve completion for unsaved files
 * A LOT of refactorings to improve stability/maintainability
-* save/restore tool view layout
+* allow to move tabs in a tool view, save/restore tool view layout
+
 
 Version 0.9.6
 -------------
 
 * fix for typo in completion results layout introduced in 0.9.5
 * few internal refactorngs to simplify code (before next big feature ;-)
+
 
 Version 0.9.5
 -------------
@@ -30,10 +32,12 @@ Version 0.9.5
 * add target to produce a `.deb` package (make `make kate-cpp-helper-plugin-deb-package`)
 * close issue #10: no package w/ required headers in recent Debian/Ubuntu
 
+
 Version 0.9.4
 -------------
 
 * close issue #8
+
 
 Version 0.9.3
 -------------
@@ -47,6 +51,7 @@ Version 0.9.3
 * configuration pages refactored, the new one has been introduced: _Clang Completion Settings_.
 * a bunch of other internal refactorings.
 
+
 Version 0.9.2
 -------------
 
@@ -54,11 +59,13 @@ Version 0.9.2
   attempts to get a source code location for _Note_ diagnostic messages.
 * diagnostic messages tab in the tool view was transformed into a (clickable) list view
 
+
 Version 0.9.1
 -------------
 
 * add a quick search (filter) to the `#include` explorer
 * fixed build w/ gcc 4.6.x (patch from Alexander Mezin)
+
 
 Version 0.9
 -----------
@@ -66,12 +73,14 @@ Version 0.9
 * add a list of file extesnsions to be ignored by #include autocompleter (per session)
 * fix regression with header file presence checker
 
+
 Version 0.8.8
 -------------
 
 * copy `#include` to clipboard improved (and recent bug has fixed)
 * disable C++ specific actions for non C++ documents
 * tree builder refactored in `#include` explorer, now everything is Ok w/ tree structure
+
 
 Version 0.8.7
 -------------
@@ -84,11 +93,13 @@ Version 0.8.7
 * enable automatic completions popup when member accessed
 * `#include` explorer has been added. It can hihglight "redundand" headers included in a translation unit.
 
+
 Version 0.8.6
 -------------
 
 * insert kate templates when execute completion item, so user may see and edit parameters required
   for a function call.
+
 
 Version 0.8.5
 -------------
@@ -99,6 +110,7 @@ Version 0.8.5
   popup for STL types. Also some boost types (`boost::variant` and MPL sequences) are supported.
 * completers registration refactored and bug with absent completers for C++ code from file templates
   is gone finally
+
 
 Version 0.8
 -----------
@@ -111,12 +123,14 @@ Version 0.8
 * other UI cleaned up a little as well
 * display optional parameters in completions list
 
+
 Version 0.7.1
 -------------
 
 * added cmake script to detect clang C API
 * fix cmake configuration for unit tests building: check if `-DBUILD_TESTING` present
 * fix a bug when parse incorrect `#include` directive
+
 
 Version 0.6-0.7
 ---------------
@@ -125,11 +139,13 @@ Version 0.6-0.7
 * rename this plugin from _Kate Include Helper_ to _Kate C++ Helper_ (cuz it became smth bigger, than
   just `#include` helper :-)
 
+
 Version 0.5
 -----------
 
 * add an action to switch between header and implementation file, just like an official *Open Header*
   plugin but smarter ;-) See details above.
+
 
 Version 0.4.5
 -------------
@@ -142,16 +158,19 @@ Version 0.4.4
 * if file going to open is inaccessible for writing, open it in RO mode, so implicit modifications
   (like TAB to space conversions or trailing spaces removal) wouldn't annoy on close
 
+
 Version 0.4.3
 -------------
 
 * make directory monitoring optional and configured via plugin's *Other Settings* configuration page
+
 
 Version 0.4.2
 -------------
 
 * watch configured directories for changes and update `#include` files status
 * add support to create source tarball
+
 
 Version 0.4.1
 -------------
@@ -160,3 +179,34 @@ Version 0.4.1
   or cursor not on a word at all
 * remove duplicates from completion list: for out of source builds and if both, source
   and binary dirs are in the search list, it led to duplicates
+
+
+Version 0.4
+-----------
+
+* fixed a bug w/ reading a global config after the plugin gets enabled
+* a bunch of refactorings since 0.3
+
+
+Version 0.3
+-----------
+
+* check if #included files are really available in configured paths. If some doesn't, 
+  then mark such lines w/ an error background. In case of multiple matches, mark it w/ 
+  a warning backgorund color.
+* configuration dialog extended w/ new options
+
+
+Version 0.2
+-----------
+
+* push `#include` directive w/ current file name into the clipboard, so it would be easy 
+  to switch to another document and just paste the whole `#include` line...
+* finally it has auto-completer for path and file name for strings w/ `#include` on a line! 
+  Yeah, now it's really easy to type and find a required header...
+
+
+Version 0.1
+-----------
+
+* open header files using F10 key

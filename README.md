@@ -142,6 +142,7 @@ TODO
 * Add more indexing threads and control their count
 * Add _Go to declaration/definition_ to the context menu
 
+
 See Also
 ========
 

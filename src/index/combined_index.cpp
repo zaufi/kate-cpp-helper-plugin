@@ -72,7 +72,7 @@ combined_index::combined_index()
     m_qp.set_stemming_strategy(Xapian::QueryParser::STEM_NONE);
 }
 
-std::vector<document> combined_index::search(
+std::pair<std::vector<document>, doccount> combined_index::search(
     const QString& q
   , const doccount start
   , const doccount maxitems
@@ -106,9 +106,10 @@ std::vector<document> combined_index::search(
     kDebug(DEBUG_AREA) << "Documents estimated:" << matches.get_matches_estimated();
     //
     auto result = std::vector<document>{};
+    result.reserve(matches.size());
     for (auto it = std::begin(matches), last = std::end(matches); it != last; ++it)
         result.emplace_back(it.get_document());
-    return result;
+    return std::make_pair(std::move(result), matches.get_matches_estimated());
 }
 
 void combined_index::add_index(ro::database* ptr)

@@ -33,6 +33,7 @@
 
 // Standard includes
 #include <memory>
+#include <utility>
 #include <vector>
 
 class QString;
@@ -61,7 +62,7 @@ public:
     /// Iniialize query parser w/ range processors and prefixes
     combined_index();
     /// Search over all connected indices
-    std::vector<document> search(const QString&, doccount = 0, doccount = 2000);
+    std::pair<std::vector<document>, doccount> search(const QString&, doccount = 0, doccount = 2000);
 
     void add_index(ro::database*);                          ///< Add index to a list of used
     void remove_index(ro::database*);                       ///< Remove index from search

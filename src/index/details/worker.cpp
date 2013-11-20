@@ -434,9 +434,8 @@ void worker::on_declaration(CXClientData client_data, const CXIdxDeclInfo* const
     // Attach symbol type. Get aliased type for typedefs, get underlaid type for enums.
     {
         const auto kind = clang::kind_of(*info->entityInfo);
-        const auto is_typedef = kind == CXIdxEntity_CXXTypeAlias || kind == CXIdxEntity_Typedef;
         CXType ct;
-        if (is_typedef)
+        if (kind == CXIdxEntity_CXXTypeAlias || kind == CXIdxEntity_Typedef)
             ct = clang_getTypedefDeclUnderlyingType(info->cursor);
         else if (kind == CXIdxEntity_Enum)
             ct = clang_getEnumDeclIntegerType(info->cursor);
@@ -952,7 +951,7 @@ void worker::update_document_with_type_size(
     auto ck = clang::kind_of(info->cursor);
     auto ct = clang_getCursorType(info->cursor);
     const auto k = clang::kind_of(ct);
-    if (k != CXType_Invalid && k != CXType_Unexposed && !clang_isReference(ck))
+    if (k != CXType_Invalid && k != CXType_Unexposed/* && !clang_isReference(ck)*/)
     {
         // Get sizeof
         const auto size = clang_Type_getSizeOf(ct);

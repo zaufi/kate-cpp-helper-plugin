@@ -60,6 +60,9 @@ const QString DATABASES_DIR = "plugins/katecpphelperplugin/indexed-collections/"
 const char* const DB_MANIFEST_FILE = "manifest";
 boost::uuids::random_generator UUID_GEN;
 const QString ANONYMOUS = "<anonymous>";
+/// \todo Make it configurable?
+constexpr std::size_t VISUAL_NOTIFICATION_THRESHOLD = 100;
+
 namespace meta {
 const QString GROUP_NAME = "options";
 namespace key {
@@ -773,8 +776,25 @@ void DatabaseManager::startSearch(QString query)
     }
     try
     {
-        auto documents = m_search_db.search(query);
-        kDebug(DEBUG_AREA) << "Found" << documents.size() << "results for query" << query;
+        auto search_results = m_search_db.search(query);
+        auto& documents = search_results.first;
+        // Make some SPAM: give user a hint about found/estimated results
+        // if "too much" results found...
+        if (VISUAL_NOTIFICATION_THRESHOLD < search_results.second)
+        {
+            KPassivePopup::message(
+                i18nc("@title:window", "Search results")
+              , i18nc(
+                    "@info:tooltip"
+                  , "%1 results displayed of %2 estimated"
+                  , documents.size()
+                  , search_results.second
+                  )
+                /// \todo WTF?! \c nullptr can't be used here!?
+              , reinterpret_cast<QWidget*>(0)
+              );
+        }
+        //
         auto model_data = SearchResultsTableModel::search_results_list_type{};
         model_data.reserve(documents.size());
         // Transform Xapian::Documents into a model
