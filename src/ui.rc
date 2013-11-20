@@ -1,21 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE kpartgui>
-<gui name="katecpphelper" library="katecpphelperplugin" version="5"
+<gui name="katecpphelper" library="katecpphelperplugin" version="8"
      xmlns="http://www.kde.org/standards/kxmlgui/1.0"
      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
      xsi:schemaLocation="http://www.kde.org/standards/kxmlgui/1.0
                          http://www.kde.org/standards/kxmlgui/1.0/kxmlgui.xsd" >
     <MenuBar>
         <Menu name="file"><text>&amp;File</text>
-            <Action name="file_open_included_header" group="open_merge"/>
-            <Action name="file_open_switch_iface_impl" group="open_merge"/>
+            <Action name="file_open_included_header" group="open_merge" />
+            <Action name="file_open_switch_iface_impl" group="open_merge" />
         </Menu>
         <Menu name="edit" noMerge="1"><text>&amp;Edit</text>
-            <Action name="edit_copy_include" group="edit_paste_merge"/>
+            <Action name="edit_copy_include" group="edit_paste_merge" />
         </Menu>
     </MenuBar>
     <Menu name="ktexteditor_popup" noMerge="1">
-        <Action name="popup_cpphelper"/>
+        <Menu name="cpphelper_popup"><text>&amp;C++ Helper</text>
+            <Action name="cpphelper_popup_search_text" />
+        </Menu>
     </Menu>
     <State name="cpp_actions_enabled">
         <enable>

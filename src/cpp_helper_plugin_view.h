@@ -29,8 +29,6 @@
 
 // Standard includes
 #include <kate/plugin.h>
-#include <KDE/KAction>
-#include <KDE/KActionMenu>
 #include <KDE/KTextEditor/View>
 #include <clang-c/Index.h>
 #include <map>
@@ -38,6 +36,7 @@
 
 class QSortFilterProxyModel;
 class QStandardItemModel;
+class KAction;
 
 namespace kate { namespace details {
 struct InclusionVisitorData;
@@ -93,9 +92,7 @@ private Q_SLOTS:
     void modeChanged(KTextEditor::Document*);
     void urlChanged(KTextEditor::Document*);
     void textInserted(KTextEditor::Document*, const KTextEditor::Range&);
-#if 0
-    void whatIsThis();
-#endif
+    void searchSymbolUnderCursor();
     void needTextHint(const KTextEditor::Cursor&, QString&);
     void updateInclusionExplorer();
     void includeFileActivatedFromTree(QTreeWidgetItem*, int);
@@ -110,10 +107,7 @@ private Q_SLOTS:
     void searchResultsUpdated();
     void searchResultActivated(const QModelIndex&);
     void locationLinkActivated(const QString&);
-
-#if 0
     void aboutToShow();
-#endif
 
 private:
     /// Type to hold a completers associated with a view
@@ -140,19 +134,19 @@ private:
     void appendSearchDetailsRow(const QString&, bool);
     void clearSearchDetails();
     void applyToolViewInteriorWidths();
+    QString symbolUnderCursor();
 
-    CppHelperPlugin* m_plugin;                              ///< Parent plugin
-    KAction* m_copy_include;                                ///< <em>Copy #include to clipboard</em> action
-    DiagnosticMessagesModel m_diagnostic_data;              ///< Storage (model) for diagnostic messages
+    CppHelperPlugin* const m_plugin;                        ///< Parent plugin
+    KAction* const m_copy_include;                          ///< <em>Copy #include to clipboard</em> action
+    /// Action to search definition of the symbol under cursor
+    KAction* const m_search_definition;
     std::unique_ptr<QWidget> m_tool_view;                   ///< A tool-view widget of this plugin
     Ui_PluginToolViewWidget* const m_tool_view_interior;    ///< Interior widget of a tool-view
-    QStandardItemModel* m_includes_list_model;
-    QSortFilterProxyModel* m_search_results_model;
+    QStandardItemModel* const m_includes_list_model;
+    QSortFilterProxyModel* const m_search_results_model;
     KTextEditor::Document* m_last_explored_document;        ///< Document explored in the \c #includes view
-#if 0
-    std::unique_ptr<KActionMenu> m_menu;                    ///< Context menu
-    QAction* m_what_is_this;                                ///< Get info about symbol under cursor
-#endif
+
+    DiagnosticMessagesModel m_diagnostic_data;              ///< Storage (model) for diagnostic messages
     completions_models_map_type m_completers;               ///< Registered completers by view
 
     QList<int> m_explorer_widths;

@@ -27,9 +27,13 @@
 
 namespace kate {
 
+/// \todo Unit tests
 KTextEditor::Range DocumentProxy::getIdentifierUnderCursor(const KTextEditor::Cursor& pos)
 {
-    auto is_space = [](const QChar c) { return !c.isLetterOrNumber(); };
+    auto is_not_part_of_identifier = [](const QChar c)
+    {
+        return !(c.isLetterOrNumber() || c == '~' || c == '_');
+    };
 
     // Get range of alphanumeric characters starting from current cursor position
     auto line = pos.line();
@@ -42,14 +46,14 @@ KTextEditor::Range DocumentProxy::getIdentifierUnderCursor(const KTextEditor::Cu
 #if 0
     kDebug(DEBUG_AREA) << "range_after_cursor =" << range_after_cursor;
 #endif
-    KTextEditor::Cursor after = scanChars(range_after_cursor, is_space);
+    KTextEditor::Cursor after = scanChars(range_after_cursor, is_not_part_of_identifier);
 
     // Get range of nonspace characters before cursor position
     KTextEditor::Range range_before_cursor = {line, 0, line, pos.column()};
 #if 0
     kDebug(DEBUG_AREA) << "range_before_cursor =" << range_before_cursor;
 #endif
-    KTextEditor::Cursor before = scanCharsReverse(range_before_cursor, is_space);
+    KTextEditor::Cursor before = scanCharsReverse(range_before_cursor, is_not_part_of_identifier);
 
     // Merge both result ranges
     if (before.isValid() && after.isValid())

@@ -11,7 +11,10 @@
      <property name="currentIndex">
       <number>0</number>
      </property>
-     <widget class="QWidget" name="completionDisgnostic">
+     <property name="movable">
+      <bool>true</bool>
+     </property>
+     <widget class="QWidget" name="diagnosticTab">
       <attribute name="title">
        <string>Diagnostic Messages</string>
       </attribute>
@@ -37,7 +40,7 @@
        </item>
       </layout>
      </widget>
-     <widget class="QWidget" name="includes">
+     <widget class="QWidget" name="includesTab">
       <attribute name="title">
        <string>#include Explorer</string>
       </attribute>
@@ -144,7 +147,17 @@
          <widget class="QWidget" name="lw_2_1">
           <layout class="QVBoxLayout" name="vl_2_1">
            <item>
-            <widget class="KLineEdit" name="searchQuery"/>
+            <widget class="KLineEdit" name="searchQuery">
+             <property name="text">
+              <string/>
+             </property>
+             <property name="placeholderText">
+              <string>Enter search query</string>
+             </property>
+             <property name="showClearButton" stdset="0">
+              <bool>true</bool>
+             </property>
+            </widget>
            </item>
            <item>
             <widget class="QTreeView" name="searchResults">
@@ -208,7 +221,7 @@
        </item>
       </layout>
      </widget>
-     <widget class="QWidget" name="indexerSettings">
+     <widget class="QWidget" name="indexerSettingsTab">
       <attribute name="title">
        <string>Indexer Settings</string>
       </attribute>

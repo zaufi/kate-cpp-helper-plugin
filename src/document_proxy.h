@@ -48,6 +48,9 @@ namespace kate {
  * documents by raw pointers, so there is no need to dereference it in user (plugin) code.
  *
  * \todo Add a function to get highligting mode at specified location
+ * \todo Reduce scan functions into a single one w/ \c direction parameter
+ * \todo Probably \c boost::string_algo may helps
+ * \todo Make this class iterable w/ range based \c for
  */
 class DocumentProxy
 {

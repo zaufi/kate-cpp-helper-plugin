@@ -23,6 +23,7 @@
 // Project specific includes
 #include <src/cpp_helper_plugin_view.h>
 #include <src/clang/location.h>
+#include <src/clang/kind_of.h>
 #include <src/clang/to_string.h>
 #include <src/cpp_helper_plugin.h>
 #include <src/choose_from_list_dialog.h>
@@ -37,6 +38,7 @@
 #include <kate/documentmanager.h>
 #include <kate/mainwindow.h>
 #include <KDE/KActionCollection>
+#include <KDE/KActionMenu>
 #include <KDE/KLocalizedString>
 #include <KDE/KMenu>
 #include <KDE/KPassivePopup>
@@ -63,6 +65,7 @@ const QStringList SRC_EXTENSIONS = QStringList() << "c" << "cc" << "cpp" << "cxx
 const QString EXPLORER_TREE_WIDTH_KEY = "ExplorerTreeWidth";
 const QString SEARCH_PANE_WIDTH_KEY = "SearchDetailsPaneWidth";
 const QString INDICES_LIST_WIDTH_KEY = "IndicesListWidth";
+const QString TOOL_VIEW_TABS_ORDER_KEY = "ToolViewTabsOrder";
 const auto CHECK_MARK = QChar{0x14, 0x27};
 const auto BALOUT_X = QChar{0x17, 0x27};
 }                                                           // anonymous namespace
@@ -76,11 +79,16 @@ CppHelperPluginView::CppHelperPluginView(
   , const KComponentData& data
   , CppHelperPlugin* plugin
   )
-  : Kate::PluginView(mw)
-  , Kate::XMLGUIClient(data)
-  , m_plugin(plugin)
-  , m_copy_include(actionCollection()->addAction("edit_copy_include"))
-  , m_tool_view(
+  : Kate::PluginView{mw}
+  , Kate::XMLGUIClient{data}
+  , m_plugin{plugin}
+  , m_copy_include{
+        actionCollection()->addAction("edit_copy_include", this, SLOT(copyInclude()))
+      }
+  , m_search_definition{
+        actionCollection()->addAction("cpphelper_popup_search_text", this, SLOT(searchSymbolUnderCursor()))
+      }
+  , m_tool_view{
         mw->createToolView(
             plugin
           , "kate_private_plugin_katecppplugin"
@@ -88,44 +96,44 @@ CppHelperPluginView::CppHelperPluginView(
           , SmallIcon("source-cpp11")
           , i18n("C++ Helper")
           )
-      )
-  , m_tool_view_interior(new Ui_PluginToolViewWidget())
-  , m_includes_list_model(new QStandardItemModel())
-  , m_search_results_model(new QSortFilterProxyModel(this))
-  , m_last_explored_document(nullptr)
-#if 0
-  , m_menu(new KActionMenu(i18n("C++ Helper: Playground"), this))
-#endif
+      }
+  , m_tool_view_interior{new Ui_PluginToolViewWidget()}
+  , m_includes_list_model{new QStandardItemModel()}
+  , m_search_results_model{new QSortFilterProxyModel(this)}
+  , m_last_explored_document{nullptr}
 {
     assert("Sanity check" && m_tool_view);
 
     //BEGIN Setup plugin actions
     {
         auto* const open_header = actionCollection()->addAction("file_open_included_header");
-        open_header->setText(i18n("Open Header Under Cursor"));
+        open_header->setText(i18nc("@action:inmenu", "Open Header Under Cursor"));
         open_header->setShortcut(QKeySequence(Qt::Key_F10));
         connect(open_header, SIGNAL(triggered(bool)), this, SLOT(openHeader()));
     }
     {
         auto* const switch_impl = actionCollection()->addAction("file_open_switch_iface_impl");
-        switch_impl->setText(i18n("Open Header/Implementation"));
+        switch_impl->setText(i18nc("@action:inmenu", "Open Header/Implementation"));
         switch_impl->setShortcut(QKeySequence(Qt::Key_F12));
         connect(switch_impl, SIGNAL(triggered(bool)), this, SLOT(switchIfaceImpl()));
     }
 
-    m_copy_include->setText(i18n("Copy #include to Clipboard"));
+    m_copy_include->setText(i18nc("@action:inmenu", "Copy #include to Clipboard"));
     m_copy_include->setShortcut(QKeySequence(Qt::SHIFT + Qt::Key_F10));
-    connect(m_copy_include, SIGNAL(triggered(bool)), this, SLOT(copyInclude()));
+    m_search_definition->setText(i18nc("@action:inmenu", "Search for %1", "..."));
 
-#if 0
-    actionCollection()->addAction("popup_cpphelper", m_menu.get());
-    m_what_is_this = m_menu->menu()->addAction(
-        i18n("What is it at cursor?", QString())
-      , this
-      , SLOT(whatIsThis())
-      );
-    connect(m_menu->menu(), SIGNAL(aboutToShow()), this, SLOT(aboutToShow()));
-#endif
+    // ATTENTION Add self as KXMLGUIClient after all actions has
+    // been added...
+    mainWindow()->guiFactory()->addClient(this);
+    // ATTENTION ... so at this point searching for particular
+    // submenu using factory will be successed!
+
+    auto* my_pop = qobject_cast<QMenu*>(mainWindow()->guiFactory()->container("cpphelper_popup", this));
+    auto* kate_pop = qobject_cast<QMenu*>(mainWindow()->guiFactory()->container("ktexteditor_popup", this));
+    kDebug(DEBUG_AREA) << "my_pop=" << my_pop;
+    kDebug(DEBUG_AREA) << "kate_pop=" << kate_pop;
+
+    connect(my_pop, SIGNAL(aboutToShow()), this, SLOT(aboutToShow()));
     //END Setup plugin actions
 
     // On viewCreated we have to subscribe self to monitor 
@@ -324,8 +332,6 @@ CppHelperPluginView::CppHelperPluginView(
       , this
       , SLOT(openFile(const KUrl&, KTextEditor::Cursor))
       );
-
-    mainWindow()->guiFactory()->addClient(this);
 }
 
 CppHelperPluginView::~CppHelperPluginView()
@@ -340,6 +346,10 @@ void CppHelperPluginView::readSessionConfig(KConfigBase* config, const QString& 
     m_explorer_widths = scg.readEntry(EXPLORER_TREE_WIDTH_KEY, QList<int>{});
     m_search_widths = scg.readEntry(SEARCH_PANE_WIDTH_KEY,  QList<int>{});
     m_indices_width = scg.readEntry(INDICES_LIST_WIDTH_KEY, QList<int>{});
+    auto order = scg.readEntry(TOOL_VIEW_TABS_ORDER_KEY, QList<int>{});
+    for (auto i = 0; i < order.size(); ++i)
+        m_tool_view_interior->tabs->moveTab(order[i], i);
+    m_tool_view_interior->tabs->setCurrentIndex(0);
 }
 
 void CppHelperPluginView::writeSessionConfig(KConfigBase* config, const QString& groupPrefix)
@@ -349,6 +359,12 @@ void CppHelperPluginView::writeSessionConfig(KConfigBase* config, const QString&
     scg.writeEntry(SEARCH_PANE_WIDTH_KEY, m_tool_view_interior->searchSplitter->sizes());
     scg.writeEntry(EXPLORER_TREE_WIDTH_KEY, m_tool_view_interior->includesSplitter->sizes());
     scg.writeEntry(INDICES_LIST_WIDTH_KEY, m_tool_view_interior->indicesSplitter->sizes());
+    QList<int> order;
+    auto& tw = *m_tool_view_interior;
+    for (auto* tab : {tw.diagnosticTab, tw.includesTab, tw.searchTab, tw.indexerSettingsTab})
+        order << m_tool_view_interior->tabs->indexOf(tab);
+    kDebug(DEBUG_AREA) << "tabs order:" << order;
+    scg.writeEntry(TOOL_VIEW_TABS_ORDER_KEY, order);
     scg.sync();
 }
 
@@ -1123,7 +1139,6 @@ KTextEditor::Range CppHelperPluginView::findIncludeFilenameNearCursor() const
     return KTextEditor::Range(line, start, line, end);
 }
 
-#if 0
 void CppHelperPluginView::aboutToShow()
 {
     assert(
@@ -1131,6 +1146,19 @@ void CppHelperPluginView::aboutToShow()
       && mainWindow()->activeView()
       );
 
+    auto symbol = symbolUnderCursor();
+    m_search_definition->setEnabled(!symbol.isEmpty());
+    if (!symbol.isEmpty())
+    {
+        kDebug(DEBUG_AREA) << "current word text: " << symbol;
+        symbol = KStringHandler::csqueeze(symbol, 30);
+    }
+    else symbol = "...";
+    m_search_definition->setText(i18nc("@action:inmenu", "Search for %1", symbol));
+}
+
+QString CppHelperPluginView::symbolUnderCursor()
+{
     KTextEditor::View* view = mainWindow()->activeView();
     if (view && view->cursorPosition().isValid())
     {
@@ -1139,18 +1167,13 @@ void CppHelperPluginView::aboutToShow()
         kDebug(DEBUG_AREA) << "current word range: " << range;
         if (range.isValid() && !range.isEmpty())
         {
-            m_what_is_this->setEnabled(true);
-            kDebug(DEBUG_AREA) << "current word text: " << doc->text(range);
-            const QString squeezed = KStringHandler::csqueeze(doc->text(range), 30);
-            m_what_is_this->setText(i18n("What is '%1'", squeezed));
-            return;
+            return doc->text(range);
         }
     }
-    m_what_is_this->setEnabled(false);
-    m_what_is_this->setText(i18n("What is ..."));
+    return QString{};
 }
 
-void CppHelperPluginView::whatIsThis()
+void CppHelperPluginView::searchSymbolUnderCursor()
 {
     assert(
         "Active view suppose to be valid at this point! Am I wrong?"
@@ -1161,6 +1184,13 @@ void CppHelperPluginView::whatIsThis()
     if (!view || !view->cursorPosition().isValid())
         return;                                             // do nothing if no view or valid cursor
 
+
+    m_tool_view_interior->searchQuery->setText(symbolUnderCursor());
+    const auto search_tab_idx = m_tool_view_interior->tabs->indexOf(m_tool_view_interior->searchTab);
+    m_tool_view_interior->tabs->setCurrentIndex(search_tab_idx);
+    mainWindow()->showToolView(m_tool_view.get());
+    m_tool_view_interior->searchQuery->setFocus(Qt::ActiveWindowFocusReason);
+    startSearch();
 #if 0
     // view is of type KTextEditor::View*
     auto* iface = qobject_cast<KTextEditor::AnnotationViewInterface*>(view);
@@ -1168,9 +1198,7 @@ void CppHelperPluginView::whatIsThis()
     {
         iface->setAnnotationBorderVisible(!iface->isAnnotationBorderVisible());
     }
-#endif
 
-#if 0
     QByteArray filename = view->document()->url().toLocalFile().toAscii();
     auto& unit = m_plugin->getTranslationUnitByDocument(view->document());
     CXFile file = clang_getFile(unit, filename.constData());
@@ -1181,20 +1209,16 @@ void CppHelperPluginView::whatIsThis()
       , view->cursorPosition().column() + 1
       );
     CXCursor ctx = clang_getCursor(unit, loc);
-    kDebug(DEBUG_AREA) << "Cursor: " << ctx;
+    kDebug(DEBUG_AREA) << "Cursor: " << clang::toString(clang::kind_of(ctx));
     CXCursor spctx = clang_getCursorSemanticParent(ctx);
-    kDebug(DEBUG_AREA) << "Cursor of semantic parent: " << spctx;
+    kDebug(DEBUG_AREA) << "Cursor of semantic parent: " << clang::toString(clang::kind_of(spctx));
     CXCursor lpctx = clang_getCursorLexicalParent(ctx);
-    kDebug(DEBUG_AREA) << "Cursor of lexical parent: " << lpctx;
+    kDebug(DEBUG_AREA) << "Cursor of lexical parent: " << clang::toString(clang::kind_of(lpctx));
 
-    clang::DCXString comment = clang_Cursor_getRawCommentText(ctx);
-    kDebug(DEBUG_AREA) << "Associated comment:" << clang_getCString(comment);
-
-    clang::DCXString usr = clang_getCursorUSR(ctx);
-    kDebug(DEBUG_AREA) << "USR:" << clang_getCString(usr);
+    auto comment = clang::toString(clang::DCXString{clang_Cursor_getRawCommentText(ctx)});
+    kDebug(DEBUG_AREA) << "Associated comment:" << comment;
 #endif
 }
-#endif                                                      // 0
 
 namespace details {
 struct InclusionVisitorData

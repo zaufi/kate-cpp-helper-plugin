@@ -140,6 +140,7 @@ TODO
 * Split `#include` completions into a __system__ and __session__? (controlled via config option)
 * Add search options
 * Add more indexing threads and control their count
+* Add _Go to declaration/definition_ to the context menu
 
 See Also
 ========
