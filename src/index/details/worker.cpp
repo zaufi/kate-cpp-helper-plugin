@@ -948,10 +948,9 @@ void worker::update_document_with_type_size(
   , document& doc
   )
 {
-    auto ck = clang::kind_of(info->cursor);
     auto ct = clang_getCursorType(info->cursor);
     const auto k = clang::kind_of(ct);
-    if (k != CXType_Invalid && k != CXType_Unexposed/* && !clang_isReference(ck)*/)
+    if (k != CXType_Invalid && k != CXType_Unexposed)
     {
         // Get sizeof
         const auto size = clang_Type_getSizeOf(ct);
