@@ -135,11 +135,6 @@ configure_file(data/qt4.incset.in data/qt4.incset)
 # Install targets
 #
 install(
-    FILES katecpphelperplugin_database_options.kcfg
-    DESTINATION ${KCFG_INSTALL_DIR}
-  )
-
-install(
     TARGETS katecpphelperplugin
     DESTINATION ${PLUGIN_INSTALL_DIR}
     COMPONENT ${KATE_CPP_HELPER_PLUGIN_PACKAGE}
