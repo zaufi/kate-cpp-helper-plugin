@@ -148,6 +148,11 @@
           <layout class="QVBoxLayout" name="vl_2_1">
            <item>
             <widget class="KLineEdit" name="searchQuery">
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Search query may contain names and/or special terms:&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Courier New,courier';&quot;&gt;access:public|protected|private, anon:y&lt;/span&gt; or &lt;span style=&quot; font-family:'Courier New,courier';&quot;&gt;anonymous:y, base:&amp;lt;class-name&amp;gt;, inheritance:public|protected|private, decl:&amp;lt;name&amp;gt;, ref:&amp;lt;name&amp;gt;, kind:&amp;lt;value&amp;gt;, pod:y, scope:&amp;lt;name&amp;gt;, static:y, virtual:y, arity:M..N, align:M..N, size:M..N.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;Valid values for &lt;span style=&quot; font-family:'Courier New,courier';&quot;&gt;kind:&lt;/span&gt;&lt;span style=&quot; font-family:'Courier New,courier';&quot;&gt;ns&lt;/span&gt;, &lt;span style=&quot; font-family:'Courier New,courier';&quot;&gt;ns-alias&lt;/span&gt;, &lt;span style=&quot; font-family:'Courier New,courier';&quot;&gt;typedef&lt;/span&gt;, &lt;span style=&quot; font-family:'Courier New,
+courier';&quot;&gt;type-alias&lt;/span&gt;, &lt;span style=&quot; font-family:'Courier New,courier';&quot;&gt;struct&lt;/span&gt;, &lt;span style=&quot; font-family:'Courier New,courier';&quot;&gt;class&lt;/span&gt;, &lt;span style=&quot; font-family:'Courier New,courier';&quot;&gt;union&lt;/span&gt;, &lt;span style=&quot; font-family:'Courier New,courier';&quot;&gt;enum&lt;/span&gt;, &lt;span style=&quot; font-family:'Courier New,courier';&quot;&gt;enum-const&lt;/span&gt;, &lt;span style=&quot; font-family:'Courier New,courier';&quot;&gt;fn&lt;/span&gt;, &lt;span style=&quot; font-family:'Courier New,courier';&quot;&gt;method&lt;/span&gt;, &lt;span style=&quot; font-family:'Courier New,courier';&quot;&gt;ctor&lt;/span&gt;, &lt;span style=&quot; font-family:'Courier New,courier';&quot;&gt;dtor&lt;/span&gt;, &lt;span style=&quot; font-family:'Courier New,courier';&quot;&gt;conversion&lt;/span&gt;, &lt;span style=&quot; font-family:'Courier New,courier';&quot;&gt;param&lt;/span&gt;, &lt;span style=&quot; font-
+family:'Courier New,courier';&quot;&gt;var&lt;/span&gt;, &lt;span style=&quot; font-family:'Courier New,courier';&quot;&gt;field&lt;/span&gt;, &lt;span style=&quot; font-family:'Courier New,courier';&quot;&gt;bitfield.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;Search terms can be combined into a logical expressions with the following keywords: &lt;span style=&quot; font-family:'Courier New,courier';&quot;&gt;AND&lt;/span&gt;, &lt;span style=&quot; font-family:'Courier New,courier';&quot;&gt;OR&lt;/span&gt;, &lt;span style=&quot; font-family:'Courier New,courier';&quot;&gt;NOT&lt;/span&gt;, &lt;span style=&quot; font-family:'Courier New,courier';&quot;&gt;XOR&lt;/span&gt; and/or parentheses.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
              <property name="text">
               <string/>
              </property>
@@ -166,6 +171,12 @@
                <horstretch>0</horstretch>
                <verstretch>0</verstretch>
               </sizepolicy>
+             </property>
+             <property name="minimumSize">
+              <size>
+               <width>250</width>
+               <height>0</height>
+              </size>
              </property>
              <property name="showDropIndicator" stdset="0">
               <bool>false</bool>
