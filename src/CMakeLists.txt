@@ -60,6 +60,9 @@ set(KATE_CPP_HELPER_PLUGIN_SOURCES
     choose_from_list_dialog.cpp
     cpp_helper_plugin_config_page.cpp
     cpp_helper_plugin_view.cpp
+    cpp_helper_plugin_view_document_services.cpp
+    cpp_helper_plugin_view_explorer.cpp
+    cpp_helper_plugin_view_search_services.cpp
     cpp_helper_plugin.cpp
   )
 

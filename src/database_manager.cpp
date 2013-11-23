@@ -782,17 +782,33 @@ void DatabaseManager::startSearch(QString query)
         // if "too much" results found...
         if (VISUAL_NOTIFICATION_THRESHOLD < search_results.second)
         {
-            KPassivePopup::message(
-                i18nc("@title:window", "Search results")
-              , i18nc(
-                    "@info:tooltip"
-                  , "%1 results displayed of %2 estimated"
-                  , documents.size()
-                  , search_results.second
-                  )
-                /// \todo WTF?! \c nullptr can't be used here!?
-              , reinterpret_cast<QWidget*>(0)
-              );
+            if (documents.size() < search_results.second)
+            {
+                KPassivePopup::message(
+                    i18nc("@title:window", "Search results")
+                  , i18nc(
+                        "@info:tooltip"
+                      , "%1 results displayed of %2 estimated"
+                      , documents.size()
+                      , search_results.second
+                      )
+                    /// \todo WTF?! \c nullptr can't be used here!?
+                  , reinterpret_cast<QWidget*>(0)
+                  );
+            }
+            else
+            {
+                KPassivePopup::message(
+                    i18nc("@title:window", "Search results")
+                  , i18nc(
+                        "@info:tooltip"
+                      , "%1 results found"
+                      , documents.size()
+                      )
+                    /// \todo WTF?! \c nullptr can't be used here!?
+                  , reinterpret_cast<QWidget*>(0)
+                  );
+            }
         }
         //
         auto model_data = SearchResultsTableModel::search_results_list_type{};

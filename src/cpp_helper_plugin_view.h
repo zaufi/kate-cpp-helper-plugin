@@ -83,31 +83,47 @@ public Q_SLOTS:
     void addDiagnosticMessage(clang::diagnostic_message);
 
 private Q_SLOTS:
+    /// \name Document services
+    //@{
     /// Open a single document
     void openFile(const KUrl&, KTextEditor::Cursor = KTextEditor::Cursor::invalid());
     void openHeader();                                      ///< Open header file under cursor
     void switchIfaceImpl();                                 ///< Open corresponding header/implementation file
-    void copyInclude();                                     ///< From \c #include directive w/ current file in the clipboard
-    void viewCreated(KTextEditor::View*);
-    void modeChanged(KTextEditor::Document*);
-    void urlChanged(KTextEditor::Document*);
-    void textInserted(KTextEditor::Document*, const KTextEditor::Range&);
-    void searchSymbolUnderCursor();
+    /// From \c #include directive w/ current file in the clipboard
+    void copyInclude();
     void needTextHint(const KTextEditor::Cursor&, QString&);
+    //@}
+
+    /// \name #include Explorer related slots
+    //@{
     void updateInclusionExplorer();
     void includeFileActivatedFromTree(QTreeWidgetItem*, int);
     void includeFileDblClickedFromTree(QTreeWidgetItem*, int);
     void includeFileDblClickedFromList(const QModelIndex&);
-    void diagnosticMessageActivated(const QModelIndex&);
+    //@}
+
+    /// \name Kate event handlers
+    //@{
+    void viewCreated(KTextEditor::View*);
+    void modeChanged(KTextEditor::Document*);
+    void urlChanged(KTextEditor::Document*);
+    void textInserted(KTextEditor::Document*, const KTextEditor::Range&);
     void onDocumentClose(KTextEditor::Document*);
+    void aboutToShow();
     void updateCppActionsAvailability();                    ///< Enable/disable C++ specific actions in UI
+    void diagnosticMessageActivated(const QModelIndex&);
+    //@}
+
+    /// \name Search services
+    //@{
+    void searchSymbolUnderCursor();
     void reindexingStarted(const QString&);
     void reindexingFinished(const QString&);
     void startSearch();
     void searchResultsUpdated();
     void searchResultActivated(const QModelIndex&);
     void locationLinkActivated(const QString&);
-    void aboutToShow();
+    //@}
 
 private:
     /// Type to hold a completers associated with a view
@@ -118,23 +134,24 @@ private:
 
     /// Register or deregister completion models for a given view
     bool handleView(KTextEditor::View*);
+    bool eventFilter(QObject*, QEvent*);
+    void updateCppActionsAvailability(const bool);          ///< Enable/disable C++ specific actions in UI
 
     /// Try to find file(s) w/ a given name+path and a list of possible extensions
     QStringList findCandidatesAt(const QString&, const QString&, const QStringList&);
-    bool eventFilter(QObject*, QEvent*);
-
     /// Try to get an \c #include filename under cursor as range
     KTextEditor::Range findIncludeFilenameNearCursor() const;
-    void openFiles(const QStringList&);                     ///< Open documents for all URIs in a given list
     QStringList findFileLocations(const QString&);          ///< Get list of absolute paths to filename
+    void openFiles(const QStringList&);                     ///< Open documents for all URIs in a given list
+
     void inclusionVisitor(details::InclusionVisitorData*, CXFile, CXSourceLocation*, unsigned);
     void dblClickOpenFile(QString&&);
-    void updateCppActionsAvailability(const bool);          ///< Enable/disable C++ specific actions in UI
+
     void appendSearchDetailsRow(const QString&, const QString&, bool = true);
     void appendSearchDetailsRow(const QString&, bool);
     void clearSearchDetails();
-    void applyToolViewInteriorWidths();
     QString symbolUnderCursor();
+
 
     CppHelperPlugin* const m_plugin;                        ///< Parent plugin
     KAction* const m_copy_include;                          ///< <em>Copy #include to clipboard</em> action
@@ -148,11 +165,6 @@ private:
 
     DiagnosticMessagesModel m_diagnostic_data;              ///< Storage (model) for diagnostic messages
     completions_models_map_type m_completers;               ///< Registered completers by view
-
-    QList<int> m_explorer_widths;
-    QList<int> m_search_widths;
-    QList<int> m_indices_width;
-    bool m_widths_applied = {false};
 };
 
 }                                                           // namespace kate
