@@ -3,7 +3,7 @@
  *
  * \brief Class \c kate::CppHelperPluginView (implementation part IV)
  *
- * Kate C++ Helper Plugin view methods related to #inclue explorer
+ * Kate C++ Helper Plugin view methods related to \c #inclue explorer
  *
  * \date Sat Nov 23 16:35:42 MSK 2013 -- Initial design
  */
@@ -34,6 +34,7 @@
 
 // Standard includes
 #include <kate/mainwindow.h>
+#include <KDE/KColorScheme>
 #include <QtGui/QStandardItemModel>
 #include <set>
 #include <stack>
@@ -53,7 +54,7 @@ struct InclusionVisitorData
 void CppHelperPluginView::updateInclusionExplorer()
 {
     assert(
-        "Active view suppose to be valid at this point! Am I wrong?"
+        "Active view supposed to be valid at this point! Am I wrong?"
       && mainWindow()->activeView()
       );
 
@@ -84,7 +85,7 @@ void CppHelperPluginView::updateInclusionExplorer()
           , CXClientData d
           )
         {
-            auto* user_data = static_cast<details::InclusionVisitorData* const>(d);
+            auto* const user_data = static_cast<details::InclusionVisitorData* const>(d);
             user_data->m_self->inclusionVisitor(user_data, file, stack, stack_size);
         }
       , &data
@@ -96,10 +97,10 @@ void CppHelperPluginView::updateInclusionExplorer()
 }
 
 void CppHelperPluginView::inclusionVisitor(
-    details::InclusionVisitorData* data
+    details::InclusionVisitorData* const data
   , CXFile file
-  , CXSourceLocation* stack
-  , unsigned stack_size
+  , CXSourceLocation* const stack
+  , const unsigned stack_size
   )
 {
     const auto header_name = clang::toString(clang::DCXString{clang_getFileName(file)});
@@ -112,12 +113,13 @@ void CppHelperPluginView::inclusionVisitor(
     {
         loc = {stack[0]};                                   // NOTE Take filename from top of stack only!
         // Obtain a filename and its ID in headers cache
+        /// \todo Normalize relative paths?
         included_from_id = m_plugin->headersCache()[loc.file().toLocalFile()];
     }
     // NOTE Kate has zero based cursor position, so -1 is here
     data->m_di->addInclusionEntry({header_id, included_from_id, loc.line() - 1, loc.column() - 1});
 
-    QTreeWidgetItem* parent = nullptr;
+    auto* parent = static_cast<QTreeWidgetItem*>(nullptr);
     if (data->m_last_stack_size < stack_size)               // Is current stack grew relative to the last call
     {
         assert("Sanity check!" && (stack_size - data->m_last_stack_size == 1));
@@ -128,7 +130,7 @@ void CppHelperPluginView::inclusionVisitor(
     else if (stack_size < data->m_last_stack_size)
     {
         // Stack size reduced since tha last call: remove our top
-        for (unsigned i = data->m_last_stack_size; i > stack_size; --i)
+        for (auto i = data->m_last_stack_size; i > stack_size; --i)
             data->m_parents.pop();
         assert("Stack expected to be non empty!" && !data->m_parents.empty());
         parent = data->m_parents.top();
@@ -143,7 +145,13 @@ void CppHelperPluginView::inclusionVisitor(
     data->m_last_added_item->setText(0, header_name);
     auto it = data->m_visited_ids.find(header_id);
     if (it != end(data->m_visited_ids))
-        data->m_last_added_item->setForeground(0, Qt::yellow);
+    {
+        KColorScheme scheme(QPalette::Normal, KColorScheme::Selection);
+        data->m_last_added_item->setForeground(
+            0
+          , scheme.foreground(KColorScheme::NeutralText).color()
+          );
+    }
     else
         data->m_visited_ids.insert(header_id);
     data->m_last_stack_size = stack_size;
@@ -196,13 +204,13 @@ void CppHelperPluginView::includeFileDblClickedFromTree(QTreeWidgetItem* item, c
 void CppHelperPluginView::includeFileDblClickedFromList(const QModelIndex& index)
 {
     assert(
-        "Active view suppose to be valid at this point! Am I wrong?"
+        "Active view supposed to be valid at this point! Am I wrong?"
       && mainWindow()->activeView()
       );
 
     auto filename = m_includes_list_model->itemFromIndex(index)->text();
-    auto pos = filename.lastIndexOf('[');
-    auto line = filename.mid(pos + 1, filename.lastIndexOf(']') - pos - 1).toInt(nullptr);
+    const auto pos = filename.lastIndexOf('[');
+    const auto line = filename.mid(pos + 1, filename.lastIndexOf(']') - pos - 1).toInt(nullptr);
     filename.remove(pos, filename.size());
     dblClickOpenFile(std::move(filename));
     mainWindow()->activeView()->setCursorPosition({line, 0});

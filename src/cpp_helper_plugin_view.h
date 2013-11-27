@@ -83,12 +83,24 @@ public Q_SLOTS:
     void addDiagnosticMessage(clang::diagnostic_message);
 
 private Q_SLOTS:
+    /// \name Kate event handlers
+    //@{
+    void viewCreated(KTextEditor::View*);
+    void modeChanged(KTextEditor::Document*);
+    void urlChanged(KTextEditor::Document*);
+    void textInserted(KTextEditor::Document*, const KTextEditor::Range&);
+    void onDocumentClose(KTextEditor::Document*);
+    void aboutToShow();
+    void updateCppActionsAvailability();                    ///< Enable/disable C++ specific actions in UI
+    void diagnosticMessageActivated(const QModelIndex&);
+    //@}
+
     /// \name Document services
     //@{
     /// Open a single document
+    void switchIfaceImpl();                                 ///< Open corresponding header/implementation file
     void openFile(const KUrl&, KTextEditor::Cursor = KTextEditor::Cursor::invalid());
     void openHeader();                                      ///< Open header file under cursor
-    void switchIfaceImpl();                                 ///< Open corresponding header/implementation file
     /// From \c #include directive w/ current file in the clipboard
     void copyInclude();
     void needTextHint(const KTextEditor::Cursor&, QString&);
@@ -100,18 +112,6 @@ private Q_SLOTS:
     void includeFileActivatedFromTree(QTreeWidgetItem*, int);
     void includeFileDblClickedFromTree(QTreeWidgetItem*, int);
     void includeFileDblClickedFromList(const QModelIndex&);
-    //@}
-
-    /// \name Kate event handlers
-    //@{
-    void viewCreated(KTextEditor::View*);
-    void modeChanged(KTextEditor::Document*);
-    void urlChanged(KTextEditor::Document*);
-    void textInserted(KTextEditor::Document*, const KTextEditor::Range&);
-    void onDocumentClose(KTextEditor::Document*);
-    void aboutToShow();
-    void updateCppActionsAvailability();                    ///< Enable/disable C++ specific actions in UI
-    void diagnosticMessageActivated(const QModelIndex&);
     //@}
 
     /// \name Search services
@@ -132,10 +132,11 @@ private:
       , std::pair<IncludeHelperCompletionModel*, ClangCodeCompletionModel*>
       > completions_models_map_type;
 
+    /// Enable/disable C++ specific actions in UI
+    void updateCppActionsAvailability(const bool);
     /// Register or deregister completion models for a given view
     bool handleView(KTextEditor::View*);
     bool eventFilter(QObject*, QEvent*);
-    void updateCppActionsAvailability(const bool);          ///< Enable/disable C++ specific actions in UI
 
     /// Try to find file(s) w/ a given name+path and a list of possible extensions
     QStringList findCandidatesAt(const QString&, const QString&, const QStringList&);
@@ -151,7 +152,6 @@ private:
     void appendSearchDetailsRow(const QString&, bool);
     void clearSearchDetails();
     QString symbolUnderCursor();
-
 
     CppHelperPlugin* const m_plugin;                        ///< Parent plugin
     KAction* const m_copy_include;                          ///< <em>Copy #include to clipboard</em> action

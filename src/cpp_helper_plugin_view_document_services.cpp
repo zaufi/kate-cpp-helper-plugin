@@ -208,7 +208,7 @@ void CppHelperPluginView::switchIfaceImpl()
             for (const auto& dir : src_paths)
             {
                 for (
-                    QDirIterator dir_it {
+                    QDirIterator dir_it{
                         dir
                       , filters
                       , QDir::Files | QDir::NoDotAndDotDot | QDir::Readable | QDir::CaseSensitive
@@ -367,15 +367,22 @@ void CppHelperPluginView::openHeader()
         candidates.swap(all);
         auto error_text = filename.isEmpty()
           ? QString()
-          : i18n("Unable to find the file: `<tt>%1</tt>'.", filename)
+          : i18nc(
+              "@info:tooltip"
+            , "Unable to find the file: <filename>%1</filename>."
+            , filename
+            )
           + (candidates.isEmpty()
               ? QString()
-              : i18n("<p>Here is a list of #included headers in the current file...</p>")
+              : i18nc(
+                  "@info:tooltip"
+                , "<p>Here is a list of <icode>#included</icode> headers in the current file...</p>"
+                )
               )
           ;
         if (!error_text.isEmpty())
             KPassivePopup::message(
-                i18n("Error")
+                i18nc("@title:window", "Error")
               , "<qt>" + error_text + "</qt>"
               , qobject_cast<QWidget*>(this)
               );
@@ -404,8 +411,8 @@ inline void CppHelperPluginView::openFile(const KUrl& file, const KTextEditor::C
     else
     {
         KPassivePopup::message(
-            i18n("Open error")
-          , i18n("File %1 is not readable", file.toLocalFile())
+            i18nc("@title:window", "Open error")
+          , i18nc("@info:tooltip", "File <filename>%1</filename> is not readable", file.toLocalFile())
           , qobject_cast<QWidget*>(this)
           );
     }
@@ -557,5 +564,4 @@ void CppHelperPluginView::openFiles(const QStringList& files)
 }
 
 //END Utility (private) functions
-
 }                                                           // namespace kate

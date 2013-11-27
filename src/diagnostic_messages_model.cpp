@@ -30,7 +30,7 @@
 
 // Standard includes
 #include <KDE/KDebug>
-#include <QtGui/QBrush>
+#include <KDE/KColorScheme>
 
 namespace kate {
 
@@ -65,18 +65,23 @@ QVariant DiagnosticMessagesModel::data(const QModelIndex& index, const int role)
             // Just return a message text
             return m_records[index.row()].m_text;
         case Qt::ForegroundRole:
+        {
+            KColorScheme scheme(QPalette::Normal, KColorScheme::Selection);
             switch (m_records[index.row()].m_type)
             {
                 case clang::diagnostic_message::type::error:
-                    return QBrush(Qt::red);
+                    return scheme.foreground(KColorScheme::NegativeText).color();
                 case clang::diagnostic_message::type::warning:
-                    return QBrush(Qt::yellow);
+                    return scheme.foreground(KColorScheme::NeutralText).color();
                 case clang::diagnostic_message::type::info:
+                    return scheme.foreground(KColorScheme::PositiveText).color();
                 case clang::diagnostic_message::type::debug:
+                    return scheme.foreground(KColorScheme::InactiveText).color();
                 default:
                     break;
             }
             break;
+        }
         default:
             break;
     }

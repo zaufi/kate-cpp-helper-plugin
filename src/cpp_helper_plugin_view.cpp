@@ -22,43 +22,25 @@
 
 // Project specific includes
 #include <src/cpp_helper_plugin_view.h>
-// #include <src/clang/location.h>
-// #include <src/clang/kind_of.h>
-// #include <src/clang/to_string.h>
 #include <src/cpp_helper_plugin.h>
-// #include <src/choose_from_list_dialog.h>
 #include <src/clang_code_completion_model.h>
-// #include <src/document_info.h>
-// #include <src/document_proxy.h>
 #include <src/include_helper_completion_model.h>
 #include <src/utils.h>
 
 // Standard includes
-// #include <kate/application.h>
-// #include <kate/documentmanager.h>
 #include <kate/mainwindow.h>
 #include <KDE/KActionCollection>
 #include <KDE/KActionMenu>
-// #include <KDE/KLocalizedString>
-// #include <KDE/KMenu>
 #include <KDE/KPassivePopup>
 #include <KDE/KStringHandler>
 #include <KDE/KTextEditor/CodeCompletionInterface>
 #include <KDE/KTextEditor/MovingInterface>
 #include <KDE/KTextEditor/TextHintInterface>
-// #include <QtGui/QApplication>
-// #include <QtGui/QClipboard>
 #include <QtGui/QKeyEvent>
 #include <QtGui/QMenu>
 #include <QtGui/QSortFilterProxyModel>
-// #include <QtGui/QStandardItem>
 #include <QtGui/QStandardItemModel>
-// #include <QtGui/QToolTip>
-// #include <QtCore/QFileInfo>
-// #include <QtCore/QDirIterator>
 #include <cassert>
-// #include <set>
-// #include <stack>
 
 namespace kate { namespace {
 const QString EXPLORER_TREE_WIDTH_KEY = "ExplorerTreeWidth";
@@ -126,10 +108,6 @@ CppHelperPluginView::CppHelperPluginView(
     // submenu using factory will be successed!
 
     auto* my_pop = qobject_cast<QMenu*>(mainWindow()->guiFactory()->container("cpphelper_popup", this));
-    auto* kate_pop = qobject_cast<QMenu*>(mainWindow()->guiFactory()->container("ktexteditor_popup", this));
-    kDebug(DEBUG_AREA) << "my_pop=" << my_pop;
-    kDebug(DEBUG_AREA) << "kate_pop=" << kate_pop;
-
     connect(my_pop, SIGNAL(aboutToShow()), this, SLOT(aboutToShow()));
     //END Setup plugin actions
 
@@ -164,7 +142,7 @@ CppHelperPluginView::CppHelperPluginView(
     {
         auto* clear_action = new QAction(
             KIcon("edit-clear-list")
-          , i18n("Clear")
+          , i18nc("@action:inmenu A verb.", "Clear")
           , m_tool_view_interior->diagnosticMessages
           );
         m_tool_view_interior->diagnosticMessages->insertAction(nullptr, clear_action);
@@ -175,55 +153,6 @@ CppHelperPluginView::CppHelperPluginView(
           , SLOT(clear())
           );
     }
-
-    // Search tab
-    {
-        auto model = m_plugin->databaseManager().getSearchResultsTableModel();
-        m_search_results_model->setSourceModel(model);
-        m_tool_view_interior->searchResults->setModel(m_search_results_model);
-        connect(
-            model
-          , SIGNAL(modelReset())
-          , this
-          , SLOT(searchResultsUpdated())
-          );
-    }
-    connect(
-        m_tool_view_interior->searchResults
-      , SIGNAL(activated(const QModelIndex&))
-      , this
-      , SLOT(searchResultActivated(const QModelIndex&))
-      );
-    connect(
-        m_tool_view_interior->searchQuery
-      , SIGNAL(returnPressed())
-      , this
-      , SLOT(startSearch())
-      );
-    connect(
-        m_tool_view_interior->indexFunctionBody
-      , SIGNAL(toggled(bool))
-      , &m_plugin->databaseManager()
-      , SLOT(indexLocalsToggled(bool))
-      );
-    connect(
-        m_tool_view_interior->skipImplicits
-      , SIGNAL(toggled(bool))
-      , &m_plugin->databaseManager()
-      , SLOT(indexImplicitsToggled(bool))
-      );
-    connect(
-        &m_plugin->databaseManager()
-      , SIGNAL(setSkipImplicitsChecked(bool))
-      , m_tool_view_interior->skipImplicits
-      , SLOT(setChecked(bool))
-      );
-    connect(
-        &m_plugin->databaseManager()
-      , SIGNAL(setIndexLocalsChecked(bool))
-      , m_tool_view_interior->indexFunctionBody
-      , SLOT(setChecked(bool))
-      );
 
     // #include explorer tab
     m_tool_view_interior->includesTree->setHeaderHidden(true);
@@ -323,14 +252,55 @@ CppHelperPluginView::CppHelperPluginView(
       , this
       , SLOT(reindexingFinished(const QString&))
       );
-#if 0
     connect(
-        ??????
-      , SIGNAL(openFile(const KUrl&, KTextEditor::Cursor))
-      , this
-      , SLOT(openFile(const KUrl&, KTextEditor::Cursor))
+        m_tool_view_interior->indexFunctionBody
+      , SIGNAL(toggled(bool))
+      , &m_plugin->databaseManager()
+      , SLOT(indexLocalsToggled(bool))
       );
-#endif
+    connect(
+        m_tool_view_interior->skipImplicits
+      , SIGNAL(toggled(bool))
+      , &m_plugin->databaseManager()
+      , SLOT(indexImplicitsToggled(bool))
+      );
+    connect(
+        &m_plugin->databaseManager()
+      , SIGNAL(setSkipImplicitsChecked(bool))
+      , m_tool_view_interior->skipImplicits
+      , SLOT(setChecked(bool))
+      );
+    connect(
+        &m_plugin->databaseManager()
+      , SIGNAL(setIndexLocalsChecked(bool))
+      , m_tool_view_interior->indexFunctionBody
+      , SLOT(setChecked(bool))
+      );
+
+    // Search tab
+    {
+        auto model = m_plugin->databaseManager().getSearchResultsTableModel();
+        m_search_results_model->setSourceModel(model);
+        m_tool_view_interior->searchResults->setModel(m_search_results_model);
+        connect(
+            model
+          , SIGNAL(modelReset())
+          , this
+          , SLOT(searchResultsUpdated())
+          );
+    }
+    connect(
+        m_tool_view_interior->searchResults
+      , SIGNAL(activated(const QModelIndex&))
+      , this
+      , SLOT(searchResultActivated(const QModelIndex&))
+      );
+    connect(
+        m_tool_view_interior->searchQuery
+      , SIGNAL(returnPressed())
+      , this
+      , SLOT(startSearch())
+      );
 }
 
 CppHelperPluginView::~CppHelperPluginView()
@@ -381,28 +351,6 @@ void CppHelperPluginView::writeSessionConfig(KConfigBase* config, const QString&
 void CppHelperPluginView::addDiagnosticMessage(clang::diagnostic_message record)
 {
     m_diagnostic_data.append(std::move(record));
-}
-
-
-
-
-
-void CppHelperPluginView::diagnosticMessageActivated(const QModelIndex& index)
-{
-    auto loc = m_diagnostic_data.getLocationByIndex(index);
-    if (!loc.empty())
-    {
-        const auto& filename = loc.file().toLocalFile();
-        assert("Filename expected to be non empty!" && !filename.isEmpty());
-        openFile(filename);
-        // NOTE Kate has line/column numbers started from 0, but clang is more
-        // human readable...
-        mainWindow()->activeView()->setCursorPosition({loc.line() - 1, loc.column() - 1});
-#if 0
-        /// \todo Make it configurable?
-        mainWindow()->activeView()->setFocus(Qt::MouseFocusReason);
-#endif
-    }
 }
 
 /**
@@ -483,6 +431,20 @@ void CppHelperPluginView::viewCreated(KTextEditor::View* view)
     /// on unregister...
 }
 
+void CppHelperPluginView::modeChanged(KTextEditor::Document* doc)
+{
+    kDebug(DEBUG_AREA) << "hl mode has been changed: " << doc->highlightingMode() << ", " << doc->mimeType();
+    if (handleView(doc->activeView()))
+        m_plugin->updateDocumentInfo(doc);
+}
+
+void CppHelperPluginView::urlChanged(KTextEditor::Document* doc)
+{
+    kDebug(DEBUG_AREA) << "name or URL has been changed: " << doc->url() << ", " << doc->mimeType();
+    if (handleView(doc->activeView()))
+        m_plugin->updateDocumentInfo(doc);
+}
+
 /**
  * \todo Move to the plugin class?
  */
@@ -520,7 +482,6 @@ void CppHelperPluginView::textInserted(KTextEditor::Document* doc, const KTextEd
      *  QString line_str = dv[line_no];
      * \endcode
      */
-    /// \todo Move document scanner to an appropriate TU
     for (auto i = range.start().line(); i < range.end().line() + 1; i++)
     {
         const auto& line_str = doc->line(i);
@@ -553,18 +514,40 @@ void CppHelperPluginView::onDocumentClose(KTextEditor::Document* doc)
     }
 }
 
-void CppHelperPluginView::modeChanged(KTextEditor::Document* doc)
+void CppHelperPluginView::diagnosticMessageActivated(const QModelIndex& index)
 {
-    kDebug(DEBUG_AREA) << "hl mode has been changed: " << doc->highlightingMode() << ", " << doc->mimeType();
-    if (handleView(doc->activeView()))
-        m_plugin->updateDocumentInfo(doc);
+    auto loc = m_diagnostic_data.getLocationByIndex(index);
+    if (!loc.empty())
+    {
+        const auto& filename = loc.file().toLocalFile();
+        assert("Filename expected to be non empty!" && !filename.isEmpty());
+        openFile(filename);
+        // NOTE Kate has line/column numbers started from 0, but clang is more
+        // human readable...
+        mainWindow()->activeView()->setCursorPosition({loc.line() - 1, loc.column() - 1});
+#if 0
+        /// \todo Make it configurable?
+        mainWindow()->activeView()->setFocus(Qt::MouseFocusReason);
+#endif
+    }
 }
 
-void CppHelperPluginView::urlChanged(KTextEditor::Document* doc)
+void CppHelperPluginView::aboutToShow()
 {
-    kDebug(DEBUG_AREA) << "name or URL has been changed: " << doc->url() << ", " << doc->mimeType();
-    if (handleView(doc->activeView()))
-        m_plugin->updateDocumentInfo(doc);
+    assert(
+        "Active view suppose to be valid at this point! Am I wrong?"
+      && mainWindow()->activeView()
+      );
+
+    auto symbol = symbolUnderCursor();
+    m_search_definition->setEnabled(!symbol.isEmpty());
+    if (!symbol.isEmpty())
+    {
+        kDebug(DEBUG_AREA) << "current word text: " << symbol;
+        symbol = KStringHandler::csqueeze(symbol, 30);
+    }
+    else symbol = "...";
+    m_search_definition->setText(i18nc("@action:inmenu", "Search for %1", symbol));
 }
 
 /**
@@ -660,24 +643,6 @@ bool CppHelperPluginView::eventFilter(QObject* obj, QEvent* event)
         }
     }
     return QObject::eventFilter(obj, event);
-}
-
-void CppHelperPluginView::aboutToShow()
-{
-    assert(
-        "Active view suppose to be valid at this point! Am I wrong?"
-      && mainWindow()->activeView()
-      );
-
-    auto symbol = symbolUnderCursor();
-    m_search_definition->setEnabled(!symbol.isEmpty());
-    if (!symbol.isEmpty())
-    {
-        kDebug(DEBUG_AREA) << "current word text: " << symbol;
-        symbol = KStringHandler::csqueeze(symbol, 30);
-    }
-    else symbol = "...";
-    m_search_definition->setText(i18nc("@action:inmenu", "Search for %1", symbol));
 }
 
 /**
