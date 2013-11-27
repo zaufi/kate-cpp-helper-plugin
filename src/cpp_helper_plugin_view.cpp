@@ -140,18 +140,14 @@ CppHelperPluginView::CppHelperPluginView(
       , SLOT(diagnosticMessageActivated(const QModelIndex&))
       );
     {
-        auto* clear_action = new QAction(
-            KIcon("edit-clear-list")
-          , i18nc("@action:inmenu A verb.", "Clear")
-          , m_tool_view_interior->diagnosticMessages
-          );
-        m_tool_view_interior->diagnosticMessages->insertAction(nullptr, clear_action);
-        connect(
-            clear_action
-          , SIGNAL(triggered(bool))
+        auto* const clear_action = actionCollection()->addAction(
+            "cpphelper_diagnostic_popup_clear"
           , &m_diagnostic_data
           , SLOT(clear())
           );
+        clear_action->setText(i18nc("@action:inmenu", "Clear Diagostic Messages"));
+        clear_action->setIcon(KIcon("edit-clear-list"));
+        m_tool_view_interior->diagnosticMessages->insertAction(nullptr, clear_action);
     }
 
     // #include explorer tab

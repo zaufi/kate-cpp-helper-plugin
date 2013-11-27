@@ -19,6 +19,9 @@
             <Action name="cpphelper_popup_search_text" />
         </Menu>
     </Menu>
+    <Menu name="cpphelper_diagnostic_popup" noMerge="1">
+        <Action name="cpphelper_diagnostic_popup_clear" />
+    </Menu>
     <State name="cpp_actions_enabled">
         <enable>
             <Action name="file_open_included_header" />
