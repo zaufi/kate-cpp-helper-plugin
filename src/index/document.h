@@ -31,6 +31,8 @@
 #include <src/index/document_extras.h>
 
 // Standard includes
+#include <boost/algorithm/string/case_conv.hpp>
+#include <boost/algorithm/string/classification.hpp>
 
 namespace kate { namespace index {
 
@@ -49,10 +51,26 @@ public:
     /// Default copy-assign operator
     document& operator=(const document&) = default;
 
+    // Brind inherited member into scope
+    using Xapian::Document::add_boolean_term;
+
+    /// Add boolean term w/ prefix
+    void add_boolean_term(const std::string& prefix, const std::string& value)
+    {
+        if (boost::is_upper()(value[0]))
+            Xapian::Document::add_boolean_term(prefix + ":" + value);
+        else
+            Xapian::Document::add_boolean_term(prefix + value);
+        //
+        std::string lowercased = boost::to_lower_copy(value);
+        Xapian::Document::add_boolean_term(prefix + lowercased);
+    }
+
     void add_value(const value_slot slot, const std::string& value)
     {
         Xapian::Document::add_value(Xapian::valueno(slot), value);
     }
+
     std::string get_value(const value_slot slot) const
     {
         return Xapian::Document::get_value(Xapian::valueno(slot));

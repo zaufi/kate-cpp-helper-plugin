@@ -34,11 +34,6 @@
 
 namespace kate {
 
-SearchResultsTableModel::SearchResultsTableModel(DatabaseManager& db_mgr)
-  : m_db_mgr(db_mgr)
-{
-}
-
 int SearchResultsTableModel::columnCount(const QModelIndex&) const
 {
     return column::last__;

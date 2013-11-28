@@ -96,7 +96,6 @@ void DatabaseManager::database_state::loadMetaFrom(const QString& filename)
 DatabaseManager::DatabaseManager()
   : m_indices_model{*this}
   , m_targets_model{*this}
-  , m_search_results_model{*this}
   , m_last_selected_index{-1}
   , m_last_selected_target{-1}
   , m_indexing_in_progress{-1}
@@ -757,13 +756,138 @@ void DatabaseManager::reportIndexingError(clang::diagnostic_message msg)
     Q_EMIT(diagnosticMessage(msg));
 }
 
+index::search_result DatabaseManager::makeSearchResult(const index::document& doc)
+{
+    // Get ID of an index produces this result
+    auto tmp_str = doc.get_value(index::value_slot::DBID);
+    if (tmp_str.empty())
+        /// \todo Damn this looks really ugly!
+        throw std::runtime_error(
+            i18nc("@info:tooltip", "No DBID attached to a document").toUtf8().constData()
+          );
+
+    auto index_id = index::deserialize<index::dbid>(tmp_str);
+    const auto& state = findIndexByID(index_id);
+    const auto& used_index = *state.m_db;
+
+    // Get kind
+    tmp_str = doc.get_value(index::value_slot::KIND);
+    assert("Sanity check" && !tmp_str.empty());
+
+    // Form a search result item
+    auto result = index::search_result{index::deserialize(tmp_str)};
+    result.m_db_name = state.m_options->name();
+
+    // Get source file ID
+    tmp_str = doc.get_value(index::value_slot::FILE);
+    if (tmp_str.empty())
+        throw std::runtime_error(
+            i18nc("@info:tooltip", "No source file ID attached to a document").toUtf8().constData()
+          );
+
+    auto file_id = static_cast<HeaderFilesCache::id_type>(Xapian::sortable_unserialise(tmp_str));
+    // Resolve header ID into string
+    result.m_file = used_index.headers_map()[file_id];
+
+    // Get line/column
+    result.m_line = static_cast<int>(
+        Xapian::sortable_unserialise(doc.get_value(index::value_slot::LINE))
+      );
+    result.m_column = static_cast<int>(
+        Xapian::sortable_unserialise(doc.get_value(index::value_slot::COLUMN))
+      );
+
+    // Get entity name
+    {
+        const auto& name = doc.get_value(index::value_slot::NAME);
+        result.m_name = name.empty() ? ANONYMOUS : string_cast<QString>(name);
+    }
+
+    // Get entity type
+    {
+        const auto& type = doc.get_value(index::value_slot::TYPE);
+        result.m_type = type.empty() ? QString{} : string_cast<QString>(type);
+    }
+
+    // Get parent scope
+    {
+        const auto& scope = doc.get_value(index::value_slot::SCOPE);
+        if (!scope.empty())
+            result.m_scope = string_cast<QString>(scope);
+    }
+
+    // Get some other props
+    {
+        const auto& str = doc.get_value(index::value_slot::TEMPLATE);
+        if (!str.empty())
+        {
+            const auto value = index::deserialize<unsigned>(str);
+            result.m_template_kind = CXIdxEntityCXXTemplateKind(value);
+        }
+    }
+    {
+        const auto& str = doc.get_value(index::value_slot::FLAGS);
+        if (!str.empty())
+            result.m_flags.m_flags_as_int =
+                index::deserialize<decltype(result.m_flags.m_flags_as_int)>(str);
+    }
+    {
+        const auto& str = doc.get_value(index::value_slot::VALUE);
+        if (!str.empty())
+            result.m_value = static_cast<long long>(Xapian::sortable_unserialise(str));
+    }
+    {
+        const auto& str = doc.get_value(index::value_slot::SIZEOF);
+        if (!str.empty())
+            result.m_sizeof = static_cast<std::size_t>(Xapian::sortable_unserialise(str));
+    }
+    {
+        const auto& str = doc.get_value(index::value_slot::ALIGNOF);
+        if (!str.empty())
+            result.m_alignof = static_cast<std::size_t>(Xapian::sortable_unserialise(str));
+    }
+    {
+        const auto& str = doc.get_value(index::value_slot::ARITY);
+        if (!str.empty())
+            result.m_arity = static_cast<int>(Xapian::sortable_unserialise(str));
+    }
+    {
+        const auto& str = doc.get_value(index::value_slot::ACCESS);
+        if (!str.empty())
+        {
+            const auto value = index::deserialize<unsigned>(str);
+            result.m_access = CX_CXXAccessSpecifier(value);
+        }
+    }
+    {
+        const auto& str = doc.get_value(index::value_slot::BASES);
+        if (!str.empty())
+        {
+            std::stringstream ss{str, std::ios_base::in | std::ios_base::binary};
+            boost::archive::binary_iarchive ia{ss};
+            std::list<std::string> l;
+            ia >> l;
+            if (!l.empty())                         // Is there anything to transform?
+            {
+                auto bases = QStringList{};
+                for (const auto& base : l)
+                    bases << string_cast<QString>(base);
+                result.m_bases = bases;
+            }
+        }
+    }
+    return result;
+}
+
 /**
  * Forward search request to \c combined_index.
  * Latter will fill the model w/ results, so they will be displayed...
  */
-void DatabaseManager::startSearch(QString query)
+std::vector<index::search_result> DatabaseManager::startSearchGetResults(QString query)
 {
     assert("Sanity check" && m_search_db.used_indices() == m_enabled_list.size());
+    auto results = std::vector<index::search_result>{};
+
     if (m_enabled_list.empty())
     {
         KPassivePopup::message(
@@ -772,8 +896,9 @@ void DatabaseManager::startSearch(QString query)
             /// \todo WTF?! \c nullptr can't be used here!?
           , reinterpret_cast<QWidget*>(0)
           );
-        return;
+        return results;
     }
+
     try
     {
         auto search_results = m_search_db.search(query);
@@ -811,145 +936,16 @@ void DatabaseManager::startSearch(QString query)
             }
         }
         //
-        auto model_data = SearchResultsTableModel::search_results_list_type{};
-        model_data.reserve(documents.size());
+        results.reserve(documents.size());
         // Transform Xapian::Documents into a model
         for (const auto& doc : documents)
-        {
-            // Get ID of an index produces this result
-            auto tmp_str = doc.get_value(index::value_slot::DBID);
-            if (tmp_str.empty())
-            {
-                kDebug(DEBUG_AREA) << "No DBID attached to a document";
-                continue;
-            }
-            auto index_id = index::deserialize<index::dbid>(tmp_str);
-            const auto& state = findIndexByID(index_id);
-            const auto& index = *state.m_db;
-
-            // Get kind
-            tmp_str = doc.get_value(index::value_slot::KIND);
-            assert("Sanity check" && !tmp_str.empty());
-
-            // Form a search result item
-            auto result = index::search_result{index::deserialize(tmp_str)};
-            result.m_db_name = state.m_options->name();
-
-            // Get source file ID
-            tmp_str = doc.get_value(index::value_slot::FILE);
-            if (tmp_str.empty())
-            {
-                kDebug(DEBUG_AREA) << "No source file ID attached to a document";
-                continue;
-            }
-            auto file_id = static_cast<HeaderFilesCache::id_type>(Xapian::sortable_unserialise(tmp_str));
-            // Resolve header ID into string
-            result.m_file = index.headers_map()[file_id];
-
-            // Get line/column
-            result.m_line = static_cast<int>(
-                Xapian::sortable_unserialise(doc.get_value(index::value_slot::LINE))
-              );
-            result.m_column = static_cast<int>(
-                Xapian::sortable_unserialise(doc.get_value(index::value_slot::COLUMN))
-              );
-
-            // Get entity name
-            {
-                const auto& name = doc.get_value(index::value_slot::NAME);
-                result.m_name = name.empty() ? ANONYMOUS : string_cast<QString>(name);
-            }
-
-            // Get entity type
-            {
-                const auto& type = doc.get_value(index::value_slot::TYPE);
-                result.m_type = type.empty() ? QString{} : string_cast<QString>(type);
-            }
-
-            // Get parent scope
-            {
-                const auto& scope = doc.get_value(index::value_slot::SCOPE);
-                if (!scope.empty())
-                    result.m_scope = string_cast<QString>(scope);
-            }
-
-            // Get some other props
-            {
-                const auto& str = doc.get_value(index::value_slot::TEMPLATE);
-                if (!str.empty())
-                {
-                    const auto value = index::deserialize<unsigned>(str);
-                    result.m_template_kind = CXIdxEntityCXXTemplateKind(value);
-                }
-            }
-            {
-                const auto& str = doc.get_value(index::value_slot::FLAGS);
-                if (!str.empty())
-                    result.m_flags.m_flags_as_int =
-                        index::deserialize<decltype(result.m_flags.m_flags_as_int)>(str);
-            }
-            {
-                const auto& str = doc.get_value(index::value_slot::VALUE);
-                if (!str.empty())
-                    result.m_value = static_cast<long long>(Xapian::sortable_unserialise(str));
-            }
-            {
-                const auto& str = doc.get_value(index::value_slot::SIZEOF);
-                if (!str.empty())
-                    result.m_sizeof = static_cast<std::size_t>(Xapian::sortable_unserialise(str));
-            }
-            {
-                const auto& str = doc.get_value(index::value_slot::ALIGNOF);
-                if (!str.empty())
-                    result.m_alignof = static_cast<std::size_t>(Xapian::sortable_unserialise(str));
-            }
-            {
-                const auto& str = doc.get_value(index::value_slot::ARITY);
-                if (!str.empty())
-                    result.m_arity = static_cast<int>(Xapian::sortable_unserialise(str));
-            }
-            {
-                const auto& str = doc.get_value(index::value_slot::ACCESS);
-                if (!str.empty())
-                {
-                    const auto value = index::deserialize<unsigned>(str);
-                    result.m_access = CX_CXXAccessSpecifier(value);
-                }
-            }
-            {
-                const auto& str = doc.get_value(index::value_slot::BASES);
-                if (!str.empty())
-                {
-                    std::stringstream ss{str, std::ios_base::in | std::ios_base::binary};
-                    boost::archive::binary_iarchive ia{ss};
-                    std::list<std::string> l;
-                    ia >> l;
-                    if (!l.empty())                         // Is there anything to transform?
-                    {
-                        auto bases = QStringList{};
-                        for (const auto& base : l)
-                            bases << string_cast<QString>(base);
-                        result.m_bases = bases;
-                    }
-                }
-            }
-
-            //
-            model_data.emplace_back(std::move(result));
-        }
-        // Update the model w/ obtained data
-        m_search_results_model.updateSearchResults(std::move(model_data));
+            results.emplace_back(makeSearchResult(doc));
     }
     catch (...)
     {
         reportError("Search failure", -1, true);
     }
-}
-
-clang::location DatabaseManager::getSearchResultLocation(const int row) const
-{
-    const auto& sr = m_search_results_model.getSearchResult(row);
-    return clang::location{sr.m_file, sr.m_line, sr.m_column};
+    return results;
 }
 
 auto DatabaseManager::findIndexByID(const index::dbid id) const -> const database_state&
@@ -997,7 +993,7 @@ void DatabaseManager::reportError(const QString& prefix, const int index, const 
               , e.what()
               );
         else if (index == -1 && !prefix.isEmpty())
-            msg = QString{"%1: %2"}.arg(prefix, e.what());
+            msg = QString{"%1: %2"}.arg(prefix).arg(e.what());
         else
             msg = e.what();
         //
@@ -1017,11 +1013,6 @@ void DatabaseManager::reportError(const QString& prefix, const int index, const 
               , reinterpret_cast<QWidget*>(0)
               );
     }
-}
-
-const index::search_result& DatabaseManager::getDetailsOf(const int index)
-{
-    return m_search_results_model.getSearchResult(index);
 }
 
 }                                                           // namespace kate

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE kpartgui>
-<gui name="katecpphelper" library="katecpphelperplugin" version="8"
+<gui name="katecpphelper" library="katecpphelperplugin" version="9"
      xmlns="http://www.kde.org/standards/kxmlgui/1.0"
      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
      xsi:schemaLocation="http://www.kde.org/standards/kxmlgui/1.0
@@ -16,6 +16,8 @@
     </MenuBar>
     <Menu name="ktexteditor_popup" noMerge="1">
         <Menu name="cpphelper_popup"><text>&amp;C++ Helper</text>
+            <Action name="cpphelper_popup_goto_declaration" />
+            <Action name="cpphelper_popup_goto_definition" />
             <Action name="cpphelper_popup_search_text" />
         </Menu>
     </Menu>
@@ -26,6 +28,13 @@
         <enable>
             <Action name="file_open_included_header" />
             <Action name="file_open_switch_iface_impl" />
+        </enable>
+    </State>
+    <State name="has_symbol_under_cursor">
+        <enable>
+            <Action name="cpphelper_popup_goto_declaration" />
+            <Action name="cpphelper_popup_goto_definition" />
+            <Action name="cpphelper_popup_search_text" />
         </enable>
     </State>
 </gui>

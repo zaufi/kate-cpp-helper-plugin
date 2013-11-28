@@ -42,10 +42,10 @@ const auto BALOUT_X = QChar{0x17, 0x27};
 }                                                           // anonymous namespace
 
 //BEGIN SLOTS
-void CppHelperPluginView::searchSymbolUnderCursor()
+void CppHelperPluginView::gotoDeclarationUnderCursor()
 {
     assert(
-        "Active view suppose to be valid at this point! Am I wrong?"
+        "Active view supposed to be valid at this point! Am I wrong?"
       && mainWindow()->activeView()
       );
 
@@ -53,13 +53,90 @@ void CppHelperPluginView::searchSymbolUnderCursor()
     if (!view || !view->cursorPosition().isValid())
         return;                                             // do nothing if no view or valid cursor
 
+    auto query = symbolUnderCursor();
+    assert(
+        "Symbol under cursor expected to be Ok, otherwise action must be disabled"
+      && !query.isEmpty()
+      );
 
-    m_tool_view_interior->searchQuery->setText(symbolUnderCursor());
-    const auto search_tab_idx = m_tool_view_interior->tabs->indexOf(m_tool_view_interior->searchTab);
-    m_tool_view_interior->tabs->setCurrentIndex(search_tab_idx);
-    mainWindow()->showToolView(m_tool_view.get());
-    m_tool_view_interior->searchQuery->setFocus(Qt::ActiveWindowFocusReason);
-    startSearch();
+    query = QString{"decl:" + query + " AND NOT def:y"};
+    kDebug() << "Search query: " << query;
+    auto results = m_plugin->databaseManager().startSearchGetResults(query);
+    if (results.size() == 1)
+    {
+        const auto& details = results[0];
+        // NOTE Kate has zero-based positioning
+        openFile(details.m_file, {details.m_line - 1, details.m_column - 1});
+    }
+    else
+    {
+        setSearchQueryAndShowIt(query);
+        m_search_results_model.updateSearchResults(std::move(results));
+    }
+}
+
+void CppHelperPluginView::gotoDefinitionUnderCursor()
+{
+    assert(
+        "Active view supposed to be valid at this point! Am I wrong?"
+      && mainWindow()->activeView()
+      );
+
+    KTextEditor::View* view = mainWindow()->activeView();
+    if (!view || !view->cursorPosition().isValid())
+        return;                                             // do nothing if no view or valid cursor
+
+    const auto symbol = symbolUnderCursor();
+    assert(
+        "Symbol under cursor expected to be Ok, otherwise action must be disabled"
+      && !symbol.isEmpty()
+      );
+
+    auto query = QString{"decl:" + symbol + " AND def:y"};
+    kDebug() << "Search query: " << query;
+    auto results = m_plugin->databaseManager().startSearchGetResults(query);
+    if (results.size() == 1)
+    {
+        const auto& details = results[0];
+        // NOTE Kate has zero-based positioning
+        openFile(details.m_file, {details.m_line - 1, details.m_column - 1});
+    }
+    else if (!results.empty())
+    {
+        setSearchQueryAndShowIt(query);
+        m_search_results_model.updateSearchResults(std::move(results));
+    }
+    else
+    {
+        query = QString{"decl:" + symbol};
+        auto results = m_plugin->databaseManager().startSearchGetResults(query);
+        if (results.size() == 1)
+        {
+            const auto& details = results[0];
+            // NOTE Kate has zero-based positioning
+            openFile(details.m_file, {details.m_line - 1, details.m_column - 1});
+        }
+        else
+        {
+            setSearchQueryAndShowIt(query);
+            m_search_results_model.updateSearchResults(std::move(results));
+        }
+    }
+}
+
+void CppHelperPluginView::searchSymbolUnderCursor()
+{
+    assert(
+        "Active view supposed to be valid at this point! Am I wrong?"
+      && mainWindow()->activeView()
+      );
+
+    KTextEditor::View* view = mainWindow()->activeView();
+    if (!view || !view->cursorPosition().isValid())
+        return;                                             // do nothing if no view or valid cursor
+
+    setSearchQueryAndShowIt(symbolUnderCursor());
+    startSearchDisplayResults();
 #if 0
     // view is of type KTextEditor::View*
     auto* iface = qobject_cast<KTextEditor::AnnotationViewInterface*>(view);
@@ -88,6 +165,7 @@ void CppHelperPluginView::searchSymbolUnderCursor()
     kDebug(DEBUG_AREA) << "Associated comment:" << comment;
 #endif
 }
+
 void CppHelperPluginView::reindexingStarted(const QString& msg)
 {
     addDiagnosticMessage(
@@ -108,12 +186,15 @@ void CppHelperPluginView::reindexingFinished(const QString& msg)
     m_tool_view_interior->stopIndexer->setEnabled(false);
 }
 
-void CppHelperPluginView::startSearch()
+void CppHelperPluginView::startSearchDisplayResults()
 {
     auto query = m_tool_view_interior->searchQuery->text();
     kDebug() << "Search query: " << query;
     if (!query.isEmpty())
-        m_plugin->databaseManager().startSearch(query);
+    {
+        auto results = m_plugin->databaseManager().startSearchGetResults(query);
+        m_search_results_model.updateSearchResults(std::move(results));
+    }
 }
 
 void CppHelperPluginView::searchResultsUpdated()
@@ -129,8 +210,8 @@ void CppHelperPluginView::searchResultActivated(const QModelIndex& index)
     m_tool_view_interior->details->blockSignals(true);
     clearSearchDetails();
     //
-    const auto& underlaid_index = m_search_results_model->mapToSource(index);
-    const auto& details = m_plugin->databaseManager().getDetailsOf(underlaid_index.row());
+    const auto& underlaid_index = m_search_results_sortable_model->mapToSource(index);
+    const auto& details = m_search_results_model.getSearchResult(underlaid_index.row());
     const auto& location = QString{R"~(<a href="#%1">%2:%3:%4</a>)~"}.arg(
         QString::number(underlaid_index.row())
       , details.m_file
@@ -219,25 +300,31 @@ void CppHelperPluginView::locationLinkActivated(const QString& link)
     kDebug() << "link=" << link;
     assert("Unexpected link format" && link[0] == '#');
     const auto row = link.mid(1).toInt();
-    const auto& details = m_plugin->databaseManager().getDetailsOf(row);
+    const auto& details = m_search_results_model.getSearchResult(row);
     // NOTE Kate has zero-based positioning
     openFile(details.m_file, {details.m_line - 1, details.m_column - 1});
 }
 //END SLOTS
 
 //BEGIN Utility (private) functions
+/**
+ * \todo Do not allow multiline selection! Really?!
+ */
 QString CppHelperPluginView::symbolUnderCursor()
 {
     KTextEditor::View* view = mainWindow()->activeView();
-    if (view && view->cursorPosition().isValid())
+    assert("Active view expected to be valid!" && view);
+    if (view->selection())
+    {
+        return view->selectionText();
+    }
+    else if (view->cursorPosition().isValid())
     {
         DocumentProxy doc = mainWindow()->activeView()->document();
         auto range = doc.getIdentifierUnderCursor(view->cursorPosition());
         kDebug(DEBUG_AREA) << "current word range: " << range;
         if (range.isValid() && !range.isEmpty())
-        {
             return doc->text(range);
-        }
     }
     return QString{};
 }
@@ -279,6 +366,15 @@ inline void CppHelperPluginView::clearSearchDetails()
             delete widget;
         delete item;
     }
+}
+
+void CppHelperPluginView::setSearchQueryAndShowIt(const QString& query)
+{
+    m_tool_view_interior->searchQuery->setText(query);
+    const auto search_tab_idx = m_tool_view_interior->tabs->indexOf(m_tool_view_interior->searchTab);
+    m_tool_view_interior->tabs->setCurrentIndex(search_tab_idx);
+    mainWindow()->showToolView(m_tool_view.get());
+    m_tool_view_interior->searchQuery->setFocus(Qt::ActiveWindowFocusReason);
 }
 //END Utility (private) functions
 

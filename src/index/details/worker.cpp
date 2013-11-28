@@ -377,7 +377,7 @@ void worker::on_declaration(CXClientData client_data, const CXIdxDeclInfo* const
 #else
         doc.add_term(boost::to_lower_copy(name));
 #endif
-        doc.add_boolean_term(term::XDECL + name);           // Mark the document w/ XDECL prefixed term
+        doc.add_boolean_term(term::XDECL, name);            // Mark the document w/ XDECL prefixed term
         // NOTE Add an original name to the value slot!
         doc.add_value(value_slot::NAME, info->entityInfo->name);
     }
@@ -402,8 +402,8 @@ void worker::on_declaration(CXClientData client_data, const CXIdxDeclInfo* const
             parent_qname = container->m_qname;
             if (!parent_qname.empty())
             {
-                doc.add_boolean_term(term::XSCOPE + container->m_name);
-                doc.add_boolean_term(term::XSCOPE + parent_qname);
+                doc.add_boolean_term(term::XSCOPE, container->m_name);
+                doc.add_boolean_term(term::XSCOPE, parent_qname);
                 doc.add_value(value_slot::SCOPE, parent_qname);
             }
         }
@@ -572,7 +572,7 @@ void worker::on_declaration_reference(CXClientData client_data, const CXIdxEntit
 #else
     doc.add_term(boost::to_lower_copy(name));
 #endif
-    doc.add_boolean_term(term::XREF + name);                // Mark the document w/ XREF prefixed term
+    doc.add_boolean_term(term::XREF, name);                 // Mark the document w/ XREF prefixed term
     doc.add_value(value_slot::NAME, name);
 
     // Add location terms
@@ -596,8 +596,8 @@ void worker::on_declaration_reference(CXClientData client_data, const CXIdxEntit
 #endif
             if (!parent_qname.empty())
             {
-                doc.add_boolean_term(term::XSCOPE + container->m_name);
-                doc.add_boolean_term(term::XSCOPE + parent_qname);
+                doc.add_boolean_term(term::XSCOPE, container->m_name);
+                doc.add_boolean_term(term::XSCOPE, parent_qname);
                 doc.add_value(value_slot::SCOPE, parent_qname);
             }
         }
@@ -976,7 +976,7 @@ void worker::update_document_with_base_classes(const CXIdxDeclInfo* info, docume
             {
                 auto name = string_cast<std::string>(class_info->bases[i]->base->name);
                 assert("Unnamed base class?" && !name.empty());
-                doc.add_boolean_term(term::XBASE_CLASS + name);
+                doc.add_boolean_term(term::XBASE_CLASS, name);
 
                 auto inheritance_term = std::string{};
                 const auto is_virtual = clang_isVirtualBase(class_info->bases[i]->cursor);

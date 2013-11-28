@@ -140,7 +140,8 @@ TODO
 * Split `#include` completions into a __system__ and __session__? (controlled via config option)
 * Add search options
 * Add more indexing threads and control their count
-* Add _Go to declaration/definition_ to the context menu
+* <del>Add <em>Go to declaration/definition</em> to the context menu</del>
+* Add _Go to semantic/lexical parent_ to context menu
 
 
 See Also

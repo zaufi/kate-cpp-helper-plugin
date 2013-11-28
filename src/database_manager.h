@@ -31,11 +31,11 @@
 #include <src/index/database.h>
 #include <src/clang/compiler_options.h>
 #include <src/index/combined_index.h>
+#include <src/index/search_result.h>
 #include <src/indexing_targets_list_model.h>
 #include <src/indices_table_model.h>
 #include <src/database_options.h>
 #include <src/diagnostic_messages_model.h>
-#include <src/search_results_table_model.h>
 
 // Standard includes
 #include <boost/filesystem/path.hpp>
@@ -100,11 +100,8 @@ public:
     void reset(const std::set<boost::uuids::uuid>&, const KUrl& = DatabaseManager::getDefaultBaseDir());
     /// Set compiler optoins for indexer
     void setCompilerOptions(clang::compiler_options&&);
-    /// Handle search request
-    void startSearch(QString);
-    /// Get source file location for given search result number
-    clang::location getSearchResultLocation(int) const;
-    const index::search_result& getDetailsOf(int);
+    /// Do search request, get results
+    std::vector<index::search_result> startSearchGetResults(QString);
 
 public Q_SLOTS:
     void enable(const QString&, bool);
@@ -166,13 +163,13 @@ private:
     void enable(int, bool);
     bool isEnabled(int) const;
     void renameCollection(int, const QString&);
+    index::search_result makeSearchResult(const index::document&);
     void reportError(const QString& = QString{}, int = -1, bool = false);
     const database_state& findIndexByID(const index::dbid) const;
 
     KUrl m_base_dir;
     IndicesTableModel m_indices_model;
     IndexingTargetsListModel m_targets_model;
-    SearchResultsTableModel m_search_results_model;
     collections_type m_collections;
     std::set<boost::uuids::uuid> m_enabled_list;
     clang::compiler_options m_compiler_options;
@@ -202,16 +199,10 @@ inline QAbstractListModel* DatabaseManager::getTargetsListModel()
     return &m_targets_model;
 }
 
-inline QAbstractItemModel* DatabaseManager::getSearchResultsTableModel()
-{
-    return &m_search_results_model;
-}
-
 inline void DatabaseManager::setCompilerOptions(clang::compiler_options&& options)
 {
     m_compiler_options = std::move(options);
 }
-
 
 }                                                           // namespace kate
 // kate: hl C++11/Qt4;

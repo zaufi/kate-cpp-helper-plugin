@@ -64,8 +64,14 @@ CppHelperPluginView::CppHelperPluginView(
   , m_copy_include{
         actionCollection()->addAction("edit_copy_include", this, SLOT(copyInclude()))
       }
-  , m_search_definition{
+  , m_search_symbol{
         actionCollection()->addAction("cpphelper_popup_search_text", this, SLOT(searchSymbolUnderCursor()))
+      }
+  , m_goto_declaration{
+        actionCollection()->addAction("cpphelper_popup_goto_declaration", this, SLOT(gotoDeclarationUnderCursor()))
+      }
+  , m_goto_definition{
+        actionCollection()->addAction("cpphelper_popup_goto_definition", this, SLOT(gotoDefinitionUnderCursor()))
       }
   , m_tool_view{
         mw->createToolView(
@@ -78,7 +84,7 @@ CppHelperPluginView::CppHelperPluginView(
       }
   , m_tool_view_interior{new Ui_PluginToolViewWidget()}
   , m_includes_list_model{new QStandardItemModel()}
-  , m_search_results_model{new QSortFilterProxyModel(this)}
+  , m_search_results_sortable_model{new QSortFilterProxyModel(this)}
   , m_last_explored_document{nullptr}
 {
     assert("Sanity check" && m_tool_view);
@@ -99,7 +105,12 @@ CppHelperPluginView::CppHelperPluginView(
 
     m_copy_include->setText(i18nc("@action:inmenu", "Copy #include to Clipboard"));
     m_copy_include->setShortcut(QKeySequence(Qt::SHIFT + Qt::Key_F10));
-    m_search_definition->setText(i18nc("@action:inmenu", "Search for %1", "..."));
+    m_search_symbol->setText(i18nc("@action:inmenu", "Search for %1", "..."));
+    m_search_symbol->setIcon(KIcon ("edit-find"));
+    m_goto_declaration->setText(i18nc("@action:inmenu", "Goto Declaration %1", "..."));
+    m_goto_declaration->setIcon(KIcon ("go-jump-declaration"));
+    m_goto_definition->setText(i18nc("@action:inmenu", "Goto Definition %1", "..."));
+    m_goto_definition->setIcon(KIcon ("go-jump-definition"));
 
     // ATTENTION Add self as KXMLGUIClient after all actions has
     // been added...
@@ -275,11 +286,10 @@ CppHelperPluginView::CppHelperPluginView(
 
     // Search tab
     {
-        auto model = m_plugin->databaseManager().getSearchResultsTableModel();
-        m_search_results_model->setSourceModel(model);
-        m_tool_view_interior->searchResults->setModel(m_search_results_model);
+        m_search_results_sortable_model->setSourceModel(&m_search_results_model);
+        m_tool_view_interior->searchResults->setModel(m_search_results_sortable_model);
         connect(
-            model
+            &m_search_results_model
           , SIGNAL(modelReset())
           , this
           , SLOT(searchResultsUpdated())
@@ -295,7 +305,7 @@ CppHelperPluginView::CppHelperPluginView(
         m_tool_view_interior->searchQuery
       , SIGNAL(returnPressed())
       , this
-      , SLOT(startSearch())
+      , SLOT(startSearchDisplayResults())
       );
 }
 
@@ -536,14 +546,21 @@ void CppHelperPluginView::aboutToShow()
       );
 
     auto symbol = symbolUnderCursor();
-    m_search_definition->setEnabled(!symbol.isEmpty());
-    if (!symbol.isEmpty())
+    m_search_symbol->setEnabled(!symbol.isEmpty());
+    if (!symbol.isEmpty() && !m_plugin->config().enabledIndices().empty())
     {
         kDebug(DEBUG_AREA) << "current word text: " << symbol;
         symbol = KStringHandler::csqueeze(symbol, 30);
+        stateChanged("has_symbol_under_cursor");
     }
-    else symbol = "...";
-    m_search_definition->setText(i18nc("@action:inmenu", "Search for %1", symbol));
+    else
+    {
+        symbol = "...";
+        stateChanged("has_symbol_under_cursor", KXMLGUIClient::StateReverse);
+    }
+    m_goto_declaration->setText(i18nc("@action:inmenu", "Go to Declaration of <icode>%1</icode>", symbol));
+    m_goto_definition->setText(i18nc("@action:inmenu", "Go to Definition of <icode>%1</icode>", symbol));
+    m_search_symbol->setText(i18nc("@action:inmenu", "Search for <icode>%1</icode>", symbol));
 }
 
 /**

@@ -1,6 +1,15 @@
 Changes
 =======
 
+Version 1.0.1
+-------------
+
+* use KDE palette to colorize diagnostic messages and `#include` explorer
+* add _Go to Declaration/Definition_ to context menu
+* refactorings to control actions via `ui.rc` file
+* few refactorings planned after 1.0.0 release
+
+
 Version 1.0.0
 -------------
 

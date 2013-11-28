@@ -28,6 +28,7 @@
 #pragma once
 
 // Project specific includes
+#include <src/clang/location.h>
 #include <src/index/kind.h>
 #include <src/index/search_result.h>
 
@@ -37,8 +38,6 @@
 #include <vector>
 
 namespace kate {
-class DatabaseManager;                                      // fwd decl
-
 /**
  * \brief [Type brief class description here]
  *
@@ -52,9 +51,6 @@ class SearchResultsTableModel : public QAbstractItemModel
 public:
     typedef std::vector<index::search_result> search_results_list_type;
 
-    /// Default constructor
-    explicit SearchResultsTableModel(DatabaseManager&);
-
     //BEGIN QAbstractItemModel interface
     virtual int columnCount(const QModelIndex&) const override;
     virtual int rowCount(const QModelIndex&) const override;
@@ -67,6 +63,8 @@ public:
 
     void updateSearchResults(search_results_list_type&&);
     const index::search_result& getSearchResult(int) const;
+    /// Get source file location for given search result number
+    clang::location getSearchResultLocation(int) const;
 
 private:
     enum column
@@ -75,7 +73,6 @@ private:
       , NAME
       , last__
     };
-    DatabaseManager& m_db_mgr;
     search_results_list_type m_results;
 };
 
@@ -95,6 +92,12 @@ inline const index::search_result& SearchResultsTableModel::getSearchResult(cons
 {
     assert("Sanity check" && std::size_t(row) < m_results.size());
     return m_results[row];
+}
+
+inline clang::location SearchResultsTableModel::getSearchResultLocation(const int row) const
+{
+    const auto& sr = getSearchResult(row);
+    return clang::location{sr.m_file, sr.m_line, sr.m_column};
 }
 
 }                                                           // namespace kate

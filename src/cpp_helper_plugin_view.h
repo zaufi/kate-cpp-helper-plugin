@@ -23,9 +23,10 @@
 #pragma once
 
 // Project specific includes
-#include <src/ui_plugin_tool_view.h>
-#include <src/diagnostic_messages_model.h>
 #include <src/document_info.h>
+#include <src/diagnostic_messages_model.h>
+#include <src/search_results_table_model.h>
+#include <src/ui_plugin_tool_view.h>
 
 // Standard includes
 #include <kate/plugin.h>
@@ -116,10 +117,12 @@ private Q_SLOTS:
 
     /// \name Search services
     //@{
+    void gotoDeclarationUnderCursor();
+    void gotoDefinitionUnderCursor();
     void searchSymbolUnderCursor();
     void reindexingStarted(const QString&);
     void reindexingFinished(const QString&);
-    void startSearch();
+    void startSearchDisplayResults();
     void searchResultsUpdated();
     void searchResultActivated(const QModelIndex&);
     void locationLinkActivated(const QString&);
@@ -148,6 +151,7 @@ private:
     void inclusionVisitor(details::InclusionVisitorData*, CXFile, CXSourceLocation*, unsigned);
     void dblClickOpenFile(QString&&);
 
+    void setSearchQueryAndShowIt(const QString&);
     void appendSearchDetailsRow(const QString&, const QString&, bool = true);
     void appendSearchDetailsRow(const QString&, bool);
     void clearSearchDetails();
@@ -155,16 +159,18 @@ private:
 
     CppHelperPlugin* const m_plugin;                        ///< Parent plugin
     KAction* const m_copy_include;                          ///< <em>Copy #include to clipboard</em> action
-    /// Action to search definition of the symbol under cursor
-    KAction* const m_search_definition;
+    KAction* const m_search_symbol;                         ///< Action to search a symbol under cursor
+    KAction* const m_goto_declaration;
+    KAction* const m_goto_definition;
     std::unique_ptr<QWidget> m_tool_view;                   ///< A tool-view widget of this plugin
     Ui_PluginToolViewWidget* const m_tool_view_interior;    ///< Interior widget of a tool-view
     QStandardItemModel* const m_includes_list_model;
-    QSortFilterProxyModel* const m_search_results_model;
+    QSortFilterProxyModel* const m_search_results_sortable_model;
     KTextEditor::Document* m_last_explored_document;        ///< Document explored in the \c #includes view
 
     DiagnosticMessagesModel m_diagnostic_data;              ///< Storage (model) for diagnostic messages
     completions_models_map_type m_completers;               ///< Registered completers by view
+    SearchResultsTableModel m_search_results_model;
 };
 
 }                                                           // namespace kate
