@@ -37,9 +37,9 @@ ChooseFromListDialog::ChooseFromListDialog(QWidget* parent)
     setModal(true);
     setButtons(KDialog::Ok | KDialog::Cancel);
     showButtonSeparator(true);
-    setCaption(i18n("Choose Header File to Open"));
+    setCaption(i18nc("@title:window", "Choose Header File to Open"));
 
-    m_list = new KListWidget(this);
+    m_list = new KListWidget{this};
     setMainWidget(m_list);
 
     connect(m_list, SIGNAL(executed(QListWidgetItem*)), this, SLOT(accept()));
@@ -61,13 +61,13 @@ QString ChooseFromListDialog::selectHeaderToOpen(QWidget* parent, const QStringL
     if (dialog.exec() == QDialog::Accepted)                 // if user accept smth
     {
         // grab seleted items into a result list
-        for (QListWidgetItem* item : dialog.m_list->selectedItems())
+        for (const QListWidgetItem* item : dialog.m_list->selectedItems())
             result.append(item->text());
     }
     dialog.saveDialogSize(gcg);                             // write dialog geometry to config
     gcg.sync();
     if (result.empty())
-        return QString();
+        return QString{};
     assert("The only file expected" && result.size() == 1u);
     return result[0];
 }

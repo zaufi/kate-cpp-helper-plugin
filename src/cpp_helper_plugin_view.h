@@ -34,6 +34,7 @@
 #include <clang-c/Index.h>
 #include <map>
 #include <memory>
+#include <stack>
 
 class QSortFilterProxyModel;
 class QStandardItemModel;
@@ -100,7 +101,7 @@ private Q_SLOTS:
     //@{
     /// Open a single document
     void switchIfaceImpl();                                 ///< Open corresponding header/implementation file
-    void openFile(const KUrl&, KTextEditor::Cursor = KTextEditor::Cursor::invalid());
+    void openFile(const KUrl&, KTextEditor::Cursor = KTextEditor::Cursor::invalid(), bool = true);
     void openHeader();                                      ///< Open header file under cursor
     /// From \c #include directive w/ current file in the clipboard
     void copyInclude();
@@ -120,6 +121,8 @@ private Q_SLOTS:
     void gotoDeclarationUnderCursor();
     void gotoDefinitionUnderCursor();
     void searchSymbolUnderCursor();
+    void backToPreviousLocation();
+    void playgroundAction();
     void reindexingStarted(const QString&);
     void reindexingFinished(const QString&);
     void startSearchDisplayResults();
@@ -146,7 +149,6 @@ private:
     /// Try to get an \c #include filename under cursor as range
     KTextEditor::Range findIncludeFilenameNearCursor() const;
     QStringList findFileLocations(const QString&);          ///< Get list of absolute paths to filename
-    void openFiles(const QStringList&);                     ///< Open documents for all URIs in a given list
 
     void inclusionVisitor(details::InclusionVisitorData*, CXFile, CXSourceLocation*, unsigned);
     void dblClickOpenFile(QString&&);
@@ -159,9 +161,10 @@ private:
 
     CppHelperPlugin* const m_plugin;                        ///< Parent plugin
     KAction* const m_copy_include;                          ///< <em>Copy #include to clipboard</em> action
-    KAction* const m_search_symbol;                         ///< Action to search a symbol under cursor
     KAction* const m_goto_declaration;
     KAction* const m_goto_definition;
+    KAction* const m_search_symbol;                         ///< Action to search a symbol under cursor
+    KAction* const m_back_to_prev_location;                 ///< Action to return to a previous location
     std::unique_ptr<QWidget> m_tool_view;                   ///< A tool-view widget of this plugin
     Ui_PluginToolViewWidget* const m_tool_view_interior;    ///< Interior widget of a tool-view
     QStandardItemModel* const m_includes_list_model;
@@ -170,7 +173,8 @@ private:
 
     DiagnosticMessagesModel m_diagnostic_data;              ///< Storage (model) for diagnostic messages
     completions_models_map_type m_completers;               ///< Registered completers by view
-    SearchResultsTableModel m_search_results_model;
+    SearchResultsTableModel m_search_results_model;         ///< Model to hold search results
+    std::stack<clang::location> m_recent_locations;         ///< Stack of last locations
 };
 
 }                                                           // namespace kate

@@ -394,15 +394,28 @@ void CppHelperPluginView::openHeader()
 /**
  * \note This function assume that given file is really exists.
  */
-inline void CppHelperPluginView::openFile(const KUrl& file, const KTextEditor::Cursor cursor)
+void CppHelperPluginView::openFile(const KUrl& file, const KTextEditor::Cursor cursor, const bool track_location)
 {
     if (file.isEmpty()) return;                             // Nothing to do if no file specified
     kDebug(DEBUG_AREA) << "Going to open " << file;
     auto* new_doc = m_plugin->application()->documentManager()->openUrl(file);
+    /// \todo How to reuse \c isPresentAndReadable() from \c utils.h here?
     auto fi = QFileInfo{file.toLocalFile()};
     if (fi.isReadable())
     {
-        kDebug(DEBUG_AREA) << "Is file " << file << " writeable? -- " << fi.isWritable();
+        // Remember a previous location if requested
+        if (track_location)
+        {
+            auto* const prev_view = mainWindow()->activeView();
+            auto prev_doc_url = prev_view->document()->url();
+            const auto prev_cursor = prev_view->cursorPosition();
+            const auto state_changed = m_recent_locations.empty();
+            m_recent_locations.emplace(std::move(prev_doc_url), prev_cursor.line(), prev_cursor.column());
+            if (state_changed)
+                stateChanged("empty_locations_stack", KXMLGUIClient::StateReverse);
+        }
+
+        // Set RO status and cursor position
         new_doc->setReadWrite(fi.isWritable());
         mainWindow()->activateView(new_doc);
         if (cursor.isValid())
@@ -410,6 +423,7 @@ inline void CppHelperPluginView::openFile(const KUrl& file, const KTextEditor::C
     }
     else
     {
+        m_plugin->application()->documentManager()->closeDocument(new_doc);
         KPassivePopup::message(
             i18nc("@title:window", "Open error")
           , i18nc("@info:tooltip", "File <filename>%1</filename> is not readable", file.toLocalFile())
@@ -555,12 +569,6 @@ KTextEditor::Range CppHelperPluginView::findIncludeFilenameNearCursor() const
         ++end;
 
     return KTextEditor::Range(line, start, line, end);
-}
-
-void CppHelperPluginView::openFiles(const QStringList& files)
-{
-    for (const auto& file : files)
-        openFile(file);
 }
 
 //END Utility (private) functions

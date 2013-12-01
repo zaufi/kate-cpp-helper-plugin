@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE kpartgui>
-<gui name="katecpphelper" library="katecpphelperplugin" version="9"
+<gui name="katecpphelper" library="katecpphelperplugin" version="10"
      xmlns="http://www.kde.org/standards/kxmlgui/1.0"
      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
      xsi:schemaLocation="http://www.kde.org/standards/kxmlgui/1.0
@@ -19,6 +19,9 @@
             <Action name="cpphelper_popup_goto_declaration" />
             <Action name="cpphelper_popup_goto_definition" />
             <Action name="cpphelper_popup_search_text" />
+            <Separator />
+            <Action name="cpphelper_popup_back_to_last_location" />
+            <Action name="cpphelper_popup_test_action" />
         </Menu>
     </Menu>
     <Menu name="cpphelper_diagnostic_popup" noMerge="1">
@@ -36,5 +39,10 @@
             <Action name="cpphelper_popup_goto_definition" />
             <Action name="cpphelper_popup_search_text" />
         </enable>
+    </State>
+    <State name="empty_locations_stack">
+        <disable>
+            <Action name="cpphelper_popup_back_to_last_location" />
+        </disable>
     </State>
 </gui>

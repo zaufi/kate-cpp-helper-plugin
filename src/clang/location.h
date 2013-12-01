@@ -31,6 +31,7 @@
 
 // Standard includes
 #include <clang-c/Index.h>
+#include <KTextEditor/Cursor>
 #include <KUrl>
 #include <QtCore/QDebug>
 #include <ostream>
@@ -70,6 +71,7 @@ public:
     int column() const;
     int offset() const;
     const KUrl& file() const;
+    KTextEditor::Cursor cursor() const;
     bool empty() const;
     //@}
 
@@ -147,6 +149,11 @@ inline int location::offset() const
 inline const KUrl& location::file() const
 {
     return m_file;
+}
+
+inline KTextEditor::Cursor location::cursor() const
+{
+    return {line(), column()};
 }
 
 inline bool location::empty() const

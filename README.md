@@ -142,6 +142,7 @@ TODO
 * Add more indexing threads and control their count
 * <del>Add <em>Go to declaration/definition</em> to the context menu</del>
 * Add _Go to semantic/lexical parent_ to context menu
+* Do incremental reindexing on view change and/or inactivity timeout
 
 
 See Also

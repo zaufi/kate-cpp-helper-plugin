@@ -62,16 +62,39 @@ CppHelperPluginView::CppHelperPluginView(
   , Kate::XMLGUIClient{data}
   , m_plugin{plugin}
   , m_copy_include{
-        actionCollection()->addAction("edit_copy_include", this, SLOT(copyInclude()))
-      }
-  , m_search_symbol{
-        actionCollection()->addAction("cpphelper_popup_search_text", this, SLOT(searchSymbolUnderCursor()))
+        actionCollection()->addAction(
+            "edit_copy_include"
+          , this
+          , SLOT(copyInclude())
+          )
       }
   , m_goto_declaration{
-        actionCollection()->addAction("cpphelper_popup_goto_declaration", this, SLOT(gotoDeclarationUnderCursor()))
+        actionCollection()->addAction(
+            "cpphelper_popup_goto_declaration"
+          , this
+          , SLOT(gotoDeclarationUnderCursor())
+          )
       }
   , m_goto_definition{
-        actionCollection()->addAction("cpphelper_popup_goto_definition", this, SLOT(gotoDefinitionUnderCursor()))
+        actionCollection()->addAction(
+            "cpphelper_popup_goto_definition"
+          , this
+          , SLOT(gotoDefinitionUnderCursor())
+          )
+      }
+  , m_search_symbol{
+        actionCollection()->addAction(
+            "cpphelper_popup_search_text"
+          , this
+          , SLOT(searchSymbolUnderCursor())
+          )
+      }
+  , m_back_to_prev_location{
+        actionCollection()->addAction(
+            "cpphelper_popup_back_to_last_location"
+          , this
+          , SLOT(backToPreviousLocation())
+          )
       }
   , m_tool_view{
         mw->createToolView(
@@ -105,12 +128,18 @@ CppHelperPluginView::CppHelperPluginView(
 
     m_copy_include->setText(i18nc("@action:inmenu", "Copy #include to Clipboard"));
     m_copy_include->setShortcut(QKeySequence(Qt::SHIFT + Qt::Key_F10));
-    m_search_symbol->setText(i18nc("@action:inmenu", "Search for %1", "..."));
-    m_search_symbol->setIcon(KIcon ("edit-find"));
     m_goto_declaration->setText(i18nc("@action:inmenu", "Goto Declaration %1", "..."));
-    m_goto_declaration->setIcon(KIcon ("go-jump-declaration"));
+    m_goto_declaration->setIcon(KIcon("go-jump-declaration"));
+    m_goto_declaration->setShortcut(QKeySequence(Qt::ALT + Qt::Key_2));
     m_goto_definition->setText(i18nc("@action:inmenu", "Goto Definition %1", "..."));
-    m_goto_definition->setIcon(KIcon ("go-jump-definition"));
+    m_goto_definition->setIcon(KIcon("go-jump-definition"));
+    m_goto_definition->setShortcut(QKeySequence(Qt::ALT + Qt::Key_3));
+    m_search_symbol->setText(i18nc("@action:inmenu", "Search for %1", "..."));
+    m_search_symbol->setIcon(KIcon("edit-find"));
+    m_search_symbol->setShortcut(QKeySequence(Qt::ALT + Qt::Key_4));
+    m_back_to_prev_location->setText(i18nc("@action:inmenu", "Jump back one step"));
+    m_back_to_prev_location->setIcon(KIcon("draw-arrow-back"));
+    m_back_to_prev_location->setShortcut(QKeySequence(Qt::ALT + Qt::Key_1));
 
     // ATTENTION Add self as KXMLGUIClient after all actions has
     // been added...

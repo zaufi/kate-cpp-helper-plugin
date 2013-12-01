@@ -59,7 +59,7 @@ void CppHelperPluginView::gotoDeclarationUnderCursor()
       && !query.isEmpty()
       );
 
-    query = QString{"decl:" + query + " AND NOT def:y"};
+    query = QString{QString{"decl:"} + query + " AND NOT def:y"};
     kDebug() << "Search query: " << query;
     auto results = m_plugin->databaseManager().startSearchGetResults(query);
     if (results.size() == 1)
@@ -164,6 +164,21 @@ void CppHelperPluginView::searchSymbolUnderCursor()
     auto comment = clang::toString(clang::DCXString{clang_Cursor_getRawCommentText(ctx)});
     kDebug(DEBUG_AREA) << "Associated comment:" << comment;
 #endif
+}
+
+void CppHelperPluginView::backToPreviousLocation()
+{
+    assert("Sanity check" && !m_recent_locations.empty());
+    auto loc = m_recent_locations.top();
+    m_recent_locations.pop();
+    if (m_recent_locations.empty())
+        stateChanged("empty_locations_stack");
+    openFile(loc.file(), loc.cursor(), false);
+}
+
+void CppHelperPluginView::playgroundAction()
+{
+
 }
 
 void CppHelperPluginView::reindexingStarted(const QString& msg)
