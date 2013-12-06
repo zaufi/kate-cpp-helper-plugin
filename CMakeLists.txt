@@ -221,6 +221,21 @@ set_common_package_options(
     SIGN_WITH ${_SIGN_KEY_ID}
   )
 
+# Specifying precise versions of some packages which are distinct
+# in different distributions.
+if(DISTRIB_CODENAME STREQUAL "precise")
+  set(BOOST_DEV_VERSION_PKG_DEP "1.48")
+elseif(DISTRIB_CODENAME STREQUAL "quantal")
+  set(BOOST_DEV_VERSION_PKG_DEP "1.50")
+elseif(DISTRIB_CODENAME STREQUAL "raring")
+  set(BOOST_DEV_VERSION_PKG_DEP "1.53")
+elseif(DISTRIB_CODENAME STREQUAL "saucy")
+  set(BOOST_DEV_VERSION_PKG_DEP "1.54")
+else()
+  message(STATUS "WARNING: Target distribution codename is unknown! Do not even try to build .deb packages!")
+endif()
+set(BOOST_VERSION_PKG_DEP "${BOOST_DEV_VERSION_PKG_DEP}.0")
+
 add_package(
     NAME kate-cpp-helper-plugin
     SUMMARY "Kate C++ Helper Plugin"
@@ -229,8 +244,10 @@ add_package(
     VERSION "${VERSION_STRING}-0ubuntu1"
     SECTION "editors"
     DEPENDS
-        "libstdc++6"
-        "libclang1 >= 3.3"
+        "libboost-filesystem${BOOST_VERSION_PKG_DEP}"
+        "libboost-system${BOOST_VERSION_PKG_DEP}"
+        "libboost-serialization${BOOST_VERSION_PKG_DEP}"
+        "libclang1-3.3"
         "libxapian22"
         "kate"
     REPLACES "kate-cpp-helper-plugin${CPACK_BUILD_FLAVOUR} (<= ${VERSION_STRING})"
