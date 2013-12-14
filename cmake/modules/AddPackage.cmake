@@ -97,6 +97,7 @@ function(set_common_package_options)
         else()
             message(STATUS "WARNING: `dpkg-sig' executable not found. Packages will not be signed!")
         endif()
+    elseif(NOT set_common_package_options_SIGN_WITH AND NOT set_common_package_options_SIGN_BY)
     else()
         message(FATAL_ERROR "Both SIGN_BY and SIGN_WITH options must be provided or none of them")
     endif()
@@ -298,7 +299,7 @@ endfunction()
 
 # X-Chewy-RepoBase: https://raw.github.com/mutanabbi/chewy-cmake-rep/master/
 # X-Chewy-Path: AddPackage.cmake
-# X-Chewy-Version: 3.8
+# X-Chewy-Version: 3.9
 # X-Chewy-Description: Add a target to make a .deb package
 # X-Chewy-AddonFile: CPackCommonPackageOptions.cmake.in
 # X-Chewy-AddonFile: CPackPackageConfig.cmake.in

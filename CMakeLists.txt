@@ -14,7 +14,11 @@ project(KateCppHelperPlugin C CXX)
 set(VERSION_MAJOR 1)
 set(VERSION_MINOR 0)
 set(VERSION_PATCH 1)
-set(VERSION_STRING ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})
+if (BUILD_NUMBER)
+    set(VERSION_STRING ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}.${BUILD_NUMBER})
+else()
+    set(VERSION_STRING ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})
+endif()
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/modules" ${CMAKE_MODULE_PATH})
 
 #---------------------------------------------------------
@@ -208,6 +212,11 @@ set(
     "builder"
     CACHE STRING "User name to be used to sign packages (builder)"
   )
+set(
+    _DEB_REPOSITORY
+    "$ENV{HOME}/repo"
+    CACHE FILEPATH "Path to repository to deploy .deb packages (using `reprepro`)"
+  )
 
 set_common_package_options(
     PROJECT_VERSION "${VERSION_STRING}"
@@ -219,7 +228,12 @@ set_common_package_options(
     LICENSE_FILE ${PROJECT_SOURCE_DIR}/LICENSE
     SIGN_BY ${_SIGN_USER_NAME}
     SIGN_WITH ${_SIGN_KEY_ID}
+    ALLOW_DEPLOY_PACKAGES
+    DEPLOY_TO ${_DEB_REPOSITORY}
   )
+
+# Obtain distribution codename according LSB
+include(GetDistribInfo)
 
 # Specifying precise versions of some packages which are distinct
 # in different distributions.
