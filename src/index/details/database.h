@@ -44,6 +44,7 @@ class database
 {
 public:
     explicit database(const dbid db_id = 0) : m_id(db_id) {}
+    virtual ~database() = default;
 
     /// Access header files mapping cache (immutable)
     const HeaderFilesCache& headers_map() const

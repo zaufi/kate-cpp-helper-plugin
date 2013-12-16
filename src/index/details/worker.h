@@ -65,7 +65,6 @@ class worker : public QObject
 
 public:
     explicit worker(indexer*);
-    ~worker();
 
     bool is_cancelled() const;
 

@@ -83,7 +83,7 @@ public:
     /// Delete copy-assign operator
     TranslationUnit& operator=(const TranslationUnit&) = delete;
     /// Destructor
-    virtual ~TranslationUnit();
+    ~TranslationUnit();
 
     /// Allow implicit conversion to \c CXTranslationUnit, so clang index API
     /// cound be fed w/ instances of this class

@@ -104,8 +104,4 @@ catch (const Xapian::DatabaseError& e)
     throw exception::database_failure{"Index database [" + path + "] failure: " + e.get_msg()};
 }
 
-database::~database()
-{
-}
-
 }}}                                                         // namespace ro, index, kate

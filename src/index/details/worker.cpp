@@ -74,10 +74,6 @@ worker::worker(indexer* const parent)
 {
 }
 
-worker::~worker()
-{
-}
-
 void worker::request_cancel()
 {
     kDebug() << "Indexing worker: Got stop request!";

@@ -62,7 +62,7 @@ class database : public Xapian::WritableDatabase, public details::database
 public:
     /// Construct from a database path
     database(dbid, const std::string&);
-    virtual ~database();
+    ~database();
 
     /// Access header files mapping cache (mutable)
     HeaderFilesCache& headers_map();
@@ -87,8 +87,6 @@ class database : public Xapian::Database, public details::database
 public:
     /// Construct from DB path
     explicit database(const std::string&);
-    /// Destructor
-    ~database();
 };
 
 }}}                                                         // namespace ro, index, kate
