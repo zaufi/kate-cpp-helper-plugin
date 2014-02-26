@@ -17,6 +17,8 @@
 #
 # TODO Add help about generic usage and about set_common_package_options() particularly
 #
+# TODO One more way to deploy: `dput` to upload to launchpad's PPA
+#
 
 include(CMakeParseArguments)
 
@@ -97,7 +99,6 @@ function(set_common_package_options)
         else()
             message(STATUS "WARNING: `dpkg-sig' executable not found. Packages will not be signed!")
         endif()
-    elseif(NOT set_common_package_options_SIGN_WITH AND NOT set_common_package_options_SIGN_BY)
     else()
         message(FATAL_ERROR "Both SIGN_BY and SIGN_WITH options must be provided or none of them")
     endif()
@@ -289,7 +290,11 @@ function(add_package)
         if(${_gen} MATCHES "DEB" AND REPREPRO_EXECUTABLE)
             add_custom_target(
                 deploy-${add_package_NAME}-${_lgen}-package
-                COMMAND ${REPREPRO_EXECUTABLE} -b ${CPACK_DEB_PACKAGES_REPO} -C ${CPACK_DEB_PACKAGES_REPO_COMPONENT} includedeb ${CPACK_DISTRIB_CODENAME} ${add_package_FILE_NAME}.deb
+                COMMAND ${REPREPRO_EXECUTABLE}
+                    -b ${CPACK_DEB_PACKAGES_REPO}
+                    -C ${CPACK_DEB_PACKAGES_REPO_COMPONENT}
+                    ${REPREPRO_CUSTOM_OPTIONS}
+                    includedeb ${CPACK_DISTRIB_CODENAME} ${add_package_FILE_NAME}.deb
                 DEPENDS ${_make_pkg_target_name}
                 COMMENT "Deploying package ${add_package_NAME} to ${CPACK_DEB_PACKAGES_REPO} [${CPACK_DISTRIB_CODENAME}/${CPACK_DEB_PACKAGES_REPO_COMPONENT}]"
               )
@@ -299,7 +304,7 @@ endfunction()
 
 # X-Chewy-RepoBase: https://raw.github.com/mutanabbi/chewy-cmake-rep/master/
 # X-Chewy-Path: AddPackage.cmake
-# X-Chewy-Version: 3.9
+# X-Chewy-Version: 3.12
 # X-Chewy-Description: Add a target to make a .deb package
 # X-Chewy-AddonFile: CPackCommonPackageOptions.cmake.in
 # X-Chewy-AddonFile: CPackPackageConfig.cmake.in

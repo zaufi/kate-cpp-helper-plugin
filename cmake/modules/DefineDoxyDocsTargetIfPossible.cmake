@@ -18,7 +18,7 @@
 #
 
 #=============================================================================
-# Copyright 2011-2013 by Alex Turbov <i.zaufi@gmail.com>
+# Copyright 2011-2014 by Alex Turbov <i.zaufi@gmail.com>
 #
 # Distributed under the OSI-approved BSD License (the "License");
 # see accompanying file LICENSE for details.
@@ -132,7 +132,7 @@ else()
     # Handle appendable options
     set(
         DOXYGEN_EXCLUDE_PATTERNS
-        "${DOXYGEN_EXCLUDE_PATTERNS} */.git/* */.svn/* */.hg/* */tests/* *_tester.cc */CMakeFiles/* */cmake/* */_CPack_Packages/*"
+        "${DOXYGEN_EXCLUDE_PATTERNS} */.git/* */.svn/* */.hg/* *_tester.cc */CMakeFiles/* */cmake/* */_CPack_Packages/*"
       )
 
     # get other defaults from generated file
@@ -182,7 +182,7 @@ endif()
 
 # X-Chewy-RepoBase: https://raw.github.com/mutanabbi/chewy-cmake-rep/master/
 # X-Chewy-Path: DefineDoxyDocsTargetIfPossible.cmake
-# X-Chewy-Version: 2.6
+# X-Chewy-Version: 2.8
 # X-Chewy-Description: Define `make doxygen` target to build API documentation using `doxygen`
 # X-Chewy-AddonFile: Doxyfile.in
 # X-Chewy-AddonFile: DoxygenInstall.cmake.in
