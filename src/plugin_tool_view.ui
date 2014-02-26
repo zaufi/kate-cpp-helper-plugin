@@ -3,6 +3,12 @@
  <author>Alex Turbov</author>
  <class>PluginToolViewWidget</class>
  <widget class="QWidget" name="PluginToolViewWidget">
+  <property name="minimumSize">
+   <size>
+    <width>0</width>
+    <height>270</height>
+   </size>
+  </property>
   <property name="windowTitle">
    <string>C++ Helper ToolView</string>
   </property>
