@@ -148,6 +148,10 @@ TODO
 * Do incremental reindexing on view change and/or inactivity timeout
 * Add a way to analyze and show to a user what exceptions are possible at some particular
   point (function/method body/call) -- so user may add an apropriate `try`/`catch` block
+* That (possibly) would be nice to have `#ifdef`/`#else ifdef`/`#else` blocks as inlined tabs
+  inside a text buffer/view. So, depending on particular definitions the code (view) will
+  activate a corresponding tab automatically (and still allows to switch to others and/or
+  add some new branches).
 
 
 See Also
