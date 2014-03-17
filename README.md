@@ -96,8 +96,8 @@ TODO
 * Enable code autocompletion (configurable by checkbox)... but how to deal w/ really heavy project?
   Nowadays for one of my current project it took ~8sec to show completions (even with PCH) :-(
   <del>So, definitely there should be possible to turn code autocompleter off</del> [done]
-* Need to introduce index database to lookup for declarations/definitions/references. It
-  also can be used for code refactorings (like rename smth & etc.)
+* <del>Need to introduce index database to lookup for declarations/definitions/references. It
+  also can be used for code refactorings (like rename smth & etc.)</del>
 * Give a context hint to code completer
 * Give a priority boost for code completion items depending on lexical/semantic context
 * <del>Not quite related to C++, but it would be nice to have a CMake autocompleter.
@@ -146,6 +146,8 @@ TODO
 * <del>Add <em>Go to declaration/definition</em> to the context menu</del>
 * Add _Go to semantic/lexical parent_ to context menu
 * Do incremental reindexing on view change and/or inactivity timeout
+* Add a way to analyze and show to a user what exceptions are possible at some particular
+  point (function/method body/call) -- so user may add an apropriate `try`/`catch` block
 
 
 See Also
