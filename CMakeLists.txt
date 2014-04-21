@@ -193,79 +193,82 @@ set(CPACK_SOURCE_IGNORE_FILES
 
 # Include CPack support
 include(CPack)
-set(CPACK_GENERATOR DEB)
-include(AddPackage)
+if(DISTRIB_PKG_FMT STREQUAL "DEB")
+    set(CPACK_GENERATOR ${DISTRIB_PKG_FMT})
+    set(REPREPRO_CUSTOM_OPTIONS "--ask-passphrase")
+    include(AddPackage)
 
-if(CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "DebugFull")
-    set(CPACK_BUILD_FLAVOUR "-dbg")
-else()
-    set(CPACK_BUILD_FLAVOUR "")
+    if(CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "DebugFull")
+        set(CPACK_BUILD_FLAVOUR "-dbg")
+    else()
+        set(CPACK_BUILD_FLAVOUR "")
+    endif()
+
+    set(
+        _SIGN_KEY_ID
+        "37925FE2"
+        CACHE STRING "GPG key ID to be used to sign result packages"
+      )
+    set(
+        _SIGN_USER_NAME
+        "builder"
+        CACHE STRING "User name to be used to sign packages (builder)"
+      )
+    set(
+        _DEB_REPOSITORY
+        "$ENV{HOME}/ubuntu.repo"
+        CACHE FILEPATH "Path to repository to deploy .deb packages (using `reprepro`)"
+     )
+
+    set_common_package_options(
+        PROJECT_VERSION "${VERSION_STRING}"
+        VENDOR_NAME "Alex Turbov"
+        VENDOR_CONTACT "Alex Turbov <i.zaufi@gmail.com>"
+        BUILD_FLAVOUR "${CPACK_BUILD_FLAVOUR}"
+        PACKAGE_INSTALL_PREFIX "/usr"
+        README_FILE ${PROJECT_SOURCE_DIR}/README.md
+        LICENSE_FILE ${PROJECT_SOURCE_DIR}/LICENSE
+        SIGN_BY ${_SIGN_USER_NAME}
+        SIGN_WITH ${_SIGN_KEY_ID}
+        ALLOW_DEPLOY_PACKAGES
+        DEPLOY_TO ${_DEB_REPOSITORY}
+      )
+
+    # Obtain distribution codename according LSB
+    include(GetDistribInfo)
+
+    # Specifying precise versions of some packages which are distinct
+    # in different distributions.
+    if(DISTRIB_CODENAME STREQUAL "precise")
+        set(BOOST_DEV_VERSION_PKG_DEP "1.48")
+    elseif(DISTRIB_CODENAME STREQUAL "quantal")
+        set(BOOST_DEV_VERSION_PKG_DEP "1.50")
+    elseif(DISTRIB_CODENAME STREQUAL "raring")
+        set(BOOST_DEV_VERSION_PKG_DEP "1.53")
+    elseif(DISTRIB_CODENAME STREQUAL "saucy")
+        set(BOOST_DEV_VERSION_PKG_DEP "1.54")
+    else()
+        message(STATUS "WARNING: Target distribution codename is unknown!")
+    endif()
+    set(BOOST_VERSION_PKG_DEP "${BOOST_DEV_VERSION_PKG_DEP}.0")
+
+    add_package(
+        NAME kate-cpp-helper-plugin
+        SUMMARY "Kate C++ Helper Plugin"
+        DESCRIPTION "Plugin for KDE Advanced Text Editor"
+        HOMEPAGE "http://zaufi.github.io/kate-cpp-helper-plugin.html"
+        VERSION "${VERSION_STRING}-0ubuntu1"
+        SECTION "editors"
+        DEPENDS
+            "libboost-filesystem${BOOST_VERSION_PKG_DEP}"
+            "libboost-system${BOOST_VERSION_PKG_DEP}"
+            "libboost-serialization${BOOST_VERSION_PKG_DEP}"
+            "libclang1-3.3"
+            "libxapian22"
+            "kate"
+        REPLACES "kate-cpp-helper-plugin${CPACK_BUILD_FLAVOUR} (<= ${VERSION_STRING})"
+     )
 endif()
-
-set(
-    _SIGN_KEY_ID
-    "37925FE2"
-    CACHE STRING "GPG key ID to be used to sign result packages"
-  )
-set(
-    _SIGN_USER_NAME
-    "builder"
-    CACHE STRING "User name to be used to sign packages (builder)"
-  )
-set(
-    _DEB_REPOSITORY
-    "$ENV{HOME}/repo"
-    CACHE FILEPATH "Path to repository to deploy .deb packages (using `reprepro`)"
-  )
-
-set_common_package_options(
-    PROJECT_VERSION "${VERSION_STRING}"
-    VENDOR_NAME "Alex Turbov"
-    VENDOR_CONTACT "Alex Turbov <i.zaufi@gmail.com>"
-    BUILD_FLAVOUR "${CPACK_BUILD_FLAVOUR}"
-    PACKAGE_INSTALL_PREFIX "/usr"
-    README_FILE ${PROJECT_SOURCE_DIR}/README.md
-    LICENSE_FILE ${PROJECT_SOURCE_DIR}/LICENSE
-    SIGN_BY ${_SIGN_USER_NAME}
-    SIGN_WITH ${_SIGN_KEY_ID}
-    ALLOW_DEPLOY_PACKAGES
-    DEPLOY_TO ${_DEB_REPOSITORY}
-  )
-
-# Obtain distribution codename according LSB
-include(GetDistribInfo)
-
-# Specifying precise versions of some packages which are distinct
-# in different distributions.
-if(DISTRIB_CODENAME STREQUAL "precise")
-  set(BOOST_DEV_VERSION_PKG_DEP "1.48")
-elseif(DISTRIB_CODENAME STREQUAL "quantal")
-  set(BOOST_DEV_VERSION_PKG_DEP "1.50")
-elseif(DISTRIB_CODENAME STREQUAL "raring")
-  set(BOOST_DEV_VERSION_PKG_DEP "1.53")
-elseif(DISTRIB_CODENAME STREQUAL "saucy")
-  set(BOOST_DEV_VERSION_PKG_DEP "1.54")
-else()
-  message(STATUS "WARNING: Target distribution codename is unknown! Do not even try to build .deb packages!")
-endif()
-set(BOOST_VERSION_PKG_DEP "${BOOST_DEV_VERSION_PKG_DEP}.0")
-
-add_package(
-    NAME kate-cpp-helper-plugin
-    SUMMARY "Kate C++ Helper Plugin"
-    DESCRIPTION "Plugin for KDE Advanced Text Editor"
-    HOMEPAGE "http://zaufi.github.io/kate-cpp-helper-plugin.html"
-    VERSION "${VERSION_STRING}-0ubuntu1"
-    SECTION "editors"
-    DEPENDS
-        "libboost-filesystem${BOOST_VERSION_PKG_DEP}"
-        "libboost-system${BOOST_VERSION_PKG_DEP}"
-        "libboost-serialization${BOOST_VERSION_PKG_DEP}"
-        "libclang1-3.3"
-        "libxapian22"
-        "kate"
-    REPLACES "kate-cpp-helper-plugin${CPACK_BUILD_FLAVOUR} (<= ${VERSION_STRING})"
-  )
 
 #---------------------------------------------------------
 # Section: Dive into subdirs after main configuration
