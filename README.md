@@ -40,8 +40,9 @@ my system). So I call to users and distro-makers to provide some feedback, so I 
 * [boost](http://boost.org) library >= 1.49 required since version 0.8.7
 * [xapian](http://xapian.org) library >= 1.2.12 required since version 1.0
 
-NOTE: Attention distro guys! GNU Autogen, searched by CMake script, needed only for new code development
-and it is Ok to have it NOT-FOUND for binary package! So, no need to add it to dependencies ;-)
+NOTE: Attention distro guys! GNU Autogen, searched by CMake script, do not needed by end users!
+No need to add it to package dependencies! It is used (by me) in this particular project to generate
+C++ files from skeletons -- i.e. it is _"this package developers only dependency"_!
 
 
 Installation
