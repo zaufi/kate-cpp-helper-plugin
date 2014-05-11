@@ -302,7 +302,7 @@ function(add_package)
     endforeach()
 endfunction()
 
-# X-Chewy-RepoBase: https://raw.github.com/mutanabbi/chewy-cmake-rep/master/
+# X-Chewy-RepoBase: https://raw.githubusercontent.com/mutanabbi/chewy-cmake-rep/master/
 # X-Chewy-Path: AddPackage.cmake
 # X-Chewy-Version: 3.12
 # X-Chewy-Description: Add a target to make a .deb package

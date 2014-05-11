@@ -101,7 +101,7 @@ find_package_handle_standard_args(
     VERSION_VAR LIBCLANG_VERSION
   )
 
-# X-Chewy-RepoBase: https://raw.github.com/mutanabbi/chewy-cmake-rep/master/
+# X-Chewy-RepoBase: https://raw.githubusercontent.com/mutanabbi/chewy-cmake-rep/master/
 # X-Chewy-Path: FindLibClang.cmake
 # X-Chewy-Version: 2.0
 # X-Chewy-Description: Find clang C API library

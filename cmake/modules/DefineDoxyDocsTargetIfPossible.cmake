@@ -180,7 +180,7 @@ else()
     endif()
 endif()
 
-# X-Chewy-RepoBase: https://raw.github.com/mutanabbi/chewy-cmake-rep/master/
+# X-Chewy-RepoBase: https://raw.githubusercontent.com/mutanabbi/chewy-cmake-rep/master/
 # X-Chewy-Path: DefineDoxyDocsTargetIfPossible.cmake
 # X-Chewy-Version: 2.8
 # X-Chewy-Description: Define `make doxygen` target to build API documentation using `doxygen`

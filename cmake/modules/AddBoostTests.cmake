@@ -164,7 +164,7 @@ function(add_boost_tests)
     endforeach()
 endfunction(add_boost_tests)
 
-# X-Chewy-RepoBase: https://raw.github.com/mutanabbi/chewy-cmake-rep/master/
+# X-Chewy-RepoBase: https://raw.githubusercontent.com/mutanabbi/chewy-cmake-rep/master/
 # X-Chewy-Path: AddBoostTests.cmake
 # X-Chewy-Version: 3.3
 # X-Chewy-Description: Integrate Boost unit tests into CMake infrastructure

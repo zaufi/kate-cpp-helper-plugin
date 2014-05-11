@@ -24,7 +24,7 @@ if(NOT DISTRIB_CODENAME)
     message(STATUS "Target distribution codename: ${DISTRIB_CODENAME}")
 endif()
 
-# X-Chewy-RepoBase: https://raw.github.com/mutanabbi/chewy-cmake-rep/master/
+# X-Chewy-RepoBase: https://raw.githubusercontent.com/mutanabbi/chewy-cmake-rep/master/
 # X-Chewy-Path: GetDistribInfo.cmake
 # X-Chewy-Version: 2.0
 # X-Chewy-Description: Get a distribution codename according LSB spec or vendor specific files

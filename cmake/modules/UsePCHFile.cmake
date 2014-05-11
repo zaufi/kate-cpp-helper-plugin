@@ -90,7 +90,7 @@ function(use_pch_file)
       )
 endfunction()
 
-# X-Chewy-RepoBase: https://raw.github.com/mutanabbi/chewy-cmake-rep/master/
+# X-Chewy-RepoBase: https://raw.githubusercontent.com/mutanabbi/chewy-cmake-rep/master/
 # X-Chewy-Path: UsePCHFile.cmake
 # X-Chewy-Version: 2.11
 # X-Chewy-Description: Add Precompiled Header Support
