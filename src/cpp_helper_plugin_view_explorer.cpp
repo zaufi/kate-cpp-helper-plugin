@@ -71,7 +71,15 @@ void CppHelperPluginView::updateInclusionExplorer()
           , std::make_move_iterator(end(diag))
           );
     }
-    details::InclusionVisitorData data = {this, &m_plugin->getDocumentInfo(doc), {}, {}, nullptr, 0};
+    details::InclusionVisitorData data = 
+    {
+        this
+      , &m_plugin->getDocumentInfo(doc)
+      , decltype(details::InclusionVisitorData::m_parents){}
+      , {}
+      , nullptr
+      , 0
+    };
     data.m_di->clearInclusionTree();                        // Clear a previous tree in the document info
     m_tool_view_interior->includesTree->clear();            // and in the tree view model
     m_includes_list_model->clear();                         // as well as `included by` list
