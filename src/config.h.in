@@ -22,10 +22,8 @@
  * with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __SRC__CONFIG_H__
-# define __SRC__CONFIG_H__
+#pragma once
 
 # define PLUGIN_VERSION "@VERSION_STRING@"
 
-#endif                                                      // __SRC__CONFIG_H__
 // kate: hl c++11;

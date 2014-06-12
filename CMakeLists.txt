@@ -1,5 +1,5 @@
 #
-# Copyright 2012-2013 by Alex Turbov <i.zaufi@gmail.com>
+# Copyright 2012-2014 by Alex Turbov <i.zaufi@gmail.com>
 #
 
 # TODO I don't know a minimum required version...
@@ -137,21 +137,38 @@ if(_need_to_include_kate_interfaces)
 endif()
 
 # Set generic compiler flags: turn ON C++11 (C++03 is suxx)...
-if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+if(UNIX AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    # Allow GNU extensions
+    add_definitions(-D_GNU_SOURCE)
+
+    # BOOST_PP (boost <= 1.55.0) do not recognize clang as a compiler w/ variadic macros support,
+    # so lets force it!
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+        add_definitions(-DBOOST_PP_VARIADICS=1)
+    endif()
+
+    # Include declaration of use_compiler_option()
+    include(MacroUseCompilerOption)
+    # Set some compiler options
+    use_compiler_option(OPTION -pipe LANGUAGE CXX OUTPUT COMPILER_HAS_PIPE_OPTION)
+    use_compiler_option(OPTION -Wall LANGUAGE CXX OUTPUT COMPILER_HAS_WALL_OPTION)
     # TODO I don't know a minimum required version...
     # Please provide some feedback, if lesser works for you.
-    if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS "4.8.0")
-        message(FATAL_ERROR "GNU gcc >=4.8.0 is required to build this package")
-    else()
-        set(CXX11_FLAG "-std=c++11")
+    use_compiler_option(OPTION -std=c++11 LANGUAGE CXX OUTPUT CXX_COMPILER_HAS_CPP11_OPTION)
+    if(NOT CXX_COMPILER_HAS_CPP11_OPTION)
+        message(FATAL_ERROR "C++11 compatible compiler required to build this project (gcc >= 4.8 or clang >= 3.4)")
     endif()
 endif()
+
 # ... and allow to use exceptions w/ Qt code
-add_definitions(${CXX11_FLAG} ${KDE4_ENABLE_EXCEPTIONS})
+add_definitions(${KDE4_ENABLE_EXCEPTIONS})
 
 # Tell to boost::result_of to use decltype to decay return type of callable.
 # NOTE This would enable to use C++11 labmda expressions w/ boost::rage adaptors
 add_definitions(-DBOOST_RESULT_OF_USE_DECLTYPE)
+# Don't want to use any deprecated API
+add_definitions(-DBOOST_SYSTEM_NO_DEPRECATED)
+add_definitions(-DBOOST_FILESYSTEM_NO_DEPRECATED)
 # Add Qt/KDE defines
 add_definitions(${QT_DEFINITIONS} ${KDE4_DEFINITIONS})
 # Use expression templates to build QStrings
@@ -293,7 +310,7 @@ define_skeleton_generation_targets(
     PROJECT_LICENSE GPL
     PROJECT_NAMESPACE kate
     PROJECT_OWNER "Alex Turbov"
-    PROJECT_YEARS "2011-2013"
+    PROJECT_YEARS "2011-2014"
     HEADER_EXT "h"
     IMPL_EXT "cpp"
     ENABLE_TESTS
