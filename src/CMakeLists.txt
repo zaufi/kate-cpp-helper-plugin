@@ -153,6 +153,12 @@ install(
     COMPONENT ${KATE_CPP_HELPER_PLUGIN_PACKAGE}
   )
 
-if (BUILD_TESTING)
+if(BUILD_TESTING)
     add_subdirectory(test)
+
+    # Test if all header files are self-contained
+    file(GLOB_RECURSE ALL_HEADERS *.h)
+    add_compile_tests(
+        SOURCES ${ALL_HEADERS}
+      )
 endif()

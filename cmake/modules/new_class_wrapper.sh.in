@@ -11,6 +11,9 @@
 # TODO Add parameter to control filename if latter isn't same as a class name... or maybe
 #      better to generate a file w/o predefined class if `fn' specified instead of `class'
 #
+# TODO Generate result files into a temporary directory first, then move to the destination
+#      with `mv -i` option to avoid files override for in-source builds.
+#
 
 source "@_DSGT_BASE_DIR@/output_helpers.sh"
 

@@ -14,11 +14,13 @@
 #
 # NOTE GNU Autogen used internally.
 #
-# TODO Rewrite this stuff using Python + jinja2
+# TODO Rewrite this stuff using pure CMake and Python + jinja2
+# TODO How to deal w/ dependency on output_helpers.sh, which
+# is required by two modules??!
 #
 
 #=============================================================================
-# Copyright 2011-2013 by Alex Turbov <i.zaufi@gmail.com>
+# Copyright 2011-2014 by Alex Turbov <i.zaufi@gmail.com>
 #
 # Distributed under the OSI-approved BSD License (the "License");
 # see accompanying file LICENSE for details.
@@ -170,7 +172,7 @@ endfunction()
 
 # X-Chewy-RepoBase: https://raw.githubusercontent.com/mutanabbi/chewy-cmake-rep/master/
 # X-Chewy-Path: DefineSkeletonGenerationTargetsIfPossible.cmake
-# X-Chewy-Version: 5.13
+# X-Chewy-Version: 5.14
 # X-Chewy-Description: Add targets to generate class header/implementation and unit-tests skeleton files
 # X-Chewy-AddonFile: TestCMakeLists.txt.in
 # X-Chewy-AddonFile: class.tpl.in

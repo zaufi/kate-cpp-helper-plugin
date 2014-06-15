@@ -14,7 +14,7 @@ project(KateCppHelperPlugin C CXX)
 set(VERSION_MAJOR 1)
 set(VERSION_MINOR 0)
 set(VERSION_PATCH 1)
-if (BUILD_NUMBER)
+if(BUILD_NUMBER)
     set(VERSION_STRING ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}.${BUILD_NUMBER})
 else()
     set(VERSION_STRING ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})
@@ -33,6 +33,7 @@ if(
       )
   )
     include(CTest)
+    include(AddCompileTests)
 endif()
 
 #---------------------------------------------------------

@@ -35,8 +35,9 @@ option(NO_DOXY_DOCS "Do not install Doxygen'ed documentation")
 # check if doxygen is even installed
 find_package(Doxygen)
 
-if(DOXYGEN_FOUND STREQUAL "NO")
-    message(WARNING "Doxygen not found. Please get a copy http://www.doxygen.org to produce HTML documentation")
+if(NOT DOXYGEN_FOUND)
+    message(STATUS "WARNING: Doxygen not found. Please get a copy http://www.doxygen.org to produce HTML documentation")
+    set(NO_DOXY_DOCS ON)
 else()
     # Try to find `mscgen` as well
     find_program(
@@ -50,7 +51,7 @@ else()
 
     # set some variables before generate a config file
     set(DOXYGEN_HAVE_DOT ${DOXYGEN_DOT_FOUND})
-    set(DOXYGEN_STRIP_FROM_PATH "${PROJECT_SOURCE_DIR} ${PROJECT_BINARY_DIR}")
+    set(DOXYGEN_STRIP_FROM_PATH "\"${PROJECT_SOURCE_DIR}\" \"${PROJECT_BINARY_DIR}\"")
 
     # override some defaults, but allow to redefine from CMakeLists.txt
     if(NOT DEFINED DOXYGEN_PROJECT_NAME)
@@ -66,10 +67,10 @@ else()
         set(DOXYGEN_RECURSIVE YES)
     endif()
     if(NOT DEFINED DOXYGEN_INPUT)
-        set(DOXYGEN_INPUT "${PROJECT_SOURCE_DIR} ${PROJECT_BINARY_DIR}")
+        set(DOXYGEN_INPUT "\"${PROJECT_SOURCE_DIR}\" \"${PROJECT_BINARY_DIR}\"")
     endif()
     if(NOT DEFINED DOXYGEN_OUTPUT_DIRECTORY)
-        set(DOXYGEN_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/doc")
+        set(DOXYGEN_OUTPUT_DIRECTORY "doc")
     endif()
     if(NOT DEFINED DOXYGEN_DOT_IMAGE_FORMAT)
         set(DOXYGEN_DOT_IMAGE_FORMAT svg)
@@ -136,53 +137,55 @@ else()
       )
 
     # get other defaults from generated file
-    include(${CMAKE_CURRENT_LIST_DIR}/DoxygenDefaults.cmake)
+    include("${CMAKE_CURRENT_LIST_DIR}/DoxygenDefaults.cmake")
     # prepare doxygen configuration file
-    configure_file(${CMAKE_CURRENT_LIST_DIR}/Doxyfile.in ${CMAKE_BINARY_DIR}/Doxyfile)
+    configure_file("${CMAKE_CURRENT_LIST_DIR}/Doxyfile.in" "${CMAKE_BINARY_DIR}/Doxyfile")
 
     # add doxygen as target
     add_custom_target(
         doxygen
-        COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_BINARY_DIR}/Doxyfile
-        DEPENDS ${CMAKE_BINARY_DIR}/Doxyfile
+        COMMAND ${DOXYGEN_EXECUTABLE} "${CMAKE_BINARY_DIR}/Doxyfile"
+        DEPENDS "${CMAKE_BINARY_DIR}/Doxyfile"
         COMMENT "Generate API documentation"
       )
 
     # cleanup $build/docs on "make clean"
     set_property(DIRECTORY APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES ${DOXYGEN_OUTPUT_DIRECTORY})
 
-    find_program(
-        XDG_OPEN_EXECUTABLE
-        NAMES xdg-open
-        DOC "opens a file or URL in the user's preferred application"
-      )
-    if(XDG_OPEN_EXECUTABLE)
-        message(STATUS "Enable 'show-api-documentation' target via ${XDG_OPEN_EXECUTABLE}")
-        add_custom_target(
-            show-api-documentation
-            COMMAND ${XDG_OPEN_EXECUTABLE} ${DOXYGEN_OUTPUT_DIRECTORY}/html/index.html
-            DEPENDS ${CMAKE_BINARY_DIR}/Doxyfile
-            COMMENT "Open API documentation"
+    if(NOT WIN32)
+        find_program(
+            XDG_OPEN_EXECUTABLE
+            NAMES xdg-open
+            DOC "opens a file or URL in the user's preferred application"
           )
-        add_dependencies(show-api-documentation doxygen)
+        if(XDG_OPEN_EXECUTABLE)
+            message(STATUS "Enable 'show-api-documentation' target via ${XDG_OPEN_EXECUTABLE}")
+            add_custom_target(
+                show-api-documentation
+                COMMAND ${XDG_OPEN_EXECUTABLE} ${DOXYGEN_OUTPUT_DIRECTORY}/html/index.html
+                DEPENDS "${CMAKE_BINARY_DIR}/Doxyfile"
+                COMMENT "Open API documentation"
+              )
+            add_dependencies(show-api-documentation doxygen)
+        endif()
     endif()
 
-    if(NOT NO_DOXY_DOCS OR NOT NO_DOXY_DOCS STREQUAL "ON")
+    if(NO_DOXY_DOCS)
+        message(STATUS "Doxygened documentation will not be installed!")
+    else()
         # make sure documentation will be produced before (possible) install
         configure_file(
-            ${CMAKE_CURRENT_LIST_DIR}/DoxygenInstall.cmake.in
-            ${CMAKE_BINARY_DIR}/DoxygenInstall.cmake
+            "${CMAKE_CURRENT_LIST_DIR}/DoxygenInstall.cmake.in"
+            "${CMAKE_BINARY_DIR}/DoxygenInstall.cmake"
             @ONLY
           )
-        install(SCRIPT ${CMAKE_BINARY_DIR}/DoxygenInstall.cmake)
-    else()
-        message(STATUS "Doxygened documentation will not be installed!")
+        install(SCRIPT "${CMAKE_BINARY_DIR}/DoxygenInstall.cmake")
     endif()
 endif()
 
 # X-Chewy-RepoBase: https://raw.githubusercontent.com/mutanabbi/chewy-cmake-rep/master/
 # X-Chewy-Path: DefineDoxyDocsTargetIfPossible.cmake
-# X-Chewy-Version: 2.8
+# X-Chewy-Version: 2.15
 # X-Chewy-Description: Define `make doxygen` target to build API documentation using `doxygen`
 # X-Chewy-AddonFile: Doxyfile.in
 # X-Chewy-AddonFile: DoxygenInstall.cmake.in

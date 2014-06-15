@@ -5,6 +5,8 @@ add_definitions(-UQT_NO_STL)
 #
 add_boost_tests(
     TARGET unit_tests
+    MODULE BasicTests
+    DYN_LINK
     SOURCES
         sanitize_snippet_tester.cpp
         utils_tester.cpp

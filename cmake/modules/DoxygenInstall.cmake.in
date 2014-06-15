@@ -2,7 +2,5 @@ execute_process(
     COMMAND ${CMAKE_COMMAND} -E echo "Generate API documentation"
   )
 execute_process(
-    COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target doxygen
+    COMMAND ${CMAKE_COMMAND} --build "@CMAKE_BINARY_DIR@" --target doxygen
   )
-
-# kate: hl cmake;
