@@ -13,7 +13,7 @@ project(KateCppHelperPlugin C CXX)
 
 set(VERSION_MAJOR 1)
 set(VERSION_MINOR 0)
-set(VERSION_PATCH 1)
+set(VERSION_PATCH 2)
 if(BUILD_NUMBER)
     set(VERSION_STRING ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}.${BUILD_NUMBER})
 else()
@@ -107,6 +107,11 @@ message(STATUS "Found Xapian library: ${XAPIAN_LIBRARIES}")
 #---------------------------------------------------------
 # Section: Configure building process
 #---------------------------------------------------------
+
+# Provide some options to be set by user
+set(WITH_SANITIZER "" CACHE STRING "Instrument code with sanitizer(s) (comma separated list)")
+string(REPLACE "," ";" WITH_SANITIZER "${WITH_SANITIZER}")
+
 # NOTE Order is important!
 include_directories(
     ${PROJECT_SOURCE_DIR}
@@ -149,15 +154,39 @@ if(UNIX AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQU
     endif()
 
     # Include declaration of use_compiler_option()
-    include(MacroUseCompilerOption)
+    include(UseCompilerOption)
     # Set some compiler options
-    use_compiler_option(OPTION -pipe LANGUAGE CXX OUTPUT COMPILER_HAS_PIPE_OPTION)
-    use_compiler_option(OPTION -Wall LANGUAGE CXX OUTPUT COMPILER_HAS_WALL_OPTION)
+    use_compiler_option(-pipe OUTPUT COMPILER_HAS_PIPE_OPTION)
+    use_compiler_option(-Wall OUTPUT COMPILER_HAS_WALL_OPTION)
     # TODO I don't know a minimum required version...
     # Please provide some feedback, if lesser works for you.
-    use_compiler_option(OPTION -std=c++11 LANGUAGE CXX OUTPUT CXX_COMPILER_HAS_CPP11_OPTION)
+    use_compiler_option(-std=c++11 LANGUAGE CXX OUTPUT CXX_COMPILER_HAS_CPP11_OPTION)
     if(NOT CXX_COMPILER_HAS_CPP11_OPTION)
         message(FATAL_ERROR "C++11 compatible compiler required to build this project (gcc >= 4.8 or clang >= 3.4)")
+    endif()
+
+    # Do not link w/ libraries which isn't provide undefined symbols.
+    # (they are specified as dependencies for other targets from this
+    # project, but listed as unused by `ldd -u binary`)
+    use_compiler_option("-Wl,--as-needed" OUTPUT LINKER_HAS_AS_NEEDED)
+    use_compiler_option("-Wl,--no-undefined" OUTPUT LINKER_HAS_NO_UNDEFINED)
+
+    # Setup compiler options depending on build type
+    message(STATUS "Setting options for ${CMAKE_BUILD_TYPE} build type")
+    if(CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "DebugFull")
+        # Show even more warnings in debug mode
+        use_compiler_option(-Wextra OUTPUT COMPILER_HAS_WALL_OPTION)
+        use_compiler_option(-ggdb3 OUTPUT COMPILER_HAS_GGDB3_OPTION)
+        if(NOT COMPILER_HAS_GGDB3_OPTION)
+            use_compiler_option(-g3 OUTPUT COMPILER_HAS_G3_OPTION)
+        endif()
+    else()
+        # More linker optimizations in release mode
+        use_compiler_option(-g3 OUTPUT COMPILER_HAS_G3_OPTION)
+        use_compiler_option("-Wl,-O1" OUTPUT LINKER_HAS_O1)
+        use_compiler_option("-Wl,--sort-common" OUTPUT LINKER_HAS_SORT_COMMON)
+        # TODO Provide more compiler options (like -march or -ftree-vectorize)
+        # TODO Use LTO
     endif()
 endif()
 
