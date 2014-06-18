@@ -26,6 +26,7 @@ set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/modules" ${CMAKE_MODULE_PATH})
 #---------------------------------------------------------
 include(GuessBuildType)
 # TODO Invalid kate highlighting!
+
 if(
     (DEFINED BUILD_TESTING AND BUILD_TESTING) OR
     (NOT DEFINED BUILD_TESTING AND
@@ -34,6 +35,9 @@ if(
   )
     include(CTest)
     include(AddCompileTests)
+    set(_REAL_BUILD_TESTING ON)
+else()
+    set(_REAL_BUILD_TESTING OFF)
 endif()
 
 #---------------------------------------------------------
@@ -43,6 +47,9 @@ endif()
 # Find KDE
 find_package(KDE4 REQUIRED)
 include(KDE4Defaults)
+# ATTENTION BUILD_TESTING turned unconditionally ON by KDE4Defaults,
+# so to return the previous state after this include()
+set(BUILD_TESTING ${_REAL_BUILD_TESTING})
 
 # Find kate developer files
 # See BUG #10
@@ -78,9 +85,7 @@ set(NEEDED_BOOST_COMPONENTS
     serialization
     system
   )
-# NOTE I see no way to make unit tests optional for release mode
-# BUILD_TESTING will always turned ON... so caller have to disable
-# it explicitly if required.
+
 if(BUILD_TESTING)
     set(NEEDED_BOOST_COMPONENTS ${NEEDED_BOOST_COMPONENTS} unit_test_framework)
 else()
