@@ -2,3 +2,4 @@ kate: space-indent on;
 kate: tab-width 4;
 kate: indent-width 4;
 kate: replace-tabs on;
+kate-wildcard(*.h;*.cpp;*.moc): mode C++/Qt4;
