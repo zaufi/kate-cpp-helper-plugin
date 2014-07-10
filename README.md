@@ -153,6 +153,7 @@ TODO
   inside a text buffer/view. So, depending on particular definitions the code (view) will
   activate a corresponding tab automatically (and still allows to switch to others and/or
   add some new branches).
+* Turn `#incldue` lines into "links", if `Ctrl` key pressed
 
 
 See Also
