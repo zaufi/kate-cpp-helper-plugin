@@ -378,7 +378,13 @@ void CppHelperPluginConfigPage::reset()
         row++;
         kDebug(DEBUG_AREA) << row << ") setting find =" << find << ", replace =" << replace;
     }
-    m_completion_settings->sanitizeRules->resizeColumnsToContents();
+    if (rules.empty())
+        m_completion_settings->sanitizeRules->setColumnWidth(
+            0
+          , m_completion_settings->sanitizeRules->size().width() / 2
+          );
+    else
+        m_completion_settings->sanitizeRules->resizeColumnsToContents();
     /// \todo Why headers text can't be taken from \c ui file?
     m_completion_settings->sanitizeRules->setHorizontalHeaderItem(0, new QTableWidgetItem{i18n("Find")});
     m_completion_settings->sanitizeRules->setHorizontalHeaderItem(1, new QTableWidgetItem{i18n("Replace")});
