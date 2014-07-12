@@ -78,7 +78,7 @@ TODO
 * <del>Add autocompleter for `#include` files</del> [done]
 * <del>Handle multiple matches</del> [done]
 * <del>Passive popups if nothing found</del> [done]
-* Handle #include files w/ relative path (investigate the "problem")
+* Handle `#include` files w/ relative and quoted paths (investigate the "problem")
 * Use `Shift+F10` to go back in stack (?)
 * <del>Form an `#include` directive w/ filename currently active in a clipboard</del> [done]
 * <del>List of currently `#included` files in a dialog and/or menu</del> [done]
@@ -106,8 +106,8 @@ TODO
   Also it can retrieve `help` screen for particular module.</del> [done in kate.git and KDE SC 4.11]
 * Collect sanitizer stats (rule hits) -- it can help to understand what rules must be first in
   a configured list (to speedup completer + sanitizer).
-* Add a bunch of default sanitizer rules
-* Add import/export sanitizer rules
+* <del>Add a bunch of default sanitizer rules</del>
+* <del>Add import/export sanitizer rules</del>
 * Show some diagnostic from sanitizer
 * Colorize and group diagnostic messages [partially done]
 * <del>Add icons to completion types</del> [done for prefix-less layout]
