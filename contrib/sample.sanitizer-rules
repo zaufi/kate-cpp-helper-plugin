@@ -1,0 +1,2 @@
+[Kate C++ Helper plugin: Completion Sanitizer Rules]
+SanitizeRules[$e]=BOOST_(PP_[A-Z_]+_(\\\\d+|[A-Z])|.*_HPP(_INCLUDED)?$$|[A-Z_]+_(AUX|DETAIL)_),(\\, ((boost::detail::variant|mpl_)::)?(void_|na))*><$$replace-with$$>>, (&|&&)<$$replace-with$$>\\\\1, ([\\\\)\\\\]>])<$$replace-with$$>\\\\1,basic_string<char><$$replace-with$$>string,std::(deque|list|vector)<(.*)\\, std::allocator<\\\\2\\\\s?>\\\\s?><$$replace-with$$>std::\\\\1<\\\\2>
