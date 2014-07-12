@@ -30,7 +30,7 @@ include(GuessBuildType)
 if(
     (DEFINED BUILD_TESTING AND BUILD_TESTING) OR
     (NOT DEFINED BUILD_TESTING AND
-        (CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "DebugFull")
+        (CMAKE_BUILD_TYPE MATCHES "Debug" AND IS_DIRECTORY "${CMAKE_SOURCE_DIR}/.git")
       )
   )
     include(CTest)
@@ -224,6 +224,20 @@ set(CMAKE_INSTALL_RPATH "${LLVM_LIBDIR}")
 configure_file(config.h.in config.h @ONLY)
 
 #---------------------------------------------------------
+# Section: Top level installs
+#---------------------------------------------------------
+install(
+    FILES README.md LICENSE Changes.md
+    DESTINATION ${CMAKE_INSTALL_PREFIX}/share/doc/katecpphelperplugin
+    COMPONENT ${KATE_CPP_HELPER_PLUGIN_PACKAGE}
+  )
+install(
+    FILES contrib/sample.sanitizer-rules
+    DESTINATION ${DATA_INSTALL_DIR}/kate/plugins/katecpphelperplugin
+    COMPONENT ${KATE_CPP_HELPER_PLUGIN_PACKAGE}
+  )
+
+#---------------------------------------------------------
 # Section: Configure package options
 #---------------------------------------------------------
 set(CPACK_SOURCE_GENERATOR TBZ2)
@@ -356,13 +370,4 @@ define_skeleton_generation_targets(
 include(UsePCHFile)
 use_pch_file(
     PCH_FILE ${CMAKE_BINARY_DIR}/most_included_files.h
-  )
-
-#---------------------------------------------------------
-# Section: Top level installs
-#---------------------------------------------------------
-install(
-    FILES README.md LICENSE Changes.md
-    DESTINATION ${CMAKE_INSTALL_PREFIX}/share/doc/katecpphelperplugin
-    COMPONENT ${KATE_CPP_HELPER_PLUGIN_PACKAGE}
   )

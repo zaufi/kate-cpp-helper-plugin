@@ -4,7 +4,8 @@ Changes
 Version 1.0.2
 -------------
 
-* add import/export sanitizer rules
+* add import/export completions sanitizer rules
+* provide sample, but quite useful, sanitizer rules
 * keep current _include set_ selected after store it
 * add action to step back after lookup declaration/definition
 * set default shortcuts for all lookup action same as ctags plugin has.
