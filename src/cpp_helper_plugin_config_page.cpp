@@ -36,6 +36,7 @@
 #include <kate/documentmanager.h>
 #include <KDE/KDebug>
 #include <KDE/KDirSelectDialog>
+#include <KDE/KFileDialog>
 #include <KDE/KPassivePopup>
 #include <KDE/KShellCompletion>
 #include <KDE/KStandardDirs>
@@ -51,9 +52,10 @@ const char* const INCSET_DIRS_KEY = "Dirs";
 /// \attention Make sure this path replaced everywhre in case of changes
 /// \todo Make a constant w/ single declaration place for this path
 const char* const INCSET_FILE_TPL = "plugins/katecpphelperplugin/%1.incset";
+const char* const SANITIZER_RULES_GROUP_NAME = "Kate C++ Helper plugin: Completion Sanitizer Rules";
 const QString DEFAULT_GCC_BINARY = "g++";
 const QString DEFAULT_CLANG_BINARY = "clang++";
-
+/// \todo Add more VCS dirs to recognize
 std::vector<const char*> VSC_DIRS = {
     ".git", ".hg", ".svn"
 };
@@ -230,6 +232,8 @@ CppHelperPluginConfigPage::CppHelperPluginConfigPage(
         connect(m_completion_settings->removeRule, SIGNAL(clicked()), this, SLOT(removeSanitizeRule()));
         connect(m_completion_settings->upRule, SIGNAL(clicked()), this, SLOT(moveSanitizeRuleUp()));
         connect(m_completion_settings->downRule, SIGNAL(clicked()), this, SLOT(moveSanitizeRuleDown()));
+        connect(m_completion_settings->exportRules, SIGNAL(clicked()), this, SLOT(exportSanitizeRules()));
+        connect(m_completion_settings->importRules, SIGNAL(clicked()), this, SLOT(importSanitizeRules()));
         connect(
             m_completion_settings->sanitizeRules
           , SIGNAL(cellChanged(int, int))
@@ -318,21 +322,8 @@ void CppHelperPluginConfigPage::apply()
     m_plugin->config().setUsePrefixColumn(m_completion_settings->usePrefixColumn->isChecked());
     m_plugin->config().setHighlightCompletions(m_completion_settings->highlightResults->isChecked());
     m_plugin->config().setSanitizeCompletions(m_completion_settings->sanitizeResults->isChecked());
-    // Collect sanitize rules
-    PluginConfiguration::sanitize_rules_list_type rules;
-    rules.reserve(m_completion_settings->sanitizeRules->rowCount());
-    for (auto row = 0; row != m_completion_settings->sanitizeRules->rowCount(); ++row)
-    {
-        auto* find_item = m_completion_settings->sanitizeRules->item(row, 0);
-        auto* repl_item = m_completion_settings->sanitizeRules->item(row, 1);
-        auto find_regex = QRegExp{find_item->text()};
-        if (find_regex.isValid())
-            rules.emplace_back(find_regex, repl_item->text());
-        else
-            kWarning() << "Ignore sanitize rule w/ invalid regex" << find_item->text();
-    }
-    kDebug(DEBUG_AREA) << rules.size() << " sanitize rules collected";
-    m_plugin->config().setSanitizeRules(std::move(rules));
+    m_plugin->config().setAppendOnImport(m_completion_settings->appendOnImport->isChecked());
+    pushSanitizeRules();
 }
 
 /**
@@ -360,34 +351,12 @@ void CppHelperPluginConfigPage::reset()
 
     m_completion_settings->highlightResults->setChecked(m_plugin->config().highlightCompletions());
     m_completion_settings->sanitizeResults->setChecked(m_plugin->config().sanitizeCompletions());
+    m_completion_settings->appendOnImport->setChecked(m_plugin->config().appendOnImport());
     m_completion_settings->autoCompletions->setChecked(m_plugin->config().autoCompletions());
     m_completion_settings->includeMacros->setChecked(m_plugin->config().includeMacros());
     m_completion_settings->usePrefixColumn->setChecked(m_plugin->config().usePrefixColumn());
 
-    const auto& rules = m_plugin->config().sanitizeRules();
-    m_completion_settings->sanitizeRules->clear();
-    m_completion_settings->sanitizeRules->setRowCount(rules.size());
-    kDebug(DEBUG_AREA) << "Sanitize rules count: " << rules.size();
-    auto row = 0;
-    for (const auto& rule : rules)
-    {
-        auto* find = new QTableWidgetItem{rule.first.pattern()};
-        auto* replace = new QTableWidgetItem{rule.second};
-        m_completion_settings->sanitizeRules->setItem(row, 0, find);
-        m_completion_settings->sanitizeRules->setItem(row, 1, replace);
-        row++;
-        kDebug(DEBUG_AREA) << row << ") setting find =" << find << ", replace =" << replace;
-    }
-    if (rules.empty())
-        m_completion_settings->sanitizeRules->setColumnWidth(
-            0
-          , m_completion_settings->sanitizeRules->size().width() / 2
-          );
-    else
-        m_completion_settings->sanitizeRules->resizeColumnsToContents();
-    /// \todo Why headers text can't be taken from \c ui file?
-    m_completion_settings->sanitizeRules->setHorizontalHeaderItem(0, new QTableWidgetItem{i18n("Find")});
-    m_completion_settings->sanitizeRules->setHorizontalHeaderItem(1, new QTableWidgetItem{i18n("Replace")});
+    pullSanitizeRules();
 
     // Setup dirs watcher
     auto flags = m_plugin->config().monitorTargets();
@@ -982,6 +951,87 @@ void CppHelperPluginConfigPage::validateSanitizeRule(const int row, const int co
     Q_EMIT(changed());
 }
 
+void CppHelperPluginConfigPage::exportSanitizeRules()
+{
+    const auto& export_to = KFileDialog::getSaveFileName(
+        KUrl()
+      , QString()
+      , this
+      , "Export completion sanitizer rules to..."
+      , KFileDialog::ConfirmOverwrite
+      );
+    auto cfg = KSharedConfig::openConfig(export_to, KConfig::SimpleConfig);
+    KConfigGroup the_only_group(cfg, SANITIZER_RULES_GROUP_NAME);
+    m_plugin->config().writeSanitizeRulesTo(the_only_group);
+}
+
+void CppHelperPluginConfigPage::importSanitizeRules()
+{
+    const auto& export_to = KFileDialog::getOpenFileName(
+        KUrl()
+      , QString()
+      , this
+      , "Import completion sanitizer rules from..."
+      );
+    auto cfg = KSharedConfig::openConfig(export_to, KConfig::SimpleConfig);
+    KConfigGroup the_only_group(cfg, SANITIZER_RULES_GROUP_NAME);
+    m_plugin->config().readSanitizeRulesFrom(
+        the_only_group
+      , !m_completion_settings->appendOnImport->isChecked()
+      );
+    // Refresh view after import
+    pullSanitizeRules();
+}
+
+void CppHelperPluginConfigPage::pullSanitizeRules()
+{
+    const auto& rules = m_plugin->config().sanitizeRules();
+    m_completion_settings->sanitizeRules->clear();
+    m_completion_settings->sanitizeRules->setRowCount(rules.size());
+    kDebug(DEBUG_AREA) << "Sanitize rules count: " << rules.size();
+    auto row = 0;
+    for (const auto& rule : rules)
+    {
+        auto* find = new QTableWidgetItem{rule.first.pattern()};
+        auto* replace = new QTableWidgetItem{rule.second};
+        m_completion_settings->sanitizeRules->setItem(row, 0, find);
+        m_completion_settings->sanitizeRules->setItem(row, 1, replace);
+        row++;
+        kDebug(DEBUG_AREA) << row << ") setting find =" << find << ", replace =" << replace;
+    }
+
+    if (rules.empty())
+        m_completion_settings->sanitizeRules->setColumnWidth(
+            0
+          , m_completion_settings->sanitizeRules->size().width() / 2
+          );
+    else
+        m_completion_settings->sanitizeRules->resizeColumnsToContents();
+
+    /// \todo Why headers text can't be taken from \c ui file?
+    m_completion_settings->sanitizeRules->setHorizontalHeaderItem(0, new QTableWidgetItem{i18n("Find")});
+    m_completion_settings->sanitizeRules->setHorizontalHeaderItem(1, new QTableWidgetItem{i18n("Replace")});
+}
+
+void CppHelperPluginConfigPage::pushSanitizeRules()
+{
+    // Push sanitize rules back to plugin's configuration
+    auto rules = PluginConfiguration::sanitize_rules_list_type{};
+    rules.reserve(m_completion_settings->sanitizeRules->rowCount());
+    for (auto row = 0; row != m_completion_settings->sanitizeRules->rowCount(); ++row)
+    {
+        auto* find_item = m_completion_settings->sanitizeRules->item(row, 0);
+        auto* repl_item = m_completion_settings->sanitizeRules->item(row, 1);
+        auto find_regex = QRegExp{find_item->text()};
+        if (find_regex.isValid())
+            rules.emplace_back(find_regex, repl_item->text());
+        else
+            kWarning() << "Ignore sanitize rule w/ invalid regex" << find_item->text();
+    }
+    kDebug(DEBUG_AREA) << rules.size() << " sanitize rules collected";
+    m_plugin->config().setSanitizeRules(std::move(rules));
+}
+
 //END CppHelperPluginConfigPage
 }                                                           // namespace kate
-// kate: hl C++11/Qt4;
+

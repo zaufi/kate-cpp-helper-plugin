@@ -1,6 +1,17 @@
 Changes
 =======
 
+Version 1.0.2
+-------------
+
+* add import/export sanitizer rules
+* keep current _include set_ selected after store it
+* add action to step back after lookup declaration/definition
+* set default shortcuts for all lookup action same as ctags plugin has.
+* eliminate compile error w/ gcc 4.9. fix issue #18
+* few cleanups in UI
+* a bunch of improvements in build system (not interested to end-users ;-)
+
 Version 1.0.1
 -------------
 
@@ -15,7 +26,7 @@ Version 1.0.0
 
 * introduce source code indexer and full featured search facility. It allows to form
   various queries to the indexed collection and do flexible search. For example, to find
-  all non templated public members-functions of `some` class, one may type:  
+  all non templated public members-functions of `some` class, one may type:
 
         scope:some access:public kind:method NOT template:y
 * extract doxygen comments for completion items and show it as a tip, when `Alt` modifier pressed
@@ -200,8 +211,8 @@ Version 0.4
 Version 0.3
 -----------
 
-* check if #included files are really available in configured paths. If some doesn't, 
-  then mark such lines w/ an error background. In case of multiple matches, mark it w/ 
+* check if #included files are really available in configured paths. If some doesn't,
+  then mark such lines w/ an error background. In case of multiple matches, mark it w/
   a warning backgorund color.
 * configuration dialog extended w/ new options
 
@@ -209,9 +220,9 @@ Version 0.3
 Version 0.2
 -----------
 
-* push `#include` directive w/ current file name into the clipboard, so it would be easy 
+* push `#include` directive w/ current file name into the clipboard, so it would be easy
   to switch to another document and just paste the whole `#include` line...
-* finally it has auto-completer for path and file name for strings w/ `#include` on a line! 
+* finally it has auto-completer for path and file name for strings w/ `#include` on a line!
   Yeah, now it's really easy to type and find a required header...
 
 

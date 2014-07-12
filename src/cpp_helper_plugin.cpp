@@ -595,4 +595,3 @@ void CppHelperPlugin::propagateCompilerOptionsToIndexer()
 }
 //END CppHelperPlugin
 }                                                           // namespace kate
-// kate: hl C++11/Qt4

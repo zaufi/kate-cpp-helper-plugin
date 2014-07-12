@@ -44,6 +44,7 @@ const QString USE_LT_GT_ITEM = "UseLtGt";
 const QString USE_CWD_ITEM = "UseCwd";
 const QString OPEN_FIRST_INCLUDE_ITEM = "OpenFirstInclude";
 const QString USE_WILDCARD_SEARCH_ITEM = "UseWildcardSearch";
+const QString APPEND_ON_IMPORT_ITEM = "AppendSanitizerRulesOnImport";
 const QString MONITOR_DIRS_ITEM = "MonitorDirs";
 const QString HIGHLIGHT_COMPLETIONS_ITEM = "HighlightCompletionItems";
 const QString SANITIZE_COMPLETIONS_ITEM = "SanitizeCompletionItems";
@@ -64,34 +65,7 @@ void PluginConfiguration::readGlobalConfig()
     auto dirs = gcg.readPathEntry(CONFIGURED_DIRS_ITEM, QStringList{});
     kDebug(DEBUG_AREA) << "Got global configured include path list: " << dirs;
     m_system_dirs = dirs;
-    // Read sanitize rules from serializable form
-    m_sanitize_rules.clear();
-    auto rules = gcg.readPathEntry(SANITIZE_RULES_ITEM, QStringList{});
-    for (auto&& rule : rules)
-    {
-        auto l = rule.split(SANITIZE_RULE_SEPARATOR);
-        auto find = QString{};
-        auto replace = QString{};
-        switch (l.size())
-        {
-            case 2:
-                replace.swap(l[1]);
-            case 1:
-                find.swap(l[0]);
-                break;
-            default:
-            kWarning() << "Invalid sanitize rule ignored: " << rule;
-        }
-        kDebug(DEBUG_AREA) << "Got sanitize rule: find =" << find << ", replace =" << replace;
-        if (!find.isEmpty())
-        {
-            auto find_regex = QRegExp{find};
-            if (find_regex.isValid())
-                m_sanitize_rules.emplace_back(std::move(find_regex), std::move(replace));
-            else
-                kWarning() << "Invalid sanitize rule ignored: " << rule;
-        }
-    }
+    readSanitizeRulesFrom(gcg, true);
     kDebug(DEBUG_AREA) << "Got" << m_sanitize_rules.size() << "sanitize rules total";
     //
     Q_EMIT(systemDirsChanged());
@@ -116,6 +90,7 @@ void PluginConfiguration::readSessionConfig(KConfigBase* config, const QString& 
     m_auto_completions = scg.readEntry(AUTO_COMPLETIONS_ITEM, QVariant{true}).toBool();
     m_include_macros = scg.readEntry(INCLUDE_MACROS_ITEM, QVariant{true}).toBool();
     m_use_prefix_column = scg.readEntry(USE_PREFIX_COLUMN_ITEM, QVariant{false}).toBool();
+    m_append_sanitizer_rules_on_import = scg.readEntry(APPEND_ON_IMPORT_ITEM, QVariant{false}).toBool();
     //
     auto monitor_flags = scg.readEntry(MONITOR_DIRS_ITEM, QVariant{0}).toInt();
     if (monitor_flags < int(MonitorTargets::last__))
@@ -171,6 +146,7 @@ void PluginConfiguration::writeSessionConfig(KConfigBase* config, const QString&
     scg.writeEntry(USE_LT_GT_ITEM, m_use_ltgt);
     scg.writeEntry(USE_PREFIX_COLUMN_ITEM, m_use_prefix_column);
     scg.writeEntry(USE_WILDCARD_SEARCH_ITEM, m_use_wildcard_search);
+    scg.writeEntry(APPEND_ON_IMPORT_ITEM, m_append_sanitizer_rules_on_import);
     {
         auto enabled_indices = QStringList{};
         for (const auto& index : m_enabled_indices)
@@ -183,26 +159,7 @@ void PluginConfiguration::writeSessionConfig(KConfigBase* config, const QString&
     // Write global config
     KConfigGroup gcg(KGlobal::config(), GLOBAL_CONFIG_GROUP_NAME);
     gcg.writePathEntry(CONFIGURED_DIRS_ITEM, m_system_dirs);
-    // Transform sanitize rules into a serializable list of strings
-    QStringList rules;
-    for (auto&& rule : m_sanitize_rules)
-    {
-        auto r = rule.first.pattern();
-        if (!rule.first.isValid())                          // Ignore invalid regular expressions
-        {
-            kWarning() << "Ignore invalid sanitize regex: " << r;
-            continue;
-        }
-        if (r.isEmpty())                                    // Ignore rules w/ empty find part
-        {
-            kWarning() << "Ignore invalid sanitize rule: " << rule.second;
-            continue;
-        }
-        if (!rule.second.isEmpty())
-            r += SANITIZE_RULE_SEPARATOR + rule.second;
-        rules << r;
-    }
-    gcg.writePathEntry(SANITIZE_RULES_ITEM, rules);
+    writeSanitizeRulesTo(gcg);
     gcg.sync();
     m_config_dirty = false;
 }
@@ -316,5 +273,74 @@ unsigned PluginConfiguration::completionFlags() const
     return flags;
 }
 
+/**
+ * \param grp group to read rules
+ * \param need_clear should all current rule must be removed before
+ */
+void PluginConfiguration::readSanitizeRulesFrom(const KConfigGroup& grp, const bool need_clear)
+{
+    if (need_clear)
+        m_sanitize_rules.clear();
+
+    // Read sanitize rules from serializable form
+    auto rules = grp.readPathEntry(SANITIZE_RULES_ITEM, QStringList{});
+    for (auto&& rule : rules)
+    {
+        auto l = rule.split(SANITIZE_RULE_SEPARATOR);
+        auto find = QString{};
+        auto replace = QString{};
+        switch (l.size())
+        {
+            case 2:
+                replace.swap(l[1]);
+            case 1:
+                find.swap(l[0]);
+                break;
+            default:
+            kWarning() << "Invalid sanitize rule ignored: " << rule;
+        }
+        kDebug(DEBUG_AREA) << "Got sanitize rule: find =" << find << ", replace =" << replace;
+        if (!find.isEmpty())
+        {
+            auto find_regex = QRegExp{find};
+            if (find_regex.isValid())
+                m_sanitize_rules.emplace_back(std::move(find_regex), std::move(replace));
+            else
+                kWarning() << "Invalid sanitize rule ignored: " << rule;
+        }
+    }
+}
+
+/**
+ * This function used to write configured rules to a given \c KConfigGroup.
+ * It happens on `kate` start and on sanitize rules export.
+ * 
+ * \param grp a group to write rules to
+ *
+ * \todo Use smth more human readable to export sanitize rules? XML?
+ */
+void PluginConfiguration::writeSanitizeRulesTo(KConfigGroup& grp)
+{
+    // Transform sanitize rules into a serializable list of strings
+    QStringList rules;
+    for (auto&& rule : sanitizeRules())
+    {
+        auto r = rule.first.pattern();
+        if (!rule.first.isValid())                          // Ignore invalid regular expressions
+        {
+            kWarning() << "Ignore invalid sanitize regex: " << r;
+            continue;
+        }
+        if (r.isEmpty())                                    // Ignore rules w/ empty find part
+        {
+            kWarning() << "Ignore invalid sanitize rule: " << rule.second;
+            continue;
+        }
+        if (!rule.second.isEmpty())
+            r += SANITIZE_RULE_SEPARATOR + rule.second;
+        rules << r;
+    }
+    grp.writePathEntry(SANITIZE_RULES_ITEM, rules);
+}
+
 }                                                           // namespace kate
-// kate: hl C++11/Qt4;

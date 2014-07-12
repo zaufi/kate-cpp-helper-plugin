@@ -95,6 +95,8 @@ private Q_SLOTS:
     void removeSanitizeRule();
     void moveSanitizeRuleUp();
     void moveSanitizeRuleDown();
+    void exportSanitizeRules();
+    void importSanitizeRules();
     void validateSanitizeRule(int, int);
     std::pair<bool, QString> isSanitizeRuleValid(int, int) const;
 
@@ -105,6 +107,8 @@ private:
     void addDirTo(const KUrl&, KListWidget*);
     void updateSets(const QString& = QString());            ///< Update predefined \c #include sets
     void swapRuleRows(int, int);                            ///< Swap rule parts in a given rows
+    void pullSanitizeRules();                               ///< Fill a table view w/ configured rules
+    void pushSanitizeRules();                               ///< Update configured rules from a table view
 
     CppHelperPlugin* m_plugin;                              ///< Parent plugin
     Ui::PerSessionSettingsConfigWidget* const m_pss_config;

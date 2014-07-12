@@ -126,6 +126,26 @@
       <item>
        <layout class="QHBoxLayout" name="hl">
         <item>
+         <widget class="KPushButton" name="exportRules">
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Save sanitizer rules to a file&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
+          <property name="text">
+           <string>Export...</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="KPushButton" name="importRules">
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Import sanitizer rules from a file&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
+          <property name="text">
+           <string>Import...</string>
+          </property>
+         </widget>
+        </item>
+        <item>
          <spacer name="hs">
           <property name="orientation">
            <enum>Qt::Horizontal</enum>
@@ -193,6 +213,16 @@
          </widget>
         </item>
        </layout>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="appendOnImport">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If unchecked, all existed sanitizer rules will be removed before import&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="text">
+         <string>Append rules on import</string>
+        </property>
+       </widget>
       </item>
      </layout>
     </widget>

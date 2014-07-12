@@ -25,8 +25,8 @@ set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/modules" ${CMAKE_MODULE_PATH})
 # Section: Include aux cmake functions
 #---------------------------------------------------------
 include(GuessBuildType)
-# TODO Invalid kate highlighting!
 
+# TODO Invalid kate highlighting!
 if(
     (DEFINED BUILD_TESTING AND BUILD_TESTING) OR
     (NOT DEFINED BUILD_TESTING AND
@@ -48,7 +48,7 @@ endif()
 find_package(KDE4 REQUIRED)
 include(KDE4Defaults)
 # ATTENTION BUILD_TESTING turned unconditionally ON by KDE4Defaults,
-# so to return the previous state after this include()
+# so return to the previous state after this include()
 set(BUILD_TESTING ${_REAL_BUILD_TESTING})
 
 # Find kate developer files

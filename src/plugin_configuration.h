@@ -29,8 +29,8 @@
 #include <boost/uuid/uuid.hpp>
 #include <KDE/KConfigBase>
 #include <KDE/KUrl>
-#include <QtCore/QStringList>
 #include <QtCore/QRegExp>
+#include <QtCore/QStringList>
 #include <set>
 #include <utility>
 #include <vector>
@@ -80,6 +80,7 @@ public:
     bool usePrefixColumn() const;
     bool useWildcardSearch() const;
     unsigned completionFlags() const;
+    bool appendOnImport() const;
     //@}
 
     /// \name Modifiers
@@ -101,6 +102,7 @@ public:
     void setUseLtGt(bool);
     void setUsePrefixColumn(bool);
     void setUseWildcardSearch(bool);
+    void setAppendOnImport(bool);
     //@}
 
     void readSessionConfig(KConfigBase*, const QString&);
@@ -108,6 +110,11 @@ public:
     void readGlobalConfig();                                ///< Read global config
 
     clang::compiler_options formCompilerOptions() const;
+
+    /// Read sanitize rules from a given config group
+    void readSanitizeRulesFrom(const KConfigGroup&, const bool);
+    /// Write sanitize rules to a given config group
+    void writeSanitizeRulesTo(KConfigGroup&);
 
 public Q_SLOTS:
     void setIndexState(const QString&, bool);
@@ -134,12 +141,16 @@ private:
     bool m_highlight_completions = {true};                  ///< Try to highlight code completion results
     bool m_include_macros = {true};                         ///< Include MACROS to completion results
     bool m_open_first = {false};
-    bool m_sanitize_completions = {true};                   ///< Use sanitize rules to cleanup code completion results
+    /// Use sanitize rules to cleanup code completion results
+    bool m_sanitize_completions = {true};
     bool m_use_cwd;                                         ///< Use current document'd dir to find \c #include
     /// If \c true <em>Copy #include</em> action would put filename into \c '<' and \c '>' instead of \c '"'
     bool m_use_ltgt = {true};
-    bool m_use_prefix_column = {true};                      ///< Use \em prefix column for result type or item kind
+    /// Use \em prefix column for result type or item kind
+    bool m_use_prefix_column = {true};
     bool m_use_wildcard_search = {false};
+    /// Append (\c true) or replace (\c false) sanitizer rules on \e import action
+    bool m_append_sanitizer_rules_on_import = {false};
 };
 
 inline auto PluginConfiguration::sanitizeRules() const -> const sanitize_rules_list_type&
@@ -191,6 +202,10 @@ inline bool PluginConfiguration::useWildcardSearch() const
 {
     return m_use_wildcard_search;
 }
+inline bool PluginConfiguration::appendOnImport() const
+{
+    return m_append_sanitizer_rules_on_import;
+}
 inline auto PluginConfiguration::monitorTargets() const -> MonitorTargets
 {
     return m_monitor_flags;
@@ -231,6 +246,12 @@ inline void PluginConfiguration::setPrecompiledFile(const KUrl& file)
 inline void PluginConfiguration::setSanitizeRules(sanitize_rules_list_type&& rules)
 {
     m_sanitize_rules = std::move(rules);
+    m_config_dirty = true;
+}
+
+inline void PluginConfiguration::setAppendOnImport(const bool state)
+{
+    m_append_sanitizer_rules_on_import = state;
     m_config_dirty = true;
 }
 
@@ -289,4 +310,3 @@ inline void PluginConfiguration::setUsePrefixColumn(const bool state)
 }
 
 }                                                           // namespace kate
-// kate: hl C++11/Qt4;
