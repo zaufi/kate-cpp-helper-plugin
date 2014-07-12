@@ -255,6 +255,8 @@ set(CPACK_SOURCE_IGNORE_FILES
     "^.*/\\\\.git.*$"
     "\\\\.kcrash\\\\.txt$"
     "^~.*$"
+    "build"
+    "\\\\.travis\\\\.yml"
   )
 
 # Include CPack support
