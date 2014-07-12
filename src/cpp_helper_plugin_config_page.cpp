@@ -528,7 +528,7 @@ void CppHelperPluginConfigPage::storeSet()
     general.writePathEntry(INCSET_DIRS_KEY, dirs);
     /// \todo I wonder is it always successed? ORLY?!
     cfg->sync();
-    updateSets();
+    updateSets(set_name);
 }
 
 void CppHelperPluginConfigPage::addSuggestedDir()
@@ -793,8 +793,10 @@ QString CppHelperPluginConfigPage::getCurrentCompiler() const
  * Open found file (as ordinal KDE config), read a set \c Name and fill the
  * \c m_include_sets map w/ \e Name to \c KSharedConfigPtr entry.
  * After all found files forcessed, fill the combobox w/ found entries.
+ * 
+ * \param current if not empty string, preselect this item
  */
-void CppHelperPluginConfigPage::updateSets()
+void CppHelperPluginConfigPage::updateSets(const QString& current)
 {
     // Remove everything collected before
     m_favorite_sets->setsList->clear();
@@ -821,8 +823,15 @@ void CppHelperPluginConfigPage::updateSets()
     }
 
     // Fill the `sets` combobox w/ names
+    kDebug() << "current set name" << current;
     for (const auto& p : m_include_sets)
+    {
+        kDebug() << "adding set name" << p.first;
         m_favorite_sets->setsList->addItem(p.first);
+    }
+    // Try to preset a set name
+    if (!current.isEmpty())
+        m_favorite_sets->setsList->setCurrentItem(current, false);
 }
 
 void CppHelperPluginConfigPage::updateSuggestions()

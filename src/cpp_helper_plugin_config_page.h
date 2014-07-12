@@ -103,7 +103,7 @@ private:
     QString findBinary(const QString&) const;
     QString getCurrentCompiler() const;
     void addDirTo(const KUrl&, KListWidget*);
-    void updateSets();                                      ///< Update predefined \c #include sets
+    void updateSets(const QString& = QString());            ///< Update predefined \c #include sets
     void swapRuleRows(int, int);                            ///< Swap rule parts in a given rows
 
     CppHelperPlugin* m_plugin;                              ///< Parent plugin
