@@ -187,7 +187,6 @@ if(UNIX AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQU
         endif()
     else()
         # More linker optimizations in release mode
-        use_compiler_option(-g3 OUTPUT COMPILER_HAS_G3_OPTION)
         use_compiler_option("-Wl,-O1" OUTPUT LINKER_HAS_O1)
         use_compiler_option("-Wl,--sort-common" OUTPUT LINKER_HAS_SORT_COMMON)
         # TODO Provide more compiler options (like -march or -ftree-vectorize)
