@@ -67,7 +67,7 @@ KTextEditor::Range DocumentProxy::getIdentifierUnderCursor(const KTextEditor::Cu
 
 /**
  * \todo Move a lambda to a functior, so it can be reused by \c wordAfterCursor.
- * But there is some problem: functiors for \c scanChars and \c scanCharsReverse
+ * But there is some problem: functors for \c scanChars and \c scanCharsReverse
  * can't have a state :-( ... at leas nowadays.
  */
 KTextEditor::Range DocumentProxy::firstWordBeforeCursor(const KTextEditor::Cursor& pos)

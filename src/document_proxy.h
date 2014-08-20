@@ -41,7 +41,7 @@ namespace kate {
  * \brief Class to decorate \e standard \c KTextEditor::Document class
  *
  * Most of the time plugin code has a pointer to document (instance of \c KTextEditor::Document).
- * Latter class has just minimum of required methods. So this class extends a document
+ * Latter class has just minimum of required methods. So this class extend a document
  * w/ some cool functionality.
  *
  * \note There is no overload dereference operator cuz most of the time Kate API accept
@@ -107,9 +107,9 @@ public:
 
 private:
     template <typename Predicate>
-    KTextEditor::Cursor handleLine(const int, int, const int, Predicate);
+    KTextEditor::Cursor handleLine(int, int, int, Predicate);
     template <typename Predicate>
-    KTextEditor::Cursor handleLineReverse(const int, const int, int, Predicate);
+    KTextEditor::Cursor handleLineReverse(int, int, int, Predicate);
 
     KTextEditor::Document* m_doc_ptr;
 };

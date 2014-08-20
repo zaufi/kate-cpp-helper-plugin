@@ -201,6 +201,7 @@ bool worker::is_look_like_cpp_source(const QFileInfo& fi)
     {
         // Try to use Mime database to detect by file content
         auto mime = KMimeType::findByFileContent(fi.canonicalFilePath());
+        kDebug() << "File extension not recognized: trying to check MIME-type:" << mime->name();
         result = (
             mime->name() != KMimeType::defaultMimeType()
           && CPP_SOURCE_MIME_TYPES.find(mime->name()) != end(CPP_SOURCE_MIME_TYPES)
