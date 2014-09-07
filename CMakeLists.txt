@@ -165,9 +165,9 @@ if(UNIX AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQU
     use_compiler_option(-Wall OUTPUT COMPILER_HAS_WALL_OPTION)
     # TODO I don't know a minimum required version...
     # Please provide some feedback, if lesser works for you.
-    use_compiler_option(-std=c++11 LANGUAGE CXX OUTPUT CXX_COMPILER_HAS_CPP11_OPTION)
-    if(NOT CXX_COMPILER_HAS_CPP11_OPTION)
-        message(FATAL_ERROR "C++11 compatible compiler required to build this project (gcc >= 4.8 or clang >= 3.4)")
+    use_compiler_option(-std=c++1y LANGUAGE CXX OUTPUT CXX_COMPILER_HAS_CPP1Y_OPTION)
+    if(NOT CXX_COMPILER_HAS_CPP1Y_OPTION)
+        message(FATAL_ERROR "C++14 compatible compiler required to build this project (gcc >= 4.9 or clang >= 3.5)")
     endif()
 
     # Do not link w/ libraries which isn't provide undefined symbols.
@@ -349,11 +349,42 @@ add_subdirectory(src)
 #       To make sure all vars r defined!
 #---------------------------------------------------------
 
-# Setup doxygen
+# Setup doxygen generator
 set(DOXYGEN_PROJECT_BRIEF "\"Kate C++ Helper Plugin\"")
-set(DOXYGEN_TAGFILES "~/.cache/doxygen/libstdc++.tag=http://gcc.gnu.org/onlinedocs/libstdc++/latest-doxygen/")
 set(DOXYGEN_PROJECT_NUMBER ${VERSION_STRING})
-include(DefineDoxyDocsTargetIfPossible)
+set(DOXYGEN_BUILTIN_STL_SUPPORT YES)
+set(DOXYGEN_FULL_PATH_NAMES YES)
+set(DOXYGEN_FULL_PATH_NAMES YES)
+set(DOXYGEN_SOURCE_BROWSER YES)
+set(DOXYGEN_STRIP_CODE_COMMENTS NO)
+set(DOXYGEN_GENERATE_LATEX NO)
+set(DOXYGEN_DOT_CLEANUP NO)
+set(DOXYGEN_EXTRACT_ALL YES)
+set(DOXYGEN_EXTRACT_PRIVATE YES)
+set(DOXYGEN_EXTRACT_STATIC YES)
+set(DOXYGEN_EXTRACT_LOCAL_METHODS YES)
+set(DOXYGEN_INTERNAL_DOCS YES)
+set(DOXYGEN_SORT_BRIEF_DOCS YES)
+set(DOXYGEN_SORT_MEMBERS_CTORS_1ST YES)
+set(DOXYGEN_SORT_GROUP_NAMES YES)
+set(DOXYGEN_SORT_BY_SCOPE_NAME YES)
+if(UNIX AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND EXISTS $ENV{HOME}/.cache/doxygen/libstdc++.tag)
+    # TODO Download libstdc++ tag file
+    set(
+        DOXYGEN_TAGFILES
+            "$ENV{HOME}/.cache/doxygen/libstdc++.tag=http://gcc.gnu.org/onlinedocs/libstdc++/latest-doxygen/"
+        )
+endif()
+include(GenerateDoxygenDocumentation)
+generate_doxygen_documentation(doxygen)
+
+# Declare target to open generated API documentation
+include(AddOpenTarget)
+add_open_target(
+    show-api-dox
+    "${CMAKE_CURRENT_BINARY_DIR}/doc/html/index.html"
+    DEPENDS doxygen
+    )
 
 include(DefineSkeletonGenerationTargetsIfPossible)
 define_skeleton_generation_targets(

@@ -14,7 +14,7 @@
 #
 # NOTE GNU Autogen used internally.
 #
-# TODO Rewrite this stuff using pure CMake and Python + jinja2
+# TODO Rewrite this stuff using Python + jinja2 (really?)
 # TODO How to deal w/ dependency on output_helpers.sh, which
 # is required by two modules??!
 #
@@ -42,28 +42,49 @@ find_program(AUTOGEN_EXECUTABLE autogen)
 
 function(define_skeleton_generation_targets)
     if(NOT AUTOGEN_EXECUTABLE)
-        message(STATUS "WARNING: You need to install GNU Autogen to be able to produce new C++ sources from skeletons")
+        message(
+            STATUS
+            "WARNING: You need to install GNU Autogen to be able to produce new C++ sources from skeletons"
+          )
     endif()
-
+    if(NOT CMAKE_GENERATOR STREQUAL "Unix Makefiles")
+        message(
+            STATUS
+            "WARNING: Skeleton generation targets are reasonable for Unix Makefiles only (nowadays), so disabled"
+          )
+        return()
+    endif()
     # Parse function arguments
-    set(options USE_CAMEL_STYLE ENABLE_TESTS USE_PRAGMA_ONCE)
-    set(one_value_args HEADER_EXT IMPL_EXT PROJECT_PREFIX PROJECT_LICENSE PROJECT_NAMESPACE PROJECT_OWNER PROJECT_YEARS)
+    set(options ENABLE_TESTS USE_PRAGMA_ONCE)
+    set(
+        one_value_args
+            HEADER_EXT
+            IMPL_EXT
+            TEST_FILE_SUFFIX
+            PROJECT_PREFIX
+            PROJECT_LICENSE
+            PROJECT_NAMESPACE
+            PROJECT_OWNER
+            PROJECT_YEARS
+      )
     set(multi_value_args)
-    cmake_parse_arguments(define_skeleton_generation_targets "${options}" "${one_value_args}" "${multi_value_args}" ${ARGN})
+    cmake_parse_arguments(
+        define_skeleton_generation_targets
+        "${options}"
+        "${one_value_args}"
+        "${multi_value_args}"
+        ${ARGN}
+      )
 
     # Check mandatory arguments
     if(NOT define_skeleton_generation_targets_PROJECT_NAMESPACE)
-        message(FATAL_ERROR "PROJECT_NAMESPACE is not ptovided")
+        message(FATAL_ERROR "PROJECT_NAMESPACE is not provided")
         return()
     endif()
     # TODO Validate namespace spelling?
     set(PROJECT_DEFAULT_NAMESPACE "${define_skeleton_generation_targets_PROJECT_NAMESPACE}")
 
     # Check optional arguments and assign defaults of ommited
-    if(define_skeleton_generation_targets_USE_CAMEL_STYLE)
-        set(NAMING_STYLE "Camel")
-    endif()
-    #
     if(define_skeleton_generation_targets_USE_PRAGMA_ONCE)
         set(USE_PRAGMA_ONCE "yes")
     else()
@@ -91,11 +112,7 @@ function(define_skeleton_generation_targets)
         set(PROJECT_YEARS "${define_skeleton_generation_targets_PROJECT_YEARS}")
     else()
         # Get current year
-        execute_process(
-            COMMAND date "+%G"
-            OUTPUT_VARIABLE PROJECT_YEARS
-            OUTPUT_STRIP_TRAILING_WHITESPACE
-          )
+        string(TIMESTAMP PROJECT_YEARS "%Y")
     endif()
     if(define_skeleton_generation_targets_PROJECT_PREFIX)
         set(PROJECT_PREFIX "${define_skeleton_generation_targets_PROJECT_PREFIX}")
@@ -116,55 +133,63 @@ function(define_skeleton_generation_targets)
         set(PROJECT_LICENSE "${define_skeleton_generation_targets_PROJECT_LICENSE}")
     endif()
 
-    # render template defaults
-    configure_file(
-        ${_DSGT_BASE_DIR}/tpl_defaults.def.in
-        ${CMAKE_BINARY_DIR}/tpl_defaults.def
-        @ONLY
-      )
+    set(_template "class.tpl")
     # render files template
     configure_file(
         ${_DSGT_BASE_DIR}/class.tpl.in
-        ${CMAKE_BINARY_DIR}/class.tpl
+        ${CMAKE_CURRENT_BINARY_DIR}/class.tpl
         @ONLY
       )
     # prepare autogen wrapper for new class skeleton creation
     configure_file(
-        ${_DSGT_BASE_DIR}/new_class_wrapper.sh.in
-        ${CMAKE_BINARY_DIR}/new_class_wrapper.sh
+        ${_DSGT_BASE_DIR}/render_template.cmake.in
+        ${CMAKE_CURRENT_BINARY_DIR}/new_class.cmake
         @ONLY
       )
 
     # add new-class as target
     add_custom_target(
         new-class
-        COMMAND /bin/sh ${CMAKE_BINARY_DIR}/new_class_wrapper.sh
-        DEPENDS ${CMAKE_BINARY_DIR}/new_class_wrapper.sh
-                ${CMAKE_BINARY_DIR}/class.tpl
-                ${_DSGT_BASE_DIR}/class.tpl.in
-        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+        COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/new_class.cmake
+        DEPENDS
+            ${CMAKE_CURRENT_BINARY_DIR}/new_class.cmake
+            ${CMAKE_CURRENT_BINARY_DIR}/class.tpl
+            ${_DSGT_BASE_DIR}/class.tpl.in
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
         COMMENT "Generate skeleton files"
       )
 
     if(define_skeleton_generation_targets_ENABLE_TESTS)
+        set(_template "class_tester.tpl")
+        if(define_skeleton_generation_targets_TEST_FILE_SUFFIX)
+            set(_filename_suffix "${define_skeleton_generation_targets_TEST_FILE_SUFFIX}")
+        else()
+            set(_filename_suffix "_tester")
+        endif()
+
         configure_file(
             ${_DSGT_BASE_DIR}/class_tester.tpl.in
-            ${CMAKE_BINARY_DIR}/class_tester.tpl
+            ${CMAKE_CURRENT_BINARY_DIR}/class_tester.tpl
             @ONLY
           )
         configure_file(
-            ${_DSGT_BASE_DIR}/new_class_tester_wrapper.sh.in
-            ${CMAKE_BINARY_DIR}/new_class_tester_wrapper.sh
+            ${_DSGT_BASE_DIR}/render_template.cmake.in
+            ${CMAKE_CURRENT_BINARY_DIR}/new_class_tester.cmake
+            @ONLY
+          )
+        configure_file(
+            ${_DSGT_BASE_DIR}/new_class_tester_post.cmake.in
+            ${CMAKE_CURRENT_BINARY_DIR}/new_class_tester_post.cmake
             @ONLY
           )
         # add new-class-tester as target
         add_custom_target(
             new-class-tester
-            COMMAND /bin/sh ${CMAKE_BINARY_DIR}/new_class_tester_wrapper.sh
-            DEPENDS ${CMAKE_BINARY_DIR}/new_class_tester_wrapper.sh
-                    ${CMAKE_BINARY_DIR}/class_tester.tpl
+            COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/new_class_tester.cmake
+            DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/new_class_tester.cmake
+                    ${CMAKE_CURRENT_BINARY_DIR}/class_tester.tpl
                     ${_DSGT_BASE_DIR}/class_tester.tpl.in
-            WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
             COMMENT "Generate unit-test skeleton file"
           )
     endif()
@@ -172,13 +197,10 @@ endfunction()
 
 # X-Chewy-RepoBase: https://raw.githubusercontent.com/mutanabbi/chewy-cmake-rep/master/
 # X-Chewy-Path: DefineSkeletonGenerationTargetsIfPossible.cmake
-# X-Chewy-Version: 5.14
+# X-Chewy-Version: 6.5
 # X-Chewy-Description: Add targets to generate class header/implementation and unit-tests skeleton files
 # X-Chewy-AddonFile: TestCMakeLists.txt.in
 # X-Chewy-AddonFile: class.tpl.in
 # X-Chewy-AddonFile: class_tester.tpl.in
-# X-Chewy-AddonFile: mknslist.awk
-# X-Chewy-AddonFile: new_class_tester_wrapper.sh.in
-# X-Chewy-AddonFile: new_class_wrapper.sh.in
-# X-Chewy-AddonFile: output_helpers.sh
-# X-Chewy-AddonFile: tpl_defaults.def.in
+# X-Chewy-AddonFile: new_class_tester_post.cmake.in
+# X-Chewy-AddonFile: render_template.cmake.in

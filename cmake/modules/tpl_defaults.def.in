@@ -1,3 +1,0 @@
-namespace=@PROJECT_DEFAULT_NAMESPACE@;
-reverse-namespace=@PROJECT_DEFAULT_NAMESPACE@;
-ns-close="}                                                           ";

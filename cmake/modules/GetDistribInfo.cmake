@@ -61,6 +61,16 @@ macro(_make_distrib_file_part)
     string(TOLOWER "${DISTRIB_FILE_PART}" DISTRIB_FILE_PART)
 endmacro()
 
+macro(_try_check_centos _release_file)
+    set(DISTRIB_ID "CentOS")
+    file(STRINGS ${_release_file} _release_string)
+    # NOTE CentOS 6.0 has a word "Linux" in release string
+    string(REGEX REPLACE "CentOS release ([0-9\\.]+) .*" "\\1" DISTRIB_VERSION "${_release_string}")
+    # Set native packages format
+    set(DISTRIB_PKG_FMT "RPM")
+    # TODO Get more details
+endmacro()
+
 #
 # Ok, lets collect come info about this distro...
 #
@@ -85,13 +95,15 @@ if(NOT DISTRIB_CODENAME)
     # Trying Windows
     if(WIN32)
 
-        set(DISTRIB_PKG_FMT "NSIS;WIX")
+        set(DISTRIB_PKG_FMT "WIX")
         if(MSVC)
             set(DISTRIB_ID "Win")
             if(CMAKE_CL_64)
                 set(DISTRIB_ARCH "64")
+                list(APPEND DISTRIB_PKG_FMT "NSIS64")
             else()
                 set(DISTRIB_ARCH "32")
+                list(APPEND DISTRIB_PKG_FMT "NSIS")
             endif()
         endif()
 
@@ -120,22 +132,16 @@ if(NOT DISTRIB_CODENAME)
         # ATTENTION CentOS has a symlink /etc/redhat-release -> /etc/centos-release,
         # so it mut be handled before!
         # NOTE /etc/centos-release
-        set(DISTRIB_ID "CentOS")
-        file(STRINGS /etc/centos-release DISTRIB_VERSION)
-        string(REGEX REPLACE "CentOS release ([0-9.]+) .*" "\\1" DISTRIB_VERSION "${DISTRIB_VERSION}")
-        # Set native packages format
-        set(DISTRIB_PKG_FMT "RPM")
-        # TODO Get more details
+        _try_check_centos(/etc/centos-release)
 
     # Trying RedHat distros
     elseif(EXISTS /etc/redhat-release)
 
-        file(STRINGS /etc/redhat-release DISTRIB_CODENAME)
-        string(REGEX REPLACE ".*\((.*)\)" "\\1" DISTRIB_CODENAME "${DISTRIB_CODENAME}")
-        string(TOLOWER "${DISTRIB_CODENAME}" DISTRIB_CODENAME)
-        # Set native packages format
-        set(DISTRIB_PKG_FMT "RPM")
-        # TODO Get more details
+        file(STRINGS /etc/redhat-release _release_string)
+        if(_release_string MATCHES "CentOS")
+            _try_check_centos(/etc/redhat-release)
+        endif()
+        # TODO Detect a real RH releases
 
     elseif(EXISTS /etc/gentoo-release)
 
@@ -190,5 +196,5 @@ endif()
 
 # X-Chewy-RepoBase: https://raw.githubusercontent.com/mutanabbi/chewy-cmake-rep/master/
 # X-Chewy-Path: GetDistribInfo.cmake
-# X-Chewy-Version: 2.7
+# X-Chewy-Version: 2.10
 # X-Chewy-Description: Get a distribution codename

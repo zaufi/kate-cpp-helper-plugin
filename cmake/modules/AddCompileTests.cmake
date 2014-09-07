@@ -6,6 +6,8 @@
 #       [STRIP_LEADING_PATH path]
 #       [PREFIX]
 #       [DEBUG]
+#       [SUITE test-suite-name]
+#       [TARGET target-name]
 #     )
 #   source1-N  -- list of source (most of the time header) files to be tested
 #   path       -- when source files list is a result of file(GLOB...), every file
@@ -15,6 +17,10 @@
 # This module will register a bunch of tests (integrated w/ CTest)
 # each of which is as simple `#include` corresponding file + dummy `main()`.
 # In case of header files this is a good test to check for self-contained header.
+#
+# Last two options are used if running under [Teamcity](http://www.jetbrains.com/teamcity/).
+# TARGET is a make target name to be registered, instead of `test`, used by CTest integration.
+# Both has default values, so can be ommited.
 #
 # Example:
 #     # Check if headers are self-contained
@@ -42,12 +48,13 @@
 #  License text for the above reference.)
 
 include(CMakeParseArguments)
+include(TeamCityIntegration)
 
 set(_ADD_COMPILE_TESTS_BASE_DIR "${CMAKE_CURRENT_LIST_DIR}")
 
 function(add_compile_tests)
     set(options DEBUG)
-    set(one_value_args STRIP_LEADING_PATH LANGUAGE PREFIX)
+    set(one_value_args LANGUAGE PREFIX STRIP_LEADING_PATH SUITE TARGET)
     set(multi_value_args SOURCES)
     cmake_parse_arguments(add_compile_tests "${options}" "${one_value_args}" "${multi_value_args}" ${ARGN})
 
@@ -129,6 +136,25 @@ function(add_compile_tests)
         file(MAKE_DIRECTORY "${_output_dir}")
     endif()
 
+    # Check if we are running under TeamCity
+    is_running_under_teamcity(_enable_teamcity)
+    if(_enable_teamcity)
+    # Set TARGET, if omitted, to top source dir
+        if(NOT add_compile_tests_SUITE)
+            set(add_compile_tests_SUITE "CompileCheck")
+        endif()
+        if(NOT add_compile_tests_TARGET)
+            set(add_compile_tests_TARGET "compile-check")
+        endif()
+        # Write a header for cmake script to be executed
+        file(
+            WRITE "${_output_dir}/teamcity.cmake"
+            "set(CMAKE_MODULE_PATH \"${CMAKE_SOURCE_DIR}/cmake/modules\" \${CMAKE_MODULE_PATH})\n"
+            "include(TeamCityIntegration)\n"
+            "tc_test_suite_start(\"${add_compile_tests_SUITE}\")\n"
+          )
+    endif()
+
     # Register individual tests
     foreach(_src ${add_compile_tests_SOURCES})
         # Split filename into components
@@ -153,15 +179,50 @@ function(add_compile_tests)
         if(add_compile_tests_DEBUG)
             message(STATUS "Registering test: '${add_compile_tests_PREFIX}_${_src_test_name}'")
         endif()
-        add_test(
-            NAME "${add_compile_tests_PREFIX}_${_src_test_name}"
-            COMMAND ${CMAKE_COMMAND} -P "${_output_dir}/compile_check_${_src_name}.cmake"
-          )
+
+        if(_enable_teamcity)
+            file(
+                APPEND "${_output_dir}/teamcity.cmake"
+                "\n"
+                "tc_test_start(\"${add_compile_tests_PREFIX}.${_src_test_name}\" )\n"
+                "execute_process(\n"
+                "    COMMAND ${CMAKE_COMMAND} -P \"${_output_dir}/compile_check_${_src_name}.cmake\"\n"
+                "    RESULT_VARIABLE _result\n"
+                "  )\n"
+                "if(NOT _result EQUAL 0)\n"
+                "   file(READ \"${_fake_cc}.log\" _out)\n"
+                "   tc_test_output(\"\${_out}\")\n"
+                "   tc_test_failed(\"fail\")\n"
+                "endif()\n"
+                "tc_test_end()\n"
+              )
+        else()
+            add_test(
+                NAME "${add_compile_tests_PREFIX}_${_src_test_name}"
+                COMMAND ${CMAKE_COMMAND} -P "${_output_dir}/compile_check_${_src_name}.cmake"
+                WORKING_DIRECTORY "${_output_dir}"
+              )
+        endif()
     endforeach()
+
+    if(_enable_teamcity)
+        # Write a tail of the cmake script to be executed
+        file(
+            APPEND "${_output_dir}/teamcity.cmake"
+            "\ntc_test_suite_end()\n"
+          )
+        # Register target to run all tests
+        add_custom_target(
+            ${add_compile_tests_TARGET}
+            COMMAND ${CMAKE_COMMAND} -P "teamcity.cmake"
+            WORKING_DIRECTORY "${_output_dir}"
+          )
+    endif()
 endfunction()
 
 # X-Chewy-RepoBase: https://raw.githubusercontent.com/mutanabbi/chewy-cmake-rep/master/
 # X-Chewy-Path: AddCompileTests.cmake
-# X-Chewy-Version: 1.1
+# X-Chewy-Version: 1.2
 # X-Chewy-Description: Check if source(s) can be compiled well (or not)
+# X-Chewy-AddonFile: TeamCityIntegration.cmake
 # X-Chewy-AddonFile: compile_test.cmake.in

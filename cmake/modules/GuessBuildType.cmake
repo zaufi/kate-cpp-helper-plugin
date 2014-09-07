@@ -27,9 +27,9 @@ if (NOT CMAKE_BUILD_TYPE)
         set(CMAKE_BUILD_TYPE "Release")
     endif()
 endif()
-message(STATUS "Configuration type choosen: ${CMAKE_BUILD_TYPE}")
+message(STATUS "Configuration type chosen: ${CMAKE_BUILD_TYPE}")
 
 # X-Chewy-RepoBase: https://raw.githubusercontent.com/mutanabbi/chewy-cmake-rep/master/
 # X-Chewy-Path: GuessBuildType.cmake
-# X-Chewy-Version: 1.5
+# X-Chewy-Version: 1.6
 # X-Chewy-Description: Guess build type if not specified explicitly

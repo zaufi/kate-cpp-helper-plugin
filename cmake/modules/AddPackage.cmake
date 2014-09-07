@@ -267,7 +267,7 @@ function(add_package)
             set(_make_pkg_target_name "signed-${add_package_NAME}-${_lgen}-package")
             add_custom_target(
                 ${_make_pkg_target_name}
-                COMMAND cpack -G ${_gen} --config ${config_file}
+                COMMAND ${CMAKE_CPACK_COMMAND} -G ${_gen} --config ${config_file}
                 COMMAND ${DPKG_SIGN_EXECUTABLE} -s ${CPACK_PACKAGE_SIGNER} -k ${CPACK_SIGN_KEY_ID} ${add_package_FILE_NAME}.deb
                 DEPENDS
                     ${add_package_PRE_BUILD}
@@ -279,7 +279,7 @@ function(add_package)
             set(_make_pkg_target_name "${add_package_NAME}-${_lgen}-package")
             add_custom_target(
                 ${_make_pkg_target_name}
-                COMMAND cpack -G ${_gen} --config ${config_file}
+                COMMAND ${CMAKE_CPACK_COMMAND} -G ${_gen} --config ${config_file}
                 DEPENDS
                     ${add_package_PRE_BUILD}
                     ${CMAKE_BINARY_DIR}/CPackCommonPackageOptions.cmake
@@ -304,7 +304,7 @@ endfunction()
 
 # X-Chewy-RepoBase: https://raw.githubusercontent.com/mutanabbi/chewy-cmake-rep/master/
 # X-Chewy-Path: AddPackage.cmake
-# X-Chewy-Version: 3.12
+# X-Chewy-Version: 3.13
 # X-Chewy-Description: Add a target to make a .deb package
 # X-Chewy-AddonFile: CPackCommonPackageOptions.cmake.in
 # X-Chewy-AddonFile: CPackPackageConfig.cmake.in
