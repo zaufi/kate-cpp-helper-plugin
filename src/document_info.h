@@ -23,6 +23,7 @@
 #pragma once
 
 // Project specific includes
+#include <src/utils.h>
 
 // Standard includes
 #include <boost/multi_index_container.hpp>
@@ -61,6 +62,7 @@ public:
       , MultipleMatches
     };
 
+    /// Holds info about location of particular \c #include directive
     struct IncludeLocationData
     {
         static const unsigned ROOT = -1;
@@ -70,33 +72,46 @@ public:
         int m_column;                                       ///< inclusion column
     };
 
-    explicit DocumentInfo(CppHelperPlugin*);
+    explicit DocumentInfo(CppHelperPlugin*, KTextEditor::Document*);
     virtual ~DocumentInfo();
 
-    bool isRangeWithSameLineExists(const KTextEditor::Range&) const;
-    Status getLineStatus(int);
+    /// Search for \c #include directives
+    void scanForHeadersIncluded(const KTextEditor::Range& = KTextEditor::Range::invalid());
+
+    /// Search collected moving ranges if there any w/ the
+    /// same list as a given range
+    auto isRangeWithSameLineExists(const KTextEditor::Range&) const;
+    auto getPossibleProblemText(int) const;                 ///< Get an \c #include line status
+
+    /// \name Used by #include explorer
+    //@{
     void addInclusionEntry(const IncludeLocationData&);
     void clearInclusionTree();
     std::vector<unsigned> getListOfIncludedBy(unsigned) const;
     std::vector<IncludeLocationData> getListOfIncludedBy2(unsigned) const;
     std::vector<unsigned> getIncludedHeaders(unsigned) const;
+    //@}
 
 public Q_SLOTS:
-    void addRange(KTextEditor::MovingRange*);
     void updateStatus();
 
 private:
     struct State
     {
-        std::unique_ptr<KTextEditor::MovingRange> m_range;
-        Status m_status;
+        std::unique_ptr<KTextEditor::MovingRange> range;
+        QString description;                                ///< Problem description if statis is not OK
+        IncludeStyle type;                                  ///< \c #include type: local or global
+        Status status;                                      ///< Status to use for line hint
 
         State(
-            std::unique_ptr<KTextEditor::MovingRange>&&
+            KTextEditor::MovingRange*
           , KTextEditor::MovingRangeFeedback*
+          , IncludeStyle
           );
-        State(State&&) = default;                           ///< Default move ctor
-        State& operator=(State&&) = default;                ///< Default move-assign operator
+        State(State&&);                                     ///< Move ctor
+        State& operator=(State&&);                          ///< Move-assign operator
+        State(const State&) = delete;                       ///< Delete copy ctor
+        State& operator=(const State&) = delete;            ///< Delete copy-assign operator
     };
 
     typedef std::vector<State> registered_ranges_type;
@@ -126,7 +141,9 @@ private:
           >
       > inclusion_index_type;
 
-    void updateStatus(State&);                              ///< Update single range
+    /// Register range w/ given \c #include style (i.e. local/global)
+    void addRange(KTextEditor::MovingRange*, IncludeStyle);
+    void updateStatus(State&);                              ///< Recheck \c #include file status
     registered_ranges_type::iterator findRange(KTextEditor::MovingRange*);
     //BEGIN MovingRangeFeedback interface
     void caretExitedRange(KTextEditor::MovingRange*, KTextEditor::View*);
@@ -135,35 +152,57 @@ private:
     //END MovingRangeFeedback interface
 
     CppHelperPlugin* m_plugin;                              ///< Parent plugin
-    ///< List of ranges w/ \c #incldue directives whithing a document
+    KTextEditor::Document* m_doc;                           ///< Associted document
+    /// List of ranges w/ \c #incldue directives whithing a document
     registered_ranges_type m_ranges;
     inclusion_index_type m_includes;
 };
 
 inline DocumentInfo::State::State(
-    std::unique_ptr<KTextEditor::MovingRange>&& range
-  , KTextEditor::MovingRangeFeedback* fbimpl
+    KTextEditor::MovingRange* const mvr
+  , KTextEditor::MovingRangeFeedback* const fbimpl
+  , const IncludeStyle includedAs
   )
-  : m_range(std::move(range))
-  , m_status(Status::Dunno)
+  : range(mvr)
+  , type(includedAs)
+  , status(Status::Dunno)
 {
-    m_range->setFeedback(fbimpl);
+    // Subscribe to range invalidate
+    range->setFeedback(fbimpl);
 }
 
-inline bool DocumentInfo::isRangeWithSameLineExists(const KTextEditor::Range& range) const
+inline DocumentInfo::State::State(State&& other)
+  : range(std::move(other.range))
+  , type(other.type)
+  , status(other.status)
+{
+    description.swap(other.description);
+}
+
+inline auto DocumentInfo::State::operator=(State&& other) -> State&
+{
+    assert("Sanity check" && this != &other);
+    range = std::move(other.range);
+    type = other.type;
+    status = other.status;
+    description.swap(other.description);
+    return *this;
+}
+
+inline auto DocumentInfo::isRangeWithSameLineExists(const KTextEditor::Range& range) const
 {
     for (const auto& state : m_ranges)
-        if (state.m_range->start().line() == range.start().line())
+        if (state.range->start().line() == range.start().line())
             return true;
     return false;
 }
 
-inline auto DocumentInfo::getLineStatus(const int line) -> Status
+inline auto DocumentInfo::getPossibleProblemText(const int line) const
 {
     for (const auto& state : m_ranges)
-        if (state.m_range->start().line() == line)
-            return state.m_status;
-    return Status::Dunno;
+        if (state.range->start().line() == line)
+            return state.description;
+    return QString{};
 }
 
 inline void DocumentInfo::addInclusionEntry(const IncludeLocationData& item)
@@ -177,4 +216,4 @@ inline void DocumentInfo::clearInclusionTree()
 }
 
 }                                                           // namespace kate
-// kate: hl C++11/Qt4;
+// kate: hl C++/Qt4;

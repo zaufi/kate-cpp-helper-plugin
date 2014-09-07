@@ -205,4 +205,4 @@ inline void DatabaseManager::setCompilerOptions(clang::compiler_options&& option
 }
 
 }                                                           // namespace kate
-// kate: hl C++11/Qt4;
+// kate: hl C++/Qt4;

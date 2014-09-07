@@ -248,7 +248,7 @@ void CppHelperPlugin::createdPath(const QString& path)
     if (QFileInfo{path}.isFile() && m_last_updated != path)
     {
         kDebug(DEBUG_AREA) << "DirWatcher said created: " << path;
-        updateCurrentView();
+        updateDocumentInfoFromView();
         m_last_updated = path;
     }
 }
@@ -258,7 +258,7 @@ void CppHelperPlugin::deletedPath(const QString& path)
     if (m_last_updated != path)
     {
         kDebug(DEBUG_AREA) << "DirWatcher said deleted: " << path;
-        updateCurrentView();
+        updateDocumentInfoFromView();
         m_last_updated = path;
     }
 }
@@ -274,30 +274,47 @@ void CppHelperPlugin::invalidateTranslationUnits()
     m_units.clear();
 }
 
-void CppHelperPlugin::updateCurrentView()
+/// If no view geven (\c nullptr is a devault value), use current view.
+void CppHelperPlugin::updateDocumentInfoFromView(KTextEditor::View* view)
 {
-    auto* view = application()->activeMainWindow()->activeView();
+    if (!view)
+        view = application()->activeMainWindow()->activeView();
     if (view)
         updateDocumentInfo(view->document());
 }
 
-void CppHelperPlugin::updateDocumentInfo(KTextEditor::Document* doc)
+void CppHelperPlugin::updateDocumentInfo(KTextEditor::Document* doc, const KTextEditor::Range& source_range)
 {
-    kDebug(DEBUG_AREA) << "(re)scan document " << doc->url() << " for #includes...";
-
     assert("Valid document expected" && doc);
-    auto* mv_iface = qobject_cast<KTextEditor::MovingInterface*>(doc);
-    if (!mv_iface)
+    kDebug(DEBUG_AREA) << "(re)scan document " << doc->url() << " for #includes at" << source_range;
+
+    if (doc->views().empty())
     {
-        kDebug(DEBUG_AREA) << "No moving iface!!!!!!!!!!!";
+        kDebug(DEBUG_AREA) << "Don not scan a document w/o views!";
         return;
     }
 
-    // Try to remove prev collected info
+    auto* mv_iface = qobject_cast<KTextEditor::MovingInterface*>(doc);
+    if (!mv_iface)
     {
-        auto it = m_doc_info.find(doc);
-        if (it != m_doc_info.end())
-            m_doc_info.erase(it);
+        kDebug(DEBUG_AREA) << "No moving iface for document!";
+        return;
+    }
+
+    auto range = source_range;
+    auto di = m_doc_info.find(doc);
+    // Try to remove previously collected info if source_range is
+    // invalid (what is a sign of full rescan required, called by
+    // OnNewDocument/OnDocumentOpen/Reload & etc).
+    if (source_range == KTextEditor::Range::invalid())
+    {
+        kDebug(DEBUG_AREA) << "rescan whole document!";
+        range = doc->documentRange();
+        if (di != m_doc_info.end())                         // Yeah, there was smth already...
+        {
+            m_doc_info.erase(di);                           // Destroy previous records
+            di = m_doc_info.end();                          // We want a new one!
+        }
     }
 
     // Do we really need to scan this file?
@@ -308,25 +325,20 @@ void CppHelperPlugin::updateDocumentInfo(KTextEditor::Document* doc)
         return;
     }
 
-    auto di = std::unique_ptr<DocumentInfo>{new DocumentInfo(this)};
-
-    // Search lines and filenames #include'd in this document
-    for (auto i = 0, end_line = doc->lines(); i < end_line; i++)
+    // Should a new record be created? (in case of new document or just reloaded)
+    if (di == m_doc_info.end())
     {
-        const auto& line_str = doc->line(i);
-        kate::IncludeParseResult r = parseIncludeDirective(line_str, false);
-        if (r.m_range.isValid())
-        {
-            r.m_range.setBothLines(i);
-            di->addRange(
-                mv_iface->newMovingRange(
-                    r.m_range
-                  , KTextEditor::MovingRange::ExpandLeft | KTextEditor::MovingRange::ExpandRight
-                  )
-              );
-        }
+        di = m_doc_info.insert(
+            std::make_pair(
+                doc
+              , std::make_unique<DocumentInfo>(this, doc)
+              )
+          ).first;
     }
-    m_doc_info.insert(std::make_pair(doc, std::move(di)));
+
+    // Rescan given range in a document for #includes
+    assert("Sanity check" && range.isValid() && di != m_doc_info.end());
+    di->second->scanForHeadersIncluded(range);
 }
 
 void CppHelperPlugin::removeDocumentInfo(KTextEditor::Document* doc)
@@ -535,7 +547,7 @@ DocumentInfo& CppHelperPlugin::getDocumentInfo(KTextEditor::Document* const doc)
     if (it == end(m_doc_info))
     {
         it = m_doc_info.insert(
-            std::make_pair(doc, std::unique_ptr<DocumentInfo>(new DocumentInfo(this)))
+            std::make_pair(doc, std::make_unique<DocumentInfo>(this, doc))
           ).first;
     }
     return *it->second;

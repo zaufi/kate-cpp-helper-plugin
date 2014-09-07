@@ -89,12 +89,12 @@ bool IncludeHelperCompletionModel::shouldStartCompletion(
 
     // Try to parse it...
     auto r = parseIncludeDirective(line, false);
-    m_should_complete = r.m_range.isValid();
+    m_should_complete = r.range.isValid();
     if (m_should_complete)
     {
-        kDebug(DEBUG_AREA) << "range=" << r.m_range;
-        m_should_complete = position.column() >= r.m_range.start().column()
-          && position.column() <= r.m_range.end().column();
+        kDebug(DEBUG_AREA) << "range=" << r.range;
+        m_should_complete = position.column() >= r.range.start().column()
+          && position.column() <= r.range.end().column();
         if (m_should_complete)
         {
             m_closer = r.close_char();
@@ -137,9 +137,9 @@ bool IncludeHelperCompletionModel::shouldAbortCompletion(
     // Try to parse it...
     auto r = parseIncludeDirective(line, false);
     // nothing to complete for lines w/o #include
-    const auto need_abort = !r.m_range.isValid()
-      || range.end().column() < r.m_range.start().column()
-      || range.end().column() > (r.m_range.end().column() + 1)
+    const auto need_abort = !r.range.isValid()
+      || range.end().column() < r.range.start().column()
+      || range.end().column() > (r.range.end().column() + 1)
       ;
     kDebug(DEBUG_AREA) << "result=" << need_abort;
     return need_abort;
@@ -156,16 +156,16 @@ void IncludeHelperCompletionModel::completionInvoked(
     const auto& t = doc->line(range.start().line()).left(range.start().column());
     kDebug(DEBUG_AREA) << "text to parse: " << t;
     auto r = parseIncludeDirective(t, false);
-    if (r.m_range.isValid())
+    if (r.range.isValid())
     {
-        m_should_complete = range.start().column() >= r.m_range.start().column()
-            && range.start().column() <= r.m_range.end().column();
+        m_should_complete = range.start().column() >= r.range.start().column()
+            && range.start().column() <= r.range.end().column();
         if (m_should_complete)
         {
-            r.m_range.setBothLines(range.start().line());
-            kDebug(DEBUG_AREA) << "parsed range: " << r.m_range;
+            r.range.setBothLines(range.start().line());
+            kDebug(DEBUG_AREA) << "parsed range: " << r.range;
             m_closer = r.close_char();
-            updateCompletionList(doc->text(r.m_range), r.m_type == IncludeStyle::local);
+            updateCompletionList(doc->text(r.range), r.type == IncludeStyle::local);
         }
     }
 }
@@ -296,7 +296,7 @@ void IncludeHelperCompletionModel::executeCompletionItem2(
         // Get line to be replaced and check if #include hase close char...
         auto line = document->line(word.start().line());
         auto r = parseIncludeDirective(line, false);
-        if (r.m_range.isValid() && !r.m_is_complete)
+        if (r.range.isValid() && !r.is_complete)
             p += r.close_char();
     }
     document->replaceText(word, p);
@@ -310,17 +310,17 @@ KTextEditor::Range IncludeHelperCompletionModel::completionRange(
     kDebug(DEBUG_AREA) << "cursor: " << position;
     auto line = view->document()->line(position.line());
     auto r = parseIncludeDirective(line, false);
-    if (r.m_range.isValid())
+    if (r.range.isValid())
     {
-        auto start = line.lastIndexOf('/', r.m_range.end().column() - 1);
+        auto start = line.lastIndexOf('/', r.range.end().column() - 1);
         kDebug(DEBUG_AREA) << "init start=" << start;
-        start = start == -1 ? r.m_range.start().column() : start + 1;
+        start = start == -1 ? r.range.start().column() : start + 1;
         kDebug(DEBUG_AREA) << "fixed start=" << start;
         KTextEditor::Range range(
             position.line()
           , start
           , position.line()
-          , r.m_range.end().column()
+          , r.range.end().column()
           );
         kDebug(DEBUG_AREA) << "selected range: " << range;
         return range;
@@ -334,4 +334,4 @@ KTextEditor::Range IncludeHelperCompletionModel::completionRange(
 }
 //END IncludeHelperCompletionModel
 }                                                           // namespace kate
-// kate: hl C++11/Qt4;
+// kate: hl C++/Qt4;

@@ -163,6 +163,7 @@ if(UNIX AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQU
     # Set some compiler options
     use_compiler_option(-pipe OUTPUT COMPILER_HAS_PIPE_OPTION)
     use_compiler_option(-Wall OUTPUT COMPILER_HAS_WALL_OPTION)
+    use_compiler_option(-Wextra OUTPUT COMPILER_HAS_WEXTRA_OPTION)
     # TODO I don't know a minimum required version...
     # Please provide some feedback, if lesser works for you.
     use_compiler_option(-std=c++1y LANGUAGE CXX OUTPUT CXX_COMPILER_HAS_CPP1Y_OPTION)

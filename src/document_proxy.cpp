@@ -142,4 +142,4 @@ KTextEditor::Range DocumentProxy::firstWordAfterCursor(const KTextEditor::Cursor
 }
 
 }                                                           // namespace kate
-// kate: hl C++11/Qt4;
+// kate: hl C++/Qt4;

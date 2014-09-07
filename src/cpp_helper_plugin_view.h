@@ -90,7 +90,6 @@ private Q_SLOTS:
     void viewCreated(KTextEditor::View*);
     void modeChanged(KTextEditor::Document*);
     void urlChanged(KTextEditor::Document*);
-    void textInserted(KTextEditor::Document*, const KTextEditor::Range&);
     void onDocumentClose(KTextEditor::Document*);
     void aboutToShow();
     void updateCppActionsAvailability();                    ///< Enable/disable C++ specific actions in UI
@@ -178,4 +177,4 @@ private:
 };
 
 }                                                           // namespace kate
-// kate: hl C++11/Qt4;
+// kate: hl C++/Qt4;

@@ -68,15 +68,15 @@ public:
 
     /// \name Accessors
     //@{
-    PluginConfiguration& config();
-    const PluginConfiguration& config() const;
+    auto& config();
+    const auto& config() const;
     CXIndex localIndex() const;
     CXIndex index() const;
-    HeaderFilesCache& headersCache();
-    const HeaderFilesCache& headersCache() const;
-    DatabaseManager& databaseManager();
-    const DatabaseManager& databaseManager() const;
-    const clang::unsaved_files_list& unsavedFiles() const;
+    auto& headersCache();
+    const auto& headersCache() const;
+    auto& databaseManager();
+    const auto& databaseManager() const;
+    const auto& unsavedFiles() const;
     //@}
 
     /// \name \c Kate::PluginConfigPageInterface interface implementation
@@ -114,7 +114,11 @@ Q_SIGNALS:
     void diagnosticMessage(clang::diagnostic_message);
 
 public Q_SLOTS:
-    void updateDocumentInfo(KTextEditor::Document*);
+    void updateDocumentInfoFromView(KTextEditor::View* = nullptr);
+    void updateDocumentInfo(
+        KTextEditor::Document*
+      , const KTextEditor::Range& = KTextEditor::Range::invalid()
+      );
     void removeDocumentInfo(KTextEditor::Document*);
     void openDocument(const KUrl&);
     void makePCHFile(const KUrl&);
@@ -122,7 +126,6 @@ public Q_SLOTS:
 private Q_SLOTS:
     void createdPath(const QString&);
     void deletedPath(const QString&);
-    void updateCurrentView();
     void buildPCHIfAbsent(bool);                            ///< Make sure a PCH is fresh
     void rebuildPCH();                                      ///< Rebuild PCH file
     /// Update watcher to monitor currently configured directories
@@ -181,11 +184,11 @@ private:
     clang::unsaved_files_list m_unsaved_files_cache;
 };
 
-inline PluginConfiguration& CppHelperPlugin::config()
+inline auto& CppHelperPlugin::config()
 {
     return m_config;
 }
-inline const PluginConfiguration& CppHelperPlugin::config() const
+inline const auto& CppHelperPlugin::config() const
 {
     return m_config;
 }
@@ -197,24 +200,24 @@ inline CXIndex CppHelperPlugin::index() const
 {
     return m_index;
 }
-inline HeaderFilesCache& CppHelperPlugin::headersCache()
+inline auto& CppHelperPlugin::headersCache()
 {
     return m_headers_cache;
 }
-inline const HeaderFilesCache& CppHelperPlugin::headersCache() const
+inline const auto& CppHelperPlugin::headersCache() const
 {
     return m_headers_cache;
 }
-inline DatabaseManager& CppHelperPlugin::databaseManager()
+inline auto& CppHelperPlugin::databaseManager()
 {
     return m_db_mgr;
 }
-inline const DatabaseManager& CppHelperPlugin::databaseManager() const
+inline const auto& CppHelperPlugin::databaseManager() const
 {
     return m_db_mgr;
 }
 
-inline const clang::unsaved_files_list& CppHelperPlugin::unsavedFiles() const
+inline const auto& CppHelperPlugin::unsavedFiles() const
 {
     return m_unsaved_files_cache;
 }
@@ -224,7 +227,7 @@ inline TranslationUnit& CppHelperPlugin::getTranslationUnitByDocument(
   , const bool is_local_requested
   )
 {
-    auto parse_options = is_local_requested
+    const auto parse_options = is_local_requested
       ? TranslationUnit::defaultEditingParseOptions()
       : TranslationUnit::defaultExplorerParseOptions()
       ;
@@ -240,4 +243,4 @@ inline TranslationUnit& CppHelperPlugin::getTranslationUnitByDocument(
 }
 
 }                                                           // namespace kate
-// kate: hl C++11/Qt4;
+// kate: hl C++/Qt4;

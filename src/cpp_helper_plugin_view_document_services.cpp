@@ -142,10 +142,10 @@ void CppHelperPluginView::switchIfaceImpl()
             {
                 const auto& line_str = doc->line(i);
                 kate::IncludeParseResult r = parseIncludeDirective(line_str, false);
-                if (r.m_range.isValid())
+                if (r.range.isValid())
                 {
-                    r.m_range.setBothLines(i);
-                    first_header_name = doc->text(r.m_range);
+                    r.range.setBothLines(i);
+                    first_header_name = doc->text(r.range);
                 }
             }
             kDebug(DEBUG_AREA) << "open src/hrd: first include file:" << first_header_name;
@@ -271,6 +271,7 @@ void CppHelperPluginView::copyInclude()
             longest_matched = dir;
     if (longest_matched.isEmpty())
     {
+        /// \todo Make it configurable
         open = '<';
         close = '>';
         // Try to match global dirs next
@@ -333,6 +334,7 @@ void CppHelperPluginView::openHeader()
         {
             // Try to find an absolute path to given filename
             candidates = findFileLocations(filename);
+            candidates.removeDuplicates();
             kDebug(DEBUG_AREA) << "Found candidates: " << candidates;
         }
     }
@@ -350,21 +352,20 @@ void CppHelperPluginView::openHeader()
         {
             const auto& line_str = doc->line(i);
             auto r = parseIncludeDirective(line_str, false);
-            if (r.m_range.isValid())
+            if (r.range.isValid())
             {
-                r.m_range.setBothLines(i);
-                candidates.push_back(doc->text(r.m_range));
+                r.range.setBothLines(i);
+                candidates.push_back(doc->text(r.range));
             }
         }
         // Resolve relative filenames to absolute
-        QStringList all;
-        for (const auto& file : candidates)
         {
-            auto cfpl = findFileLocations(file);            // fill `Current File Paths List' ;-)
-            /// \todo WTF! List doesn't have a \c merge() ???
-            all.append(cfpl);
+            QStringList resolved;
+            for (const auto& file : candidates)
+                resolved << findFileLocations(file);
+            resolved.removeDuplicates();
+            candidates.swap(resolved);
         }
-        candidates.swap(all);
         auto error_text = filename.isEmpty()
           ? QString()
           : i18nc(
@@ -446,21 +447,8 @@ void CppHelperPluginView::needTextHint(const KTextEditor::Cursor& pos, QString& 
     // Is current file can have some hints?
     if (isSuitableDocument(doc->mimeType(), doc->highlightingMode()))
     {
-        auto& di = m_plugin->getDocumentInfo(doc);
-        auto status = di.getLineStatus(pos.line());
-        switch (status)
-        {
-            case DocumentInfo::Status::NotFound:
-                text = i18nc("@info:tooltip", "File not found");
-                break;
-            case DocumentInfo::Status::MultipleMatches:
-                text = i18nc("@info:tooltip", "Multiple files matched");
-                break;
-            default:
-                break;
-        }
-        QPoint p = view->cursorToCoordinate(pos);
-        QToolTip::showText(p, text, view);
+        const auto& di = m_plugin->getDocumentInfo(doc);
+        text = di.getPossibleProblemText(pos.line());
     }
 }
 //END SLOTS
@@ -509,7 +497,7 @@ QStringList CppHelperPluginView::findFileLocations(const QString& filename)
         if (isPresentAndReadable(uri))
             candidates.push_front(uri);                     // Push to front cuz more likely that user wants it
     }
-    removeDuplicates(candidates);                           // Remove possible duplicates
+    candidates.removeDuplicates();                          // Remove possible duplicates
     return candidates;
 }
 
@@ -535,11 +523,11 @@ KTextEditor::Range CppHelperPluginView::findIncludeFilenameNearCursor() const
 
     // Check if current line starts w/ #include
     kate::IncludeParseResult r = parseIncludeDirective(line_str, false);
-    if (r.m_range.isValid())
+    if (r.range.isValid())
     {
-        r.m_range.setBothLines(line);
-        kDebug(DEBUG_AREA) << "Ok, found #include directive:" << r.m_range;
-        return r.m_range;
+        r.range.setBothLines(line);
+        kDebug(DEBUG_AREA) << "Ok, found #include directive:" << r.range;
+        return r.range;
     }
 
     // No #include parsed... fallback to the default way:

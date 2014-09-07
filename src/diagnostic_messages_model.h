@@ -107,4 +107,4 @@ inline void DiagnosticMessagesModel::append(Iter first, Iter last)
 }
 
 }                                                           // namespace kate
-// kate: hl C++11/Qt4;
+// kate: hl C++/Qt4;

@@ -67,12 +67,12 @@ public:
 
     /// \name Accessors/observers
     //@{
-    int line() const;
-    int column() const;
-    int offset() const;
-    const KUrl& file() const;
-    KTextEditor::Cursor cursor() const;
-    bool empty() const;
+    auto line() const;
+    auto column() const;
+    auto offset() const;
+    const auto& file() const;
+    auto cursor() const;
+    auto empty() const;
     //@}
 
 private:
@@ -131,32 +131,32 @@ inline location& location::operator=(location&& other) noexcept
     return *this;
 }
 
-inline int location::line() const
+inline auto location::line() const
 {
     return m_line;
 }
 
-inline int location::column() const
+inline auto location::column() const
 {
     return m_column;
 }
 
-inline int location::offset() const
+inline auto location::offset() const
 {
     return m_offset;
 }
 
-inline const KUrl& location::file() const
+inline const auto& location::file() const
 {
     return m_file;
 }
 
-inline KTextEditor::Cursor location::cursor() const
+inline auto location::cursor() const
 {
-    return {line(), column()};
+    return KTextEditor::Cursor{line(), column()};
 }
 
-inline bool location::empty() const
+inline auto location::empty() const
 {
     return m_file.isEmpty();
 }

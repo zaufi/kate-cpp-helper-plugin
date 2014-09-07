@@ -73,4 +73,4 @@ QString ChooseFromListDialog::selectHeaderToOpen(QWidget* parent, const QStringL
 }
 //END ChooseFromListDialog
 }                                                           // namespace kate
-// kate: hl C++11/Qt4;
+// kate: hl C++/Qt4;

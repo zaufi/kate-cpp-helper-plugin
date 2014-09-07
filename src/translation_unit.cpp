@@ -638,4 +638,4 @@ unsigned TranslationUnit::defaultExplorerParseOptions()
 }
 
 }                                                           // namespace kate
-// kate: hl C++11/Qt4;
+// kate: hl C++/Qt4;

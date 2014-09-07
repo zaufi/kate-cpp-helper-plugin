@@ -400,7 +400,7 @@ void CppHelperPluginView::viewCreated(KTextEditor::View* view)
 
     // Try to execute initial completers registration and #includes scanning
     if (handleView(view))
-        m_plugin->updateDocumentInfo(view->document());
+        m_plugin->updateDocumentInfoFromView(view);
 
     auto* th_iface = qobject_cast<KTextEditor::TextHintInterface*>(view);
     if (th_iface)
@@ -426,8 +426,8 @@ void CppHelperPluginView::viewCreated(KTextEditor::View* view)
     connect(
         doc
       , SIGNAL(textInserted(KTextEditor::Document*, const KTextEditor::Range&))
-      , this
-      , SLOT(textInserted(KTextEditor::Document*, const KTextEditor::Range&))
+      , m_plugin
+      , SLOT(updateDocumentInfo(KTextEditor::Document*, const KTextEditor::Range&))
       );
     // Unnamed documents can change highlighting mode, so we have to register
     // completers and scan for #includes. For example if new document was created
@@ -478,65 +478,6 @@ void CppHelperPluginView::urlChanged(KTextEditor::Document* doc)
     kDebug(DEBUG_AREA) << "name or URL has been changed: " << doc->url() << ", " << doc->mimeType();
     if (handleView(doc->activeView()))
         m_plugin->updateDocumentInfo(doc);
-}
-
-/**
- * \todo Move to the plugin class?
- */
-void CppHelperPluginView::textInserted(KTextEditor::Document* doc, const KTextEditor::Range& range)
-{
-    kDebug(DEBUG_AREA) << doc << " new text: " << doc->text(range);
-    auto* mv_iface = qobject_cast<KTextEditor::MovingInterface*>(doc);
-    if (!mv_iface)
-    {
-        kDebug(DEBUG_AREA) << "No moving iface!!!!!!!!!!!";
-        return;
-    }
-    // Do we really need to scan this file?
-    if (!isSuitableDocument(doc->mimeType(), doc->highlightingMode()))
-    {
-        kDebug(DEBUG_AREA) << "Document doesn't looks like C or C++: type ="
-          << doc->mimeType() << ", hl =" << doc->highlightingMode();
-        return;
-    }
-    // Find corresponding document info, insert if needed
-    auto& di = m_plugin->getDocumentInfo(doc);
-    // Search lines and filenames #include'd in this range
-    /**
-     * \todo It would be \b cool to have a view class over a document
-     * so the following code would be possible:
-     * \code
-     *  for (const auto& l : DocumentLinesView(range, doc))
-     *  {
-     *      QString line_str = l;    // auto converstion to strings
-     *      int line_no = l.index(); // tracking of the current line number
-     *  }
-     *  // Or even smth like this
-     *  DocumentLinesView dv = { view->document() };
-     *  // Get line text by number
-     *  QString line_str = dv[line_no];
-     * \endcode
-     */
-    for (auto i = range.start().line(); i < range.end().line() + 1; i++)
-    {
-        const auto& line_str = doc->line(i);
-        kate::IncludeParseResult r = parseIncludeDirective(line_str, true);
-        if (r.m_range.isValid())
-        {
-            r.m_range.setBothLines(i);
-            if (!di.isRangeWithSameLineExists(r.m_range))
-            {
-                di.addRange(
-                    mv_iface->newMovingRange(
-                        r.m_range
-                      , KTextEditor::MovingRange::ExpandLeft | KTextEditor::MovingRange::ExpandRight
-                      )
-                  );
-            }
-            else kDebug(DEBUG_AREA) << "range already registered";
-        }
-        else kDebug(DEBUG_AREA) << "no valid #include found";
-    }
 }
 
 void CppHelperPluginView::onDocumentClose(KTextEditor::Document* doc)
@@ -651,7 +592,7 @@ bool CppHelperPluginView::handleView(KTextEditor::View* view)
     }
     else
     {
-        // Oops! Do not any completers required for this document.
+        // Oops! No completers required for this document.
         // Check if some was registered before, and erase if it is
         if (it != end(m_completers))
         {
@@ -723,4 +664,4 @@ void CppHelperPluginView::updateCppActionsAvailability(const bool enable_cpp_spe
 
 //END CppHelperPluginView
 }                                                           // namespace kate
-// kate: hl C++11/Qt4;
+// kate: hl C++/Qt4;

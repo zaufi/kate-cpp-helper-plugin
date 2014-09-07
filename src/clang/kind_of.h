@@ -37,22 +37,22 @@ namespace kate { namespace clang {
 /// \name Functions to get kind of various clang entities in a unified way
 //@{
 
-inline CXCursorKind kind_of(const CXCursor& c)
+inline auto kind_of(const CXCursor& c)
 {
     return clang_getCursorKind(c);
 }
 
-inline CXIdxEntityKind kind_of(const CXIdxEntityInfo& e)
+inline auto kind_of(const CXIdxEntityInfo& e)
 {
     return e.kind;
 }
 
-inline CXTypeKind kind_of(const CXType& t)
+inline auto kind_of(const CXType& t)
 {
     return t.kind;
 }
 
-inline CXCompletionChunkKind kind_of(CXCompletionString completion_string, unsigned chunk_number)
+inline auto kind_of(CXCompletionString completion_string, unsigned chunk_number)
 {
     return clang_getCompletionChunkKind(completion_string, chunk_number);
 }
@@ -63,7 +63,7 @@ inline CXCompletionChunkKind kind_of(CXCompletionString completion_string, unsig
  * This function return \c true if \c CXIdxEntityInfo::templateKind member can be accessed,
  * \c false otherwise.
  */
-inline bool may_apply_template_kind(const CXIdxEntityKind kind)
+inline auto may_apply_template_kind(const CXIdxEntityKind kind)
 {
     switch (kind)
     {

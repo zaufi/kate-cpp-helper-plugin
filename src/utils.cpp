@@ -45,7 +45,7 @@ const std::vector<QString> SUITABLE_DOCUMENT_TYPES = {
 const std::vector<QString> SUITABLE_HIGHLIGHT_TYPES = {
     QString("C++")
   , QString("C++11")
-  , QString("C++11/Qt4")
+  , QString("C++/Qt4")
   , QString("C")
 };
 }                                                           // anonymous namespace
@@ -81,9 +81,6 @@ IncludeParseResult parseIncludeDirective(const QString& line, const bool strict)
 
     // Perpare 'default' result
     IncludeParseResult result;
-    result.m_range = KTextEditor::Range::invalid();
-    result.m_type = IncludeStyle::unknown;
-    result.m_is_complete = false;
 
     int start = -1;
     int end = -1;
@@ -142,12 +139,12 @@ IncludeParseResult parseIncludeDirective(const QString& line, const bool strict)
                 if (line[pos] == QLatin1Char('<'))
                 {
                     close = QLatin1Char('>');
-                    result.m_type = IncludeStyle::global;
+                    result.type = IncludeStyle::global;
                 }
                 else if (line[pos] == QLatin1Char('"'))
                 {
                     close = QLatin1Char('"');
-                    result.m_type = IncludeStyle::local;
+                    result.type = IncludeStyle::local;
                 }
                 else
                 {
@@ -174,7 +171,7 @@ IncludeParseResult parseIncludeDirective(const QString& line, const bool strict)
 #endif
                         return result;                      // in strict mode return false for incomplete #include
                     }
-                    result.m_is_complete = true;            // Found close char! #include complete...
+                    result.is_complete = true;              // Found close char! #include complete...
                     state = stop;
                     end = pos;
                 }
@@ -201,20 +198,20 @@ IncludeParseResult parseIncludeDirective(const QString& line, const bool strict)
     {
         case foundOpenChar:
             if (!strict)
-                result.m_range = KTextEditor::Range(0, line.length(), 0, line.length());
+                result.range = KTextEditor::Range(0, line.length(), 0, line.length());
 #if ENABLE_INCLUDE_PARSER_SPAM
             kDebug(DEBUG_AREA) << "pase failure: EOL after open char";
 #endif
             break;
         case findCloseChar:
             if (!strict)
-                result.m_range = KTextEditor::Range(0, start, 0, line.length());
+                result.range = KTextEditor::Range(0, start, 0, line.length());
 #if ENABLE_INCLUDE_PARSER_SPAM
             kDebug(DEBUG_AREA) << "pase failure: EOL before close char";
 #endif
             break;
         case stop:
-            result.m_range = KTextEditor::Range(0, start, 0, end);
+            result.range = KTextEditor::Range(0, start, 0, end);
             break;
         case skipSpace:
         case skipOptionalInitialSpaces:
@@ -226,7 +223,9 @@ IncludeParseResult parseIncludeDirective(const QString& line, const bool strict)
             assert(!"Parsing FSM broken!");
     }
 #if ENABLE_INCLUDE_PARSER_SPAM
-    kDebug(DEBUG_AREA) << "result-range=" << result.m_range << ", is_complete=" << result.m_is_complete;
+    kDebug(DEBUG_AREA) << "result-range=" << result.range <<
+        ", is_complete=" << result.is_complete <<
+      ;
 #endif
     return result;
 }
@@ -340,8 +339,6 @@ QStringList findHeader(const QString& file, const QStringList& locals, const QSt
     findFiles(file, locals, result);                        // Try locals first
     kDebug(DEBUG_AREA) << "Trying system paths...";
     findFiles(file, system, result);                        // Then try system paths
-    /// \todo I think it is redundant nowadays...
-    removeDuplicates(result);                               // Remove possible duplicates
     return result;
 }
 
@@ -387,4 +384,4 @@ void updateListsFromFS(
 }
 
 }                                                           // namespace kate
-// kate: hl C++11/Qt4;
+// kate: hl C++/Qt4;
