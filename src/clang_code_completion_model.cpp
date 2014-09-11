@@ -39,8 +39,8 @@
 namespace kate {
 
 ClangCodeCompletionModel::ClangCodeCompletionModel(
-    QObject* parent
-  , CppHelperPlugin* plugin
+    QObject* const parent
+  , CppHelperPlugin* const plugin
   , DiagnosticMessagesModel& dmm
   )
   : KTextEditor::CodeCompletionModel2(parent)
@@ -51,20 +51,17 @@ ClangCodeCompletionModel::ClangCodeCompletionModel(
 }
 
 bool ClangCodeCompletionModel::shouldStartCompletion(
-    KTextEditor::View* view
+    KTextEditor::View* const view
   , const QString& inserted_text
-  , bool user_insertion
+  , const bool user_insertion
   , const KTextEditor::Cursor& pos
   )
 {
-    auto* doc = view->document();                           // get current document
+    auto* const doc = view->document();                     // get current document
     auto result = false;
-    auto* iface = qobject_cast<KTextEditor::HighlightInterface*>(doc);
+    auto* const iface = qobject_cast<KTextEditor::HighlightInterface*>(doc);
     if (iface)
     {
-#if 0
-        kDebug(DEBUG_AREA) << "higlighting mode at" << pos << ':' << iface->highlightingModeAt(pos);
-#endif
         auto is_completion_needed = user_insertion
           && m_plugin->config().autoCompletions()
           && isSuitableDocumentAndHighlighting(doc->mimeType(), iface->highlightingModeAt(pos))
@@ -80,13 +77,13 @@ bool ClangCodeCompletionModel::shouldStartCompletion(
 }
 
 void ClangCodeCompletionModel::completionInvoked(
-    KTextEditor::View* view
+    KTextEditor::View* const view
   , const KTextEditor::Range& range
-  , InvocationType /*invocationType*/
+  , const InvocationType /*invocationType*/
   )
 {
     m_current_view = view;
-    auto* doc = view->document();
+    auto* const doc = view->document();
     const auto& url = doc->url();
     if (!url.isValid() || url.isEmpty())
     {
@@ -173,9 +170,33 @@ void ClangCodeCompletionModel::completionInvoked(
     }
 }
 
-int ClangCodeCompletionModel::columnCount(const QModelIndex& /*index*/) const
+QModelIndex ClangCodeCompletionModel::index(
+    const int row
+  , const int column
+  , const QModelIndex& parent
+  ) const
 {
-    return 1;
+    if (!parent.isValid())                                  // Is invisible root node?
+    {
+        if (0 <= row && unsigned(row) < m_groups.size())    /// \todo use assert instead of runtime check?
+            return createIndex(row, column, Level::GROUP);
+        return QModelIndex{};
+    }
+    if (parent.internalId() == Level::GROUP)
+    {
+        assert(
+            "row must be less then items count"
+          && unsigned(row) < m_groups[parent.row()].second.m_completions.size()
+          );
+        return createIndex(row, column, parent.row());
+    }
+    // Leaf nodes have no children
+    return QModelIndex{};
+}
+
+int ClangCodeCompletionModel::columnCount(const QModelIndex& parent) const
+{
+    return int(parent.isValid());
 }
 
 int ClangCodeCompletionModel::rowCount(const QModelIndex& parent) const
@@ -185,7 +206,8 @@ int ClangCodeCompletionModel::rowCount(const QModelIndex& parent) const
     if (parent.internalId() == Level::GROUP)                // Check if given parent is level1 index
         // ... return count of completion items in a group
         return m_groups[parent.row()].second.m_completions.size();
-    return 0;                                               // Otherwise return 0, cuz leaf nodes have no children
+    // Otherwise return 0, cuz leaf nodes have no children
+    return 0;
 }
 
 /**
@@ -197,9 +219,9 @@ int ClangCodeCompletionModel::rowCount(const QModelIndex& parent) const
 QModelIndex ClangCodeCompletionModel::parent(const QModelIndex& index) const
 {
     if (!index.isValid())                                   // Return an invalid index if given index is a root
-        return QModelIndex();
+        return QModelIndex{};
     if (index.internalId() == Level::GROUP)                 // Is the given index is a level1 index?
-        return QModelIndex();
+        return QModelIndex{};
     // Otherwise this is level2 index: return a group index
     assert(
         "index.internalId() supposed to be less than m_groups.size()"
@@ -208,34 +230,10 @@ QModelIndex ClangCodeCompletionModel::parent(const QModelIndex& index) const
     return createIndex(index.internalId(), 0, Level::GROUP);
 }
 
-QModelIndex ClangCodeCompletionModel::index(
-    const int row
-  , const int column
-  , const QModelIndex& parent
-  ) const
-{
-    if (!parent.isValid())                                  // Is invisible root node?
-    {
-        if (0 <= row && unsigned(row) < m_groups.size())    /// \todo use assert instead of runtime check?
-            return createIndex(row, column, Level::GROUP);
-        return QModelIndex();
-    }
-    if (parent.internalId() == Level::GROUP)
-    {
-        assert(
-            "row must be less then items count"
-          && unsigned(row) < m_groups[parent.row()].second.m_completions.size()
-          );
-        return createIndex(row, column, parent.row());
-    }
-    // Leaf nodes have no children
-    return QModelIndex();
-}
-
 QVariant ClangCodeCompletionModel::data(const QModelIndex& index, const int role) const
 {
     if (!index.isValid())
-        return QVariant();                                  // Return nothing for invalid index
+        return QVariant{};                                  // Return nothing for invalid index
 
     if (index.internalId() == Level::GROUP)
         return getGroupData(index, role);
@@ -251,23 +249,23 @@ QVariant ClangCodeCompletionModel::getGroupData(const QModelIndex& index, const 
         case KTextEditor::CodeCompletionModel::SetMatchContext:
         case KTextEditor::CodeCompletionModel::MatchQuality:
         case KTextEditor::CodeCompletionModel::HighlightingMethod:
-            return QVariant(QVariant::Invalid);
+            return QVariant::Invalid;
         case KTextEditor::CodeCompletionModel::ScopeIndex:
             return -1;
         case KTextEditor::CodeCompletionModel::InheritanceDepth:
-            return QVariant(0);
+            return 0;
         case KTextEditor::CodeCompletionModel::GroupRole:
-            return QVariant(Qt::DisplayRole);
+            return Qt::DisplayRole;
         case Qt::DisplayRole:
             assert(
                 "row must be less than groups size"
               && unsigned(index.row()) < m_groups.size()
               );
-            return QVariant(m_groups[index.row()].first);
+            return m_groups[index.row()].first;
         default:
             break;
     }
-    return QVariant();
+    return QVariant{};
 }
 
 QVariant ClangCodeCompletionModel::getItemData(const QModelIndex& index, const int role) const
@@ -302,7 +300,7 @@ QVariant ClangCodeCompletionModel::getItemHighlightData(const QModelIndex& index
     {
         case KTextEditor::CodeCompletionModel::SetMatchContext:
         case KTextEditor::CodeCompletionModel::MatchQuality:
-            return QVariant(QVariant::Invalid);
+            return QVariant::Invalid;
         case KTextEditor::CodeCompletionModel::ScopeIndex:
             return -1;
         case KTextEditor::CodeCompletionModel::HighlightingMethod:
@@ -320,7 +318,7 @@ QVariant ClangCodeCompletionModel::getItemHighlightData(const QModelIndex& index
 #if 0
                     kDebug(DEBUG_AREA) << "HighlightingMethod(" << role << ") DEFAULT called for " << index;
 #endif
-                    return QVariant(QVariant::Invalid);
+                    return QVariant::Invalid;
             }
             break;
         case KTextEditor::CodeCompletionModel::CustomHighlight:
@@ -335,19 +333,19 @@ QVariant ClangCodeCompletionModel::getItemHighlightData(const QModelIndex& index
                     kDebug(DEBUG_AREA) << "OK: CustomHighlight(" << role << ") called for" << index;
 #endif
                     // Request item for text to highlight
-                    auto text = m_groups[index.internalId()]
+                    const auto text = m_groups[index.internalId()]
                       .second.m_completions[index.row()]
                       .data(index, Qt::DisplayRole, m_plugin->config().usePrefixColumn())
                       .toString()
                       ;
                     // Do not waste time if nothing to highlight
                     if (text.isEmpty())
-                        return QVariant();
+                        return QVariant{};
                     // Ask the last visited document about current highlighting mode
-                    KTextEditor::Document* doc = m_current_view->document();
-                    auto mode = doc->highlightingMode();
+                    const auto* const doc = m_current_view->document();
+                    const auto mode = doc->highlightingMode();
                     // Colorise a snippet
-                    auto attrs = m_plugin->highlightSnippet(text, mode);
+                    const auto attrs = m_plugin->highlightSnippet(text, mode);
                     if (!attrs.isEmpty())
                     {
                         // Transform obtained attribute blocks into a sequence
@@ -371,11 +369,11 @@ QVariant ClangCodeCompletionModel::getItemHighlightData(const QModelIndex& index
             }
             break;                                          // Return nothing
     }
-    return QVariant();
+    return QVariant{};
 }
 
 void ClangCodeCompletionModel::executeCompletionItem2(
-    KTextEditor::Document* doc
+    KTextEditor::Document* const doc
   , const KTextEditor::Range& word
   , const QModelIndex& index
   ) const
@@ -395,11 +393,11 @@ void ClangCodeCompletionModel::executeCompletionItem2(
       && unsigned(index.row()) < m_groups[index.internalId()].second.m_completions.size()
       );
 
-    auto* template_iface = qobject_cast<KTextEditor::TemplateInterface2*>(m_current_view);
+    auto* const template_iface = qobject_cast<KTextEditor::TemplateInterface2*>(m_current_view);
     if (template_iface)
     {
         kDebug(DEBUG_AREA) << "TemplateInterface available for a view" << m_current_view;
-        auto result = m_groups[index.internalId()]
+        const auto result = m_groups[index.internalId()]
           .second.m_completions[index.row()]
           .getCompletionTemplate();
         kDebug(DEBUG_AREA) << "Template:" << result.m_tpl;
@@ -408,7 +406,7 @@ void ClangCodeCompletionModel::executeCompletionItem2(
         auto range = word;
         if (result.m_is_function)
         {
-            auto next_word_range = DocumentProxy(doc).firstWordAfterCursor(word.end());
+            const auto next_word_range = DocumentProxy(doc).firstWordAfterCursor(word.end());
             kDebug(DEBUG_AREA) << "OK THIS IS FUNCTION TEMPLATE: next word range" << next_word_range;
             kDebug(DEBUG_AREA) << "replace range before:" << range;
             if (next_word_range.isValid() && doc->text(next_word_range).startsWith(QLatin1String("()")))
@@ -423,7 +421,7 @@ void ClangCodeCompletionModel::executeCompletionItem2(
     else
     {
         kDebug(DEBUG_AREA) << "No TemplateInterface for a view" << m_current_view;
-        auto p = m_groups[index.internalId()].second.m_completions[index.row()].executeCompletion();
+        const auto p = m_groups[index.internalId()].second.m_completions[index.row()].executeCompletion();
         doc->replaceText(word, p.first);
         // Try to reposition a cursor inside a current (hope it still is) view
         auto pos = word.start();

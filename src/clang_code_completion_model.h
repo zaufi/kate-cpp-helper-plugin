@@ -10,12 +10,12 @@
  * under the terms of the GNU General Public License as published by the
  * Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * KateCppHelperPlugin is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License along
  * with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
@@ -27,16 +27,15 @@
 
 // Standard includes
 #include <clang-c/Index.h>
-#if (__GNUC__ >=4 && __GNUC_MINOR__ >= 5)
+#if __GNUC__
 # pragma GCC push_options
 # pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-#endif                                                      // (__GNUC__ >=4 && __GNUC_MINOR__ >= 5)
+#endif                                                      // __GNUC__
 #include <KDE/KTextEditor/CodeCompletionModel>
 #include <KDE/KTextEditor/CodeCompletionModelControllerInterface>
-#if (__GNUC__ >=4 && __GNUC_MINOR__ >= 5)
+#if __GNUC__
 # pragma GCC pop_options
-#endif                                                      // (__GNUC__ >=4 && __GNUC_MINOR__ >= 5)
-#include <KDE/KTextEdit>
+#endif                                                      // __GNUC__
 #include <vector>
 
 namespace kate {
@@ -58,33 +57,33 @@ class ClangCodeCompletionModel
     Q_INTERFACES(KTextEditor::CodeCompletionModelControllerInterface3)
 
 public:
-    /// Default constructor
+    /**
+     * Construct from parent \c QObject, plugin
+     * pointer (to access configuration data) and
+     * reference to diagnistic messages manager
+     */
     ClangCodeCompletionModel(QObject*, CppHelperPlugin*, DiagnosticMessagesModel&);
 
     //BEGIN KTextEditor::CodeCompletionModel overrides
-    /// Generate completions for given range
-    virtual void completionInvoked(
-        KTextEditor::View*
-      , const KTextEditor::Range&
-      , InvocationType
-      ) override;
-    /// Respond w/ data for particular completion entry
-    virtual QVariant data(const QModelIndex&, int) const override;
-    virtual int columnCount(const QModelIndex&) const override;
-    virtual int rowCount(const QModelIndex& parent) const override;
-    /// Make an index of a parent node
-    virtual QModelIndex parent(const QModelIndex& index) const override;
-    virtual QModelIndex index(
-        int row
-      , int column
-      , const QModelIndex& parent
-      ) const override;
     virtual bool shouldStartCompletion(
         KTextEditor::View*
       , const QString&
       , bool
       , const KTextEditor::Cursor&
       ) override;
+    /// Generate completions for given range
+    virtual void completionInvoked(
+        KTextEditor::View*
+      , const KTextEditor::Range&
+      , InvocationType
+      ) override;
+    virtual QModelIndex index(int, int, const QModelIndex&) const override;
+    virtual int columnCount(const QModelIndex&) const override;
+    virtual int rowCount(const QModelIndex&) const override;
+    /// Make an index of a parent node
+    virtual QModelIndex parent(const QModelIndex&) const override;
+    /// Respond w/ data for particular completion entry
+    virtual QVariant data(const QModelIndex&, int) const override;
     virtual void executeCompletionItem2(
         KTextEditor::Document*
       , const KTextEditor::Range&
@@ -116,7 +115,7 @@ private:
     QVariant getItemData(const QModelIndex&, int) const;
     QVariant getItemHighlightData(const QModelIndex&, int) const;
 
-    CppHelperPlugin* m_plugin;
+    CppHelperPlugin* const m_plugin;
     DiagnosticMessagesModel& m_diagnostic_model;
     KTextEditor::View* m_current_view;
     groups_list_type m_groups;                              ///< Level one nodes

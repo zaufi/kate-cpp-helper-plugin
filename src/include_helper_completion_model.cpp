@@ -34,60 +34,39 @@
 namespace kate {
 //BEGIN IncludeHelperCompletionModel
 IncludeHelperCompletionModel::IncludeHelperCompletionModel(
-    QObject* parent
-  , CppHelperPlugin* plugin
+    QObject* const parent
+  , CppHelperPlugin* const plugin
   )
   : KTextEditor::CodeCompletionModel2(parent)
   , m_plugin(plugin)
-  , m_closer(0)
-  , m_should_complete(false)
 {
-}
-
-QModelIndex IncludeHelperCompletionModel::index(int row, int column, const QModelIndex& parent) const
-{
-    // kDebug(DEBUG_AREA) << "row=" << row << ", col=" << column << ", p=" << parent.isValid();
-    if (!parent.isValid())
-    {
-        // At 'top' level only 'header' present, so nothing else than row 0 can be here...
-        // As well as nothing for leaf nodes required...
-        return row == 0 ? createIndex(row, column, 0) : QModelIndex();
-    }
-
-    if (parent.parent().isValid())
-        return QModelIndex();
-
-    // Check bounds
-    const auto count = m_dir_completions.size() + m_file_completions.size();
-    if (row < count && row >= 0 && column >= 0)
-        return createIndex(row, column, 1);                 // make leaf node
-    return QModelIndex();
 }
 
 /**
- * Initiate completion when there is \c #include on a line (\c m_range
+ * Initiate completion when there is \c #include on a line (\c range
  * in a result of \c parseIncludeDirective() not empty -- i.e. there is some file present)
  * and cursor placed within that range... despite of completeness of the whole line.
  */
 bool IncludeHelperCompletionModel::shouldStartCompletion(
-    KTextEditor::View* view
+    KTextEditor::View* const view
   , const QString& inserted_text
-  , bool user_insertion
+  , const bool user_insertion
   , const KTextEditor::Cursor& position
   )
 {
-    kDebug(DEBUG_AREA) << "position=" << position << ", inserted_text=" << inserted_text << ", ui=" << user_insertion;
+    kDebug(DEBUG_AREA) << "pos=" << position << ", text=" << inserted_text << ", ui=" << user_insertion;
 
     m_should_complete = false;
-    auto* doc = view->document();                           // get current document
-    auto line = doc->line(position.line());                 // get current line
-    auto* iface = qobject_cast<KTextEditor::HighlightInterface*>(doc);
+
+    auto* const doc = view->document();                     // get current document
+    auto* const iface = qobject_cast<KTextEditor::HighlightInterface*>(doc);
     // Do nothing if no highlighting interface or not suitable document or
     // a place within it... (we won't to complete smth in non C++ files or comments for example)
     if (!iface || !isSuitableDocumentAndHighlighting(doc->mimeType(), iface->highlightingModeAt(position)))
         return m_should_complete;
 
     // Try to parse it...
+    const auto& line = doc->line(position.line());          // get current line
     auto r = parseIncludeDirective(line, false);
     m_should_complete = r.range.isValid();
     if (m_should_complete)
@@ -101,21 +80,6 @@ bool IncludeHelperCompletionModel::shouldStartCompletion(
             kDebug(DEBUG_AREA) << "closer=" << m_closer;
         }
     }
-    else if (position.column() == line.length())
-    {
-        auto text = tryToCompleteIncludeDirective(line.mid(0, position.column()).trimmed());
-        m_should_complete = !text.isEmpty();
-        if (m_should_complete)
-        {
-            /// \todo Hardcoded angle bracket! Better to check what file was selected
-            /// (from system path or session specific) and replace it accordingly...
-            text += QLatin1String(" <");
-            auto start = position;
-            start.setColumn(0);
-            auto range = KTextEditor::Range{start, position};
-            view->document()->replaceText(range, text);
-        }
-    }
     return m_should_complete;
 }
 
@@ -124,7 +88,7 @@ bool IncludeHelperCompletionModel::shouldStartCompletion(
  * (i.e. contains complete \c #include expression) or have no \c #include at all.
  */
 bool IncludeHelperCompletionModel::shouldAbortCompletion(
-    KTextEditor::View* view
+    KTextEditor::View* const view
   , const KTextEditor::Range& range
   , const QString& current_completion
   )
@@ -146,12 +110,12 @@ bool IncludeHelperCompletionModel::shouldAbortCompletion(
 }
 
 void IncludeHelperCompletionModel::completionInvoked(
-    KTextEditor::View* view
+    KTextEditor::View* const view
   , const KTextEditor::Range& range
-  , InvocationType
+  , const InvocationType
   )
 {
-    auto* doc = view->document();
+    auto* const doc = view->document();
     kDebug(DEBUG_AREA) << range << ", " << doc->text(range);
     const auto& t = doc->line(range.start().line()).left(range.start().column());
     kDebug(DEBUG_AREA) << "text to parse: " << t;
@@ -177,7 +141,7 @@ void IncludeHelperCompletionModel::updateCompletionList(const QString& start, co
     m_file_completions.clear();
     m_dir_completions.clear();
     const auto slash = start.lastIndexOf('/');
-    const auto path = slash != -1 ? start.left(slash) : QString();
+    const auto path = slash != -1 ? start.left(slash) : QString{};
     const auto name = slash != -1 ? start.mid(slash + 1) + "*" : QString("*");
     QStringList mask;
     mask.append(name);
@@ -209,10 +173,34 @@ void IncludeHelperCompletionModel::updateCompletionList(const QString& start, co
     endResetModel();
 }
 
-QVariant IncludeHelperCompletionModel::data(const QModelIndex& index, int role) const
+QModelIndex IncludeHelperCompletionModel::index(
+    const int row
+  , const int column
+  , const QModelIndex& parent
+  ) const
+{
+    // kDebug(DEBUG_AREA) << "row=" << row << ", col=" << column << ", p=" << parent.isValid();
+    if (!parent.isValid())
+    {
+        // At 'top' level only 'header' present, so nothing else than row 0 can be here...
+        // As well as nothing for leaf nodes required...
+        return row == 0 ? createIndex(row, column, 0) : QModelIndex{};
+    }
+
+    if (parent.parent().isValid())
+        return QModelIndex{};
+
+    // Check bounds
+    const auto count = m_dir_completions.size() + m_file_completions.size();
+    if (row < count && row >= 0 && column >= 0)
+        return createIndex(row, column, 1);                 // make leaf node
+    return QModelIndex{};
+}
+
+QVariant IncludeHelperCompletionModel::data(const QModelIndex& index, const int role) const
 {
     if (!index.isValid() || !m_should_complete)
-        return QVariant();
+        return QVariant{};
 
 #if 0
     kDebug(DEBUG_AREA) << index.isValid() << '/' << index.parent().isValid() << ": index " << index.row()
@@ -276,11 +264,11 @@ QVariant IncludeHelperCompletionModel::data(const QModelIndex& index, int role) 
         default:
             break;
     }
-    return QVariant();
+    return QVariant{};
 }
 
 void IncludeHelperCompletionModel::executeCompletionItem2(
-    KTextEditor::Document* document
+    KTextEditor::Document* const document
   , const KTextEditor::Range& word
   , const QModelIndex& index
   ) const
@@ -303,12 +291,12 @@ void IncludeHelperCompletionModel::executeCompletionItem2(
 }
 
 KTextEditor::Range IncludeHelperCompletionModel::completionRange(
-    KTextEditor::View* view
+    KTextEditor::View* const view
   , const KTextEditor::Cursor& position
   )
 {
     kDebug(DEBUG_AREA) << "cursor: " << position;
-    auto line = view->document()->line(position.line());
+    const auto line = view->document()->line(position.line());
     auto r = parseIncludeDirective(line, false);
     if (r.range.isValid())
     {
@@ -326,11 +314,7 @@ KTextEditor::Range IncludeHelperCompletionModel::completionRange(
         return range;
     }
     kDebug(DEBUG_AREA) << "default select";
-#if 0
-    return KTextEditor::Range();
-#else
     return KTextEditor::CodeCompletionModelControllerInterface3::completionRange(view, position);
-#endif
 }
 //END IncludeHelperCompletionModel
 }                                                           // namespace kate

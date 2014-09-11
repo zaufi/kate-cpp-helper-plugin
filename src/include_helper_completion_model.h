@@ -25,15 +25,15 @@
 // Project specific includes
 
 // Standard includes
-#if (__GNUC__ >=4 && __GNUC_MINOR__ >= 5)
+#if __GNUC__
 # pragma GCC push_options
 # pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-#endif                                                      // (__GNUC__ >=4 && __GNUC_MINOR__ >= 5)
+#endif                                                      // __GNUC__
 #include <KDE/KTextEditor/CodeCompletionModel>
 #include <KDE/KTextEditor/CodeCompletionModelControllerInterface>
-#if (__GNUC__ >=4 && __GNUC_MINOR__ >= 5)
+#if __GNUC__
 # pragma GCC pop_options
-#endif                                                      // (__GNUC__ >=4 && __GNUC_MINOR__ >= 5)
+#endif                                                      // __GNUC__
 
 namespace kate {
 class CppHelperPlugin;                                      // forward declaration
@@ -56,24 +56,6 @@ public:
 
     //BEGIN KTextEditor::CodeCompletionModel overrides
 
-    /// Generate completions for given range
-    virtual void completionInvoked(
-        KTextEditor::View*
-      , const KTextEditor::Range&
-      , InvocationType
-      ) override;
-    /// Insert a current completion item into a document
-    virtual void executeCompletionItem2(
-        KTextEditor::Document*
-      , const KTextEditor::Range&
-      , const QModelIndex&
-      ) const override;
-    virtual KTextEditor::Range completionRange(
-        KTextEditor::View*
-      , const KTextEditor::Cursor&
-      ) override;
-    /// Respond w/ data for particular completion entry
-    virtual QVariant data(const QModelIndex&, int) const override;
     /// Check if line starts w/ \c #include and \c '"' or \c '<' just pressed
     virtual bool shouldStartCompletion(
         KTextEditor::View*
@@ -81,13 +63,34 @@ public:
       , bool
       , const KTextEditor::Cursor&
       ) override;
+
     /// Check if we've done w/ \c #include filename completion
     virtual bool shouldAbortCompletion(
         KTextEditor::View*
       , const KTextEditor::Range&
       , const QString&
       ) override;
+
+    /// Generate completions for given range
+    virtual void completionInvoked(
+        KTextEditor::View*
+      , const KTextEditor::Range&
+      , InvocationType
+      ) override;
+
+    virtual KTextEditor::Range completionRange(
+        KTextEditor::View*
+      , const KTextEditor::Cursor&
+      ) override;
+
     virtual QModelIndex index(int, int, const QModelIndex&) const override;
+
+    /// Get columns count (the only one)
+    virtual int columnCount(const QModelIndex&) const override
+    {
+        return 1;
+    }
+
     /// Get rows count
     virtual int rowCount(const QModelIndex& parent) const override
     {
@@ -98,11 +101,7 @@ public:
           : 1                                               // No parent -- root node...
           ;
     }
-    /// Get columns count (the only one)
-    virtual int columnCount(const QModelIndex&) const override
-    {
-        return 1;
-    }
+
     /// Get parent's index
     virtual QModelIndex parent(const QModelIndex& index) const override
     {
@@ -110,17 +109,28 @@ public:
         // otherwise return an invalid node.
         return index.internalId() ? createIndex(0, 0, 0) : QModelIndex();
     }
+
+    /// Respond w/ data for particular completion entry
+    virtual QVariant data(const QModelIndex&, int) const override;
+
+    /// Insert a current completion item into a document
+    virtual void executeCompletionItem2(
+        KTextEditor::Document*
+      , const KTextEditor::Range&
+      , const QModelIndex&
+      ) const override;
+
     //END KTextEditor::CodeCompletionModel overrides
 
 private:
     /// Update \c m_completions for given string
     void updateCompletionList(const QString&, const bool);
 
-    CppHelperPlugin* m_plugin;
+    CppHelperPlugin* const m_plugin;
     QStringList m_dir_completions;                          ///< List of dirs suggested
     QStringList m_file_completions;                         ///< List of files suggested
-    QChar m_closer;
-    bool m_should_complete;
+    QChar m_closer = 0;
+    bool m_should_complete = false;
 };
 
 }                                                           // namespace kate

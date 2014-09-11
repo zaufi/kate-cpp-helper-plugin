@@ -396,7 +396,6 @@ define_skeleton_generation_targets(
     HEADER_EXT "h"
     IMPL_EXT "cpp"
     ENABLE_TESTS
-    USE_CAMEL_STYLE
     USE_PRAGMA_ONCE
   )
 

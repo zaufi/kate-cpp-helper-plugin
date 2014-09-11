@@ -25,6 +25,7 @@
 #include <src/cpp_helper_plugin.h>
 #include <src/clang_code_completion_model.h>
 #include <src/include_helper_completion_model.h>
+#include <src/preprocessor_completion_model.h>
 #include <src/utils.h>
 
 // Standard includes
@@ -54,9 +55,9 @@ const QString TOOL_VIEW_TABS_ORDER_KEY = "ToolViewTabsOrder";
  * \note Instances of this class created once per main window
  */
 CppHelperPluginView::CppHelperPluginView(
-    Kate::MainWindow* mw
+    Kate::MainWindow* const mw
   , const KComponentData& data
-  , CppHelperPlugin* plugin
+  , CppHelperPlugin* const plugin
   )
   : Kate::PluginView{mw}
   , Kate::XMLGUIClient{data}
@@ -147,7 +148,9 @@ CppHelperPluginView::CppHelperPluginView(
     // ATTENTION ... so at this point searching for particular
     // submenu using factory will be successed!
 
-    auto* my_pop = qobject_cast<QMenu*>(mainWindow()->guiFactory()->container("cpphelper_popup", this));
+    auto* const my_pop = qobject_cast<QMenu*>(
+        mainWindow()->guiFactory()->container("cpphelper_popup", this)
+      );
     connect(my_pop, SIGNAL(aboutToShow()), this, SLOT(aboutToShow()));
     //END Setup plugin actions
 
@@ -343,7 +346,7 @@ CppHelperPluginView::~CppHelperPluginView()
     mainWindow()->guiFactory()->removeClient(this);
 }
 
-void CppHelperPluginView::readSessionConfig(KConfigBase* config, const QString& groupPrefix)
+void CppHelperPluginView::readSessionConfig(KConfigBase* const config, const QString& groupPrefix)
 {
     kDebug(DEBUG_AREA) << "** VIEW **: Reading session config: " << groupPrefix;
     KConfigGroup scg(config, groupPrefix);
@@ -367,7 +370,7 @@ void CppHelperPluginView::readSessionConfig(KConfigBase* config, const QString& 
     }
 }
 
-void CppHelperPluginView::writeSessionConfig(KConfigBase* config, const QString& groupPrefix)
+void CppHelperPluginView::writeSessionConfig(KConfigBase* const config, const QString& groupPrefix)
 {
     kDebug(DEBUG_AREA) << "** VIEW **: Writing session config: " << groupPrefix;
     KConfigGroup scg(config, groupPrefix);
@@ -394,7 +397,7 @@ void CppHelperPluginView::addDiagnosticMessage(clang::diagnostic_message record)
  * but highlighted as C++ the code below wouldn't work! Even more, after document gets
  * saved to disk completion still wouldn't work! That is definitely SUXX
  */
-void CppHelperPluginView::viewCreated(KTextEditor::View* view)
+void CppHelperPluginView::viewCreated(KTextEditor::View* const view)
 {
     kDebug(DEBUG_AREA) << "view created";
 
@@ -402,7 +405,7 @@ void CppHelperPluginView::viewCreated(KTextEditor::View* view)
     if (handleView(view))
         m_plugin->updateDocumentInfoFromView(view);
 
-    auto* th_iface = qobject_cast<KTextEditor::TextHintInterface*>(view);
+    auto* const th_iface = qobject_cast<KTextEditor::TextHintInterface*>(view);
     if (th_iface)
     {
         connect(
@@ -414,7 +417,7 @@ void CppHelperPluginView::viewCreated(KTextEditor::View* view)
         th_iface->enableTextHints(3000);                    // 3 seconds
     }
 
-    auto* doc = view->document();
+    auto* const doc = view->document();
     // Rescan document for #includes on reload
     connect(
         doc
@@ -466,21 +469,21 @@ void CppHelperPluginView::viewCreated(KTextEditor::View* view)
     /// on unregister...
 }
 
-void CppHelperPluginView::modeChanged(KTextEditor::Document* doc)
+void CppHelperPluginView::modeChanged(KTextEditor::Document* const doc)
 {
     kDebug(DEBUG_AREA) << "hl mode has been changed: " << doc->highlightingMode() << ", " << doc->mimeType();
     if (handleView(doc->activeView()))
         m_plugin->updateDocumentInfo(doc);
 }
 
-void CppHelperPluginView::urlChanged(KTextEditor::Document* doc)
+void CppHelperPluginView::urlChanged(KTextEditor::Document* const doc)
 {
     kDebug(DEBUG_AREA) << "name or URL has been changed: " << doc->url() << ", " << doc->mimeType();
     if (handleView(doc->activeView()))
         m_plugin->updateDocumentInfo(doc);
 }
 
-void CppHelperPluginView::onDocumentClose(KTextEditor::Document* doc)
+void CppHelperPluginView::onDocumentClose(KTextEditor::Document* const doc)
 {
     if (doc == m_last_explored_document)
     {
@@ -492,7 +495,7 @@ void CppHelperPluginView::onDocumentClose(KTextEditor::Document* doc)
 
 void CppHelperPluginView::diagnosticMessageActivated(const QModelIndex& index)
 {
-    auto loc = m_diagnostic_data.getLocationByIndex(index);
+    const auto loc = m_diagnostic_data.getLocationByIndex(index);
     if (!loc.empty())
     {
         const auto& filename = loc.file().toLocalFile();
@@ -543,7 +546,7 @@ void CppHelperPluginView::aboutToShow()
  * \param view view to register completers for. Do nothing if \c nullptr.
  * \return \c true if suitable document and registration successed, \c false otherwise.
  */
-bool CppHelperPluginView::handleView(KTextEditor::View* view)
+bool CppHelperPluginView::handleView(KTextEditor::View* const view)
 {
     if (!view)                                              // Null view is quite possible...
         return false;                                       // do nothing in this case.
@@ -553,7 +556,7 @@ bool CppHelperPluginView::handleView(KTextEditor::View* view)
 
     updateCppActionsAvailability(is_suitable_document);
 
-    auto* cc_iface = qobject_cast<KTextEditor::CodeCompletionInterface*>(view);
+    auto* const cc_iface = qobject_cast<KTextEditor::CodeCompletionInterface*>(view);
     if (!cc_iface)
     {
         kDebug(DEBUG_AREA) << "Nothing to do if no completion iface present for a view";
@@ -568,23 +571,37 @@ bool CppHelperPluginView::handleView(KTextEditor::View* view)
         if (it == end(m_completers))
         {
             kDebug(DEBUG_AREA) << "C/C++ source: register #include and code completers";
-            std::unique_ptr<IncludeHelperCompletionModel> include_completer(
-                new IncludeHelperCompletionModel(view, m_plugin)
+            auto include_completer = std::make_unique<IncludeHelperCompletionModel>(
+                view
+              , m_plugin
               );
-            std::unique_ptr<ClangCodeCompletionModel> code_completer(
-                new ClangCodeCompletionModel(view, m_plugin, m_diagnostic_data)
+            auto code_completer = std::make_unique<ClangCodeCompletionModel>(
+                view
+              , m_plugin
+              , m_diagnostic_data
+              );
+            auto preprocessor_completer = std::make_unique<PreprocessorCompletionModel>(
+                view
+              , m_plugin
+              , m_diagnostic_data
               );
             auto r = m_completers.insert(
                 std::make_pair(
                     view
-                  , std::make_pair(include_completer.release(), code_completer.release())
+                  , std::make_tuple(
+                        include_completer.release()
+                      , code_completer.release()
+                      , preprocessor_completer.release()
+                      )
                   )
               );
             assert("Completers expected to be new" && r.second);
             // Enable #include completions
-            cc_iface->registerCompletionModel(r.first->second.first);
+            cc_iface->registerCompletionModel(std::get<0>(r.first->second));
             // Enable semantic C++ code completions
-            cc_iface->registerCompletionModel(r.first->second.second);
+            cc_iface->registerCompletionModel(std::get<1>(r.first->second));
+            // Enable preprocessor directives completion
+            cc_iface->registerCompletionModel(std::get<2>(r.first->second));
             // Turn auto completions ON
             cc_iface->setAutomaticInvocationEnabled(true);
             result = true;
@@ -596,16 +613,18 @@ bool CppHelperPluginView::handleView(KTextEditor::View* view)
         // Check if some was registered before, and erase if it is
         if (it != end(m_completers))
         {
-            kDebug(DEBUG_AREA) << "Not a C/C++ source (anymore): unregister #include and code completers";
-            cc_iface->unregisterCompletionModel(it->second.first);
-            cc_iface->unregisterCompletionModel(it->second.second);
+            kDebug(DEBUG_AREA) << "Not a C/C++ source (anymore): unregister code completers";
+            cc_iface->unregisterCompletionModel(std::get<0>(it->second));
+            cc_iface->unregisterCompletionModel(std::get<1>(it->second));
+            cc_iface->unregisterCompletionModel(std::get<2>(it->second));
             /// \todo Is there any damn way to avoid explicit delete???
             /// Fraking Qt (as far as I know) was developed w/ automatic
             /// memory management (to help users not to think about it),
             /// so WHY I still have to call \c new and/or \c delete !!!
             /// FRAKING WHY!?
-            delete it->second.first;
-            delete it->second.second;
+            delete std::get<0>(it->second);
+            delete std::get<1>(it->second);
+            delete std::get<2>(it->second);
             m_completers.erase(it);
         }
     }
@@ -613,11 +632,11 @@ bool CppHelperPluginView::handleView(KTextEditor::View* view)
     return result;
 }
 
-bool CppHelperPluginView::eventFilter(QObject* obj, QEvent* event)
+bool CppHelperPluginView::eventFilter(QObject* const obj, QEvent* const event)
 {
     if (event->type() == QEvent::KeyPress)
     {
-        auto* ke = static_cast<QKeyEvent*>(event);
+        const auto* const ke = static_cast<QKeyEvent*>(event);
         if ((obj == m_tool_view.get()) && (ke->key() == Qt::Key_Escape))
         {
             mainWindow()->hideToolView(m_tool_view.get());
@@ -633,7 +652,7 @@ bool CppHelperPluginView::eventFilter(QObject* obj, QEvent* event)
  */
 void CppHelperPluginView::updateCppActionsAvailability()
 {
-    auto* view = mainWindow()->activeView();
+    const auto* const view = mainWindow()->activeView();
     if (!view)
     {
         kDebug(DEBUG_AREA) << "no active view yet -- leave `open header' action as is...";

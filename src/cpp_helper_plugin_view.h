@@ -35,6 +35,7 @@
 #include <map>
 #include <memory>
 #include <stack>
+#include <tuple>
 
 class QSortFilterProxyModel;
 class QStandardItemModel;
@@ -46,6 +47,7 @@ struct InclusionVisitorData;
 class CppHelperPlugin;
 class IncludeHelperCompletionModel;
 class ClangCodeCompletionModel;
+class PreprocessorCompletionModel;
 
 
 /**
@@ -134,7 +136,11 @@ private:
     /// Type to hold a completers associated with a view
     typedef std::map<
         KTextEditor::View*
-      , std::pair<IncludeHelperCompletionModel*, ClangCodeCompletionModel*>
+      , std::tuple<
+            IncludeHelperCompletionModel*
+          , ClangCodeCompletionModel*
+          , PreprocessorCompletionModel*
+          >
       > completions_models_map_type;
 
     /// Enable/disable C++ specific actions in UI

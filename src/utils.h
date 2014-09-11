@@ -79,9 +79,6 @@ struct IncludeParseResult
 /// Get filename of \c #include directive at given line
 IncludeParseResult parseIncludeDirective(const QString&, const bool);
 
-/// Check if given string looks like a \c #include string or its beginning part
-QString tryToCompleteIncludeDirective(const QString&);
-
 /// \c true if given MIME type string belongs to C/C++ source or in case of
 /// \c text-plain (set for new documents), check for highlighting mode
 bool isSuitableDocument(const QString&, const QString&);
@@ -91,7 +88,7 @@ bool isSuitableDocumentAndHighlighting(const QString&, const QString&);
  * \brief Try to find a file in a given location
  * \param[in] uri name of the file to lookup
  */
-inline bool isPresentAndReadable(const QString& uri)
+inline auto isPresentAndReadable(const QString& uri)
 {
     const auto fi = QFileInfo{uri};
     return fi.exists() && fi.isFile() && fi.isReadable();

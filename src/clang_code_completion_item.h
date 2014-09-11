@@ -96,7 +96,6 @@ public:
     }
 
 private:
-
     QString renderPrefix() const;
     QString renderPlaceholders(const QString&) const;
 

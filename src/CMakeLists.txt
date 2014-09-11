@@ -57,6 +57,7 @@ set(KATE_CPP_HELPER_PLUGIN_SOURCES
     clang_code_completion_item.cpp
     clang_code_completion_model.cpp
     include_helper_completion_model.cpp
+    preprocessor_completion_model.cpp
     choose_from_list_dialog.cpp
     cpp_helper_plugin_config_page.cpp
     cpp_helper_plugin_view.cpp

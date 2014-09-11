@@ -515,7 +515,7 @@ QString TranslationUnit::makeParentText(CXCompletionString str, const CXCursorKi
 void TranslationUnit::storeTo(const KUrl& filename)
 {
     auto pch_filename = filename.toLocalFile().toUtf8();
-    auto result = clang_saveTranslationUnit(
+    const auto result = clang_saveTranslationUnit(
         m_unit
       , pch_filename.constData()
       , CXSaveTranslationUnit_None /*clang_defaultSaveOptions(m_unit)*/
@@ -546,6 +546,7 @@ void TranslationUnit::reparse(const clang::unsaved_files_list& unsaved_files)
  * \attention \c clang_formatDiagnostic have a nasty BUG since clang 3.3!
  * It fails (<em>pure virtual function call</em>) on messages w/o location attached
  * (like notices). DO NOT USE IT! EVER!
+ * \todo Check for fresh clang versions!
  */
 void TranslationUnit::appendDiagnostic(const CXDiagnostic& diag)
 {

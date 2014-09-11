@@ -87,7 +87,7 @@ QVariant ClangCodeCompletionItem::data(
                     if (use_prefix_column)
                         result = m_text;
                     else
-                        result = QString(renderPrefix() + " " + m_text);
+                        result = QString{renderPrefix() + " " + m_text};
                     break;
                 case KTextEditor::CodeCompletionModel::Postfix:
                     if (m_deprecated)
@@ -121,14 +121,14 @@ QString ClangCodeCompletionItem::renderPrefix() const
     {
         switch (m_kind)
         {
-            case CXCursor_TypedefDecl:      prefix = QLatin1String("typedef");        break;
-            case CXCursor_ClassDecl:        prefix = QLatin1String("class");          break;
-            case CXCursor_ClassTemplate:    prefix = QLatin1String("template class"); break;
-            case CXCursor_StructDecl:       prefix = QLatin1String("struct");         break;
-            case CXCursor_EnumDecl:         prefix = QLatin1String("enum");           break;
-            case CXCursor_Namespace:        prefix = QLatin1String("namespace");      break;
-            case CXCursor_UnionDecl:        prefix = QLatin1String("union");          break;
-            case CXCursor_MacroDefinition:  prefix = QLatin1String("macro");          break;
+            case CXCursor_TypedefDecl:      prefix = QLatin1String{"typedef"};        break;
+            case CXCursor_ClassDecl:        prefix = QLatin1String{"class"};          break;
+            case CXCursor_ClassTemplate:    prefix = QLatin1String{"template class"}; break;
+            case CXCursor_StructDecl:       prefix = QLatin1String{"struct"};         break;
+            case CXCursor_EnumDecl:         prefix = QLatin1String{"enum"};           break;
+            case CXCursor_Namespace:        prefix = QLatin1String{"namespace"};      break;
+            case CXCursor_UnionDecl:        prefix = QLatin1String{"union"};          break;
+            case CXCursor_MacroDefinition:  prefix = QLatin1String{"macro"};          break;
             default: break;
         }
     }
@@ -235,7 +235,7 @@ const std::map<
 
 KTextEditor::CodeCompletionModel::CompletionProperty ClangCodeCompletionItem::completionProperty() const
 {
-    auto it = CURSOR_PREPERTY_MAP.find(m_kind);
+    const auto it = CURSOR_PREPERTY_MAP.find(m_kind);
     if (it != std::end(CURSOR_PREPERTY_MAP))
         return it->second;
     return KTextEditor::CodeCompletionModel::NoProperty;
@@ -355,7 +355,7 @@ const std::map<
 
 QVariant ClangCodeCompletionItem::icon() const
 {
-    auto it = ICONS_MAP.find(m_kind);
+    const auto it = ICONS_MAP.find(m_kind);
     if (it != std::end(ICONS_MAP))
         return KIcon(it->second);
     kDebug(DEBUG_AREA) << "Item kind has no icon defined: " << clang::toString(m_kind);
