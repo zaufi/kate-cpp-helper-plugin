@@ -134,25 +134,6 @@ bool PreprocessorCompletionModel::shouldAbortCompletion(
     }
     kDebug(DEBUG_AREA) << "matches.size()=" << matches.size();
 
-#if 0
-    m_should_complete = inserted_text.isEmpty() || std::any_of(
-        begin(COMPLETIONS)
-      , end(COMPLETIONS)
-      , [&inserted_text](const auto& item)
-        {
-            auto text = item.text;
-            const auto end_of_first_word = text.indexOf(' ');
-            if (end_of_first_word != -1)
-                // Strip tail of the completion item... only first word is interesting!
-                text = text.left(end_of_first_word);
-            kDebug(DEBUG_AREA) << "text=" << text;
-            return inserted_text.size() < text.size() && text.startsWith(inserted_text);
-        }
-      );
-    kDebug(DEBUG_AREA) << "m_should_complete=" << m_should_complete;
-    return !m_should_complete;
-#endif
-
     /// Then, if matched items count equal to one, that means
     /// we can auto-insert that item (cuz there is no other alternatives).
     if (matches.size() == 1)
@@ -295,7 +276,7 @@ QVariant PreprocessorCompletionModel::data(const QModelIndex& index, const int r
         case ScopeIndex:
             return -1;
         case InheritanceDepth:
-            return 0;
+            return index.row() == 0 ? 1 : 100;
         case CodeCompletionModel::GroupRole:
             return Qt::DisplayRole;
         case CompletionRole:
