@@ -111,6 +111,18 @@ bool PreprocessorCompletionModel::shouldAbortCompletion(
     auto* const doc = view->document();                     // get current document
     kDebug(DEBUG_AREA) << "completion text=" << inserted_text;
 
+    if (!m_should_complete)
+        return true;
+
+    /// Make sure the current line starts w/ a hash.
+    auto text_before = doc->text(
+        {KTextEditor::Cursor(inserted_range.end().line(), 0), inserted_range.end()}
+      );
+    kDebug(DEBUG_AREA) << "text_before=" << text_before;
+
+    /// Check if current line starts w/ \c '#' which is a sign of a preprocessor directive.
+    if (text_before[0] != '#')
+        return false;
     /// If we are start completion, and user entered text still empty,
     /// when no reason to abort completion.
     if (inserted_text.isEmpty())
@@ -122,7 +134,6 @@ bool PreprocessorCompletionModel::shouldAbortCompletion(
     for (auto i = 0u; i < COMPLETIONS.size(); ++i)
     {
         auto text = COMPLETIONS[i].text;
-        kDebug(DEBUG_AREA) << "comp=" << text;
         const auto end_of_first_word = text.indexOf(' ');
         if (end_of_first_word != -1)
             text = text.left(end_of_first_word);
@@ -132,7 +143,6 @@ bool PreprocessorCompletionModel::shouldAbortCompletion(
         if (is_match)
             matches.emplace_back(i);
     }
-    kDebug(DEBUG_AREA) << "matches.size()=" << matches.size();
 
     /// Then, if matched items count equal to one, that means
     /// we can auto-insert that item (cuz there is no other alternatives).

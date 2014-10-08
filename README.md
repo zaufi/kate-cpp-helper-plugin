@@ -154,6 +154,7 @@ TODO
   activate a corresponding tab automatically (and still allows to switch to others and/or
   add some new branches).
 * Turn `#incldue` lines into "links", if `Ctrl` key pressed
+* Avoid CSS files (if found) to be indexed as C/C++ sources!
 
 
 See Also

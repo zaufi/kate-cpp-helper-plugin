@@ -34,6 +34,7 @@
 #if __GNUC__
 # pragma GCC pop_options
 #endif                                                      // __GNUC__
+#include <vector>
 
 namespace kate {
 class CppHelperPlugin;                                      // forward declaration
@@ -54,8 +55,8 @@ class IncludeHelperCompletionModel
 public:
     IncludeHelperCompletionModel(QObject*, CppHelperPlugin*);
 
-    //BEGIN KTextEditor::CodeCompletionModel overrides
-
+    /// \name KTextEditor::CodeCompletionModelControllerInterface3
+    //@{
     /// Check if line starts w/ \c #include and \c '"' or \c '<' just pressed
     virtual bool shouldStartCompletion(
         KTextEditor::View*
@@ -71,44 +72,25 @@ public:
       , const QString&
       ) override;
 
-    /// Generate completions for given range
-    virtual void completionInvoked(
-        KTextEditor::View*
-      , const KTextEditor::Range&
-      , InvocationType
-      ) override;
-
+    /// Returns the completion range that will be used for the current completion
     virtual KTextEditor::Range completionRange(
         KTextEditor::View*
       , const KTextEditor::Cursor&
       ) override;
+    //@}
 
+    /// \name KTextEditor::CodeCompletionModel overrides
+    //@{
     virtual QModelIndex index(int, int, const QModelIndex&) const override;
 
     /// Get columns count (the only one)
-    virtual int columnCount(const QModelIndex&) const override
-    {
-        return 1;
-    }
+    virtual int columnCount(const QModelIndex&) const override;
 
     /// Get rows count
-    virtual int rowCount(const QModelIndex& parent) const override
-    {
-        if (parent.parent().isValid())
-            return 0;
-        return parent.isValid()
-          ? m_dir_completions.size() + m_file_completions.size()
-          : 1                                               // No parent -- root node...
-          ;
-    }
+    virtual int rowCount(const QModelIndex&) const override;
 
     /// Get parent's index
-    virtual QModelIndex parent(const QModelIndex& index) const override
-    {
-        // make a ref to root node from level 1 nodes,
-        // otherwise return an invalid node.
-        return index.internalId() ? createIndex(0, 0, 0) : QModelIndex();
-    }
+    virtual QModelIndex parent(const QModelIndex&) const override;
 
     /// Respond w/ data for particular completion entry
     virtual QVariant data(const QModelIndex&, int) const override;
@@ -120,16 +102,42 @@ public:
       , const QModelIndex&
       ) const override;
 
-    //END KTextEditor::CodeCompletionModel overrides
+    /// Generate completions for given range
+    virtual void completionInvoked(
+        KTextEditor::View*
+      , const KTextEditor::Range&
+      , InvocationType
+      ) override;
+    //@}
 
 private:
+    enum Level                                              ///< Internal node ID constants
+    {
+        ITEM                                                ///< Leaf node (particular completion item)
+      , GROUP                                               ///< Group node (w/ \e "Filesystem" text)
+    };
+
+    struct CompletionItem
+    {
+        QString text;                                       ///< Completion text
+        bool is_directory = false;                          ///< \c true if item is a directory
+
+        CompletionItem(QString, bool);
+    };
+
     /// Update \c m_completions for given string
-    void updateCompletionList(const QString&, const bool);
+    void updateCompletionList(const QString&, const QString&);
+    /// Scan for files and dirs
+    void updateCompletionListPath(
+        const QString&
+      , const QStringList&
+      , const QStringList&
+      , const QStringList&
+      );
 
     CppHelperPlugin* const m_plugin;
-    QStringList m_dir_completions;                          ///< List of dirs suggested
-    QStringList m_file_completions;                         ///< List of files suggested
-    QChar m_closer = 0;
+    std::vector<CompletionItem> m_completions;              ///< List of completion items
+    QChar m_closer = 0;                                     ///< Character to be used to finalize \c #include
     bool m_should_complete = false;
 };
 

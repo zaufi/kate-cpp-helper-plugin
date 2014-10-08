@@ -274,46 +274,5 @@ QStringList findHeader(const QString& file, const QStringList& locals, const QSt
     return result;
 }
 
-void updateListsFromFS(
-    const QString& path                                     ///< Path to append to every dir in a list to scan
-  , const QStringList& dirs2scan                            ///< List of directories to scan
-  , const QStringList& masks                                ///< Filename masks used for globbing
-  , QStringList& dirs                                       ///< Directories list to append to
-  , QStringList& files                                      ///< Files list to append to
-  , const QStringList& ignore_extensions                    ///< Extensions to ignore
-  )
-{
-    const QDir::Filters common_flags = QDir::NoDotAndDotDot | QDir::CaseSensitive | QDir::Readable;
-    for (const auto& d : dirs2scan)
-    {
-        const auto dir = QDir::cleanPath(d + '/' + path);
-        kDebug(DEBUG_AREA) << "Trying " << dir;
-        {
-            QStringList result = QDir(dir).entryList(masks, QDir::Dirs | common_flags);
-            for (const auto& r : result)
-            {
-                const QString d = r + '/';
-                if (!dirs.contains(d)) dirs.append(d);
-            }
-        }
-        {
-            QStringList result = QDir(dir).entryList(masks, QDir::Files | common_flags);
-            for (const auto& r : result)
-            {
-                const auto ignore = std::any_of(
-                    std::begin(ignore_extensions)
-                  , std::end(ignore_extensions)
-                  , [r](const QString& ext) { return r.endsWith(ext); }
-                  );
-                // Append if a file not in the list yet, and shouldn't be ignored
-                if (!files.contains(r) && !ignore)
-                    files.append(r);
-                else
-                    kDebug(DEBUG_AREA) << "Skip " << r;
-            }
-        }
-    }
-}
-
 }                                                           // namespace kate
 // kate: hl C++/Qt4;

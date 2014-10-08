@@ -32,6 +32,15 @@
 #include <KDE/KLocalizedString>
 
 namespace kate {
+
+//BEGIN IncludeHelperCompletionModel::CompletionItem
+IncludeHelperCompletionModel::CompletionItem::CompletionItem(const QString item_text, const bool isDir)
+  : text(item_text)
+  , is_directory(isDir)
+{
+}
+//END IncludeHelperCompletionModel::CompletionItem
+
 //BEGIN IncludeHelperCompletionModel
 IncludeHelperCompletionModel::IncludeHelperCompletionModel(
     QObject* const parent
@@ -42,6 +51,7 @@ IncludeHelperCompletionModel::IncludeHelperCompletionModel(
 {
 }
 
+//BEGIN KTextEditor::CodeCompletionModelControllerInterface3
 /**
  * Initiate completion when there is \c #include on a line (\c range
  * in a result of \c parseIncludeDirective() not empty -- i.e. there is some file present)
@@ -69,6 +79,7 @@ bool IncludeHelperCompletionModel::shouldStartCompletion(
     const auto& line = doc->line(position.line());          // get current line
     auto r = parseIncludeDirective(line, false);
     m_should_complete = r.range.isValid();
+    kDebug(DEBUG_AREA) << "m_should_complete=" << m_should_complete;
     if (m_should_complete)
     {
         kDebug(DEBUG_AREA) << "range=" << r.range;
@@ -109,187 +120,6 @@ bool IncludeHelperCompletionModel::shouldAbortCompletion(
     return need_abort;
 }
 
-void IncludeHelperCompletionModel::completionInvoked(
-    KTextEditor::View* const view
-  , const KTextEditor::Range& range
-  , const InvocationType
-  )
-{
-    auto* const doc = view->document();
-    kDebug(DEBUG_AREA) << range << ", " << doc->text(range);
-    const auto& t = doc->line(range.start().line()).left(range.start().column());
-    kDebug(DEBUG_AREA) << "text to parse: " << t;
-    auto r = parseIncludeDirective(t, false);
-    if (r.range.isValid())
-    {
-        m_should_complete = range.start().column() >= r.range.start().column()
-            && range.start().column() <= r.range.end().column();
-        if (m_should_complete)
-        {
-            r.range.setBothLines(range.start().line());
-            kDebug(DEBUG_AREA) << "parsed range: " << r.range;
-            m_closer = r.close_char();
-            updateCompletionList(doc->text(r.range), r.type == IncludeStyle::local);
-        }
-    }
-}
-
-void IncludeHelperCompletionModel::updateCompletionList(const QString& start, const bool only_local)
-{
-    kDebug(DEBUG_AREA) << "IncludeHelper: Form completion list for " << start;
-    beginResetModel();
-    m_file_completions.clear();
-    m_dir_completions.clear();
-    const auto slash = start.lastIndexOf('/');
-    const auto path = slash != -1 ? start.left(slash) : QString{};
-    const auto name = slash != -1 ? start.mid(slash + 1) + "*" : QString("*");
-    QStringList mask;
-    mask.append(name);
-    kDebug(DEBUG_AREA) << "mask=" << mask;
-    // Complete session dirst first
-    updateListsFromFS(
-        path
-      , m_plugin->config().sessionDirs()
-      , mask
-      , m_dir_completions
-      , m_file_completions
-      , m_plugin->config().ignoreExtensions()
-      );
-    if (!only_local)
-    {
-        // Complete global dirs next
-        updateListsFromFS(
-            path
-          , m_plugin->config().systemDirs()
-          , mask
-          , m_dir_completions
-          , m_file_completions
-          , m_plugin->config().ignoreExtensions()
-          );
-    }
-    //
-    kDebug(DEBUG_AREA) << "Got file completions: " << m_file_completions;
-    kDebug(DEBUG_AREA) << "Got dir completions: " << m_dir_completions;
-    endResetModel();
-}
-
-QModelIndex IncludeHelperCompletionModel::index(
-    const int row
-  , const int column
-  , const QModelIndex& parent
-  ) const
-{
-    // kDebug(DEBUG_AREA) << "row=" << row << ", col=" << column << ", p=" << parent.isValid();
-    if (!parent.isValid())
-    {
-        // At 'top' level only 'header' present, so nothing else than row 0 can be here...
-        // As well as nothing for leaf nodes required...
-        return row == 0 ? createIndex(row, column, 0) : QModelIndex{};
-    }
-
-    if (parent.parent().isValid())
-        return QModelIndex{};
-
-    // Check bounds
-    const auto count = m_dir_completions.size() + m_file_completions.size();
-    if (row < count && row >= 0 && column >= 0)
-        return createIndex(row, column, 1);                 // make leaf node
-    return QModelIndex{};
-}
-
-QVariant IncludeHelperCompletionModel::data(const QModelIndex& index, const int role) const
-{
-    if (!index.isValid() || !m_should_complete)
-        return QVariant{};
-
-#if 0
-    kDebug(DEBUG_AREA) << index.isValid() << '/' << index.parent().isValid() << ": index " << index.row()
-      << "," << index.column() << ", role " << role;
-#endif
-
-    switch (role)
-    {
-        case HighlightingMethod:
-        case SetMatchContext:
-            return QVariant::Invalid;
-        case GroupRole:
-            // kDebug(DEBUG_AREA) << "GroupRole";
-            return Qt::DisplayRole;
-#if 0
-        case Qt::DecorationRole:
-            if (index.column() == KTextEditor::CodeCompletionModel::Icon && !index.parent().isValid())
-                return QIcon(KIcon("text-x-c++hdr").pixmap(QSize(16, 16)));
-            break;
-#endif
-        case Qt::DisplayRole:
-            // kDebug(DEBUG_AREA) << "Qt::DisplayRole";
-            switch (index.column())
-            {
-                case KTextEditor::CodeCompletionModel::Name:
-                    // kDebug(DEBUG_AREA) << "Name";
-                    if (index.parent().isValid())
-                        return (index.row() < m_dir_completions.size())
-                          ? m_dir_completions[index.row()]
-                          : m_file_completions[index.row() - m_dir_completions.size()];
-                    break;
-                case KTextEditor::CodeCompletionModel::Prefix:
-                    // kDebug(DEBUG_AREA) << "Prefix";
-                    if (!index.parent().isValid())
-                        return i18n("Include Helper");
-                    if (index.row() < m_dir_completions.size())
-                        return i18n("dir");
-                case KTextEditor::CodeCompletionModel::Scope:
-                    // kDebug(DEBUG_AREA) << "Scope";
-                    break;
-                case KTextEditor::CodeCompletionModel::Arguments:
-                    // kDebug(DEBUG_AREA) << "Arguments";
-                    break;
-                case KTextEditor::CodeCompletionModel::Postfix:
-                    // kDebug(DEBUG_AREA) << "Postfix";
-                    break;
-            }
-            break;
-        case InheritanceDepth:
-            // kDebug(DEBUG_AREA) << "InheritanceDepth";
-            return 0;
-        case ArgumentHintDepth:
-            // kDebug(DEBUG_AREA) << "ArgumentHintDepth";
-            return 0;
-        case CompletionRole:
-            // kDebug(DEBUG_AREA) << "CompletionRole";
-            return QVariant(GlobalScope | LocalScope);
-        case ItemSelected:
-            // kDebug(DEBUG_AREA) << "ItemSelected";
-//             return QString("Tooltip text");
-        default:
-            break;
-    }
-    return QVariant{};
-}
-
-void IncludeHelperCompletionModel::executeCompletionItem2(
-    KTextEditor::Document* const document
-  , const KTextEditor::Range& word
-  , const QModelIndex& index
-  ) const
-{
-    kDebug(DEBUG_AREA) << "rword=" << word;
-    auto p = index.row() < m_dir_completions.size()
-      ? m_dir_completions[index.row()]
-      : m_file_completions[index.row() - m_dir_completions.size()]
-      ;
-    kDebug(DEBUG_AREA) << "dict=" << p;
-    if (!p.endsWith("/"))                                   // Is that dir or file completion?
-    {
-        // Get line to be replaced and check if #include hase close char...
-        auto line = document->line(word.start().line());
-        auto r = parseIncludeDirective(line, false);
-        if (r.range.isValid() && !r.is_complete)
-            p += r.close_char();
-    }
-    document->replaceText(word, p);
-}
-
 KTextEditor::Range IncludeHelperCompletionModel::completionRange(
     KTextEditor::View* const view
   , const KTextEditor::Cursor& position
@@ -316,6 +146,276 @@ KTextEditor::Range IncludeHelperCompletionModel::completionRange(
     kDebug(DEBUG_AREA) << "default select";
     return KTextEditor::CodeCompletionModelControllerInterface3::completionRange(view, position);
 }
+//END KTextEditor::CodeCompletionModelControllerInterface3
+
+//BEGIN KTextEditor::CodeCompletionModel
+int IncludeHelperCompletionModel::columnCount(const QModelIndex& parent) const
+{
+    return int(parent.isValid());
+}
+
+int IncludeHelperCompletionModel::rowCount(const QModelIndex& parent) const
+{
+    if (!parent.isValid())
+        return 1;
+    if (parent.internalId() == Level::ITEM)
+        return 0;
+    return static_cast<int>(m_completions.size());
+}
+
+QModelIndex IncludeHelperCompletionModel::parent(const QModelIndex& index) const
+{
+    // Return invalid index for top level group and/or other invalid indices
+    if (!index.isValid() || index.internalId() == Level::GROUP)
+        return QModelIndex{};
+    // For item nodes just return an index of group node
+    return index.internalId() == Level::ITEM
+        ? createIndex(0, 0, Level::GROUP)
+        : QModelIndex{}
+        ;
+}
+
+QModelIndex IncludeHelperCompletionModel::index(
+    const int row
+  , const int column
+  , const QModelIndex& parent
+  ) const
+{
+    if (!parent.isValid())
+    {
+#if 0
+        assert("Row/column expected to be zero" && row == 0  && column == 0);
+#endif
+        // At 'top' level only 'header' present, so nothing else than row 0 can be here...
+        // As well as nothing for leaf nodes required...
+        if (row == 0  && column == 0)                       /// \todo Assert this?
+            return createIndex(0, 0, Level::GROUP);
+        return QModelIndex{};
+    }
+
+    if (parent.internalId() == Level::GROUP)
+    {
+        assert(
+            "Row must be less then items count"
+            && unsigned(row) < m_completions.size()
+          );
+        return createIndex(row, column, Level::ITEM);
+    }
+    return QModelIndex{};
+}
+
+QVariant IncludeHelperCompletionModel::data(const QModelIndex& index, const int role) const
+{
+    if (!index.isValid() || !m_should_complete)
+        return QVariant{};
+
+    switch (role)
+    {
+        case HighlightingMethod:
+        case SetMatchContext:
+            return QVariant::Invalid;
+#if 0
+        case Qt::DecorationRole:
+            if (index.column() == KTextEditor::CodeCompletionModel::Icon && !index.parent().isValid())
+                return QIcon(KIcon("text-x-c++hdr").pixmap(QSize(16, 16)));
+            break;
+#endif
+        case GroupRole:
+            // kDebug(DEBUG_AREA) << "GroupRole";
+            return Qt::DisplayRole;
+
+        case Qt::DisplayRole:
+            // kDebug(DEBUG_AREA) << "Qt::DisplayRole";
+            switch (index.column())
+            {
+                case KTextEditor::CodeCompletionModel::Name:
+                    if (index.internalId() == Level::ITEM)
+                    {
+                        assert("Sanity check" && std::size_t(index.row()) < m_completions.size());
+                        // Return completion item text w/ cursor indicator removed
+                        return m_completions[index.row()].text;
+                    }
+                    break;
+                case KTextEditor::CodeCompletionModel::Prefix:
+                    // kDebug(DEBUG_AREA) << "Prefix";
+                    if (index.internalId() == Level::GROUP)
+                        return i18n("Filesystem");
+                    assert("Index check" && std::size_t(index.row()) < m_completions.size());
+                    if (m_completions[index.row()].is_directory)
+                        return i18n("dir");
+                    break;
+                case KTextEditor::CodeCompletionModel::Scope:
+                    // kDebug(DEBUG_AREA) << "Scope";
+                    break;
+                case KTextEditor::CodeCompletionModel::Arguments:
+                    // kDebug(DEBUG_AREA) << "Arguments";
+                    break;
+                case KTextEditor::CodeCompletionModel::Postfix:
+                    // kDebug(DEBUG_AREA) << "Postfix";
+                    break;
+            }
+            break;
+        case InheritanceDepth:
+            // kDebug(DEBUG_AREA) << "InheritanceDepth";
+            return 0;
+        case ArgumentHintDepth:
+            // kDebug(DEBUG_AREA) << "ArgumentHintDepth";
+            return 0;
+        case CompletionRole:
+            // kDebug(DEBUG_AREA) << "CompletionRole";
+            return QVariant{GlobalScope | LocalScope};
+        case ItemSelected:
+            // kDebug(DEBUG_AREA) << "ItemSelected";
+            // return QString("Tooltip text");
+            break;
+        default:
+            break;
+    }
+    return QVariant{};
+}
+
+void IncludeHelperCompletionModel::completionInvoked(
+    KTextEditor::View* const view
+  , const KTextEditor::Range& range
+  , const InvocationType
+  )
+{
+    auto* const doc = view->document();
+    kDebug(DEBUG_AREA) << range << ", " << doc->text(range);
+    const auto& t = doc->line(range.start().line()).left(range.start().column());
+    kDebug(DEBUG_AREA) << "text to parse: " << t;
+    auto r = parseIncludeDirective(t, false);
+    if (r.range.isValid())
+    {
+        m_should_complete = range.start().column() >= r.range.start().column()
+          && range.start().column() <= r.range.end().column();
+        if (m_should_complete)
+        {
+            r.range.setBothLines(range.start().line());
+            kDebug(DEBUG_AREA) << "parsed range: " << r.range;
+            m_closer = r.close_char();
+            kDebug(DEBUG_AREA) << "doc-path:" << QFileInfo(doc->url().path()).dir();
+            updateCompletionList(
+                doc->text(r.range)
+              , r.type == IncludeStyle::local ? QFileInfo(doc->url().path()).dir().absolutePath() : QString{}
+              );
+        }
+    }
+}
+
+void IncludeHelperCompletionModel::updateCompletionList(const QString& start, const QString& parent_path)
+{
+    kDebug(DEBUG_AREA) << "IncludeHelper: Form completion list for '" << start << "' [parent-path=" << parent_path << "]";
+    beginResetModel();
+
+    m_completions.clear();
+
+    const auto info = QFileInfo{start};
+    const auto path = !start.isEmpty() ? info.dir().path() : QString{};
+    const auto name = info.completeBaseName() + "*";
+
+    QStringList mask;
+    mask.append(name);
+
+    if (!parent_path.isEmpty())
+    {
+        // #include "" needs to be completed
+        QStringList paths;
+        paths << parent_path;
+        updateCompletionListPath(path, paths, mask, m_plugin->config().ignoreExtensions());
+        // Append ".." to completions list for convinience
+        if (QDir(parent_path + "/" + path).canonicalPath() != "/")
+            m_completions.emplace_back("../", true);
+    }
+    else
+    {
+        // #include <> needs to be completed
+        updateCompletionListPath(path, m_plugin->config().systemDirs(), mask, m_plugin->config().ignoreExtensions());
+        updateCompletionListPath(path, m_plugin->config().sessionDirs(), mask, m_plugin->config().ignoreExtensions());
+    }
+    endResetModel();
+}
+
+void IncludeHelperCompletionModel::executeCompletionItem2(
+    KTextEditor::Document* const document
+  , const KTextEditor::Range& word
+  , const QModelIndex& index
+  ) const
+{
+    kDebug(DEBUG_AREA) << "rword=" << word;
+    assert("Index check" && std::size_t(index.row()) < m_completions.size());
+
+    auto p = m_completions[index.row()].text;
+    const auto is_file = !m_completions[index.row()].is_directory;
+    if (is_file)
+    {
+        // Get line to be replaced and check if #include has a close char...
+        const auto line = document->line(word.start().line());
+        const auto r = parseIncludeDirective(line, false);
+        if (r.range.isValid() && !r.is_complete)
+            p += r.close_char();
+    }
+    document->replaceText(word, p);
+
+    // Move cursor after the close char if completion item was a file
+    auto* const view = document->activeView();
+    if (view && is_file)
+        view->setCursorPosition({
+            word.start().line()
+          , word.start().column() + p.length() + 1
+          });
+}
+//END KTextEditor::CodeCompletionModel
+
+void IncludeHelperCompletionModel::updateCompletionListPath(
+    const QString& path                                     ///< Path to append to every dir in a list to scan
+  , const QStringList& dirs2scan                            ///< List of directories to scan
+  , const QStringList& masks                                ///< Filename masks used for globbing
+  , const QStringList& ignore_extensions                    ///< Extensions to ignore
+  )
+{
+    kDebug(DEBUG_AREA) << "path =" << path
+      << "dirs2scan =" << dirs2scan
+      << "masks =" << masks
+      << "ignore_extensions =" << ignore_extensions
+      ;
+    const QDir::Filters glob_flags = QDir::NoDotAndDotDot
+      | QDir::AllDirs
+      | QDir::Files
+      | QDir::CaseSensitive
+      | QDir::Readable
+      ;
+    for (const auto& d : dirs2scan)
+    {
+        const auto dir = QDir::cleanPath(d + '/' + path);
+        kDebug(DEBUG_AREA) << "Trying " << dir;
+
+        for (const auto& info : QDir(dir).entryInfoList(masks, glob_flags))
+        {
+            if (!info.isDir() && !(info.isFile() && info.isReadable()))
+                // Skip everything that is not a directory or readable file
+                continue;
+
+            const auto is_directory = info.isDir();
+            auto text = info.fileName();
+            if (is_directory)
+                text += "/";
+
+            // Make sure that entry not in a list yet
+            const auto it = std::find_if(
+                begin(m_completions)
+              , end(m_completions)
+              , [is_directory, &text](const auto& item)
+                {
+                    return item.text == text && item.is_directory == is_directory;
+                }
+              );
+            if (it == end(m_completions) && !ignore_extensions.contains(info.completeSuffix()))
+                m_completions.emplace_back(text, is_directory);
+        }
+    }
+}
+
 //END IncludeHelperCompletionModel
 }                                                           // namespace kate
 // kate: hl C++/Qt4;

@@ -108,16 +108,6 @@ inline void findFiles(const QString& file, const QStringList& paths, QStringList
     }
 }
 
-/// Scan for files and dirs
-void updateListsFromFS(
-    const QString&
-  , const QStringList&
-  , const QStringList&
-  , QStringList&
-  , QStringList&
-  , const QStringList&
-  );
-
 /// Find given header withing list of paths
 QStringList findHeader(const QString&, const QStringList&, const QStringList&);
 
