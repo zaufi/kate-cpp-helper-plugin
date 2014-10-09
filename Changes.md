@@ -9,6 +9,8 @@ Version 1.0.3
   at line start. Also it will substitute directive if user continue to
   type characters and there is no ambiguity -- yep, like it was before
   this release if user types `'#in'`.
+* ATTENTION C++14 used since this version! So, you'd better to have
+  GCC >= 4.9 or Clang >= 3.5
 
 Version 1.0.2
 -------------
