@@ -317,21 +317,31 @@ void IncludeHelperCompletionModel::updateCompletionList(const QString& start, co
     QStringList mask;
     mask.append(name);
 
-    if (!parent_path.isEmpty())
+    if (parent_path.isEmpty())
     {
-        // #include "" needs to be completed
+        // #include <> needs to be completed
+        updateCompletionListPath(
+            path
+          , m_plugin->config().systemDirs()
+          , mask
+          , m_plugin->config().ignoreExtensions()
+          );
+        updateCompletionListPath(
+            path
+          , m_plugin->config().sessionDirs()
+          , mask
+          , m_plugin->config().ignoreExtensions()
+          );
+    }
+    if (!parent_path.isEmpty() || m_plugin->config().useCwd())
+    {
+        // #include "" needs to be completed or "Use current dir is ON"
         QStringList paths;
         paths << parent_path;
         updateCompletionListPath(path, paths, mask, m_plugin->config().ignoreExtensions());
-        // Append ".." to completions list for convinience
-        if (QDir(parent_path + "/" + path).canonicalPath() != "/")
+        // Append ".." to completions list for convinience only if #include "" gets completed
+        if (!m_plugin->config().useCwd() && QDir(parent_path + "/" + path).canonicalPath() != "/")
             m_completions.emplace_back("../", true);
-    }
-    else
-    {
-        // #include <> needs to be completed
-        updateCompletionListPath(path, m_plugin->config().systemDirs(), mask, m_plugin->config().ignoreExtensions());
-        updateCompletionListPath(path, m_plugin->config().sessionDirs(), mask, m_plugin->config().ignoreExtensions());
     }
     endResetModel();
 }

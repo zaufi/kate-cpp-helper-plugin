@@ -1,6 +1,15 @@
 Changes
 =======
 
+Version 1.0.3
+-------------
+
+* improve `#include` helper to support local (i.e. in quotes) headers
+* introduce preprocessor directives completions after `'#'` pressed
+  at line start. Also it will substitute directive if user continue to
+  type characters and there is no ambiguity -- yep, like it was before
+  this release if user types `'#in'`.
+
 Version 1.0.2
 -------------
 

@@ -143,7 +143,7 @@ private:
     bool m_open_first = {false};
     /// Use sanitize rules to cleanup code completion results
     bool m_sanitize_completions = {true};
-    bool m_use_cwd;                                         ///< Use current document'd dir to find \c #include
+    bool m_use_cwd = {false};                               ///< Use current document'd dir to find \c #include
     /// If \c true <em>Copy #include</em> action would put filename into \c '<' and \c '>' instead of \c '"'
     bool m_use_ltgt = {true};
     /// Use \em prefix column for result type or item kind
