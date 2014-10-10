@@ -32,6 +32,7 @@
 
 namespace kate {
 
+/// Enumerate possible ways to \c #include header
 enum class IncludeStyle
 {
     unknown                                                 ///< Pase errors seems occurs before complete
@@ -39,10 +40,11 @@ enum class IncludeStyle
   , global                                                  ///< \c '<',\c '>' used to \c #include a file
 };
 
+/// Structure to hold \c #include parse results
 struct IncludeParseResult
 {
     KTextEditor::Range range;                               ///< A range w/ filename of \c #include directive
-    /// \c #include type: local (w/ \c '""' or global (w/ \c '<>')
+    /// \c #include type: local (w/ \c '""') or global (w/ \c '<>')
     IncludeStyle type;
     bool has_include;                                       ///< Is there \c #include on the line?
     bool is_complete;                                       ///< Is this valid \c #include directive?
@@ -67,8 +69,13 @@ struct IncludeParseResult
     }
 
     /// Default initializer: set state to \e invalid
-    IncludeParseResult()
-      : range{KTextEditor::Range::invalid()}
+    IncludeParseResult() : IncludeParseResult{KTextEditor::Range::invalid()}
+    {
+    }
+
+    /// Initialize from range
+    IncludeParseResult(const KTextEditor::Range& r)
+      : range{r}
       , type{IncludeStyle::unknown}
       , has_include{false}
       , is_complete{false}
@@ -94,22 +101,56 @@ inline auto isPresentAndReadable(const QString& uri)
     return fi.exists() && fi.isFile() && fi.isReadable();
 }
 
-inline void findFiles(const QString& file, const QStringList& paths, QStringList& result)
+/**
+ * \brief Find a given \c file in a list of \c paths and fill
+ * \c result if file exists in a particular directory.
+ */
+template <typename Container>
+inline void findFiles(const QString& file, Container&& paths, QStringList& result)
 {
     for (const auto& path : paths)
     {
-        const auto full_filename = QDir::cleanPath(path + '/' + file);
+        const auto full_filename = QDir(QDir::cleanPath(path)).filePath(file);
         if (isPresentAndReadable(full_filename))
         {
             kDebug(DEBUG_AREA) << " ... " << full_filename << " Ok";
-            result.push_back(std::move(full_filename));
+            result << full_filename;
         }
         else kDebug(DEBUG_AREA) << " ... " << full_filename << " doesn't exists/readable";
     }
 }
 
-/// Find given header withing list of paths
-QStringList findHeader(const QString&, const QStringList&, const QStringList&);
+/**
+ * \brief Terminate recursion over containers in the templated
+ * version of \c findHeader.
+ */
+inline auto findHeader(const QString&)
+{
+    return QStringList{};
+}
+
+/**
+ * \brief Try to find a given filename in a list of paths
+ *
+ * \param[in] file filename to look for in the next 2 lists...
+ * \param[in] head first container w/ paths to check
+ * \param[in] others other containers w/ paths to check
+ * \return list of absolute filenames
+ *
+ * \note \c QStringList used as a result because it has \c removeDuplicates().
+ */
+template <typename Container, typename... OtherContainers>
+inline auto findHeader(
+    const QString& file
+  , Container&& head
+  , OtherContainers&&... others
+  )
+{
+    QStringList result;
+    findFiles(file, std::forward<Container>(head), result);
+    result << findHeader(file, std::forward<OtherContainers>(others)...);
+    return result;
+}
 
 }                                                           // namespace kate
 // kate: hl C++/Qt4;

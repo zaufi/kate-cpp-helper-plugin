@@ -256,23 +256,5 @@ bool isSuitableDocumentAndHighlighting(const QString& mime_str, const QString& h
     return false;
 }
 
-/**
- * \todo Is there any way to make a joint view for both containers?
- *
- * \param[in] file filename to look for in the next 2 lists...
- * \param[in] locals per session \c #include search paths list
- * \param[in] system global \c #include search paths list
- * \return list of absolute filenames
- */
-QStringList findHeader(const QString& file, const QStringList& locals, const QStringList& system)
-{
-    QStringList result;
-    kDebug(DEBUG_AREA) << "Trying locals first...";
-    findFiles(file, locals, result);                        // Try locals first
-    kDebug(DEBUG_AREA) << "Trying system paths...";
-    findFiles(file, system, result);                        // Then try system paths
-    return result;
-}
-
 }                                                           // namespace kate
 // kate: hl C++/Qt4;

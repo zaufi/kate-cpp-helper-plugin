@@ -49,7 +49,6 @@ const QStringList HDR_EXTENSIONS = QStringList() << "h" << "hh" << "hpp" << "hxx
 const QStringList SRC_EXTENSIONS = QStringList() << "c" << "cc" << "cpp" << "cxx" << "C" << "inl";
 }                                                           // anonymous namespace
 
-
 //BEGIN SLOTS
 /**
  * Do same things as <em>Open Header</em> plugin do... but little better ;-)
@@ -95,7 +94,7 @@ void CppHelperPluginView::switchIfaceImpl()
       && mainWindow()->activeView()
       );
     // Ok, trying case 1
-    auto* doc = mainWindow()->activeView()->document();
+    auto* const doc = mainWindow()->activeView()->document();
     auto url = doc->url();
     if (!url.isValid() || url.isEmpty())
         return;
@@ -321,19 +320,21 @@ void CppHelperPluginView::openHeader()
       && mainWindow()->activeView()
       );
 
-    QStringList candidates;
-    QString filename;
+    QString filename;                                       // Name of header under cursor
+    QStringList candidates;                                 // List of candidates (if any)
+
     auto* doc = mainWindow()->activeView()->document();
 
-    auto r = findIncludeFilenameNearCursor();
-    kDebug(DEBUG_AREA) << "findIncludeFilenameNearCursor() = " << r;
-    if (!r.isEmpty())
+    auto result = findIncludeFilenameNearCursor();
+    kDebug(DEBUG_AREA) << "findIncludeFilenameNearCursor() = " << result.range;
+
+    if (!result.range.isEmpty())                            // Is any valid #include found?
     {
-        filename = doc->text(r).trimmed();
+        filename = doc->text(result.range).trimmed();       // Assign filename under cursor for further use
         if (!filename.isEmpty())
         {
             // Try to find an absolute path to given filename
-            candidates = findFileLocations(filename);
+            candidates = findFileLocations(filename, result.type == IncludeStyle::local);
             candidates.removeDuplicates();
             kDebug(DEBUG_AREA) << "Found candidates: " << candidates;
         }
@@ -345,9 +346,9 @@ void CppHelperPluginView::openHeader()
         openFile(candidates.first());
         return;
     }
-    else if (candidates.isEmpty())
+    else if (candidates.isEmpty())                          // It seems nothing has found!
     {
-        // Scan current document for #include files
+        // Scan current document for #include files to offer other files
         for (int i = 0; i < doc->lines(); i++)
         {
             const auto& line_str = doc->line(i);
@@ -355,17 +356,13 @@ void CppHelperPluginView::openHeader()
             if (r.range.isValid())
             {
                 r.range.setBothLines(i);
-                candidates.push_back(doc->text(r.range));
+                // Try to resolve relative filename to absolute
+                candidates << findFileLocations(doc->text(r.range), r.type == IncludeStyle::local);
             }
         }
-        // Resolve relative filenames to absolute
-        {
-            QStringList resolved;
-            for (const auto& file : candidates)
-                resolved << findFileLocations(file);
-            resolved.removeDuplicates();
-            candidates.swap(resolved);
-        }
+        candidates.removeDuplicates();
+
+        // Ok form an error message if we were failed even on this
         auto error_text = filename.isEmpty()
           ? QString()
           : i18nc(
@@ -388,6 +385,10 @@ void CppHelperPluginView::openHeader()
               , qobject_cast<QWidget*>(this)
               );
     }
+
+    // Check candidates again: now show a dialog even if
+    // there is only one header found after scan, because
+    // it doesn't match anyway to the `filename`...
     if (!candidates.isEmpty())
         openFile(ChooseFromListDialog::selectHeaderToOpen(qobject_cast<QWidget*>(this), candidates));
 }
@@ -398,8 +399,10 @@ void CppHelperPluginView::openHeader()
 void CppHelperPluginView::openFile(const KUrl& file, const KTextEditor::Cursor cursor, const bool track_location)
 {
     if (file.isEmpty()) return;                             // Nothing to do if no file specified
+
     kDebug(DEBUG_AREA) << "Going to open " << file;
-    auto* new_doc = m_plugin->application()->documentManager()->openUrl(file);
+
+    auto* const new_doc = m_plugin->application()->documentManager()->openUrl(file);
     /// \todo How to reuse \c isPresentAndReadable() from \c utils.h here?
     auto fi = QFileInfo{file.toLocalFile()};
     if (fi.isReadable())
@@ -451,6 +454,20 @@ void CppHelperPluginView::needTextHint(const KTextEditor::Cursor& pos, QString& 
         text = di.getPossibleProblemText(pos.line());
     }
 }
+
+/**
+ * To transform `#include <>` into `#include ""`:
+ * - get 
+ */
+void CppHelperPluginView::toggleIncludeStyle()
+{
+    assert(
+        "Active view suppose to be valid at this point! Am I wrong?"
+      && mainWindow()->activeView()
+      );
+    // Ok, trying case 1
+    auto* const doc = mainWindow()->activeView()->document();
+}
 //END SLOTS
 
 //BEGIN Utility (private) functions
@@ -480,42 +497,47 @@ QStringList CppHelperPluginView::findCandidatesAt(
     return result;
 }
 
-QStringList CppHelperPluginView::findFileLocations(const QString& filename)
+QStringList CppHelperPluginView::findFileLocations(const QString& filename, const bool is_local)
 {
     assert(
         "Active view suppose to be valid at this point! Am I wrong?"
       && mainWindow()->activeView()
       );
 
-    auto* doc = mainWindow()->activeView()->document();
+    // Check CWD as well, if local #include or configuration option
+    auto aux_paths = QStringList{};
+    if (is_local || m_plugin->config().useCwd())
+        aux_paths << QFileInfo(
+            mainWindow()->activeView()->document()->url().path()
+          ).dir().absolutePath();
+
     // Try to find full filename to open
-    auto candidates = findHeader(filename, m_plugin->config().sessionDirs(), m_plugin->config().systemDirs());
-    // Check CWD as well, if allowed
-    if (m_plugin->config().useCwd())
-    {
-        const auto uri = QString{doc->url().prettyUrl() + '/' + filename};
-        if (isPresentAndReadable(uri))
-            candidates.push_front(uri);                     // Push to front cuz more likely that user wants it
-    }
+    auto candidates = findHeader(
+        filename
+      , aux_paths
+      , m_plugin->config().sessionDirs()
+      , m_plugin->config().systemDirs()
+      );
     candidates.removeDuplicates();                          // Remove possible duplicates
     return candidates;
 }
 
-KTextEditor::Range CppHelperPluginView::findIncludeFilenameNearCursor() const
+IncludeParseResult CppHelperPluginView::findIncludeFilenameNearCursor() const
 {
     assert(
         "Active view suppose to be valid at this point! Am I wrong?"
       && mainWindow()->activeView()
       );
 
-    KTextEditor::Range result;                              // default range is empty
+    KTextEditor::Range range;                               // default range is empty
     auto* view = mainWindow()->activeView();
     if (!view || !view->cursorPosition().isValid())
-        return result;                                      // do nothing if no view or valid cursor
+        // do nothing if no view or valid cursor
+        return {range};
 
     // Return selected text if any
     if (view->selection())
-        return view->selectionRange();
+        return {view->selectionRange()};
 
     // Obtain a line under cursor
     const auto line = view->cursorPosition().line();
@@ -527,14 +549,14 @@ KTextEditor::Range CppHelperPluginView::findIncludeFilenameNearCursor() const
     {
         r.range.setBothLines(line);
         kDebug(DEBUG_AREA) << "Ok, found #include directive:" << r.range;
-        return r.range;
+        return r;
     }
 
     // No #include parsed... fallback to the default way:
     // just search a word under cursor...
 
     // Get cursor line/column
-    auto col = view->cursorPosition().column();
+    const auto col = view->cursorPosition().column();
 
     // NOTE Make sure cursor withing a line
     // (dunno is it possible to have a cursor far than a line length...
@@ -556,8 +578,8 @@ KTextEditor::Range CppHelperPluginView::findIncludeFilenameNearCursor() const
     while (end < line_str.length() && !line_str[end].isSpace() && line_str[end] != '>' && line_str[end] != '"')
         ++end;
 
-    return KTextEditor::Range(line, start, line, end);
+    return {{line, start, line, end}};
 }
-
 //END Utility (private) functions
 }                                                           // namespace kate
+// kate: hl C++/Qt;

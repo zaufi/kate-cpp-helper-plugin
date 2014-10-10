@@ -97,6 +97,13 @@ CppHelperPluginView::CppHelperPluginView(
           , SLOT(backToPreviousLocation())
           )
       }
+  , m_toggle_include_style{
+        actionCollection()->addAction(
+            "cpphelper_toggle_include_style"
+          , this
+          , SLOT(toggleIncludeStyle())
+          )
+      }
   , m_tool_view{
         mw->createToolView(
             plugin
@@ -141,6 +148,7 @@ CppHelperPluginView::CppHelperPluginView(
     m_back_to_prev_location->setText(i18nc("@action:inmenu", "Jump back one step"));
     m_back_to_prev_location->setIcon(KIcon("draw-arrow-back"));
     m_back_to_prev_location->setShortcut(QKeySequence(Qt::ALT + Qt::Key_1));
+    m_toggle_include_style->setText(i18nc("@action:inmenu", "Toggle #include style"));
 
     // ATTENTION Add self as KXMLGUIClient after all actions has
     // been added...

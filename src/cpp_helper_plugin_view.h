@@ -104,6 +104,7 @@ private Q_SLOTS:
     void switchIfaceImpl();                                 ///< Open corresponding header/implementation file
     void openFile(const KUrl&, KTextEditor::Cursor = KTextEditor::Cursor::invalid(), bool = true);
     void openHeader();                                      ///< Open header file under cursor
+    void toggleIncludeStyle();
     /// From \c #include directive w/ current file in the clipboard
     void copyInclude();
     void needTextHint(const KTextEditor::Cursor&, QString&);
@@ -152,8 +153,8 @@ private:
     /// Try to find file(s) w/ a given name+path and a list of possible extensions
     QStringList findCandidatesAt(const QString&, const QString&, const QStringList&);
     /// Try to get an \c #include filename under cursor as range
-    KTextEditor::Range findIncludeFilenameNearCursor() const;
-    QStringList findFileLocations(const QString&);          ///< Get list of absolute paths to filename
+    IncludeParseResult findIncludeFilenameNearCursor() const;
+    QStringList findFileLocations(const QString&, bool);    ///< Get list of absolute paths to filename
 
     void inclusionVisitor(details::InclusionVisitorData*, CXFile, CXSourceLocation*, unsigned);
     void dblClickOpenFile(QString&&);
@@ -170,6 +171,7 @@ private:
     KAction* const m_goto_definition;
     KAction* const m_search_symbol;                         ///< Action to search a symbol under cursor
     KAction* const m_back_to_prev_location;                 ///< Action to return to a previous location
+    KAction* const m_toggle_include_style;                  ///< Action to switch between 2 forms of \c #include
     std::unique_ptr<QWidget> m_tool_view;                   ///< A tool-view widget of this plugin
     Ui_PluginToolViewWidget* const m_tool_view_interior;    ///< Interior widget of a tool-view
     QStandardItemModel* const m_includes_list_model;
