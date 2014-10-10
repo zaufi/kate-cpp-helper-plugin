@@ -62,48 +62,6 @@ CppHelperPluginView::CppHelperPluginView(
   : Kate::PluginView{mw}
   , Kate::XMLGUIClient{data}
   , m_plugin{plugin}
-  , m_copy_include{
-        actionCollection()->addAction(
-            "edit_copy_include"
-          , this
-          , SLOT(copyInclude())
-          )
-      }
-  , m_goto_declaration{
-        actionCollection()->addAction(
-            "cpphelper_popup_goto_declaration"
-          , this
-          , SLOT(gotoDeclarationUnderCursor())
-          )
-      }
-  , m_goto_definition{
-        actionCollection()->addAction(
-            "cpphelper_popup_goto_definition"
-          , this
-          , SLOT(gotoDefinitionUnderCursor())
-          )
-      }
-  , m_search_symbol{
-        actionCollection()->addAction(
-            "cpphelper_popup_search_text"
-          , this
-          , SLOT(searchSymbolUnderCursor())
-          )
-      }
-  , m_back_to_prev_location{
-        actionCollection()->addAction(
-            "cpphelper_popup_back_to_last_location"
-          , this
-          , SLOT(backToPreviousLocation())
-          )
-      }
-  , m_toggle_include_style{
-        actionCollection()->addAction(
-            "cpphelper_toggle_include_style"
-          , this
-          , SLOT(toggleIncludeStyle())
-          )
-      }
   , m_tool_view{
         mw->createToolView(
             plugin
@@ -122,33 +80,23 @@ CppHelperPluginView::CppHelperPluginView(
 
     //BEGIN Setup plugin actions
     {
-        auto* const open_header = actionCollection()->addAction("file_open_included_header");
-        open_header->setText(i18nc("@action:inmenu", "Open Header Under Cursor"));
-        open_header->setShortcut(QKeySequence(Qt::Key_F10));
-        connect(open_header, SIGNAL(triggered(bool)), this, SLOT(openHeader()));
+        auto* const actions = actionCollection();
+        actions->addAction("file_open_included_header", this, SLOT(openHeader()));
+        actions->addAction("file_open_switch_iface_impl", this, SLOT(switchIfaceImpl()));
+        actions->addAction("cpphelper_popup_toggle_include_style", this, SLOT(toggleIncludeStyle()));
+        actions->addAction("cpphelper_popup_goto_declaration", this, SLOT(gotoDeclarationUnderCursor()));
+        actions->addAction("cpphelper_popup_goto_definition", this, SLOT(gotoDefinitionUnderCursor()));
+        actions->addAction("cpphelper_popup_search_text", this, SLOT(searchSymbolUnderCursor()));
+        actions->addAction("edit_copy_include", this, SLOT(copyInclude()));
+        {
+            auto* const action = actions->addAction(
+                "cpphelper_popup_back_to_last_location"
+              , this
+              , SLOT(backToPreviousLocation())
+              );
+            action->setEnabled(false);                          // Initially there is no back stack
+        }
     }
-    {
-        auto* const switch_impl = actionCollection()->addAction("file_open_switch_iface_impl");
-        switch_impl->setText(i18nc("@action:inmenu", "Open Header/Implementation"));
-        switch_impl->setShortcut(QKeySequence(Qt::Key_F12));
-        connect(switch_impl, SIGNAL(triggered(bool)), this, SLOT(switchIfaceImpl()));
-    }
-
-    m_copy_include->setText(i18nc("@action:inmenu", "Copy #include to Clipboard"));
-    m_copy_include->setShortcut(QKeySequence(Qt::SHIFT + Qt::Key_F10));
-    m_goto_declaration->setText(i18nc("@action:inmenu", "Goto Declaration %1", "..."));
-    m_goto_declaration->setIcon(KIcon("go-jump-declaration"));
-    m_goto_declaration->setShortcut(QKeySequence(Qt::ALT + Qt::Key_2));
-    m_goto_definition->setText(i18nc("@action:inmenu", "Goto Definition %1", "..."));
-    m_goto_definition->setIcon(KIcon("go-jump-definition"));
-    m_goto_definition->setShortcut(QKeySequence(Qt::ALT + Qt::Key_3));
-    m_search_symbol->setText(i18nc("@action:inmenu", "Search for %1", "..."));
-    m_search_symbol->setIcon(KIcon("edit-find"));
-    m_search_symbol->setShortcut(QKeySequence(Qt::ALT + Qt::Key_4));
-    m_back_to_prev_location->setText(i18nc("@action:inmenu", "Jump back one step"));
-    m_back_to_prev_location->setIcon(KIcon("draw-arrow-back"));
-    m_back_to_prev_location->setShortcut(QKeySequence(Qt::ALT + Qt::Key_1));
-    m_toggle_include_style->setText(i18nc("@action:inmenu", "Toggle <icode>#include</icode> style"));
 
     // ATTENTION Add self as KXMLGUIClient after all actions has
     // been added...
@@ -156,10 +104,12 @@ CppHelperPluginView::CppHelperPluginView(
     // ATTENTION ... so at this point searching for particular
     // submenu using factory will be successed!
 
-    auto* const my_pop = qobject_cast<QMenu*>(
-        mainWindow()->guiFactory()->container("cpphelper_popup", this)
-      );
-    connect(my_pop, SIGNAL(aboutToShow()), this, SLOT(aboutToShow()));
+    {
+        auto* const my_pop = qobject_cast<QMenu*>(
+            mainWindow()->guiFactory()->container("cpphelper_popup", this)
+          );
+        connect(my_pop, SIGNAL(aboutToShow()), this, SLOT(aboutToShow()));
+    }
     //END Setup plugin actions
 
     // On viewCreated we have to subscribe self to monitor 
@@ -196,8 +146,6 @@ CppHelperPluginView::CppHelperPluginView(
           , &m_diagnostic_data
           , SLOT(clear())
           );
-        clear_action->setText(i18nc("@action:inmenu", "Clear Diagostic Messages"));
-        clear_action->setIcon(KIcon("edit-clear-list"));
         m_tool_view_interior->diagnosticMessages->insertAction(nullptr, clear_action);
     }
 
@@ -382,15 +330,18 @@ void CppHelperPluginView::writeSessionConfig(KConfigBase* const config, const QS
 {
     kDebug(DEBUG_AREA) << "** VIEW **: Writing session config: " << groupPrefix;
     KConfigGroup scg(config, groupPrefix);
+
     scg.writeEntry(SEARCH_PANE_WIDTH_KEY, m_tool_view_interior->searchSplitter->sizes());
     scg.writeEntry(EXPLORER_TREE_WIDTH_KEY, m_tool_view_interior->includesSplitter->sizes());
     scg.writeEntry(INDICES_LIST_WIDTH_KEY, m_tool_view_interior->indicesSplitter->sizes());
+
     QList<int> order;
     auto& tw = *m_tool_view_interior;
     for (auto* tab : {tw.diagnosticTab, tw.includesTab, tw.searchTab, tw.indexerSettingsTab})
         order << m_tool_view_interior->tabs->indexOf(tab);
     kDebug(DEBUG_AREA) << "tabs order:" << order;
     scg.writeEntry(TOOL_VIEW_TABS_ORDER_KEY, order);
+
     scg.sync();
 }
 
@@ -537,11 +488,10 @@ void CppHelperPluginView::aboutToShow()
       && !m_plugin->config().enabledIndices().empty()
       ;
 
-    m_search_symbol->setEnabled(should_enable_lookup_action);
     if (should_enable_lookup_action)
     {
         kDebug(DEBUG_AREA) << "current word text: " << symbol;
-        symbol = KStringHandler::csqueeze(symbol, 30);
+        symbol = KStringHandler::csqueeze(symbol.replace('\n', ' '), 30);
         stateChanged("has_symbol_under_cursor");
     }
     else
@@ -549,37 +499,32 @@ void CppHelperPluginView::aboutToShow()
         symbol = "...";
         stateChanged("has_symbol_under_cursor", KXMLGUIClient::StateReverse);
     }
-    m_goto_declaration->setText(i18nc("@action:inmenu", "Go to Declaration of <icode>%1</icode>", symbol));
-    m_goto_definition->setText(i18nc("@action:inmenu", "Go to Definition of <icode>%1</icode>", symbol));
-    m_search_symbol->setText(i18nc("@action:inmenu", "Search for <icode>%1</icode>", symbol));
+    kDebug(DEBUG_AREA) << "symbol =" << symbol;
+
+    {
+        auto* const actions = actionCollection();
+        actions->action("cpphelper_popup_goto_declaration")->setText(
+            i18nc("@action:inmenu", "Go to Declaration of <icode>%1</icode>", symbol)
+          );
+        actions->action("cpphelper_popup_goto_definition")->setText(
+            i18nc("@action:inmenu", "Go to Definition of <icode>%1</icode>", symbol)
+          );
+        actions->action("cpphelper_popup_search_text")->setText(
+            i18nc("@action:inmenu", "Search for <icode>%1</icode>", symbol)
+          );
+    }
 
     // Disable #include style switcher if no include on a line
-#if 0
-    m_toggle_include_style->setEnabled(is_suitable_document);
-#endif
     if (!view->selection())
     {
         const auto line_str = doc->line(view->cursorPosition().line());
         const auto r = parseIncludeDirective(line_str, true);
         stateChanged(
-            "has_symbol_under_cursor"
+            "no_include_at_current_line"
           , r.range.isValid()
-            ? KXMLGUIClient::StateNoReverse
-            : KXMLGUIClient::StateReverse
+            ? KXMLGUIClient::StateReverse
+            : KXMLGUIClient::StateNoReverse
           );
-        m_toggle_include_style->setText(
-            i18nc(
-                "@action:inmenu"
-              , "Turn into <icode>#include %1</icode>"
-              , r.type == IncludeStyle::local
-                  ? "<>"
-                  : "\"\""
-              )
-          );
-    }
-    else
-    {
-        m_toggle_include_style->setText(i18nc("@action:inmenu", "Toggle <icode>#include</icode> style"));
     }
 }
 
@@ -715,17 +660,20 @@ void CppHelperPluginView::updateCppActionsAvailability()
 void CppHelperPluginView::updateCppActionsAvailability(const bool enable_cpp_specific_actions)
 {
     kDebug(DEBUG_AREA) << "Enable C++ specific actions:" << enable_cpp_specific_actions;
+
     m_tool_view_interior->updateButton->setEnabled(enable_cpp_specific_actions);
-    if (enable_cpp_specific_actions)
-    {
-        m_copy_include->setText(i18n("Copy #include to Clipboard"));
-        stateChanged("cpp_actions_enabled");
-    }
-    else
-    {
-        m_copy_include->setText(i18n("Copy File URI to Clipboard"));
-        stateChanged("cpp_actions_enabled", KXMLGUIClient::StateReverse);
-    }
+
+    actionCollection()->action("edit_copy_include")->setText(
+        enable_cpp_specific_actions
+      ? i18nc("@action:inmenu",  "Copy #include to Clipboard")
+      : i18nc("@action:inmenu",  "Copy File URI to Clipboard")
+      );
+    stateChanged(
+        "cpp_actions_enabled"
+      , enable_cpp_specific_actions
+          ? KXMLGUIClient::StateNoReverse
+          : KXMLGUIClient::StateReverse
+      );
 }
 
 //END CppHelperPluginView

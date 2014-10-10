@@ -562,7 +562,7 @@ IncludeParseResult CppHelperPluginView::findIncludeFilenameNearCursor() const
     const auto line_str = view->document()->line(line);
 
     // Check if current line starts w/ #include
-    kate::IncludeParseResult r = parseIncludeDirective(line_str, false);
+    auto r = parseIncludeDirective(line_str, false);
     if (r.range.isValid())
     {
         r.range.setBothLines(line);

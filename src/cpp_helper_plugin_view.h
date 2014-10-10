@@ -167,12 +167,6 @@ private:
     void toggleIncludeStyle(KTextEditor::Document*, int, int);
 
     CppHelperPlugin* const m_plugin;                        ///< Parent plugin
-    KAction* const m_copy_include;                          ///< <em>Copy #include to clipboard</em> action
-    KAction* const m_goto_declaration;
-    KAction* const m_goto_definition;
-    KAction* const m_search_symbol;                         ///< Action to search a symbol under cursor
-    KAction* const m_back_to_prev_location;                 ///< Action to return to a previous location
-    KAction* const m_toggle_include_style;                  ///< Action to switch between 2 forms of \c #include
     std::unique_ptr<QWidget> m_tool_view;                   ///< A tool-view widget of this plugin
     Ui_PluginToolViewWidget* const m_tool_view_interior;    ///< Interior widget of a tool-view
     QStandardItemModel* const m_includes_list_model;

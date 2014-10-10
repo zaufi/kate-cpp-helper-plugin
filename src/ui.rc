@@ -1,10 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE kpartgui>
-<gui name="katecpphelper" library="katecpphelperplugin" version="10"
+<gui name="katecpphelper" library="katecpphelperplugin" version="11"
      xmlns="http://www.kde.org/standards/kxmlgui/1.0"
      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
      xsi:schemaLocation="http://www.kde.org/standards/kxmlgui/1.0
                          http://www.kde.org/standards/kxmlgui/1.0/kxmlgui.xsd" >
+
+    <!-- Inject some actions to application menu -->
     <MenuBar>
         <Menu name="file"><text>&amp;File</text>
             <Action name="file_open_included_header" group="open_merge" />
@@ -14,6 +16,8 @@
             <Action name="edit_copy_include" group="edit_paste_merge" />
         </Menu>
     </MenuBar>
+
+    <!-- Inject some actions into context popup menu -->
     <Menu name="ktexteditor_popup" noMerge="1">
         <Menu name="cpphelper_popup"><text>&amp;C++ Helper</text>
             <Action name="cpphelper_popup_back_to_last_location" />
@@ -22,17 +26,20 @@
             <Action name="cpphelper_popup_goto_definition" />
             <Action name="cpphelper_popup_search_text" />
             <Separator />
-            <Action name="cpphelper_toggle_include_style" />
+            <Action name="cpphelper_popup_toggle_include_style" />
         </Menu>
     </Menu>
+
+    <!-- Actions for toolview -->
     <Menu name="cpphelper_diagnostic_popup" noMerge="1">
         <Action name="cpphelper_diagnostic_popup_clear" />
     </Menu>
+
     <State name="cpp_actions_enabled">
         <enable>
             <Action name="file_open_included_header" />
             <Action name="file_open_switch_iface_impl" />
-            <Action name="cpphelper_toggle_include_style" />
+            <Action name="cpphelper_popup_toggle_include_style" />
         </enable>
     </State>
     <State name="has_symbol_under_cursor">
@@ -49,7 +56,51 @@
     </State>
     <State name="no_include_at_current_line">
         <disable>
-            <Action name="cpphelper_toggle_include_style" />
+            <Action name="cpphelper_popup_toggle_include_style" />
         </disable>
     </State>
+
+    <!-- Assign default properties -->
+    <ActionProperties scheme="Default">
+        <Action name="cpphelper_diagnostic_popup_clear"
+                text="Clear Diagostic Messages"
+                icon="edit-clear-list" />
+
+        <Action name="file_open_included_header"
+                text="Open Header Under Cursor"
+                shortcut="F10" />
+
+        <Action name="file_open_switch_iface_impl"
+                text="Open Header/Implementation"
+                shortcut="F12" />
+
+        <Action name="edit_copy_include"
+                text="Copy #include to Clipboard"
+                shortcut="Shift+F10" />
+
+        <Action name="cpphelper_popup_toggle_include_style"
+                text="Toggle #include style"
+                shortcut="Alt+#" />
+
+        <Action name="cpphelper_popup_back_to_last_location"
+                icon="draw-arrow-back"
+                text="Jump one step back"
+                shortcut="Alt+1" />
+
+        <Action name="cpphelper_popup_goto_declaration"
+                text="Goto Declaration ..."
+                icon="go-jump-declaration"
+                shortcut="Alt+2" />
+
+        <Action name="cpphelper_popup_goto_definition"
+                text="Goto Definition ..."
+                icon="go-jump-definition"
+                shortcut="Alt+3" />
+
+        <Action name="cpphelper_popup_search_text"
+                text="Search for ..."
+                icon="edit-find"
+                shortcut="Alt+4"/>
+
+    </ActionProperties>
 </gui>
