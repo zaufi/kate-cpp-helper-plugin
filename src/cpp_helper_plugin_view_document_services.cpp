@@ -335,7 +335,6 @@ void CppHelperPluginView::openHeader()
         {
             // Try to find an absolute path to given filename
             candidates = findFileLocations(filename, result.type == IncludeStyle::local);
-            candidates.removeDuplicates();
             kDebug(DEBUG_AREA) << "Found candidates: " << candidates;
         }
     }
@@ -613,16 +612,7 @@ void CppHelperPluginView::toggleIncludeStyle(KTextEditor::Document* const doc, c
             continue;                                       // Skip if nothing found
 
         r.range.setBothLines(i);
-        const auto& filename = doc->text(r.range);
-
-        // Get list of candidates
-        auto candidates = findFileLocations(filename, r.type == IncludeStyle::local);
-        candidates.removeDuplicates();
-
-        if (candidates.size() != 1)
-            continue;                                       // Skip if more than one file found
-
-        kDebug(DEBUG_AREA) << "found candidate:" << candidates[0];
+        auto filename = doc->text(r.range);
 
         // Transform #include
         auto new_header = QString{};
@@ -632,27 +622,46 @@ void CppHelperPluginView::toggleIncludeStyle(KTextEditor::Document* const doc, c
             {
                 kDebug(DEBUG_AREA) << "local->global";
 
-                QString longest_matched;
-
-                // NOTE Try to match local (per session) dirs only!
-                for (const auto& dir : m_plugin->config().sessionDirs())
-                    if (candidates[0].startsWith(dir) && longest_matched.length() < dir.length())
-                        longest_matched = dir;
-
-                // Is file available via configured paths?
-                if (!longest_matched.isEmpty())
+                QString shortest_matched;
+                const auto fi = QFileInfo{filename};
+                auto remains = QFileInfo{fi.path()};
+                filename = fi.fileName();
+                do
                 {
-                    new_header = candidates[0];
-                    // Strip configure path from found candidate
-                    new_header.remove(0, longest_matched.size() + 1);
-                    // From part of #include
-                    new_header = QString{"<%1>"}.arg(new_header);
+                    kDebug(DEBUG_AREA) << "<<< remains=" << remains.filePath();
+                    kDebug(DEBUG_AREA) << "<<< filename=" << filename;
+
+                    const auto candidates = findFileLocations(filename, false);
+                    if (candidates.isEmpty())
+                    {
+                        filename = QDir{remains.fileName()}.filePath(filename);
+                        remains = remains.path();
+                    }
+                    else break;
                 }
+                while (!remains.fileName().isEmpty());
+
+                if (filename.isEmpty())
+                    continue;                               // Skip if nothing has found
+
+                // From part of #include
+                new_header = QString{R"~(<%1>)~"}.arg(filename);
+
                 break;
             }
             case IncludeStyle::global:                      // From global to local form
             {
                 kDebug(DEBUG_AREA) << "global->local";
+
+                // Get list of candidates
+                auto candidates = findFileLocations(filename, true);
+
+                if (candidates.size() != 1)
+                    /// \todo ... or use the first one?
+                    continue;                               // Skip if more than one file found
+
+                kDebug(DEBUG_AREA) << "found candidate:" << candidates[0];
+
                 const auto& doc_dir = QDir{doc->url().directory()};
                 // From part of #include
                 new_header = QString{R"~("%1")~"}.arg(doc_dir.relativeFilePath(candidates[0]));
