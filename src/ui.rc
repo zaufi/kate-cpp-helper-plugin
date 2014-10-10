@@ -32,6 +32,7 @@
         <enable>
             <Action name="file_open_included_header" />
             <Action name="file_open_switch_iface_impl" />
+            <Action name="cpphelper_toggle_include_style" />
         </enable>
     </State>
     <State name="has_symbol_under_cursor">

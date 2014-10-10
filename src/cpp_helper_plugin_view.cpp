@@ -148,7 +148,7 @@ CppHelperPluginView::CppHelperPluginView(
     m_back_to_prev_location->setText(i18nc("@action:inmenu", "Jump back one step"));
     m_back_to_prev_location->setIcon(KIcon("draw-arrow-back"));
     m_back_to_prev_location->setShortcut(QKeySequence(Qt::ALT + Qt::Key_1));
-    m_toggle_include_style->setText(i18nc("@action:inmenu", "Toggle #include style"));
+    m_toggle_include_style->setText(i18nc("@action:inmenu", "Toggle <icode>#include</icode> style"));
 
     // ATTENTION Add self as KXMLGUIClient after all actions has
     // been added...
@@ -526,9 +526,19 @@ void CppHelperPluginView::aboutToShow()
       && mainWindow()->activeView()
       );
 
+    const auto* const view = mainWindow()->activeView();
+    auto* const doc = view->document();
+
+    // Disable lookup actions for non C/C++ sources
     auto symbol = symbolUnderCursor();
-    m_search_symbol->setEnabled(!symbol.isEmpty());
-    if (!symbol.isEmpty() && !m_plugin->config().enabledIndices().empty())
+    const auto is_suitable_document = isSuitableDocument(doc->mimeType(), doc->highlightingMode());
+    const auto should_enable_lookup_action = is_suitable_document
+      && !symbol.isEmpty()
+      && !m_plugin->config().enabledIndices().empty()
+      ;
+
+    m_search_symbol->setEnabled(should_enable_lookup_action);
+    if (should_enable_lookup_action)
     {
         kDebug(DEBUG_AREA) << "current word text: " << symbol;
         symbol = KStringHandler::csqueeze(symbol, 30);
@@ -542,6 +552,35 @@ void CppHelperPluginView::aboutToShow()
     m_goto_declaration->setText(i18nc("@action:inmenu", "Go to Declaration of <icode>%1</icode>", symbol));
     m_goto_definition->setText(i18nc("@action:inmenu", "Go to Definition of <icode>%1</icode>", symbol));
     m_search_symbol->setText(i18nc("@action:inmenu", "Search for <icode>%1</icode>", symbol));
+
+    // Disable #include style switcher if no include on a line
+#if 0
+    m_toggle_include_style->setEnabled(is_suitable_document);
+#endif
+    if (!view->selection())
+    {
+        const auto line_str = doc->line(view->cursorPosition().line());
+        const auto r = parseIncludeDirective(line_str, true);
+        stateChanged(
+            "has_symbol_under_cursor"
+          , r.range.isValid()
+            ? KXMLGUIClient::StateNoReverse
+            : KXMLGUIClient::StateReverse
+          );
+        m_toggle_include_style->setText(
+            i18nc(
+                "@action:inmenu"
+              , "Turn into <icode>#include %1</icode>"
+              , r.type == IncludeStyle::local
+                  ? "<>"
+                  : "\"\""
+              )
+          );
+    }
+    else
+    {
+        m_toggle_include_style->setText(i18nc("@action:inmenu", "Toggle <icode>#include</icode> style"));
+    }
 }
 
 /**
