@@ -110,7 +110,7 @@ inline void findFiles(const QString& file, Container&& paths, QStringList& resul
 {
     for (const auto& path : paths)
     {
-        const auto full_filename = QDir(QDir::cleanPath(path)).filePath(file);
+        const auto full_filename = QDir{QDir::cleanPath(path)}.filePath(file);
         if (isPresentAndReadable(full_filename))
         {
             kDebug(DEBUG_AREA) << " ... " << full_filename << " Ok";

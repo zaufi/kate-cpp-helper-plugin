@@ -76,8 +76,8 @@ bool hasVCSDir(const QString& url)
 {
     for (const auto vcs_dir : VSC_DIRS)
     {
-        const QFileInfo di(QString(url + QLatin1String("/") + vcs_dir));
-        if (di.exists())
+        const auto di = QFileInfo{QDir{QDir::cleanPath(url)}.filePath(vcs_dir)};
+        if (di.isDir() && di.exists())
             return true;
     }
     return false;
@@ -85,14 +85,14 @@ bool hasVCSDir(const QString& url)
 
 bool isFirstLevelPath(const QString& dir)
 {
-    auto url = KUrl(dir).directory();
-    return KUrl(url).path() == QLatin1String("/");
+    const auto url = KUrl(dir).directory();
+    return KUrl(url).path() == QDir::rootPath();
 }
 
 bool isOneOfWellKnownPaths(const QString& url)
 {
     for (const auto dir : WELL_KNOWN_NOT_SUITABLE_DIRS)
-        if (url == QLatin1String(dir))
+        if (url == QLatin1String{dir})
             return true;
     return false;
 }
@@ -826,7 +826,7 @@ void CppHelperPluginConfigPage::updateSuggestions()
             // Traverse over all parent dirs
             for (
                 KUrl url = current_doc_uri.directory()
-              ; url.hasPath() && url.path() != QLatin1String("/")
+              ; url.hasPath() && url.path() != QDir::rootPath()
               ; url = url.upUrl()
               )
             {
@@ -1034,4 +1034,4 @@ void CppHelperPluginConfigPage::pushSanitizeRules()
 
 //END CppHelperPluginConfigPage
 }                                                           // namespace kate
-
+// kate: hl C++/Qt4;

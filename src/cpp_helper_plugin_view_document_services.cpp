@@ -140,7 +140,7 @@ void CppHelperPluginView::switchIfaceImpl()
             for (auto i = 0; i < doc->lines() && first_header_name.isEmpty(); i++)
             {
                 const auto& line_str = doc->line(i);
-                kate::IncludeParseResult r = parseIncludeDirective(line_str, false);
+                auto r = parseIncludeDirective(line_str, false);
                 if (r.range.isValid())
                 {
                     r.range.setBothLines(i);
@@ -257,7 +257,7 @@ void CppHelperPluginView::copyInclude()
       && mainWindow()->activeView()
       );
 
-    const auto* view = mainWindow()->activeView();
+    const auto* const view = mainWindow()->activeView();
     const auto& uri = view->document()->url();
     auto current_dir = uri.directory();
     QString longest_matched;
@@ -286,13 +286,13 @@ void CppHelperPluginView::copyInclude()
         if (is_suitable_document)
         {
             kDebug(DEBUG_AREA) << "current_dir=" << current_dir << ", lm=" << longest_matched;
-            int count = longest_matched.size();
+            auto count = longest_matched.size();
             for (; count < current_dir.size() && current_dir[count] == '/'; ++count) {}
             current_dir.remove(0, count);
             kDebug(DEBUG_AREA) << "current_dir=" << current_dir << ", lm=" << longest_matched;
             if (!current_dir.isEmpty() && !current_dir.endsWith('/'))
                 current_dir += '/';
-            text = QString("#include %1%2%3")
+            text = QString{"#include %1%2%3"}
               .arg(open)
               .arg(current_dir + uri.fileName())
               .arg(close);
@@ -302,7 +302,7 @@ void CppHelperPluginView::copyInclude()
     else
     {
         if (is_suitable_document)
-            text = QString("#include \"%1\"").arg(uri.toLocalFile());
+            text = QString{R"~(#include "%1")~"}.arg(uri.toLocalFile());
         else text = uri.prettyUrl();
     }
     kDebug(DEBUG_AREA) << "Result:" << text;
@@ -323,7 +323,7 @@ void CppHelperPluginView::openHeader()
     QString filename;                                       // Name of header under cursor
     QStringList candidates;                                 // List of candidates (if any)
 
-    auto* doc = mainWindow()->activeView()->document();
+    auto* const doc = mainWindow()->activeView()->document();
 
     auto result = findIncludeFilenameNearCursor();
     kDebug(DEBUG_AREA) << "findIncludeFilenameNearCursor() = " << result.range;
@@ -363,7 +363,7 @@ void CppHelperPluginView::openHeader()
         candidates.removeDuplicates();
 
         // Ok form an error message if we were failed even on this
-        auto error_text = filename.isEmpty()
+        const auto error_text = filename.isEmpty()
           ? QString()
           : i18nc(
               "@info:tooltip"
@@ -404,7 +404,7 @@ void CppHelperPluginView::openFile(const KUrl& file, const KTextEditor::Cursor c
 
     auto* const new_doc = m_plugin->application()->documentManager()->openUrl(file);
     /// \todo How to reuse \c isPresentAndReadable() from \c utils.h here?
-    auto fi = QFileInfo{file.toLocalFile()};
+    const auto fi = QFileInfo{file.toLocalFile()};
     if (fi.isReadable())
     {
         // Remember a previous location if requested
@@ -445,8 +445,8 @@ void CppHelperPluginView::needTextHint(const KTextEditor::Cursor& pos, QString& 
 
     kDebug(DEBUG_AREA) << "Text hint requested at " << pos;
 
-    auto* view = mainWindow()->activeView();                // get current view
-    auto* doc = view->document();                           // get current document
+    const auto* const view = mainWindow()->activeView();    // get current view
+    auto* const doc = view->document();                     // get current document
     // Is current file can have some hints?
     if (isSuitableDocument(doc->mimeType(), doc->highlightingMode()))
     {
@@ -456,8 +456,7 @@ void CppHelperPluginView::needTextHint(const KTextEditor::Cursor& pos, QString& 
 }
 
 /**
- * To transform `#include <>` into `#include ""`:
- * - get 
+ * To transform `#include <>` into `#include ""` and vise versa.
  */
 void CppHelperPluginView::toggleIncludeStyle()
 {
@@ -465,8 +464,26 @@ void CppHelperPluginView::toggleIncludeStyle()
         "Active view suppose to be valid at this point! Am I wrong?"
       && mainWindow()->activeView()
       );
-    // Ok, trying case 1
-    auto* const doc = mainWindow()->activeView()->document();
+
+    const auto* const view = mainWindow()->activeView();
+    auto* const doc = view->document();
+
+    // Do nothing for non C/C++ sources
+    const auto is_suitable_document = isSuitableDocument(doc->mimeType(), doc->highlightingMode());
+    if (!is_suitable_document)
+        return;
+
+    // check if selection present
+    if (view->selection())
+    {
+        const auto& selection = view->selectionRange();
+        toggleIncludeStyle(doc, selection.start().line(), selection.end().line() + 1);
+    }
+    else
+    {
+        const auto& cursor = view->cursorPosition();
+        toggleIncludeStyle(doc, cursor.line(), cursor.line() + 1);
+    }
 }
 //END SLOTS
 
@@ -488,7 +505,7 @@ QStringList CppHelperPluginView::findCandidatesAt(
     for (const auto& ext : extensions)
     {
         /// \todo Is there smth like \c boost::filesystem::path?
-        auto filename = QDir::cleanPath(path + "/" + name + "." + ext);
+        const auto filename = QDir{QDir::cleanPath(path)}.filePath(name + "." + ext);
         kDebug(DEBUG_AREA) << "open src/hrd: trying " << filename;
         if (isPresentAndReadable(filename))
             result.push_back(filename);
@@ -507,11 +524,12 @@ QStringList CppHelperPluginView::findFileLocations(const QString& filename, cons
     // Check CWD as well, if local #include or configuration option
     auto aux_paths = QStringList{};
     if (is_local || m_plugin->config().useCwd())
-        aux_paths << QFileInfo(
-            mainWindow()->activeView()->document()->url().path()
-          ).dir().absolutePath();
+        aux_paths << mainWindow()->activeView()->document()->url().directory();
 
     // Try to find full filename to open
+    kDebug(DEBUG_AREA) << "Trying to find" << filename << "@ configured dirs:" 
+      << aux_paths << ',' << m_plugin->config().sessionDirs() << ',' << m_plugin->config().systemDirs()
+      ;
     auto candidates = findHeader(
         filename
       , aux_paths
@@ -579,6 +597,84 @@ IncludeParseResult CppHelperPluginView::findIncludeFilenameNearCursor() const
         ++end;
 
     return {{line, start, line, end}};
+}
+
+/**
+ * \todo Add popup note if enything goes wrong
+ */
+void CppHelperPluginView::toggleIncludeStyle(KTextEditor::Document* const doc, const int start, const int end)
+{
+    for (auto i = start; i != end; ++i)
+    {
+        // Is there any #inlude on a line?
+        const auto& line_str = doc->line(i);
+        auto r = parseIncludeDirective(line_str, true);
+        if (!r.range.isValid())
+            continue;                                       // Skip if nothing found
+
+        r.range.setBothLines(i);
+        const auto& filename = doc->text(r.range);
+
+        // Get list of candidates
+        auto candidates = findFileLocations(filename, r.type == IncludeStyle::local);
+        candidates.removeDuplicates();
+
+        if (candidates.size() != 1)
+            continue;                                       // Skip if more than one file found
+
+        kDebug(DEBUG_AREA) << "found candidate:" << candidates[0];
+
+        // Transform #include
+        auto new_header = QString{};
+        switch (r.type)
+        {
+            case IncludeStyle::local:                       // From local to global from
+            {
+                kDebug(DEBUG_AREA) << "local->global";
+
+                QString longest_matched;
+
+                // NOTE Try to match local (per session) dirs only!
+                for (const auto& dir : m_plugin->config().sessionDirs())
+                    if (candidates[0].startsWith(dir) && longest_matched.length() < dir.length())
+                        longest_matched = dir;
+
+                // Is file available via configured paths?
+                if (!longest_matched.isEmpty())
+                {
+                    new_header = candidates[0];
+                    // Strip configure path from found candidate
+                    new_header.remove(0, longest_matched.size() + 1);
+                    // From part of #include
+                    new_header = QString{"<%1>"}.arg(new_header);
+                }
+                break;
+            }
+            case IncludeStyle::global:                      // From global to local form
+            {
+                kDebug(DEBUG_AREA) << "global->local";
+                const auto& doc_dir = QDir{doc->url().directory()};
+                // From part of #include
+                new_header = QString{R"~("%1")~"}.arg(doc_dir.relativeFilePath(candidates[0]));
+                break;
+            }
+
+            default:
+                kDebug(DEBUG_AREA) << "Dunno how to transform current #include: " << filename;
+                continue;
+        }
+
+        // Replace header name and open/close characters in #include
+        if (!new_header.isEmpty())
+        {
+            kDebug(DEBUG_AREA) << "new_header =" << new_header;
+            // Extend range by one char at both sides
+            r.range.start().setColumn(r.range.start().column() - 1);
+            r.range.end().setColumn(r.range.end().column() + 1);
+            // Set new header name
+            doc->replaceText(r.range, new_header, false);
+        }
+    }
 }
 //END Utility (private) functions
 }                                                           // namespace kate

@@ -294,10 +294,10 @@ void IncludeHelperCompletionModel::completionInvoked(
             r.range.setBothLines(range.start().line());
             kDebug(DEBUG_AREA) << "parsed range: " << r.range;
             m_closer = r.close_char();
-            kDebug(DEBUG_AREA) << "doc-path:" << QFileInfo(doc->url().path()).dir();
+            kDebug(DEBUG_AREA) << "doc-path:" << doc->url().directory();
             updateCompletionList(
                 doc->text(r.range)
-              , r.type == IncludeStyle::local ? QFileInfo(doc->url().path()).dir().absolutePath() : QString{}
+              , r.type == IncludeStyle::local ? doc->url().directory() : QString{}
               );
         }
     }
@@ -340,8 +340,11 @@ void IncludeHelperCompletionModel::updateCompletionList(const QString& start, co
         paths << parent_path;
         updateCompletionListPath(path, paths, mask, m_plugin->config().ignoreExtensions());
         // Append ".." to completions list for convinience only if #include "" gets completed
-        if (!m_plugin->config().useCwd() && QDir(parent_path + "/" + path).canonicalPath() != "/")
-            m_completions.emplace_back("../", true);
+        const auto is_root = (
+            QDir::rootPath() == QDir{QDir::cleanPath(parent_path)}.filePath(path)
+          );
+        if (!m_plugin->config().useCwd() && !is_root)
+            m_completions.emplace_back(QString{".."} + QDir::separator(), true);
     }
     endResetModel();
 }
@@ -409,7 +412,7 @@ void IncludeHelperCompletionModel::updateCompletionListPath(
             const auto is_directory = info.isDir();
             auto text = info.fileName();
             if (is_directory)
-                text += "/";
+                text += QDir::separator();
 
             // Make sure that entry not in a list yet
             const auto it = std::find_if(

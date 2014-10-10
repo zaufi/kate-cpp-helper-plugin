@@ -164,6 +164,7 @@ private:
     void appendSearchDetailsRow(const QString&, bool);
     void clearSearchDetails();
     QString symbolUnderCursor();
+    void toggleIncludeStyle(KTextEditor::Document*, int, int);
 
     CppHelperPlugin* const m_plugin;                        ///< Parent plugin
     KAction* const m_copy_include;                          ///< <em>Copy #include to clipboard</em> action
