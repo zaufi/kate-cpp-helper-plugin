@@ -21,7 +21,7 @@
  */
 
 // Project specific includes
-#include <src/sanitize_snippet.h>
+#include "sanitize_snippet.h"
 
 // Standard includes
 #include <KDE/KDebug>

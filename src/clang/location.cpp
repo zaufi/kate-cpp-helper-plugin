@@ -26,8 +26,8 @@
  */
 
 // Project specific includes
-#include <src/clang/location.h>
-#include <src/clang/disposable.h>
+#include "location.h"
+#include "disposable.h"
 
 // Standard includes
 #include <cassert>

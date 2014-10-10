@@ -28,10 +28,10 @@
  */
 
 // Project specific includes
-#include <src/cpp_helper_plugin_view.h>
-#include <src/cpp_helper_plugin.h>
-#include <src/choose_from_list_dialog.h>
-#include <src/utils.h>
+#include "cpp_helper_plugin_view.h"
+#include "cpp_helper_plugin.h"
+#include "choose_from_list_dialog.h"
+#include "utils.h"
 
 // Standard includes
 #include <kate/application.h>

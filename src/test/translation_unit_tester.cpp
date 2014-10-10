@@ -26,10 +26,10 @@
  */
 
 // Project specific includes
-#include <src/translation_unit.h>
-#include <src/clang/compiler_options.h>
-#include <src/clang/disposable.h>
-#include <src/clang/unsaved_files_list.h>
+#include "../translation_unit.h"
+#include "../clang/compiler_options.h"
+#include "../clang/disposable.h"
+#include "../clang/unsaved_files_list.h"
 #include <config.h>
 
 // Standard includes

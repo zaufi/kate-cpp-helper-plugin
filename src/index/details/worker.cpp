@@ -26,14 +26,14 @@
  */
 
 // Project specific includes
-#include <src/index/details/worker.h>
-#include <src/clang/kind_of.h>
-#include <src/clang/to_string.h>
-#include <src/index/document.h>
-#include <src/index/document_extras.h>
-#include <src/index/indexer.h>
-#include <src/index/kind.h>
-#include <src/string_cast.h>
+#include "worker.h"
+#include "../document_extras.h"
+#include "../document.h"
+#include "../indexer.h"
+#include "../kind.h"
+#include "../../clang/kind_of.h"
+#include "../../clang/to_string.h"
+#include "../../string_cast.h"
 
 // Standard includes
 #include <boost/algorithm/string.hpp>

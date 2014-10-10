@@ -26,8 +26,8 @@
  */
 
 // Project specific includes
-#include <src/search_results_table_model.h>
-#include <src/database_manager.h>
+#include "search_results_table_model.h"
+#include "database_manager.h"
 
 // Standard includes
 #include <KDE/KLocalizedString>

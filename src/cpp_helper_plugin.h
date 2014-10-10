@@ -23,12 +23,12 @@
 #pragma once
 
 // Project specific includes
-#include <src/clang/disposable.h>
-#include <src/clang/unsaved_files_list.h>
-#include <src/database_manager.h>
-#include <src/header_files_cache.h>
-#include <src/plugin_configuration.h>
-#include <src/translation_unit.h>
+#include "clang/disposable.h"
+#include "clang/unsaved_files_list.h"
+#include "database_manager.h"
+#include "header_files_cache.h"
+#include "plugin_configuration.h"
+#include "translation_unit.h"
 
 // Standard includes
 #include <kate/plugin.h>

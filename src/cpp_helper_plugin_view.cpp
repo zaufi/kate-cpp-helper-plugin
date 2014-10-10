@@ -21,12 +21,12 @@
  */
 
 // Project specific includes
-#include <src/cpp_helper_plugin_view.h>
-#include <src/cpp_helper_plugin.h>
-#include <src/clang_code_completion_model.h>
-#include <src/include_helper_completion_model.h>
-#include <src/preprocessor_completion_model.h>
-#include <src/utils.h>
+#include "cpp_helper_plugin_view.h"
+#include "cpp_helper_plugin.h"
+#include "clang_code_completion_model.h"
+#include "include_helper_completion_model.h"
+#include "preprocessor_completion_model.h"
+#include "utils.h"
 
 // Standard includes
 #include <kate/mainwindow.h>

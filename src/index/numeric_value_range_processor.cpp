@@ -26,7 +26,7 @@
  */
 
 // Project specific includes
-#include <src/index/numeric_value_range_processor.h>
+#include "numeric_value_range_processor.h"
 
 // Standard includes
 #include <boost/algorithm/string/erase.hpp>

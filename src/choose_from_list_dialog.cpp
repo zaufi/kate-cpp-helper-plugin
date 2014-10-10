@@ -21,7 +21,7 @@
  */
 
 // Project specific includes
-#include <src/choose_from_list_dialog.h>
+#include "choose_from_list_dialog.h"
 
 // Standard includes
 #include <KDE/KListWidget>

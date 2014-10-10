@@ -119,8 +119,7 @@ string(REPLACE "," ";" WITH_SANITIZER "${WITH_SANITIZER}")
 
 # NOTE Order is important!
 include_directories(
-    ${PROJECT_SOURCE_DIR}
-    ${PROJECT_BINARY_DIR}
+    ${PROJECT_BINARY_DIR}/src
     ${KDE4_INCLUDES}
     ${QT_INCLUDES}
     ${Boost_INCLUDE_DIRS}
@@ -221,7 +220,7 @@ add_definitions(-DDEBUG_AREA=13040)
 set(CMAKE_INSTALL_RPATH "${LLVM_LIBDIR}")
 
 # Render configuration file (used by unit tests)
-configure_file(config.h.in config.h @ONLY)
+configure_file(src/test/config.h.in src/test/config.h @ONLY)
 
 #---------------------------------------------------------
 # Section: Top level installs

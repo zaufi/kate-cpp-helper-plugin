@@ -21,12 +21,12 @@
  */
 
 // Project specific includes
-#include <src/clang_code_completion_model.h>
-#include <src/cpp_helper_plugin.h>
-#include <src/document_proxy.h>
-#include <src/diagnostic_messages_model.h>
-#include <src/translation_unit.h>
-#include <src/utils.h>
+#include "clang_code_completion_model.h"
+#include "cpp_helper_plugin.h"
+#include "document_proxy.h"
+#include "diagnostic_messages_model.h"
+#include "translation_unit.h"
+#include "utils.h"
 
 // Standard includes
 #include <KDE/KTextEditor/Document>

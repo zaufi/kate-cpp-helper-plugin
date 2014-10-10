@@ -21,7 +21,7 @@
  */
 
 // Project specific includes
-#include <src/document_proxy.h>
+#include "document_proxy.h"
 
 // Standard includes
 

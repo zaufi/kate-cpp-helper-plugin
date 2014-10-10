@@ -23,9 +23,9 @@
 #pragma once
 
 // Project specific includes
-#include <src/clang_code_completion_item.h>
-#include <src/diagnostic_messages_model.h>
-#include <src/plugin_configuration.h>
+#include "clang_code_completion_item.h"
+#include "diagnostic_messages_model.h"
+#include "plugin_configuration.h"
 
 // Standard includes
 #include <KDE/KUrl>

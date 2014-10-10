@@ -23,7 +23,7 @@
 #pragma once
 
 // Project specific includes
-#include <src/clang_code_completion_item.h>
+#include "clang_code_completion_item.h"
 
 // Standard includes
 #include <clang-c/Index.h>

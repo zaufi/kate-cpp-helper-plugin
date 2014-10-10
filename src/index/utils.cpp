@@ -26,7 +26,7 @@
  */
 
 // Project specific includes
-#include <src/index/utils.h>
+#include "utils.h"
 
 // Standard includes
 #include <boost/uuid/string_generator.hpp>

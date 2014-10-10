@@ -26,7 +26,7 @@
  */
 
 // Project specific includes
-#include <src/diagnostic_messages_model.h>
+#include "diagnostic_messages_model.h"
 
 // Standard includes
 #include <KDE/KDebug>

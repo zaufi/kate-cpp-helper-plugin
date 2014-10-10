@@ -28,7 +28,7 @@
 #pragma once
 
 // Project specific includes
-#include <src/index/indexer.h>
+#include "../index/indexer.h"
 
 // Standard includes
 #include <QtCore/QObject>

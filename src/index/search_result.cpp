@@ -26,7 +26,7 @@
  */
 
 // Project specific includes
-#include <src/index/search_result.h>
+#include "search_result.h"
 
 // Standard includes
 #include <cassert>

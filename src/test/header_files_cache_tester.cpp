@@ -21,7 +21,7 @@
  */
 
 // Project specific includes
-#include <src/header_files_cache.h>
+#include "../header_files_cache.h"
 
 // Standard includes
 #include <boost/test/auto_unit_test.hpp>

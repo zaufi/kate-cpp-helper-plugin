@@ -26,8 +26,8 @@
  */
 
 // Project specific includes
-#include <src/preprocessor_completion_model.h>
-#include <src/utils.h>
+#include "preprocessor_completion_model.h"
+#include "utils.h"
 
 // Standard includes
 #include <KDE/KTextEditor/Document>

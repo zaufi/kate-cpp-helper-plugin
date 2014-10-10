@@ -28,7 +28,7 @@
 #pragma once
 
 // Project specific includes
-#include <src/clang/location.h>
+#include "location.h"
 
 // Standard includes
 #include <QtCore/QString>

@@ -21,15 +21,15 @@
  */
 
 // Project specific includes
-#include <src/cpp_helper_plugin_config_page.h>
-#include <src/cpp_helper_plugin.h>
-#include <src/ui_clang_completion_settings.h>
-#include <src/ui_clang_settings.h>
-#include <src/ui_detect_compiler_paths.h>
-#include <src/ui_other_settings.h>
-#include <src/ui_path_config.h>
-#include <src/ui_session_paths_sets.h>
-#include <src/utils.h>
+#include "cpp_helper_plugin_config_page.h"
+#include "cpp_helper_plugin.h"
+#include "ui_clang_completion_settings.h"
+#include "ui_clang_settings.h"
+#include "ui_detect_compiler_paths.h"
+#include "ui_other_settings.h"
+#include "ui_path_config.h"
+#include "ui_session_paths_sets.h"
+#include "utils.h"
 
 // Standard includes
 #include <kate/application.h>

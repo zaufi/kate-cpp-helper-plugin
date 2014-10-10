@@ -21,9 +21,9 @@
  */
 
 // Project specific includes
-#include <src/include_helper_completion_model.h>
-#include <src/cpp_helper_plugin.h>
-#include <src/utils.h>
+#include "include_helper_completion_model.h"
+#include "cpp_helper_plugin.h"
+#include "utils.h"
 
 // Standard includes
 #include <KDE/KTextEditor/Document>

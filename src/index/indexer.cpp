@@ -26,8 +26,8 @@
  */
 
 // Project specific includes
-#include <src/index/indexer.h>
-#include <src/index/details/worker.h>
+#include "indexer.h"
+#include "details/worker.h"
 
 // Standard includes
 #include <KDE/KDebug>

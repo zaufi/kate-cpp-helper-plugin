@@ -23,13 +23,13 @@
  */
 
 // Project specific includes
-#include <src/translation_unit.h>
-#include <src/clang/compiler_options.h>
-#include <src/clang/disposable.h>
-#include <src/clang/kind_of.h>
-#include <src/clang/to_string.h>
-#include <src/clang/unsaved_files_list.h>
-#include <src/sanitize_snippet.h>
+#include "translation_unit.h"
+#include "clang/compiler_options.h"
+#include "clang/disposable.h"
+#include "clang/kind_of.h"
+#include "clang/to_string.h"
+#include "clang/unsaved_files_list.h"
+#include "sanitize_snippet.h"
 
 // Standard includes
 #include <cassert>

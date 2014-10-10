@@ -28,7 +28,7 @@
 #pragma once
 
 // Project specific includes
-#include <src/index/details/database.h>
+#include "details/database.h"
 
 // Standard includes
 #include <xapian.h>

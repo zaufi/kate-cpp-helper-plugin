@@ -21,8 +21,8 @@
  */
 
 // Project specific includes
-#include <src/plugin_configuration.h>
-#include <src/index/utils.h>
+#include "plugin_configuration.h"
+#include "index/utils.h"
 
 // Standard includes
 #include <KDE/KConfigGroup>

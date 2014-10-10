@@ -28,11 +28,11 @@
 #pragma once
 
 // Project specific includes
-#include <src/clang/disposable.h>
-#include <src/clang/diagnostic_message.h>
-#include <src/index/database.h>
-#include <src/index/search_result.h>
-#include <src/index/types.h>
+#include "database.h"
+#include "search_result.h"
+#include "types.h"
+#include "../clang/disposable.h"
+#include "../clang/diagnostic_message.h"
 
 // Standard includes
 #include <KDE/KUrl>
@@ -124,3 +124,4 @@ inline unsigned indexer::default_indexing_options()
 }
 
 }}                                                          // namespace index, kate
+// kate: hl C++/Qt;

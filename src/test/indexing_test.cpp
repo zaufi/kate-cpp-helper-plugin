@@ -26,10 +26,10 @@
  */
 
 // Project specific includes
-#include <src/clang/disposable.h>
-#include <src/clang/kind_of.h>
-#include <src/clang/location.h>
-#include <src/clang/to_string.h>
+#include "../clang/disposable.h"
+#include "../clang/kind_of.h"
+#include "../clang/location.h"
+#include "../clang/to_string.h"
 #include <config.h>
 
 // Standard includes

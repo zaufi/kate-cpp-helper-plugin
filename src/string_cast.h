@@ -28,7 +28,7 @@
 #pragma once
 
 // Project specific includes
-#include <src/clang/disposable.h>
+#include "clang/disposable.h"
 
 // Standard includes
 #include <QtCore/QString>

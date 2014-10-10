@@ -21,7 +21,7 @@
  */
 
 // Project specific includes
-#include <src/sanitize_snippet.h>
+#include "../sanitize_snippet.h"
 
 // Standard includes
 #include <boost/test/auto_unit_test.hpp>

@@ -26,7 +26,7 @@
  */
 
 // Project specific includes
-#include <src/index/database.h>
+#include "database.h"
 
 // Standard includes
 #include <KDE/KDebug>

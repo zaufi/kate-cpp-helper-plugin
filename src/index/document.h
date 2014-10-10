@@ -28,7 +28,7 @@
 #pragma once
 
 // Project specific includes
-#include <src/index/document_extras.h>
+#include "document_extras.h"
 
 // Standard includes
 #include <boost/algorithm/string/case_conv.hpp>

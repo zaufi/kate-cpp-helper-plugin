@@ -28,7 +28,7 @@
 #pragma once
 
 // Project specific includes
-#include <src/clang/diagnostic_message.h>
+#include "clang/diagnostic_message.h"
 
 // Standard includes
 #include <QtCore/QAbstractListModel>

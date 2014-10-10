@@ -28,8 +28,8 @@
 #pragma once
 
 // Project specific includes
-#include <src/index/types.h>
-#include <src/header_files_cache.h>
+#include "../types.h"
+#include "../../header_files_cache.h"
 
 // Standard includes
 

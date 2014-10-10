@@ -21,9 +21,9 @@
  */
 
 // Project specific includes
-#include <src/clang_code_completion_item.h>
-#include <src/clang/to_string.h>
-#include <src/sanitize_snippet.h>
+#include "clang_code_completion_item.h"
+#include "clang/to_string.h"
+#include "sanitize_snippet.h"
 
 // Standard includes
 #include <KDE/KIcon>

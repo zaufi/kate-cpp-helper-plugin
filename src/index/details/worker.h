@@ -28,9 +28,9 @@
 #pragma once
 
 // Project specific includes
-#include <src/clang/diagnostic_message.h>
-#include <src/index/details/container_info.h>
-#include <src/index/search_result.h>
+#include "container_info.h"
+#include "../search_result.h"
+#include "../../clang/diagnostic_message.h"
 
 // Standard includes
 #include <clang-c/Index.h>

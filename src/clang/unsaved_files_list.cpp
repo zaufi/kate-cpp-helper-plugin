@@ -26,7 +26,7 @@
  */
 
 // Project specific includes
-#include <src/clang/unsaved_files_list.h>
+#include "unsaved_files_list.h"
 
 // Standard includes
 #include <KDE/KDebug>

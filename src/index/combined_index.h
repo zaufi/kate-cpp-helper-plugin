@@ -28,8 +28,8 @@
 #pragma once
 
 // Project specific includes
-#include <src/index/types.h>
-#include <src/index/numeric_value_range_processor.h>
+#include "types.h"
+#include "numeric_value_range_processor.h"
 
 // Standard includes
 #include <memory>

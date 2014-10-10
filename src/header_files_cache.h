@@ -23,7 +23,7 @@
 #pragma once
 
 // Project specific includes
-#include <src/index/types.h>
+#include "index/types.h"
 
 // Standard includes
 #include <boost/archive/binary_iarchive.hpp>

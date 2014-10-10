@@ -26,7 +26,7 @@
  */
 
 // Project specific includes
-#include <src/database_manager.h>
+#include "../database_manager.h"
 #include <config.h>
 
 // Standard includes

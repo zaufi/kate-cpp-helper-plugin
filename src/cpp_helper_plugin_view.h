@@ -23,10 +23,10 @@
 #pragma once
 
 // Project specific includes
-#include <src/document_info.h>
-#include <src/diagnostic_messages_model.h>
-#include <src/search_results_table_model.h>
-#include <src/ui_plugin_tool_view.h>
+#include "document_info.h"
+#include "diagnostic_messages_model.h"
+#include "search_results_table_model.h"
+#include "ui_plugin_tool_view.h"
 
 // Standard includes
 #include <kate/plugin.h>

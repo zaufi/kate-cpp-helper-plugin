@@ -26,8 +26,8 @@
  */
 
 // Project specific includes
-#include <src/indices_table_model.h>
-#include <src/database_manager.h>
+#include "indices_table_model.h"
+#include "database_manager.h"
 
 // Standard includes
 #include <KDE/KLocalizedString>

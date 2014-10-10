@@ -21,12 +21,12 @@
  */
 
 // Project specific includes
-#include <src/config.h>
-#include <src/cpp_helper_plugin.h>
-#include <src/cpp_helper_plugin_config_page.h>
-#include <src/cpp_helper_plugin_view.h>
-#include <src/document_info.h>
-#include <src/utils.h>
+#include "cpp_helper_plugin.h"
+#include "cpp_helper_plugin_config_page.h"
+#include "cpp_helper_plugin_view.h"
+#include "config.h"
+#include "document_info.h"
+#include "utils.h"
 
 // Standard includes
 #include <kate/application.h>

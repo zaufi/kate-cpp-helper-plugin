@@ -23,7 +23,7 @@
 #pragma once
 
 // Project specific includes
-#include <src/clang/compiler_options.h>
+#include "clang/compiler_options.h"
 
 // Standard includes
 #include <boost/uuid/uuid.hpp>

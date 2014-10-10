@@ -26,7 +26,7 @@
  */
 
 // Project specific includes
-#include <src/clang/to_string.h>
+#include "to_string.h"
 
 // Standard includes
 #include <cassert>

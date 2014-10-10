@@ -28,8 +28,8 @@
 #pragma once
 
 // Project specific includes
-#include <src/index/document_extras.h>
-#include <src/index/types.h>
+#include "document_extras.h"
+#include "types.h"
 
 // Standard includes
 

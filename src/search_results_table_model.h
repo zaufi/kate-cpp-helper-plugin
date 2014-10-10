@@ -28,9 +28,9 @@
 #pragma once
 
 // Project specific includes
-#include <src/clang/location.h>
-#include <src/index/kind.h>
-#include <src/index/search_result.h>
+#include "clang/location.h"
+#include "index/kind.h"
+#include "index/search_result.h"
 
 // Standard includes
 #include <QtCore/QAbstractItemModel>

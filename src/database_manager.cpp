@@ -26,12 +26,12 @@
  */
 
 // Project specific includes
-#include <src/database_manager.h>
-#include <src/index/document.h>
-#include <src/index/document_extras.h>
-#include <src/index/indexer.h>
-#include <src/index/utils.h>
-#include <src/string_cast.h>
+#include "database_manager.h"
+#include "index/document.h"
+#include "index/document_extras.h"
+#include "index/indexer.h"
+#include "index/utils.h"
+#include "string_cast.h"
 
 // Standard includes
 #include <boost/archive/binary_iarchive.hpp>

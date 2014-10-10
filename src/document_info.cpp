@@ -21,9 +21,9 @@
  */
 
 // Project specific includes
-#include <src/document_info.h>
-#include <src/cpp_helper_plugin.h>
-#include <src/utils.h>
+#include "document_info.h"
+#include "cpp_helper_plugin.h"
+#include "utils.h"
 
 // Standard includes
 #include <KDE/KDebug>

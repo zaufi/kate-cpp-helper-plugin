@@ -26,8 +26,8 @@
  */
 
 // Project specific includes
-#include <src/indexing_targets_list_model.h>
-#include <src/database_manager.h>
+#include "indexing_targets_list_model.h"
+#include "database_manager.h"
 
 // Standard includes
 

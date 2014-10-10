@@ -26,7 +26,7 @@
  */
 
 // Project specific includes
-#include <src/test/indexer_tester.h>
+#include "indexer_tester.h"
 #include <config.h>
 
 // Standard includes

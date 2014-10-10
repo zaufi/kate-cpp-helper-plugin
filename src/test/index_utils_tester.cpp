@@ -26,7 +26,7 @@
  */
 
 // Project specific includes
-#include <src/index/utils.h>
+#include "../index/utils.h"
 
 // Standard includes
 #include <boost/test/auto_unit_test.hpp>

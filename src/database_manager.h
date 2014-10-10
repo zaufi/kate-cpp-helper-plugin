@@ -28,14 +28,14 @@
 #pragma once
 
 // Project specific includes
-#include <src/index/database.h>
-#include <src/clang/compiler_options.h>
-#include <src/index/combined_index.h>
-#include <src/index/search_result.h>
-#include <src/indexing_targets_list_model.h>
-#include <src/indices_table_model.h>
-#include <src/database_options.h>
-#include <src/diagnostic_messages_model.h>
+#include "index/database.h"
+#include "diagnostic_messages_model.h"
+#include "clang/compiler_options.h"
+#include "index/combined_index.h"
+#include "index/search_result.h"
+#include "indexing_targets_list_model.h"
+#include "indices_table_model.h"
+#include "database_options.h"
 
 // Standard includes
 #include <boost/filesystem/path.hpp>

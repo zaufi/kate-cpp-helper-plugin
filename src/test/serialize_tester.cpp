@@ -26,7 +26,7 @@
  */
 
 // Project specific includes
-#include <src/index/serialize.h>
+#include "../index/serialize.h"
 
 // Standard includes
 #include <boost/test/auto_unit_test.hpp>

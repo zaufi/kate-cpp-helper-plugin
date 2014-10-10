@@ -28,7 +28,7 @@
 #pragma once
 
 // Project specific includes
-#include <src/index/kind.h>
+#include "kind.h"
 
 // Standard includes
 #include <boost/optional.hpp>

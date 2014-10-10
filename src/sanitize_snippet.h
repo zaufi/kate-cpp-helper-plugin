@@ -23,7 +23,7 @@
 #pragma once
 
 // Project specific includes
-#include <src/plugin_configuration.h>
+#include "plugin_configuration.h"
 
 // Standard includes
 #include <QtCore/QString>

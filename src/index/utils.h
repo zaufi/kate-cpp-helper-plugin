@@ -28,7 +28,7 @@
 #pragma once
 
 // Project specific includes
-#include <src/index/types.h>
+#include "types.h"
 
 // Standard includes
 #include <boost/uuid/uuid.hpp>

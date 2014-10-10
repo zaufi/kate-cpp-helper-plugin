@@ -28,7 +28,7 @@
 #pragma once
 
 // Project specific includes
-#include <src/index/serialize.h>
+#include "serialize.h"
 
 // Standard includes
 

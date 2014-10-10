@@ -26,7 +26,7 @@
  */
 
 // Project specific includes
-#include <src/clang/compiler_options.h>
+#include "compiler_options.h"
 
 // Standard includes
 #include <QtCore/QDebug>

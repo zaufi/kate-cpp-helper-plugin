@@ -26,7 +26,7 @@
  */
 
 // Project specific includes
-#include <src/clang/unsaved_files_list.h>
+#include "../clang/unsaved_files_list.h"
 
 // Standard includes
 #include <boost/algorithm/string.hpp>
