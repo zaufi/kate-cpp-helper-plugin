@@ -165,6 +165,7 @@ private:
     void clearSearchDetails();
     QString symbolUnderCursor();
     void toggleIncludeStyle(KTextEditor::Document*, int, int);
+    QString tryGuessHeaderRelativeConfiguredDirs(QString, QFileInfo);
 
     CppHelperPlugin* const m_plugin;                        ///< Parent plugin
     std::unique_ptr<QWidget> m_tool_view;                   ///< A tool-view widget of this plugin

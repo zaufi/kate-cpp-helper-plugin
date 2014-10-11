@@ -62,10 +62,6 @@
 
     <!-- Assign default properties -->
     <ActionProperties scheme="Default">
-        <Action name="cpphelper_diagnostic_popup_clear"
-                text="Clear Diagostic Messages"
-                icon="edit-clear-list" />
-
         <Action name="file_open_included_header"
                 text="Open Header Under Cursor"
                 shortcut="F10" />

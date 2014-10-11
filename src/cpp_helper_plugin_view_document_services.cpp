@@ -476,7 +476,7 @@ void CppHelperPluginView::toggleIncludeStyle()
     if (view->selection())
     {
         const auto& selection = view->selectionRange();
-        toggleIncludeStyle(doc, selection.start().line(), selection.end().line() + 1);
+        toggleIncludeStyle(doc, selection.start().line(), selection.end().line());
     }
     else
     {
@@ -526,9 +526,7 @@ QStringList CppHelperPluginView::findFileLocations(const QString& filename, cons
         aux_paths << mainWindow()->activeView()->document()->url().directory();
 
     // Try to find full filename to open
-    kDebug(DEBUG_AREA) << "Trying to find" << filename << "@ configured dirs:" 
-      << aux_paths << ',' << m_plugin->config().sessionDirs() << ',' << m_plugin->config().systemDirs()
-      ;
+    kDebug(DEBUG_AREA) << "Trying to find" << filename << "@ configured dirs";
     auto candidates = findHeader(
         filename
       , aux_paths
@@ -603,6 +601,7 @@ IncludeParseResult CppHelperPluginView::findIncludeFilenameNearCursor() const
  */
 void CppHelperPluginView::toggleIncludeStyle(KTextEditor::Document* const doc, const int start, const int end)
 {
+    kDebug(DEBUG_AREA) << "Transform #includes at lines: [" << start << ',' << end << ')';
     for (auto i = start; i < end; ++i)
     {
         // Is there any #inlude on a line?
@@ -622,33 +621,24 @@ void CppHelperPluginView::toggleIncludeStyle(KTextEditor::Document* const doc, c
             {
                 kDebug(DEBUG_AREA) << "local->global";
 
-                QString shortest_matched;
-                const auto fi = QFileInfo{filename};
-                auto remains = QFileInfo{fi.path()};
-                assert("Sanity check" && !remains.fileName().isEmpty());
-                filename = fi.fileName();
-                assert("Sanity check" && !filename.isEmpty());
-                auto found = false;
-                do
+                auto remains = QFileInfo{filename};
+                filename = remains.fileName();
+                remains = remains.path();
+                filename = tryGuessHeaderRelativeConfiguredDirs(filename, remains);
+
+                if (filename.isEmpty())
                 {
-                    kDebug(DEBUG_AREA) << "<<< remains=" << remains.filePath();
-                    kDebug(DEBUG_AREA) << "<<< filename=" << filename;
-
-                    const auto candidates = findFileLocations(filename, false);
-                    found = !candidates.isEmpty();
-                    if (!found)
-                    {
-                        filename = QDir{remains.fileName()}.filePath(filename);
-                        remains = remains.path();
-                        kDebug(DEBUG_AREA) << "<<< not found -- next try... >>>";
-                    }
+                    // Try to go from other side: suppose `filename` is relative to
+                    // this document...
+                    kDebug(DEBUG_AREA) << ">>> Ok, try smth else...";
+                    filename = doc->text(r.range);      // Restore initial filename from #incldue
+                    remains = QFileInfo{doc->url().directory()};
+                    filename = tryGuessHeaderRelativeConfiguredDirs(filename, remains);
+                    if (filename.isEmpty()) break;          // I'm giving up!
                 }
-                while (!found && remains.fileName() != ".");
-
-                if (!found) continue;                       // Skip if nothing has found
 
                 // From part of #include
-                new_header = QString{R"~(<%1>)~"}.arg(filename);
+                new_header = QString{"<%1>"}.arg(filename);
 
                 break;
             }
@@ -687,6 +677,37 @@ void CppHelperPluginView::toggleIncludeStyle(KTextEditor::Document* const doc, c
             doc->replaceText(r.range, new_header, false);
         }
     }
+}
+
+QString CppHelperPluginView::tryGuessHeaderRelativeConfiguredDirs(QString filename, QFileInfo remains)
+{
+    filename = QDir::cleanPath(filename);
+
+    assert("Sanity check" && !remains.fileName().isEmpty());
+    assert("Sanity check" && !filename.isEmpty());
+
+    auto found = false;
+    do
+    {
+        kDebug(DEBUG_AREA) << "<<< remains=" << remains.filePath();
+        kDebug(DEBUG_AREA) << "<<< filename=" << filename;
+
+        const auto candidates = findFileLocations(filename, false);
+        found = !candidates.isEmpty();
+        if (!found)
+        {
+            const auto nn = remains.fileName();
+            if (nn != "." && remains.filePath() != QDir::rootPath())
+            {
+                filename = QDir::cleanPath(QDir{nn}.filePath(filename));
+                remains = remains.path();
+                kDebug(DEBUG_AREA) << "<<< not found -- next try... >>>";
+            }
+            else break;
+        }
+    }
+    while (!found);
+    return found ? filename : QString{};
 }
 //END Utility (private) functions
 }                                                           // namespace kate

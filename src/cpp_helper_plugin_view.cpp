@@ -146,6 +146,8 @@ CppHelperPluginView::CppHelperPluginView(
           , &m_diagnostic_data
           , SLOT(clear())
           );
+        clear_action->setText(i18nc("@action:inmenu", "Clear Diagostic Messages"));
+        clear_action->setIcon(KIcon{"edit-clear-list"});
         m_tool_view_interior->diagnosticMessages->insertAction(nullptr, clear_action);
     }
 
