@@ -162,7 +162,7 @@ CppHelperPluginConfigPage::CppHelperPluginConfigPage(
         layout->addWidget(paths, 1);
         layout->addWidget(compilers, 0);
         system_tab->setLayout(layout);
-        tab->addTab(system_tab, i18n("System Paths List"));
+        tab->addTab(system_tab, i18nc("@title:tab", "System Paths List"));
     }
 
     // Session #include paths
@@ -192,14 +192,14 @@ CppHelperPluginConfigPage::CppHelperPluginConfigPage(
         layout->addWidget(paths, 1);
         layout->addWidget(favorites, 0);
         session_tab->setLayout(layout);
-        tab->addTab(session_tab, i18n("Session Paths List"));
+        tab->addTab(session_tab, i18nc("@title:tab", "Session Paths List"));
     }
 
     // Clang settings
     {
         auto* clang_tab = new QWidget{tab};
         m_clang_config->setupUi(clang_tab);
-        tab->addTab(clang_tab, i18n("Clang Settings"));
+        tab->addTab(clang_tab, i18nc("@title:tab", "Clang Settings"));
         // Monitor changes to PCH file
         connect(
             m_clang_config->pchHeader
@@ -227,7 +227,7 @@ CppHelperPluginConfigPage::CppHelperPluginConfigPage(
     {
         auto* comp_tab = new QWidget{tab};
         m_completion_settings->setupUi(comp_tab);
-        tab->addTab(comp_tab, i18n("Code Completion Settings"));
+        tab->addTab(comp_tab, i18nc("@title:tab", "Code Completion Settings"));
         connect(m_completion_settings->addRule, SIGNAL(clicked()), this, SLOT(addEmptySanitizeRule()));
         connect(m_completion_settings->removeRule, SIGNAL(clicked()), this, SLOT(removeSanitizeRule()));
         connect(m_completion_settings->upRule, SIGNAL(clicked()), this, SLOT(moveSanitizeRuleUp()));
@@ -246,7 +246,7 @@ CppHelperPluginConfigPage::CppHelperPluginConfigPage(
     {
         auto* pss_tab = new QWidget{tab};
         m_pss_config->setupUi(pss_tab);
-        tab->addTab(pss_tab, i18n("Other Settings"));
+        tab->addTab(pss_tab, i18nc("@title:tab", "Other Settings"));
         // Disable completion on 'ignore extensions' like edit
         m_pss_config->ignoreExtensions->setCompletionMode(KGlobalSettings::CompletionNone);
     }
@@ -455,15 +455,15 @@ void CppHelperPluginConfigPage::removeSet()
         if (!file.remove())
         {
             KPassivePopup::message(
-                i18n("Error")
-              , i18n("<qt>Unable to remove file:<br /><tt>%1</tt></qt>", file.fileName())
+                i18nc("@title:window", "Error")
+              , i18nc("@info:tooltip", "<qt>Unable to remove file:<br /><icode>%1</icode></qt>", file.fileName())
               , qobject_cast<QWidget*>(this)
               );
             return;
         }
         KPassivePopup::message(
-            i18n("Done")
-          , i18n("<qt>Remove successed<br /><tt>%1</tt></qt>", file.fileName())
+            i18nc("@title:window", "Done")
+          , i18nc("@info:tooltip", "<qt>Remove successed<br /><icode>%1</icode></qt>", file.fileName())
           , qobject_cast<QWidget*>(this)
           );
         updateSets();
@@ -575,8 +575,8 @@ void CppHelperPluginConfigPage::openPCHHeaderFile()
         m_plugin->openDocument(pch_url);
     else
         KPassivePopup::message(
-            i18n("Error")
-          , i18n("<qt>PCH header file is not configured or readable.</qt>")
+            i18nc("@title:window", "Error")
+          , i18nc("@info:tooltip", "<qt>PCH header file is not configured or readable.</qt>")
           , qobject_cast<QWidget*>(this)
           );
 }
@@ -589,8 +589,8 @@ void CppHelperPluginConfigPage::rebuildPCH()
         m_plugin->makePCHFile(pch_url);
     else
         KPassivePopup::message(
-            i18n("Error")
-          , i18n("<qt>PCH header file is not configured or readable.</qt>")
+            i18nc("@title:window", "Error")
+          , i18nc("@info:tooltip", "<qt>PCH header file is not configured or readable.</qt>")
           , qobject_cast<QWidget*>(this)
           );
 }
@@ -635,19 +635,24 @@ void CppHelperPluginConfigPage::error(QProcess::ProcessError error)
     auto status_str = QString{};
     switch (error)
     {
-        case QProcess::FailedToStart: status_str = i18n("Process failed to start"); break;
-        case QProcess::Crashed:       status_str = i18n("Process crashed"); break;
-        case QProcess::Timedout:      status_str = i18n("Timedout");        break;
-        case QProcess::WriteError:    status_str = i18n("Write error");     break;
-        case QProcess::ReadError:     status_str = i18n("Read error");      break;
+        case QProcess::FailedToStart: status_str = i18nc("@info:tooltip", "Process failed to start"); break;
+        case QProcess::Crashed:       status_str = i18nc("@info:tooltip", "Process crashed"); break;
+        case QProcess::Timedout:      status_str = i18nc("@info:tooltip", "Timedout");        break;
+        case QProcess::WriteError:    status_str = i18nc("@info:tooltip", "Write error");     break;
+        case QProcess::ReadError:     status_str = i18nc("@info:tooltip", "Read error");      break;
         case QProcess::UnknownError:
         default:
-            status_str = i18n("Unknown error");
+            status_str = i18nc("@info:tooltip", "Unknown error");
             break;
     }
     KPassivePopup::message(
-        i18n("Error")
-      , i18n("<qt>Failed to execute <tt>%1</tt>:<br />%2</qt>", binary, status_str)
+        i18nc("@title:window", "Error")
+      , i18nc(
+            "@info:tooltip"
+          , "<qt>Failed to execute <command>%1</command>:<nl /><message>%2</message><qt>"
+          , binary
+          , status_str
+          )
       , qobject_cast<QWidget*>(this)
       );
     QApplication::setOverrideCursor(QCursor(Qt::ArrowCursor));
@@ -665,9 +670,10 @@ void CppHelperPluginConfigPage::finished(int exit_code, QProcess::ExitStatus exi
     if (exit_status != QProcess::NormalExit && exit_code != EXIT_SUCCESS)
     {
         KPassivePopup::message(
-            i18n("Error")
-          , i18n(
-                "<qt>Unable to get predefined <tt>#include</tt> paths. Process exited with code %1</qt>"
+        i18nc("@title:window", "Error")
+          , i18nc(
+                "@info:tooltip"
+              , "<qt>Unable to get predefined <icode>#include</icode> paths. Process exited with code %1</qt>"
               , exit_code
               )
           , qobject_cast<QWidget*>(this)
@@ -708,7 +714,7 @@ void CppHelperPluginConfigPage::readyReadStandardError()
     m_error.append(m_compiler_proc.readAll());
 }
 
-bool CppHelperPluginConfigPage::contains(const QString& dir, const KListWidget* list)
+bool CppHelperPluginConfigPage::contains(const QString& dir, const KListWidget* const list)
 {
     for (auto i = 0; i < list->count(); ++i)
         if (list->item(i)->text() == dir)
@@ -716,13 +722,12 @@ bool CppHelperPluginConfigPage::contains(const QString& dir, const KListWidget* 
     return false;
 }
 
-void CppHelperPluginConfigPage::addDirTo(const KUrl& dir_uri, KListWidget* list)
+void CppHelperPluginConfigPage::addDirTo(const KUrl& dir_uri, KListWidget* const list)
 {
     if (dir_uri.isValid() && !dir_uri.isEmpty())
     {
-        auto dir_str = dir_uri.toLocalFile();               // get URI as local file/path
-        while (dir_str.endsWith('/'))                       // remove possible trailing slashes
-            dir_str.remove(dir_str.length() - 1, 1);
+        // get URI as local file/path
+        auto dir_str = QDir::cleanPath(dir_uri.toLocalFile());
         if (!contains(dir_str, list))                       // append only if given path not in a list already
             new QListWidgetItem{dir_str, list};
     }
@@ -732,15 +737,14 @@ QString CppHelperPluginConfigPage::findBinary(const QString& binary) const
 {
     assert("binary name expected to be non-empty" && !binary.isEmpty());
 
-    const auto* path_env = std::getenv("PATH");
     auto result = QString{};
-    if (path_env)
+    if (const auto* const path_env = std::getenv("PATH"))
     {
         /// \todo Is there any portable way to get paths separator?
-        auto paths = QString{path_env}.split(':', QString::SkipEmptyParts);
+        const auto paths = QString{path_env}.split(':', QString::SkipEmptyParts);
         for (const auto& path : paths)
         {
-            const auto full_path = QString{path + '/' + binary};
+            const auto full_path = QDir{path}.filePath(binary);
             const auto fi = QFileInfo{full_path};
             if (fi.exists() && fi.isExecutable())
             {
@@ -830,9 +834,7 @@ void CppHelperPluginConfigPage::updateSuggestions()
               ; url = url.upUrl()
               )
             {
-                auto dir = url.path();                      // Obtain path as string
-                while (dir.endsWith('/'))                   // Strip trailing '/'
-                    dir = dir.remove(dir.length() - 1, 1);
+                auto dir = QDir::cleanPath(url.path());     // Obtain path as string
                 // Check uniqueness and other constraints
                 const bool should_add = dirs.indexOf(dir) == -1
                   && !contains(dir, m_system_list->pathsList)
@@ -919,7 +921,7 @@ std::pair<bool, QString> CppHelperPluginConfigPage::isSanitizeRuleValid(
 {
     if (!column)                                            // Only 1st column can be validated...
     {
-        auto* item = m_completion_settings->sanitizeRules->item(row, column);
+        auto* const item = m_completion_settings->sanitizeRules->item(row, column);
         auto expr = QRegExp{item->text()};
         kDebug(DEBUG_AREA) << "Validate regex text: " << item->text() << ", pattern text:" << expr.pattern();
         return std::make_pair(expr.isValid(), expr.errorString());
@@ -932,13 +934,14 @@ std::pair<bool, QString> CppHelperPluginConfigPage::isSanitizeRuleValid(
 void CppHelperPluginConfigPage::validateSanitizeRule(const int row, const int column)
 {
     kDebug(DEBUG_AREA) << "Sanitize rule has been changed: row =" << row << ", col =" << column;
-    auto p = isSanitizeRuleValid(row, column);
+    const auto p = isSanitizeRuleValid(row, column);
     if (!p.first)
     {
         KPassivePopup::message(
-            i18n("Error")
-          , i18n(
-                "Regular expression at %1, %2 is not valid: %3"
+            i18nc("@title:window", "Error")
+          , i18nc(
+                "@info:tooltip"
+              , "Regular expression at (%1, %2) is not valid: %3"
               , row
               , column
               , p.second
@@ -957,7 +960,7 @@ void CppHelperPluginConfigPage::exportSanitizeRules()
         KUrl()
       , QString()
       , this
-      , "Export completion sanitizer rules to..."
+      , i18nc("@title:window", "Export completion sanitizer rules to...")
       , KFileDialog::ConfirmOverwrite
       );
     auto cfg = KSharedConfig::openConfig(export_to, KConfig::SimpleConfig);
@@ -971,7 +974,7 @@ void CppHelperPluginConfigPage::importSanitizeRules()
         KUrl()
       , QString()
       , this
-      , "Import completion sanitizer rules from..."
+      , i18nc("@title:window", "Import completion sanitizer rules from...")
       );
     auto cfg = KSharedConfig::openConfig(export_to, KConfig::SimpleConfig);
     KConfigGroup the_only_group(cfg, SANITIZER_RULES_GROUP_NAME);
@@ -1009,8 +1012,14 @@ void CppHelperPluginConfigPage::pullSanitizeRules()
         m_completion_settings->sanitizeRules->resizeColumnsToContents();
 
     /// \todo Why headers text can't be taken from \c ui file?
-    m_completion_settings->sanitizeRules->setHorizontalHeaderItem(0, new QTableWidgetItem{i18n("Find")});
-    m_completion_settings->sanitizeRules->setHorizontalHeaderItem(1, new QTableWidgetItem{i18n("Replace")});
+    m_completion_settings->sanitizeRules->setHorizontalHeaderItem(
+        0
+      , new QTableWidgetItem{i18nc("@title:column", "Find")}
+      );
+    m_completion_settings->sanitizeRules->setHorizontalHeaderItem(
+        1
+      , new QTableWidgetItem{i18nc("@title:column", "Replace")}
+      );
 }
 
 void CppHelperPluginConfigPage::pushSanitizeRules()

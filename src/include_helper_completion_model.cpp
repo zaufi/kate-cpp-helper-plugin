@@ -239,10 +239,10 @@ QVariant IncludeHelperCompletionModel::data(const QModelIndex& index, const int 
                 case KTextEditor::CodeCompletionModel::Prefix:
                     // kDebug(DEBUG_AREA) << "Prefix";
                     if (index.internalId() == Level::GROUP)
-                        return i18n("Filesystem");
+                        return i18nc("@title:row", "Filesystem");
                     assert("Index check" && std::size_t(index.row()) < m_completions.size());
                     if (m_completions[index.row()].is_directory)
-                        return i18n("dir");
+                        return i18nc("@item:inlistbox", "dir");
                     break;
                 case KTextEditor::CodeCompletionModel::Scope:
                     // kDebug(DEBUG_AREA) << "Scope";

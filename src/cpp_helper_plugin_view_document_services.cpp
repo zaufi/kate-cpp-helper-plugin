@@ -371,14 +371,14 @@ void CppHelperPluginView::openHeader()
         const auto error_text = filename.isEmpty()
           ? QString()
           : i18nc(
-              "@info:tooltip"
+              "@item:intext"
             , "Unable to find the file: <filename>%1</filename>."
             , filename
             )
           + (candidates.isEmpty()
               ? QString()
               : i18nc(
-                  "@info:tooltip"
+                  "@item:intext"
                 , "<p>Here is a list of <icode>#included</icode> headers in the current file...</p>"
                 )
               )

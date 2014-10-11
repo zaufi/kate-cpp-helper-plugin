@@ -4,8 +4,6 @@
  * \brief Class \c kate::TranslationUnit (implementation)
  *
  * \date Thu Nov 22 18:07:27 MSK 2012 -- Initial design
- *
- * \todo Add \c i18n() to (some) strings?
  */
 /*
  * KateCppHelperPlugin is free software: you can redistribute it and/or modify it
@@ -32,6 +30,7 @@
 #include "sanitize_snippet.h"
 
 // Standard includes
+#include <KDE/KLocalizedString>
 #include <cassert>
 #include <cstring>
 #if defined(CINDEX_VERSION_MAJOR) && defined(CINDEX_VERSION_MINOR)
@@ -127,15 +126,15 @@ void debugShowCompletionResult(
     kDebug(DEBUG_AREA) << ">>> -----------------------------------";
 }
 
-const QString GLOBAL_NS_GROUP_STR = {"Global"};
-const QString PREPROCESSOR_GROUP_STR = {"Preprocessor Macro"};
+const auto GLOBAL_NS_GROUP_STR = i18nc("@title:row", "Global");
+const auto PREPROCESSOR_GROUP_STR = i18nc("@title:row", "Preprocessor Macro");
 
-const QString STRUCT_NS_STR = {"struct"};
-const QString ENUM_NS_STR = {"enum"};
-const QString UNION_NS_STR = {"union"};
-const QString CLASS_NS_STR = {"class"};
-const QString TYPEDEF_NS_STR = {"typedef"};
-const QString NAMESPACE_NS_STR = {"namespace"};
+const auto STRUCT_NS_STR = i18nc("@item:inlistbox", "struct");
+const auto ENUM_NS_STR = i18nc("@item:inlistbox", "enum");
+const auto UNION_NS_STR = i18nc("@item:inlistbox", "union");
+const auto CLASS_NS_STR = i18nc("@item:inlistbox", "class");
+const auto TYPEDEF_NS_STR = i18nc("@item:inlistbox", "typedef");
+const auto NAMESPACE_NS_STR = i18nc("@item:inlistbox", "namespace");
 }                                                           // anonymous namespace
 
 /**
@@ -150,7 +149,9 @@ TranslationUnit::TranslationUnit(
   , m_unit(clang_createTranslationUnit(index, m_filename.constData()))
 {
     if (!m_unit)
-        throw Exception::LoadFailure("Fail to load a preparsed file");
+        throw Exception::LoadFailure(
+            i18nc("@item:intext", "Fail to load a preparsed file").toAscii().constData()
+          );
 }
 
 #if 0
@@ -174,7 +175,9 @@ TranslationUnit::TranslationUnit(
       , 0
       );
     if (!m_unit)
-        throw Exception::ParseFailure("Failure to parse C++ code");
+        throw Exception::ParseFailure(
+            i18nc("@item:intext", "Failure to parse C++ code").toAscii().constData()
+          );
 }
 #endif
 
@@ -203,7 +206,9 @@ TranslationUnit::TranslationUnit(
       , parse_options
       );
     if (!m_unit)
-        throw Exception::ParseFailure("Failure to parse C++ code");
+        throw Exception::ParseFailure(
+            i18nc("@item:intext", "Failure to parse C++ code").toAscii().constData()
+          );
     updateDiagnostic();
 }
 
@@ -266,7 +271,9 @@ QList<ClangCodeCompletionItem> TranslationUnit::completeAt(
       };
     if (!res)
     {
-        throw Exception::CompletionFailure("Unable to perform code completion");
+        throw Exception::CompletionFailure(
+            i18nc("@item:intext", "Unable to perform code completion").toAscii().constData()
+          );
     }
 
 #if 0
@@ -525,7 +532,9 @@ void TranslationUnit::storeTo(const KUrl& filename)
     {
         if (result == CXSaveError_TranslationErrors)
             updateDiagnostic();
-        throw Exception::SaveFailure("Failure on save translation unit into a file");
+        throw Exception::SaveFailure(
+            i18nc("@item:intext", "Failure on save translation unit into a file").toAscii().constData()
+          );
     }
 }
 

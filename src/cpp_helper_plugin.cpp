@@ -125,28 +125,32 @@ uint CppHelperPlugin::configPages() const
     return 1;
 }
 
-QString CppHelperPlugin::configPageName(uint number) const
+QString CppHelperPlugin::configPageName(const uint number) const
 {
     Q_UNUSED(number)
     assert("This plugin have the only configuration page" && number == 0);
-    return i18n("C++ Helper");
+    return i18nc("@item:inmenu", "C++ Helper");
 }
 
-QString CppHelperPlugin::configPageFullName(uint number) const
+QString CppHelperPlugin::configPageFullName(const uint number) const
 {
     Q_UNUSED(number)
     assert("This plugin have the only configuration page" && number == 0);
-    return i18n("C++ Helper Settings");
+    return i18nc("@title:group", "C++ Helper Settings");
 }
 
-KIcon CppHelperPlugin::configPageIcon(uint number) const
+KIcon CppHelperPlugin::configPageIcon(const uint number) const
 {
     Q_UNUSED(number)
     assert("This plugin have the only configuration page" && number == 0);
-    return KIcon ("text-x-c++src");
+    return KIcon("text-x-c++src");
 }
 
-Kate::PluginConfigPage* CppHelperPlugin::configPage(uint number, QWidget* parent, const char*)
+Kate::PluginConfigPage* CppHelperPlugin::configPage(
+    const uint number
+  , QWidget* const parent
+  , const char* const
+  )
 {
     assert("This plugin have the only configuration page" && number == 0);
     if (number != 0)
@@ -160,7 +164,7 @@ Kate::PluginConfigPage* CppHelperPlugin::configPage(uint number, QWidget* parent
  * \attention This is a bad idea to initialize smth here that can be accessed
  * from other object, like view, cuz this method get called after view creation...
  */
-void CppHelperPlugin::readSessionConfig(KConfigBase* cfg, const QString& groupPrefix)
+void CppHelperPlugin::readSessionConfig(KConfigBase* const cfg, const QString& groupPrefix)
 {
     kDebug(DEBUG_AREA) << "** PLUGIN **: Reading session config: " << groupPrefix;
     config().readSessionConfig(cfg, groupPrefix);
@@ -169,7 +173,7 @@ void CppHelperPlugin::readSessionConfig(KConfigBase* cfg, const QString& groupPr
     propagateCompilerOptionsToIndexer();
 }
 
-void CppHelperPlugin::writeSessionConfig(KConfigBase* cfg, const QString& groupPrefix)
+void CppHelperPlugin::writeSessionConfig(KConfigBase* const cfg, const QString& groupPrefix)
 {
     kDebug(DEBUG_AREA) << "** PLUGIN **: Writing session config: " << groupPrefix;
     config().writeSessionConfig(cfg, groupPrefix);
@@ -179,9 +183,9 @@ void CppHelperPlugin::writeSessionConfig(KConfigBase* cfg, const QString& groupP
  * of \c this plugin instance, so diagnostic messages can be viewed in
  * a plugin's tool view.
  */
-Kate::PluginView* CppHelperPlugin::createView(Kate::MainWindow* parent)
+Kate::PluginView* CppHelperPlugin::createView(Kate::MainWindow* const parent)
 {
-    auto* view = new CppHelperPluginView(parent, CppHelperPluginFactory::componentData(), this);
+    auto* const view = new CppHelperPluginView(parent, CppHelperPluginFactory::componentData(), this);
     // Connect view to diagnostic messages emit by this instance
     connect(
         this
@@ -283,7 +287,10 @@ void CppHelperPlugin::updateDocumentInfoFromView(KTextEditor::View* view)
         updateDocumentInfo(view->document());
 }
 
-void CppHelperPlugin::updateDocumentInfo(KTextEditor::Document* doc, const KTextEditor::Range& source_range)
+void CppHelperPlugin::updateDocumentInfo(
+    KTextEditor::Document* const doc
+  , const KTextEditor::Range& source_range
+  )
 {
     assert("Valid document expected" && doc);
     kDebug(DEBUG_AREA) << "(re)scan document " << doc->url() << " for #includes at" << source_range;
@@ -294,7 +301,7 @@ void CppHelperPlugin::updateDocumentInfo(KTextEditor::Document* doc, const KText
         return;
     }
 
-    auto* mv_iface = qobject_cast<KTextEditor::MovingInterface*>(doc);
+    auto* const mv_iface = qobject_cast<KTextEditor::MovingInterface*>(doc);
     if (!mv_iface)
     {
         kDebug(DEBUG_AREA) << "No moving iface for document!";
@@ -341,7 +348,7 @@ void CppHelperPlugin::updateDocumentInfo(KTextEditor::Document* doc, const KText
     di->second->scanForHeadersIncluded(range);
 }
 
-void CppHelperPlugin::removeDocumentInfo(KTextEditor::Document* doc)
+void CppHelperPlugin::removeDocumentInfo(KTextEditor::Document* const doc)
 {
     assert("Valid document expected" && doc);
     kDebug(DEBUG_AREA) << "going to remove document" << doc;
@@ -385,7 +392,7 @@ void CppHelperPlugin::makePCHFile(const KUrl& filename)
     {
         addDiagnosticMessage(
             clang::diagnostic_message{
-                QString{"Rebuilding PCH file: %1"}.arg(pch_file_name)
+                i18nc("@info", "Rebuilding PCH file: <filename>%1</filename>", pch_file_name)
               , clang::diagnostic_message::type::info
               }
           );
@@ -405,7 +412,7 @@ void CppHelperPlugin::makePCHFile(const KUrl& filename)
     {
         addDiagnosticMessage(
             clang::diagnostic_message{
-                QString{"PCH file parse failure: %1"}.arg(e.what())
+                i18nc("@info", "PCH file parse failure: <message>%1</message>", e.what())
               , clang::diagnostic_message::type::error
               }
           );

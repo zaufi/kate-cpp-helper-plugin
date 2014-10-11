@@ -308,7 +308,7 @@ QVariant PreprocessorCompletionModel::data(const QModelIndex& index, const int r
                     break;
                 case KTextEditor::CodeCompletionModel::Prefix:
                     if (index.internalId() == Level::GROUP)
-                        return i18n("Preprocessor");
+                        return i18nc("@title:row", "Preprocessor");
             }
             break;
         default:

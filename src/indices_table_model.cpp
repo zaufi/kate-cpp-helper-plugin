@@ -106,7 +106,7 @@ QVariant IndicesTableModel::headerData(
             switch (section)
             {
                 case column::NAME:
-                    return QString{i18n("Name")};
+                    return i18nc("@title:row", "Name");
                 default:
                     break;
             }

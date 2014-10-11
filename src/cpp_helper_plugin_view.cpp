@@ -32,7 +32,6 @@
 #include <kate/mainwindow.h>
 #include <KDE/KActionCollection>
 #include <KDE/KActionMenu>
-#include <KDE/KPassivePopup>
 #include <KDE/KStringHandler>
 #include <KDE/KTextEditor/CodeCompletionInterface>
 #include <KDE/KTextEditor/MovingInterface>
@@ -68,7 +67,7 @@ CppHelperPluginView::CppHelperPluginView(
           , "kate_private_plugin_katecppplugin"
           , Kate::MainWindow::Bottom
           , SmallIcon("source-cpp11")
-          , i18n("C++ Helper")
+          , i18nc("@title:tab", "C++ Helper")
           )
       }
   , m_tool_view_interior{new Ui_PluginToolViewWidget()}

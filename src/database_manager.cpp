@@ -186,7 +186,7 @@ void DatabaseManager::reset(const std::set<boost::uuids::uuid>& enabled_list, co
                 }
                 catch (...)
                 {
-                    reportError(i18n("Load failure '%1'", state.m_options->name()));
+                    reportError(i18nc("Load failure '%1'", state.m_options->name()));
                     state.m_status = database_state::status::invalid;
                 }
             }
@@ -474,7 +474,7 @@ void DatabaseManager::rebuildCurrentIndex()
             );
         Q_EMIT(reindexingFinished(msg));
         KPassivePopup::message(
-            i18n("Error")
+            i18nc("@title:window", "Error")
           , msg
             /// \todo WTF?! \c nullptr can't be used here!?
           , reinterpret_cast<QWidget*>(0)
@@ -587,7 +587,7 @@ void DatabaseManager::rebuildFinished()
     }
     catch (...)
     {
-        reportError(i18n("Load failure '%1'", name));
+        reportError(i18nc("@info/plain", "Load failure '%1'", name));
         state.m_status = database_state::status::invalid;
         return;
     }
