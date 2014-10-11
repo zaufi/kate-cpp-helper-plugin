@@ -625,6 +625,9 @@ IncludeParseResult CppHelperPluginView::findIncludeFilenameNearCursor() const
 void CppHelperPluginView::toggleIncludeStyle(KTextEditor::Document* const doc, const int start, const int end)
 {
     kDebug(DEBUG_AREA) << "Transform #includes at lines: [" << start << ',' << end << ')';
+
+    doc->startEditing();                                    // Make all changes atomic
+
     for (auto i = start; i < end; ++i)
     {
         // Is there any #include on a line?
@@ -741,6 +744,8 @@ void CppHelperPluginView::toggleIncludeStyle(KTextEditor::Document* const doc, c
             doc->replaceText(r.range, new_header, false);
         }
     }
+
+    doc->endEditing();                                      // End of edit transaction
 }
 
 QString CppHelperPluginView::tryGuessHeaderRelativeConfiguredDirs(QString filename, QFileInfo remains)
