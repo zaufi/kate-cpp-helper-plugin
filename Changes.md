@@ -1,6 +1,15 @@
 Changes
 =======
 
+Version 1.0.4
+-------------
+
+* action to toggle `#include <>` into `#include ""` and vise versa
+* improve _Open header/implementation_ action
+* improve support for local `#includes` (i.e. withing quotes)
+* and as usual some code refactorings
+
+
 Version 1.0.3
 -------------
 
@@ -11,6 +20,7 @@ Version 1.0.3
   this release if user types `'#in'`.
 * ATTENTION C++14 used since this version! So, you'd better to have
   GCC >= 4.9 or Clang >= 3.5
+
 
 Version 1.0.2
 -------------
@@ -23,6 +33,7 @@ Version 1.0.2
 * eliminate compile error w/ gcc 4.9. fix issue #18
 * few cleanups in UI
 * a bunch of improvements in build system (not interested to end-users ;-)
+
 
 Version 1.0.1
 -------------

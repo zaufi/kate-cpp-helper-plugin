@@ -1,30 +1,24 @@
 Kate C++ Helper Plugin
 ======================
 
-Information
------------
-
 This plugin intended to simplify the hard life of C/C++ programmers who use Kate to write code :-)
 
-First of all, I tired to use the file browser to open mine (or system) header files. With version
-0.1 of the plugin one may press `F10` to open a header file that has its name under cursor.
-Actually, you are not even required to move a cursor to a file name if the current line starts with
-`#include` directive...
+Features
+--------
 
-Later `#include` autocompletion was implemented to help you to type (long) paths to header files used
-in your sources. Here is also few little cute things:
-
+* code auto completion using [clang](http://clang.llvm.org)
+* filexible cleanup rules to beutify completion results
+* code indexing and navigation (no need to use `ctags` plugin anymore)
+* flexible search facility allowing to execute various queries using multiple indices
+* preprocessor directives auto completion w/ automatic substitution
+* `#include` headers auto completion
+* highlight `#include` lines if header not found in configured locations or found in multiple times
 * `Edit->Copy #include to Clipboard` to add `#include <current-file.h>` to a clipboard
 * `File->Open Header/Implementation` a replacement for official _Open Header_ plugin with few enhancments
-  (see below for details)
-* highlight `#include` lines if header not found in configured locations or found in multiple times
+* explore and navigate over included files
 * monitor configured directories for header files
 
-Since version 0.6 I've added a code completion based on clang API and decided to rename _Kate Include Helper_
-into _Kate C++ Helper Plugin_.
-
-Version 1.0 has a source code indexer and powerful search facility.
-
+... and few more neat things. Hope you'll enjoy using it! ;-)
 
 Requirements
 ------------
