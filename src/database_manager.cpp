@@ -186,7 +186,7 @@ void DatabaseManager::reset(const std::set<boost::uuids::uuid>& enabled_list, co
                 }
                 catch (...)
                 {
-                    reportError(i18nc("Load failure '%1'", state.m_options->name()));
+                    reportError(i18nc("@info/plain", "Load failure '%1'", state.m_options->name()));
                     state.m_status = database_state::status::invalid;
                 }
             }
