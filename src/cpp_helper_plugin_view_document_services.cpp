@@ -603,7 +603,7 @@ IncludeParseResult CppHelperPluginView::findIncludeFilenameNearCursor() const
  */
 void CppHelperPluginView::toggleIncludeStyle(KTextEditor::Document* const doc, const int start, const int end)
 {
-    for (auto i = start; i != end; ++i)
+    for (auto i = start; i < end; ++i)
     {
         // Is there any #inlude on a line?
         const auto& line_str = doc->line(i);
@@ -625,24 +625,27 @@ void CppHelperPluginView::toggleIncludeStyle(KTextEditor::Document* const doc, c
                 QString shortest_matched;
                 const auto fi = QFileInfo{filename};
                 auto remains = QFileInfo{fi.path()};
+                assert("Sanity check" && !remains.fileName().isEmpty());
                 filename = fi.fileName();
+                assert("Sanity check" && !filename.isEmpty());
+                auto found = false;
                 do
                 {
                     kDebug(DEBUG_AREA) << "<<< remains=" << remains.filePath();
                     kDebug(DEBUG_AREA) << "<<< filename=" << filename;
 
                     const auto candidates = findFileLocations(filename, false);
-                    if (candidates.isEmpty())
+                    found = !candidates.isEmpty();
+                    if (!found)
                     {
                         filename = QDir{remains.fileName()}.filePath(filename);
                         remains = remains.path();
+                        kDebug(DEBUG_AREA) << "<<< not found -- next try... >>>";
                     }
-                    else break;
                 }
-                while (!remains.fileName().isEmpty());
+                while (!found && remains.fileName() != ".");
 
-                if (filename.isEmpty())
-                    continue;                               // Skip if nothing has found
+                if (!found) continue;                       // Skip if nothing has found
 
                 // From part of #include
                 new_header = QString{R"~(<%1>)~"}.arg(filename);
