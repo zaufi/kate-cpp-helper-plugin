@@ -137,6 +137,7 @@ void CppHelperPluginView::switchIfaceImpl()
             kDebug(DEBUG_AREA) << "open src/hdr: open first #include enabled";
             // Try to find first #include in this (active) document
             QString first_header_name;
+            bool is_local = false;
             for (auto i = 0; i < doc->lines() && first_header_name.isEmpty(); i++)
             {
                 const auto& line_str = doc->line(i);
@@ -145,6 +146,7 @@ void CppHelperPluginView::switchIfaceImpl()
                 {
                     r.range.setBothLines(i);
                     first_header_name = doc->text(r.range);
+                    is_local = r.type == IncludeStyle::local;
                 }
             }
             kDebug(DEBUG_AREA) << "open src/hrd: first include file:" << first_header_name;
@@ -152,8 +154,11 @@ void CppHelperPluginView::switchIfaceImpl()
             if (!first_header_name.isEmpty())
             {
                 // Ok, try to find it among session dirs
-                QStringList files;
-                findFiles(first_header_name, m_plugin->config().sessionDirs(), files);
+                const auto files = findHeader(
+                    first_header_name
+                  , is_local ? QStringList{doc->url().directory()} : QStringList{}
+                  , m_plugin->config().sessionDirs()
+                  );
                 kDebug(DEBUG_AREA) << "* candidates: " << candidates;
                 for (const auto& c : files)
                 {
@@ -604,7 +609,7 @@ void CppHelperPluginView::toggleIncludeStyle(KTextEditor::Document* const doc, c
     kDebug(DEBUG_AREA) << "Transform #includes at lines: [" << start << ',' << end << ')';
     for (auto i = start; i < end; ++i)
     {
-        // Is there any #inlude on a line?
+        // Is there any #include on a line?
         const auto& line_str = doc->line(i);
         auto r = parseIncludeDirective(line_str, true);
         if (!r.range.isValid())
@@ -624,6 +629,7 @@ void CppHelperPluginView::toggleIncludeStyle(KTextEditor::Document* const doc, c
                 auto remains = QFileInfo{filename};
                 filename = remains.fileName();
                 remains = remains.path();
+
                 filename = tryGuessHeaderRelativeConfiguredDirs(filename, remains);
 
                 if (filename.isEmpty())
@@ -633,7 +639,9 @@ void CppHelperPluginView::toggleIncludeStyle(KTextEditor::Document* const doc, c
                     kDebug(DEBUG_AREA) << ">>> Ok, try smth else...";
                     filename = doc->text(r.range);      // Restore initial filename from #incldue
                     remains = QFileInfo{doc->url().directory()};
+
                     filename = tryGuessHeaderRelativeConfiguredDirs(filename, remains);
+
                     if (filename.isEmpty()) break;          // I'm giving up!
                 }
 
