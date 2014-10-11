@@ -235,9 +235,10 @@ void CppHelperPluginView::switchIfaceImpl()
     if (candidates.isEmpty())
     {
         KPassivePopup::message(
-            i18n("Error")
-          , i18n(
-              "<qt>Unable to find a corresponding header/source for `<tt>%1</tt>'.</qt>"
+            i18nc("@title:window", "Error")
+          , i18nc(
+              "@info:tooltip"
+            , "<qt>Unable to find a corresponding header/source for `<tt>%1</tt>'.</qt>"
             , url.toLocalFile()
             )
           , qobject_cast<QWidget*>(this)
@@ -518,7 +519,22 @@ QStringList CppHelperPluginView::findCandidatesAt(
     return result;
 }
 
-QStringList CppHelperPluginView::findFileLocations(const QString& filename, const bool is_local)
+/**
+ * This function used to locate a given \c filename among configured
+ * \c #include directories (system-wide and per session). Depending
+ * on \c #inlcude style (i.e. w/ \c "" or \c <>) it may use current
+ * document's directory. Also, to open headers it may additionally use
+ * current document's directory (if corresponding option is set in
+ * configuration). But sometimes, to transform \c #include style, it
+ * must ignore this setting to behave like a real compiler finding
+ * header according rules specified by The Standard. It is why \c use_cwd
+ * parameter is here.
+ */
+QStringList CppHelperPluginView::findFileLocations(
+    const QString& filename
+  , const bool is_local
+  , const bool use_cwd
+  )
 {
     assert(
         "Active view suppose to be valid at this point! Am I wrong?"
@@ -527,11 +543,12 @@ QStringList CppHelperPluginView::findFileLocations(const QString& filename, cons
 
     // Check CWD as well, if local #include or configuration option
     auto aux_paths = QStringList{};
-    if (is_local || m_plugin->config().useCwd())
+    if (is_local || (use_cwd && m_plugin->config().useCwd()))
         aux_paths << mainWindow()->activeView()->document()->url().directory();
 
     // Try to find full filename to open
-    kDebug(DEBUG_AREA) << "Trying to find" << filename << "@ configured dirs";
+    kDebug(DEBUG_AREA) << "Trying to find" << filename << "@ configured dirs (is-local:" << is_local << ")";
+    kDebug(DEBUG_AREA) << "  aux-dirs:" << aux_paths;
     auto candidates = findHeader(
         filename
       , aux_paths
@@ -603,6 +620,7 @@ IncludeParseResult CppHelperPluginView::findIncludeFilenameNearCursor() const
 
 /**
  * \todo Add popup note if enything goes wrong
+ * \todo Redesign it in a way for easily unit testing!
  */
 void CppHelperPluginView::toggleIncludeStyle(KTextEditor::Document* const doc, const int start, const int end)
 {
@@ -637,12 +655,25 @@ void CppHelperPluginView::toggleIncludeStyle(KTextEditor::Document* const doc, c
                     // Try to go from other side: suppose `filename` is relative to
                     // this document...
                     kDebug(DEBUG_AREA) << ">>> Ok, try smth else...";
-                    filename = doc->text(r.range);      // Restore initial filename from #incldue
+                    filename = doc->text(r.range);      // Restore initial filename from #include
                     remains = QFileInfo{doc->url().directory()};
 
                     filename = tryGuessHeaderRelativeConfiguredDirs(filename, remains);
 
-                    if (filename.isEmpty()) break;          // I'm giving up!
+                    if (filename.isEmpty())                 // I'm giving up!
+                    {
+                        kDebug(DEBUG_AREA) << "FILENAME=" << filename;
+                        KPassivePopup::message(
+                            i18nc("@title:window", "Error")
+                          , i18nc(
+                                "@info:tooltip"
+                              , "<qt>Unable to find <icode>%1</icode>.</qt>"
+                              , doc->text(r.range)
+                              )
+                          , qobject_cast<QWidget*>(this)
+                          );
+                        break;
+                    }
                 }
 
                 // From part of #include
@@ -657,9 +688,34 @@ void CppHelperPluginView::toggleIncludeStyle(KTextEditor::Document* const doc, c
                 // Get list of candidates
                 auto candidates = findFileLocations(filename, true);
 
+                if (candidates.empty())
+                {
+                    kDebug(DEBUG_AREA) << "FILENAME=" << filename;
+                    KPassivePopup::message(
+                        i18nc("@title:window", "Error")
+                      , i18nc(
+                            "@info:tooltip"
+                          , "<qt>Unable to find <icode>%1</icode>.</qt>"
+                          , filename
+                          )
+                      , qobject_cast<QWidget*>(this)
+                      );
+                    continue;
+                }
                 if (candidates.size() != 1)
+                {
+                    KPassivePopup::message(
+                        i18nc("@title:window", "Error")
+                      , i18nc(
+                            "@info:tooltip"
+                          , "<qt>Multiple matches for <icode>%1</icode>.</qt>"
+                          , filename
+                          )
+                      , qobject_cast<QWidget*>(this)
+                      );
                     /// \todo ... or use the first one?
                     continue;                               // Skip if more than one file found
+                }
 
                 kDebug(DEBUG_AREA) << "found candidate:" << candidates[0];
 
@@ -700,7 +756,7 @@ QString CppHelperPluginView::tryGuessHeaderRelativeConfiguredDirs(QString filena
         kDebug(DEBUG_AREA) << "<<< remains=" << remains.filePath();
         kDebug(DEBUG_AREA) << "<<< filename=" << filename;
 
-        const auto candidates = findFileLocations(filename, false);
+        const auto candidates = findFileLocations(filename, false, false);
         found = !candidates.isEmpty();
         if (!found)
         {

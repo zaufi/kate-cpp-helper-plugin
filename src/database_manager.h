@@ -35,7 +35,7 @@
 #include "index/search_result.h"
 #include "indexing_targets_list_model.h"
 #include "indices_table_model.h"
-#include "database_options.h"
+#include "database_options.h"                               // NOTE generated file from build dir
 
 // Standard includes
 #include <boost/filesystem/path.hpp>

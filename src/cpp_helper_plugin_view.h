@@ -154,7 +154,8 @@ private:
     QStringList findCandidatesAt(const QString&, const QString&, const QStringList&);
     /// Try to get an \c #include filename under cursor as range
     IncludeParseResult findIncludeFilenameNearCursor() const;
-    QStringList findFileLocations(const QString&, bool);    ///< Get list of absolute paths to filename
+    /// Get list of absolute paths to filename
+    QStringList findFileLocations(const QString&, bool, bool = true);
 
     void inclusionVisitor(details::InclusionVisitorData*, CXFile, CXSourceLocation*, unsigned);
     void dblClickOpenFile(QString&&);
