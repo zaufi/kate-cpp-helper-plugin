@@ -51,7 +51,7 @@ class PreprocessorCompletionModel;
 
 
 /**
- * \brief [Type brief class description here]
+ * \brief Plugin view class
  *
  * \note When some view going to be deleted, it will try to delete all
  * child \c QObject (and completers are children of the view, btw)

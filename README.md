@@ -7,14 +7,14 @@ Features
 --------
 
 * code auto completion using [clang](http://clang.llvm.org)
-* filexible cleanup rules to beutify completion results
+* flexible cleanup rules to beautify completion results
 * code indexing and navigation (no need to use `ctags` plugin anymore)
 * flexible search facility allowing to execute various queries using multiple indices
 * preprocessor directives auto completion w/ automatic substitution
 * `#include` headers auto completion
 * highlight `#include` lines if header not found in configured locations or found in multiple times
 * `Edit->Copy #include to Clipboard` to add `#include <current-file.h>` to a clipboard
-* `File->Open Header/Implementation` a replacement for official _Open Header_ plugin with few enhancments
+* `File->Open Header/Implementation` a replacement for official _Open Header_ plugin with few enhancements
 * explore and navigate over included files
 * monitor configured directories for header files
 
@@ -88,7 +88,7 @@ TODO
 * Use compilation database if possible. [what to do w/ headers which are not in there?]
 * Auto generate doxygen documentation for functions from definition -- just skeleton
   w/ parameters and return type. (maybe better to implement as Python plugin for kate?)
-* Enable code autocompletion (configurable by checkbox)... but how to deal w/ really heavy project?
+* Enable code auto completion (configurable by checkbox)... but how to deal w/ really heavy project?
   Nowadays for one of my current project it took ~8sec to show completions (even with PCH) :-(
   <del>So, definitely there should be possible to turn code autocompleter off</del> [done]
 * <del>Need to introduce index database to lookup for declarations/definitions/references. It
@@ -142,7 +142,7 @@ TODO
 * Add _Go to semantic/lexical parent_ to context menu
 * Do incremental reindexing on view change and/or inactivity timeout
 * Add a way to analyze and show to a user what exceptions are possible at some particular
-  point (function/method body/call) -- so user may add an apropriate `try`/`catch` block
+  point (function/method body/call) -- so user may add an appropriate `try`/`catch` block
 * That (possibly) would be nice to have `#ifdef`/`#else ifdef`/`#else` blocks as inlined tabs
   inside a text buffer/view. So, depending on particular definitions the code (view) will
   activate a corresponding tab automatically (and still allows to switch to others and/or
