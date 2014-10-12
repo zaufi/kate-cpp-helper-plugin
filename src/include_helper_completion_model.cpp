@@ -343,7 +343,7 @@ void IncludeHelperCompletionModel::updateCompletionList(const QString& start, co
         const auto is_root = (
             QDir::rootPath() == QDir{QDir::cleanPath(parent_path)}.filePath(path)
           );
-        if (!m_plugin->config().useCwd() && !is_root)
+        if (!parent_path.isEmpty() && !is_root)
             m_completions.emplace_back(QString{".."} + QDir::separator(), true);
     }
     endResetModel();
