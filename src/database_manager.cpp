@@ -196,10 +196,19 @@ void DatabaseManager::reset(const std::set<boost::uuids::uuid>& enabled_list, co
             }
             state.m_enabled = is_enabled;
             const auto db_id = state.m_id;
-            m_collections.emplace_back(std::move(state));
+            const auto insert_position = std::lower_bound(
+                begin(m_collections)
+              , end(m_collections)
+              , state.m_options->name()
+              , [](const auto& other_state, const auto& name)
+                {
+                    return other_state.m_options->name() < name;
+                }
+              );
+            const auto pos = m_collections.emplace(insert_position, std::move(state));
             if (is_enabled)
             {
-                m_search_db.add_index(m_collections.back().m_db.get());
+                m_search_db.add_index(pos->m_db.get());
                 m_enabled_list.insert(db_id);
                 Q_EMIT(indexStatusChanged(index::toString(db_id), true));
             }
