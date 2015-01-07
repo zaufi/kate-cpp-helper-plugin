@@ -149,6 +149,7 @@ endif()
 # Set generic compiler flags: turn ON C++11 (C++03 is suxx)...
 if(UNIX AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
     # Allow GNU extensions
+    add_definitions(-D_DEFAULT_SOURCE)
     add_definitions(-D_GNU_SOURCE)
 
     # BOOST_PP (boost <= 1.55.0) do not recognize clang as a compiler w/ variadic macros support,
