@@ -38,6 +38,7 @@
 #include <KDE/KTextEditor/TextHintInterface>
 #include <QtGui/QKeyEvent>
 #include <QtGui/QMenu>
+#include <QtGui/QScrollBar>
 #include <QtGui/QSortFilterProxyModel>
 #include <QtGui/QStandardItemModel>
 #include <cassert>
@@ -348,7 +349,17 @@ void CppHelperPluginView::writeSessionConfig(KConfigBase* const config, const QS
 
 void CppHelperPluginView::addDiagnosticMessage(clang::diagnostic_message record)
 {
+    const auto scroll_pos = m_tool_view_interior->diagnosticMessages->verticalScrollBar()->value();
+    const auto max_scroll_pos = m_tool_view_interior->diagnosticMessages->verticalScrollBar()->maximum();
+    const auto need_auto_scroll = (scroll_pos == max_scroll_pos);
+    kDebug(DEBUG_AREA) << "VSB value =" << scroll_pos << ", max =" << max_scroll_pos;
+
     m_diagnostic_data.append(std::move(record));
+
+    if (need_auto_scroll)
+        m_tool_view_interior->diagnosticMessages->verticalScrollBar()->setValue(
+            m_tool_view_interior->diagnosticMessages->verticalScrollBar()->maximum()
+          );
 }
 
 /**
