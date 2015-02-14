@@ -51,11 +51,11 @@
 #include <set>
 
 namespace kate { namespace index { namespace details { namespace {
-std::set<QString> TYPICAL_CPP_EXTENSIONS = {
-    "h", "hh", "hpp", "hxx", "inl", "tcc"
-  , "c", "cc", "cpp", "cxx"
+const std::set<QString> TYPICAL_CPP_EXTENSIONS = {
+    "h", "hh", "hpp", "hxx", "H", "inl", "tcc", "ipp"
+  , "c", "cc", "cpp", "cxx", "C"
 };
-std::set<QString> CPP_SOURCE_MIME_TYPES = {
+const std::set<QString> CPP_SOURCE_MIME_TYPES = {
     "text/x-csrc"
   , "text/x-c++src"
   , "text/x-chdr"
@@ -194,14 +194,20 @@ bool worker::dispatch_target(const QFileInfo& fi)
     return false;
 }
 
+/**
+ * \attention Indexer wouldn't recognize any file extensions which are not in a
+ * (hardcoded) list of well known C/C++ extensions. This was introduced, cuz
+ * some CSS files could be recognized as C++ by MIME type checker.
+ */
 bool worker::is_look_like_cpp_source(const QFileInfo& fi)
 {
-    auto result = true;
-    if (TYPICAL_CPP_EXTENSIONS.find(fi.suffix()) == end(TYPICAL_CPP_EXTENSIONS))
+    auto result = (TYPICAL_CPP_EXTENSIONS.find(fi.suffix()) != end(TYPICAL_CPP_EXTENSIONS));
+    kDebug() << "file extension:" << fi.suffix();
+    if (result)
     {
         // Try to use Mime database to detect by file content
         auto mime = KMimeType::findByFileContent(fi.canonicalFilePath());
-        kDebug() << "File extension not recognized: trying to check MIME-type:" << mime->name();
+        kDebug() << "File extension is not recognized: trying to check MIME-type:" << mime->name();
         result = (
             mime->name() != KMimeType::defaultMimeType()
           && CPP_SOURCE_MIME_TYPES.find(mime->name()) != end(CPP_SOURCE_MIME_TYPES)

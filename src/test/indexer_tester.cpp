@@ -47,18 +47,19 @@
 using namespace kate;
 
 namespace {
-
+/// \todo Get current compiler paths dynamically!
+/// This code already present in the plugin sources, just need to reuse it.
 std::vector<const char*> PARSE_OPTIONS = {
     "-x", "c++"
   , "-std=c++11"
   , "-D__GXX_EXPERIMENTAL_CXX0X__"
   , "-I/usr/include"
-  , "-I/usr/lib/gcc/x86_64-pc-linux-gnu/4.8.1/include/g++-v4"
-  , "-I/usr/lib/gcc/x86_64-pc-linux-gnu/4.8.1/include/g++-v4/x86_64-pc-linux-gnu"
-  , "-I/usr/lib/gcc/x86_64-pc-linux-gnu/4.8.1/include/g++-v4/backward"
-  , "-I/usr/lib/gcc/x86_64-pc-linux-gnu/4.8.1/include"
+  , "-I/usr/lib/gcc/x86_64-pc-linux-gnu/4.9.2/include/g++-v4"
+  , "-I/usr/lib/gcc/x86_64-pc-linux-gnu/4.9.2/include/g++-v4/x86_64-pc-linux-gnu"
+  , "-I/usr/lib/gcc/x86_64-pc-linux-gnu/4.9.2/include/g++-v4/backward"
+  , "-I/usr/lib/gcc/x86_64-pc-linux-gnu/4.9.2/include"
   , "-I/usr/local/include"
-  , "-I/usr/lib/gcc/x86_64-pc-linux-gnu/4.8.1/include-fixed"
+  , "-I/usr/lib/gcc/x86_64-pc-linux-gnu/4.9.2/include-fixed"
   , "-I" CMAKE_SOURCE_DIR
   , "-I" CMAKE_SOURCE_DIR "/src/test/data"
 };
