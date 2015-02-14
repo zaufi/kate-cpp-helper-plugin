@@ -34,6 +34,7 @@
 #include "../../clang/kind_of.h"
 #include "../../clang/to_string.h"
 #include "../../string_cast.h"
+#include "../../utils.h"
 
 // Standard includes
 #include <boost/algorithm/string.hpp>
@@ -43,7 +44,6 @@
 #include <KDE/KUrl>
 #include <KDE/KDebug>
 #include <KDE/KLocalizedString>
-#include <KDE/KMimeType>
 #include <QtCore/QCoreApplication>
 #include <QtCore/QFileInfo>
 #include <QtCore/QDirIterator>
@@ -51,16 +51,6 @@
 #include <set>
 
 namespace kate { namespace index { namespace details { namespace {
-const std::set<QString> TYPICAL_CPP_EXTENSIONS = {
-    "h", "hh", "hpp", "hxx", "H", "inl", "tcc", "ipp"
-  , "c", "cc", "cpp", "cxx", "C"
-};
-const std::set<QString> CPP_SOURCE_MIME_TYPES = {
-    "text/x-csrc"
-  , "text/x-c++src"
-  , "text/x-chdr"
-  , "text/x-c++hdr"
-};
 
 inline Xapian::termpos make_term_position(const clang::location& loc)
 {
@@ -187,34 +177,11 @@ bool worker::dispatch_target(const QFileInfo& fi)
     const auto& filename = fi.canonicalFilePath();
     if (fi.isDir())
         handle_directory(filename);
-    else if (fi.isFile() && is_look_like_cpp_source(fi))
+    else if (fi.isFile() && kate::isLookLikeCppSource(fi))
         handle_file(filename);
     else
         kDebug(DEBUG_AREA) << filename << "is not a suitable file or directory!";
     return false;
-}
-
-/**
- * \attention Indexer wouldn't recognize any file extensions which are not in a
- * (hardcoded) list of well known C/C++ extensions. This was introduced, cuz
- * some CSS files could be recognized as C++ by MIME type checker.
- */
-bool worker::is_look_like_cpp_source(const QFileInfo& fi)
-{
-    auto result = (TYPICAL_CPP_EXTENSIONS.find(fi.suffix()) != end(TYPICAL_CPP_EXTENSIONS));
-    kDebug() << "file extension:" << fi.suffix();
-    if (result)
-    {
-        // Try to use Mime database to detect by file content
-        auto mime = KMimeType::findByFileContent(fi.canonicalFilePath());
-        kDebug() << "File extension is not recognized: trying to check MIME-type:" << mime->name();
-        result = (
-            mime->name() != KMimeType::defaultMimeType()
-          && CPP_SOURCE_MIME_TYPES.find(mime->name()) != end(CPP_SOURCE_MIME_TYPES)
-          ) || false
-          ;
-    }
-    return result;
 }
 
 int worker::on_abort_cb(CXClientData, void*)

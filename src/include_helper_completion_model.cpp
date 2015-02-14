@@ -423,7 +423,12 @@ void IncludeHelperCompletionModel::updateCompletionListPath(
                     return item.text == text && item.is_directory == is_directory;
                 }
               );
-            if (it == end(m_completions) && !ignore_extensions.contains(info.completeSuffix()))
+            const bool need2add = (
+                it == end(m_completions)
+              && (is_directory || isLookLikeCppSource(info))
+              && !ignore_extensions.contains(info.completeSuffix())
+              );
+            if (need2add)
                 m_completions.emplace_back(text, is_directory);
         }
     }

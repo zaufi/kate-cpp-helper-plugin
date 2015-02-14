@@ -27,26 +27,31 @@
 #include <boost/range/algorithm/find.hpp>
 #include <KDE/KDebug>
 #include <KDE/KTextEditor/Range>
+#include <KDE/KMimeType>
 #include <algorithm>
 #include <cassert>
-#include <vector>
+#include <set>
 
 /// \internal Turn debug SPAM from \c #include parser
 #define ENABLE_INCLUDE_PARSER_SPAM 0
 
 namespace kate { namespace {
 const char* const INCLUDE_STR = "include";
-const std::vector<QString> SUITABLE_DOCUMENT_TYPES = {
-    QString("text/x-c++src")
-  , QString("text/x-c++hdr")
-  , QString("text/x-csrc")
-  , QString("text/x-chdr")
+const std::set<QString> SUITABLE_HIGHLIGHT_TYPES = {
+    "C++"
+  , "C++11"
+  , "C++/Qt4"
+  , "C"
 };
-const std::vector<QString> SUITABLE_HIGHLIGHT_TYPES = {
-    QString("C++")
-  , QString("C++11")
-  , QString("C++/Qt4")
-  , QString("C")
+const std::set<QString> TYPICAL_CPP_EXTENSIONS = {
+    "h", "hh", "hpp", "hxx", "H", "inl", "tcc", "ipp"
+  , "c", "cc", "cpp", "cxx", "C"
+};
+const std::set<QString> CPP_SOURCE_MIME_TYPES = {
+    "text/x-csrc"
+  , "text/x-c++src"
+  , "text/x-chdr"
+  , "text/x-c++hdr"
 };
 }                                                           // anonymous namespace
 
@@ -232,12 +237,12 @@ IncludeParseResult parseIncludeDirective(const QString& line, const bool strict)
 
 bool isSuitableDocument(const QString& mime_str, const QString& hl_mode)
 {
-    auto it = boost::find(SUITABLE_DOCUMENT_TYPES, mime_str);
-    if (it == end(SUITABLE_DOCUMENT_TYPES))
+    auto it = CPP_SOURCE_MIME_TYPES.find(mime_str);
+    if (it == end(CPP_SOURCE_MIME_TYPES))
     {
         if (mime_str == QLatin1String("text/plain"))
         {
-            it = boost::find(SUITABLE_HIGHLIGHT_TYPES, hl_mode);
+            it = SUITABLE_HIGHLIGHT_TYPES.find(hl_mode);
             return it != end(SUITABLE_HIGHLIGHT_TYPES);
         }
         return false;
@@ -247,13 +252,36 @@ bool isSuitableDocument(const QString& mime_str, const QString& hl_mode)
 
 bool isSuitableDocumentAndHighlighting(const QString& mime_str, const QString& hl_mode)
 {
-    auto it = boost::find(SUITABLE_DOCUMENT_TYPES, mime_str);
-    if (it != end(SUITABLE_DOCUMENT_TYPES) || mime_str == QLatin1String("text/plain"))
+    auto it = CPP_SOURCE_MIME_TYPES.find(mime_str);
+    if (it != end(CPP_SOURCE_MIME_TYPES) || mime_str == QLatin1String("text/plain"))
     {
-        it = boost::find(SUITABLE_HIGHLIGHT_TYPES, hl_mode);
+        it = SUITABLE_HIGHLIGHT_TYPES.find(hl_mode);
         return it != end(SUITABLE_HIGHLIGHT_TYPES);
     }
     return false;
+}
+
+/**
+ * \attention Indexer wouldn't recognize any file extensions which are not in a
+ * (hardcoded) list of well known C/C++ extensions. This was introduced, cuz
+ * some CSS files could be recognized as C++ by MIME type checker.
+ */
+bool isLookLikeCppSource(const QFileInfo& fi)
+{
+    auto result = (TYPICAL_CPP_EXTENSIONS.find(fi.suffix()) != end(TYPICAL_CPP_EXTENSIONS));
+    kDebug() << "file extension:" << fi.suffix();
+    if (result)
+    {
+        // Try to use Mime database to detect by file content
+        auto mime = KMimeType::findByFileContent(fi.canonicalFilePath());
+        kDebug() << "File extension is not recognized: trying to check MIME-type:" << mime->name();
+        result = (
+            mime->name() != KMimeType::defaultMimeType()
+          && CPP_SOURCE_MIME_TYPES.find(mime->name()) != end(CPP_SOURCE_MIME_TYPES)
+          ) || false
+          ;
+    }
+    return result;
 }
 
 }                                                           // namespace kate

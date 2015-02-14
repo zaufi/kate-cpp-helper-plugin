@@ -152,5 +152,8 @@ inline auto findHeader(
     return result;
 }
 
+/// Try to guess if a given file is a C/C++ source
+bool isLookLikeCppSource(const QFileInfo&);
+
 }                                                           // namespace kate
 // kate: hl C++/Qt4;

@@ -99,7 +99,6 @@ private:
     bool dispatch_target(const QFileInfo&);
     void handle_file(const QString&);
     void handle_directory(const QString&);
-    bool is_look_like_cpp_source(const QFileInfo&);
 
     template <typename... ClientArgs>
     CXIdxClientContainer update_client_container(ClientArgs&&...);
