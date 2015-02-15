@@ -1,24 +1,28 @@
 #
-# Copyright 2012-2014 by Alex Turbov <i.zaufi@gmail.com>
+# Copyright 2012-2015 by Alex Turbov <i.zaufi@gmail.com>
 #
 
-# TODO I don't know a minimum required version...
-# Please provide some feedback, if lesser works for you.
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.1.0)
+
+cmake_policy(SET CMP0022 NEW)
+cmake_policy(SET CMP0028 NEW)
+cmake_policy(SET CMP0048 NEW)
+cmake_policy(SET CMP0054 NEW)
 
 #---------------------------------------------------------
 # Section: Init cmake
 #---------------------------------------------------------
-project(KateCppHelperPlugin C CXX)
-
-set(VERSION_MAJOR 1)
-set(VERSION_MINOR 0)
-set(VERSION_PATCH 4)
-if(BUILD_NUMBER)
-    set(VERSION_STRING ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}.${BUILD_NUMBER})
-else()
-    set(VERSION_STRING ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})
+# Include build number if specified
+# NOTE This feature used by build server to make a packages that
+# would differ from previous build.
+if (BUILD_NUMBER)
+    set(_TWEAK_VERSION_TAIL ".${BUILD_NUMBER}")
 endif()
+if (NOT _TWEAK_VERSION_TAIL AND "$ENV{BUILD_NUMBER}")
+    set(_TWEAK_VERSION_TAIL ".$ENV{BUILD_NUMBER}")
+endif()
+project(KateCppHelperPlugin VERSION 1.0.5${_TWEAK_VERSION_TAIL} LANGUAGES C CXX)
+
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/modules" ${CMAKE_MODULE_PATH})
 
 #---------------------------------------------------------
@@ -242,7 +246,7 @@ install(
 #---------------------------------------------------------
 set(CPACK_SOURCE_GENERATOR TBZ2)
 set(
-    CPACK_SOURCE_PACKAGE_FILE_NAME "${PROJECT_NAME}-${VERSION_STRING}"
+    CPACK_SOURCE_PACKAGE_FILE_NAME "${PROJECT_NAME}-${PROJECT_VERSION}"
     CACHE INTERNAL "tarball basename"
   )
 # The following components are regex's to match anywhere (unless anchored)
@@ -289,7 +293,7 @@ if(DISTRIB_PKG_FMT STREQUAL "DEB")
      )
 
     set_common_package_options(
-        PROJECT_VERSION "${VERSION_STRING}"
+        PROJECT_VERSION "${PROJECT_VERSION}"
         VENDOR_NAME "Alex Turbov"
         VENDOR_CONTACT "Alex Turbov <i.zaufi@gmail.com>"
         BUILD_FLAVOUR "${CPACK_BUILD_FLAVOUR}"
@@ -325,7 +329,7 @@ if(DISTRIB_PKG_FMT STREQUAL "DEB")
         SUMMARY "Kate C++ Helper Plugin"
         DESCRIPTION "Plugin for KDE Advanced Text Editor"
         HOMEPAGE "http://zaufi.github.io/kate-cpp-helper-plugin.html"
-        VERSION "${VERSION_STRING}-0ubuntu1"
+        VERSION "${PROJECT_VERSION}-0ubuntu1"
         SECTION "editors"
         DEPENDS
             "libboost-filesystem${BOOST_VERSION_PKG_DEP}"
@@ -334,7 +338,7 @@ if(DISTRIB_PKG_FMT STREQUAL "DEB")
             "libclang1-3.3"
             "libxapian22"
             "kate"
-        REPLACES "kate-cpp-helper-plugin${CPACK_BUILD_FLAVOUR} (<= ${VERSION_STRING})"
+        REPLACES "kate-cpp-helper-plugin${CPACK_BUILD_FLAVOUR} (<= ${PROJECT_VERSION})"
      )
 endif()
 
@@ -352,7 +356,7 @@ add_subdirectory(src)
 
 # Setup doxygen generator
 set(DOXYGEN_PROJECT_BRIEF "\"Kate C++ Helper Plugin\"")
-set(DOXYGEN_PROJECT_NUMBER ${VERSION_STRING})
+set(DOXYGEN_PROJECT_NUMBER ${PROJECT_VERSION})
 set(DOXYGEN_BUILTIN_STL_SUPPORT YES)
 set(DOXYGEN_FULL_PATH_NAMES YES)
 set(DOXYGEN_FULL_PATH_NAMES YES)
@@ -392,7 +396,7 @@ define_skeleton_generation_targets(
     PROJECT_LICENSE GPL
     PROJECT_NAMESPACE kate
     PROJECT_OWNER "Alex Turbov"
-    PROJECT_YEARS "2011-2014"
+    PROJECT_YEARS "2011-2015"
     HEADER_EXT "h"
     IMPL_EXT "cpp"
     ENABLE_TESTS

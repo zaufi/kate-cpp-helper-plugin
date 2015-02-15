@@ -45,7 +45,7 @@ include(CMakeParseArguments)
 set(_ADD_BOOST_TEST_BASE_DIR "${CMAKE_CURRENT_LIST_DIR}")
 
 function(add_boost_tests)
-    set(options CATCH_SYSTEM_ERRORS NO_CATCH_SYSTEM_ERRORS USE_HEADER_ONLY_VERSION DYN_LINK)
+    set(options DEBUG CATCH_SYSTEM_ERRORS NO_CATCH_SYSTEM_ERRORS USE_HEADER_ONLY_VERSION DYN_LINK)
     set(one_value_args WORKING_DIRECTORY TARGET MODULE)
     set(multi_value_args SOURCES)
     cmake_parse_arguments(add_boost_tests "${options}" "${one_value_args}" "${multi_value_args}" ${ARGN})
@@ -117,7 +117,10 @@ function(add_boost_tests)
             set(_skip_scan OFF)
         endif()
         if(NOT _skip_scan)
-            #message(STATUS "scanning ${source}")
+            if(add_boost_tests_DEBUG)
+                message(STATUS "  [add_boost_tests] Checking source file '${source}'")
+            endif()
+
             file(
                 STRINGS "${source}" contents
                 REGEX "^\\s*BOOST_(AUTO_TEST_(CASE|SUITE(_END)?)|FIXTURE_TEST_(CASE|SUITE))"
@@ -125,27 +128,31 @@ function(add_boost_tests)
             set(current_suite "<NONE>")
             set(found_tests "")
             foreach(line IN LISTS contents)
+                if(add_boost_tests_DEBUG)
+                    message(STATUS "  [add_boost_tests] line: '${line}'")
+                endif()
+
                 set(found_test)
                 # Try BOOST_AUTO_TEST_CASE
                 if(line MATCHES "BOOST_AUTO_TEST_CASE\\([A-Za-z0-9_]+\\)")
                     string(
                         REGEX REPLACE
-                            "BOOST_AUTO_TEST_CASE\\(([A-Za-z0-9_]+)\\)" "\\1"
+                            "BOOST_AUTO_TEST_CASE\\(([A-Za-z0-9_]+)\\).*" "\\1"
                         found_test
                         "${line}"
                       )
-                elseif(line MATCHES "BOOST_FIXTURE_TEST_CASE\\([A-Za-z_0-9]+, [A-Za-z_0-9]+\\)")
+                elseif(line MATCHES "BOOST_FIXTURE_TEST_CASE\\([A-Za-z_0-9]+, [A-Za-z_0-9:]+\\)")
                     string(
                         REGEX REPLACE
-                            "BOOST_FIXTURE_TEST_CASE\\(([A-Za-z_0-9]+), [A-Za-z_0-9]+\\)"
+                            "BOOST_FIXTURE_TEST_CASE\\(([A-Za-z_0-9]+), [A-Za-z_0-9:]+\\).*"
                             "\\1"
                         found_test
                         "${line}"
                       )
-                elseif(line MATCHES "BOOST_FIXTURE_TEST_SUITE\\([A-Za-z_0-9]+, [A-Za-z_0-9]+\\)")
+                elseif(line MATCHES "BOOST_FIXTURE_TEST_SUITE\\([A-Za-z_0-9]+, [A-Za-z_0-9:]+\\)")
                     string(
                         REGEX REPLACE
-                            "BOOST_FIXTURE_TEST_SUITE\\(([A-Za-z_0-9]+), [A-Za-z_0-9]+\\)"
+                            "BOOST_FIXTURE_TEST_SUITE\\(([A-Za-z_0-9]+), [A-Za-z_0-9:]+\\).*"
                             "\\1"
                         current_suite
                         "${line}"
@@ -153,13 +160,19 @@ function(add_boost_tests)
                 elseif(line MATCHES "BOOST_AUTO_TEST_SUITE\\([A-Za-z_0-9]+\\)")
                     string(
                         REGEX REPLACE
-                            "BOOST_AUTO_TEST_SUITE\\(([A-Za-z0-9_]+)\\)" "\\1"
+                            "BOOST_AUTO_TEST_SUITE\\(([A-Za-z0-9_]+)\\).*" "\\1"
                         current_suite
                         "${line}"
                       )
                 elseif(line MATCHES "BOOST_AUTO_TEST_SUITE_END\\(\\)")
                     set(current_suite "<NONE>")
                 endif()
+
+                if(add_boost_tests_DEBUG)
+                    message(STATUS "  [add_boost_tests] current suite: '${current_suite}'")
+                    message(STATUS "  [add_boost_tests] found test: '${found_test}'")
+                endif()
+
                 # Add if any test was found
                 if(found_test)
                     if(current_suite STREQUAL "<NONE>")
@@ -172,7 +185,12 @@ function(add_boost_tests)
 
             # Register found tests
             foreach(test_name ${found_tests})
-                #message(STATUS "Add test[$<TARGET_FILE:${add_boost_tests_TARGET}>]: ${test_name}")
+                if(add_boost_tests_DEBUG)
+                    message(
+                        STATUS
+                        "  [add_boost_tests] add test[$<TARGET_FILE:${add_boost_tests_TARGET}>]: ${test_name}"
+                      )
+                endif()
                 add_test(
                     NAME ${test_name}
                     COMMAND $<TARGET_FILE:${add_boost_tests_TARGET}> --run_test=${test_name} ${extra_args}
@@ -185,6 +203,6 @@ endfunction(add_boost_tests)
 
 # X-Chewy-RepoBase: https://raw.githubusercontent.com/mutanabbi/chewy-cmake-rep/master/
 # X-Chewy-Path: AddBoostTests.cmake
-# X-Chewy-Version: 4.3
+# X-Chewy-Version: 4.5
 # X-Chewy-Description: Integrate Boost unit tests into CMake infrastructure
 # X-Chewy-AddonFile: unit_tests_main_skeleton.cc.in

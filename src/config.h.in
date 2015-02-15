@@ -24,6 +24,6 @@
 
 #pragma once
 
-# define PLUGIN_VERSION "@VERSION_STRING@"
+# define PLUGIN_VERSION "@PROJECT_VERSION@"
 
 // kate: hl c++11;

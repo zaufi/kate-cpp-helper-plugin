@@ -148,7 +148,7 @@ TODO
   activate a corresponding tab automatically (and still allows to switch to others and/or
   add some new branches).
 * Turn `#incldue` lines into "links", if `Ctrl` key pressed
-* Avoid CSS files (if found) to be indexed as C/C++ sources! (and `*.cc.in` as well)
+* <del>Avoid CSS files (if found) to be indexed as C/C++ sources! (and `*.cc.in` as well) </del>
 * Disable "Save Current List" button on _Session Include Dirs_ page if current list is empty
   (to prevent overwriting some saved list occasionally). Introduce confirmation on overwrite?
 * When autocomplete preprocessor, do not add a space if it is already here. Make autocompletion configurable?
