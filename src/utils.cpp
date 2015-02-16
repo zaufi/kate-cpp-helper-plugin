@@ -36,16 +36,14 @@
 #define ENABLE_INCLUDE_PARSER_SPAM 0
 
 namespace kate { namespace {
+const int DEFINITELY_SURE = 100;
+const int PRETTY_SURE = 90;
 const char* const INCLUDE_STR = "include";
 const std::set<QString> SUITABLE_HIGHLIGHT_TYPES = {
     "C++"
   , "C++11"
   , "C++/Qt4"
   , "C"
-};
-const std::set<QString> TYPICAL_CPP_EXTENSIONS = {
-    "h", "hh", "hpp", "hxx", "H", "inl", "tcc", "ipp"
-  , "c", "cc", "cpp", "cxx", "C"
 };
 const std::set<QString> CPP_SOURCE_MIME_TYPES = {
     "text/x-csrc"
@@ -262,26 +260,28 @@ bool isSuitableDocumentAndHighlighting(const QString& mime_str, const QString& h
 }
 
 /**
- * \attention Indexer wouldn't recognize any file extensions which are not in a
- * (hardcoded) list of well known C/C++ extensions. This was introduced, cuz
- * some CSS files could be recognized as C++ by MIME type checker.
+ * Try the following way:
+ * - check if it is possible to have 100% accuracy using only filename (\c KMimeType::findByPath() in fast mode), if not
+ * - try \c KMimeType::findByPath() in "full" mode (trying to analyze content)
  */
 bool isLookLikeCppSource(const QFileInfo& fi)
 {
-    auto result = (TYPICAL_CPP_EXTENSIONS.find(fi.suffix()) != end(TYPICAL_CPP_EXTENSIONS));
-    kDebug() << "file extension:" << fi.suffix();
-    if (result)
+    const auto& absFilePath = fi.absoluteFilePath();
+    auto accuracy = 0;
+    auto mime = KMimeType::findByPath(absFilePath, 0, true, &accuracy);
+    kDebug() << "isLookLikeCppSource[1]: file name:" << fi.fileName() << "is a" << mime->name() << '[' << accuracy << "%]";
+    if (accuracy < DEFINITELY_SURE)
     {
-        // Try to use Mime database to detect by file content
-        auto mime = KMimeType::findByFileContent(fi.canonicalFilePath());
-        kDebug() << "File extension is not recognized: trying to check MIME-type:" << mime->name();
-        result = (
-            mime->name() != KMimeType::defaultMimeType()
-          && CPP_SOURCE_MIME_TYPES.find(mime->name()) != end(CPP_SOURCE_MIME_TYPES)
-          ) || false
-          ;
+        mime = KMimeType::findByPath(absFilePath, 0, false, &accuracy);
+        kDebug() << "isLookLikeCppSource[2]: file name:" << fi.fileName() << "is a" << mime->name() << '[' << accuracy << "%]";
     }
-    return result;
+
+    return (
+        PRETTY_SURE <= accuracy
+      && mime->name() != KMimeType::defaultMimeType()
+      && CPP_SOURCE_MIME_TYPES.find(mime->name()) != end(CPP_SOURCE_MIME_TYPES)
+      ) || false
+      ;
 }
 
 }                                                           // namespace kate
