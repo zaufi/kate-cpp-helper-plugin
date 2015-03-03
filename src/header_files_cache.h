@@ -26,14 +26,17 @@
 #include "index/types.h"
 
 // Standard includes
-#include <boost/archive/binary_iarchive.hpp>
-#include <boost/archive/binary_oarchive.hpp>
-#include <boost/multi_index_container.hpp>
-#include <boost/multi_index/member.hpp>
-#include <boost/multi_index/ordered_index.hpp>
-#include <boost/multi_index/tag.hpp>
-#include <boost/multi_index/indexed_by.hpp>
-#include <boost/serialization/split_member.hpp>
+// ATTENTION https://bugreports.qt.io/browse/QTBUG-22829
+#ifndef Q_MOC_RUN
+# include <boost/archive/binary_iarchive.hpp>
+# include <boost/archive/binary_oarchive.hpp>
+# include <boost/multi_index_container.hpp>
+# include <boost/multi_index/member.hpp>
+# include <boost/multi_index/ordered_index.hpp>
+# include <boost/multi_index/tag.hpp>
+# include <boost/multi_index/indexed_by.hpp>
+# include <boost/serialization/split_member.hpp>
+#endif                                                      // Q_MOC_RUN
 #include <QtCore/QString>
 #include <limits>
 #include <sstream>
