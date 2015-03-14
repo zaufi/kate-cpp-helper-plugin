@@ -263,6 +263,8 @@ bool isSuitableDocumentAndHighlighting(const QString& mime_str, const QString& h
  * Try the following way:
  * - check if it is possible to have 100% accuracy using only filename (\c KMimeType::findByPath() in fast mode), if not
  * - try \c KMimeType::findByPath() in "full" mode (trying to analyze content)
+ * \note Standard C++ headers recognied w/ 30% probability as C++ files, so lets use a heuristic here:
+ * if file have no extension, then assume it is C++ even if accuracy is not \c PRETTY_SURE.
  */
 bool isLookLikeCppSource(const QFileInfo& fi)
 {
@@ -276,12 +278,11 @@ bool isLookLikeCppSource(const QFileInfo& fi)
         kDebug() << "isLookLikeCppSource[2]: file name:" << fi.fileName() << "is a" << mime->name() << '[' << accuracy << "%]";
     }
 
-    return (
-        PRETTY_SURE <= accuracy
-      && mime->name() != KMimeType::defaultMimeType()
-      && CPP_SOURCE_MIME_TYPES.find(mime->name()) != end(CPP_SOURCE_MIME_TYPES)
-      ) || false
-      ;
+    return accuracy
+        && mime->name() != KMimeType::defaultMimeType()
+        && CPP_SOURCE_MIME_TYPES.find(mime->name()) != end(CPP_SOURCE_MIME_TYPES)
+        && (fi.suffix().isEmpty() || PRETTY_SURE <= accuracy)
+        ;
 }
 
 }                                                           // namespace kate
