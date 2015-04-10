@@ -136,6 +136,7 @@ TODO
 * <del>Use actions w/ states (see KXMLGUIClient)</del>
 * <del>Normalize file names when add to the cache on indexing</del>
 * Split `#include` completions into a __system__ and __session__? (controlled via config option)
+  or even maybe it would be reasonable to have a base dirctory name as a group name.
 * Add search options
 * Add more indexing threads and control their count
 * <del>Add <em>Go to declaration/definition</em> to the context menu</del>
@@ -152,6 +153,8 @@ TODO
 * Disable "Save Current List" button on _Session Include Dirs_ page if current list is empty
   (to prevent overwriting some saved list occasionally). Introduce confirmation on overwrite?
 * When autocomplete preprocessor, do not add a space if it is already here. Make autocompletion configurable?
+* BUG: after sanitize refref has no space after parameter
+* Strip '.' from ignore extensions list. Maybe it is better to have inclusion list instead, BTW?
 
 
 See Also
