@@ -28,7 +28,7 @@ my system). So I call to users and distro-makers to provide some feedback, so I 
 
 * C++14 compatible compiler (gcc >= 4.9)
 * [clang](http://clang.llvm.org) >= 3.3 or >=3.5 if you want to compile it with clang
-* [cmake](http://cmake.org) >= 2.8.12
+* [cmake](http://cmake.org) >= 3.1
 * [Kate](http://kate-editor.org) editor version >= 3.8
 * [KDE](http://kde.org) >= 4.8
 * [boost](http://boost.org) library >= 1.49 required since version 0.8.7
