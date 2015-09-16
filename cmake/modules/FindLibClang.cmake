@@ -26,11 +26,12 @@ if(LibClang_FIND_VERSION_EXACT)
     endif()
 else()
     set(_llvm_config_programs
+        llvm-config-3.8
+        llvm-config-3.7
+        llvm-config-3.6
+        llvm-config-3.5
         llvm-config-3.4
         llvm-config-3.3
-        llvm-config-3.2
-        llvm-config-3.1
-        llvm-config-3.0
       )
 endif()
 
@@ -103,6 +104,6 @@ find_package_handle_standard_args(
 
 # X-Chewy-RepoBase: https://raw.githubusercontent.com/mutanabbi/chewy-cmake-rep/master/
 # X-Chewy-Path: FindLibClang.cmake
-# X-Chewy-Version: 2.0
+# X-Chewy-Version: 2.1
 # X-Chewy-Description: Find clang C API library
 # X-Chewy-AddonFile: libclang_get_version.cpp
