@@ -2,12 +2,11 @@
 # Copyright 2012-2015 by Alex Turbov <i.zaufi@gmail.com>
 #
 
-cmake_minimum_required(VERSION 3.1.0)
+cmake_minimum_required(VERSION 3.0.0)
 
 cmake_policy(SET CMP0022 NEW)
 cmake_policy(SET CMP0028 NEW)
 cmake_policy(SET CMP0048 NEW)
-cmake_policy(SET CMP0054 NEW)
 
 #---------------------------------------------------------
 # Section: Init cmake
@@ -139,9 +138,15 @@ if(_need_to_include_kate_interfaces)
     else()
         set(_use_kate_iface_ver "latest")
     endif()
+
+    # BUG See issue #23
+    include_directories(
+        ${PROJECT_SOURCE_DIR}/third_party/kde${KDE_VERSION_MAJOR}-kate-interfaces
+      )
     include_directories(
         ${PROJECT_SOURCE_DIR}/third_party/kde${KDE_VERSION_MAJOR}-kate-interfaces/${_use_kate_iface_ver}
       )
+
     if(_use_kate_iface_ver STREQUAL "latest")
         set(_use_kate_iface_ver ">=4.10")
     else()
