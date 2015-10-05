@@ -155,6 +155,7 @@ TODO
 * When autocomplete preprocessor, do not add a space if it is already here. Make autocompletion configurable?
 * BUG: after sanitize refref has no space after parameter
 * Strip '.' from ignore extensions list. Maybe it is better to have inclusion list instead, BTW?
+* Try to match filenames when "open first header" option in effect
 
 
 See Also
