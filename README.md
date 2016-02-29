@@ -85,7 +85,8 @@ TODO
 * Issue a warning if `/proc/sys/fs/inotify/max_user_watches` is not high enough
 * Use `KUrl` for files and dirs instead of `QStrings` [code review required]
 * <del>Clean `std::enable_if` and `boost::enable_if` from return value and parameters</del> [use sanitizers]
-* Use compilation database if possible. [what to do w/ headers which are not in there?]
+* Use compilation database if possible. What to do w/ headers which are not in there? -- Collect various options
+  from database and offer to autosetup "Additional clang options" from few variants...
 * Auto generate doxygen documentation for functions from definition -- just skeleton
   w/ parameters and return type. (maybe better to implement as Python plugin for kate?)
 * Enable code auto completion (configurable by checkbox)... but how to deal w/ really heavy project?
