@@ -157,6 +157,7 @@ TODO
 * BUG: after sanitize refref has no space after parameter
 * Strip '.' from ignore extensions list. Maybe it is better to have inclusion list instead, BTW?
 * Try to match filenames when "open first header" option in effect
+* Index standard headers w/ a predefined collection name and use them to add missed #includes
 
 
 See Also
