@@ -158,6 +158,7 @@ TODO
 * Strip '.' from ignore extensions list. Maybe it is better to have inclusion list instead, BTW?
 * Try to match filenames when "open first header" option in effect
 * Index standard headers w/ a predefined collection name and use them to add missed #includes
+* Add an action to generate a `switch` statement for enumeration type
 
 
 See Also
