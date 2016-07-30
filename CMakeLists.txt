@@ -2,12 +2,13 @@
 # Copyright 2012-2015 by Alex Turbov <i.zaufi@gmail.com>
 #
 
-cmake_minimum_required(VERSION 3.1.0)
+cmake_minimum_required(VERSION 3.6)
 
 cmake_policy(SET CMP0022 NEW)
 cmake_policy(SET CMP0028 NEW)
 cmake_policy(SET CMP0048 NEW)
 cmake_policy(SET CMP0054 NEW)
+cmake_policy(SET CMP0059 NEW)
 
 #---------------------------------------------------------
 # Section: Init cmake
@@ -21,9 +22,9 @@ endif()
 if (NOT _TWEAK_VERSION_TAIL AND "$ENV{BUILD_NUMBER}")
     set(_TWEAK_VERSION_TAIL ".$ENV{BUILD_NUMBER}")
 endif()
-project(KateCppHelperPlugin VERSION 1.0.5${_TWEAK_VERSION_TAIL} LANGUAGES C CXX)
+project(KateCppHelperPlugin VERSION 1.0.6${_TWEAK_VERSION_TAIL} LANGUAGES C CXX)
 
-set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/modules" ${CMAKE_MODULE_PATH})
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/modules")
 
 #---------------------------------------------------------
 # Section: Include aux cmake functions
@@ -81,32 +82,26 @@ find_library(KATE_INTERFACES_LIB NAMES libkateinterfaces.so libkateinterfaces.so
 
 # TODO I don't know a minimum required version...
 # Please provide some feedback, if lesser works for you.
-find_package(LibClang 3.3 REQUIRED)
+find_package(LibClang 3.8 REQUIRED)
 
 # find boost
 set(NEEDED_BOOST_COMPONENTS
-    filesystem
-    serialization
-    system
   )
 
 if(BUILD_TESTING)
-    set(NEEDED_BOOST_COMPONENTS ${NEEDED_BOOST_COMPONENTS} unit_test_framework)
+    set(AUX_BOOST_COMPONENTS  unit_test_framework)
 else()
     message(STATUS "Unit tests disabled")
 endif()
 
-# TODO I don't know a minimum required version...
-# Please provide some feedback, if lesser works for you.
-# ATTENTION 1.49 should be quite enough
-find_package(Boost 1.49 REQUIRED COMPONENTS ${NEEDED_BOOST_COMPONENTS})
-
-if(NOT Boost_UNIT_TEST_FRAMEWORK_LIBRARY)
-    message(STATUS "Unit tests disabled")
-    set(BUILD_TESTING OFF)
-else()
-    include(AddBoostTests)
-endif()
+find_package(
+    Boost 1.61 REQUIRED
+    COMPONENTS
+        filesystem
+        serialization
+        system
+        ${AUX_BOOST_COMPONENTS}
+  )
 
 # TODO I don't know a minimum required version...
 # Please provide some feedback, if lesser works for you.
@@ -126,7 +121,6 @@ include_directories(
     ${PROJECT_BINARY_DIR}/src
     ${KDE4_INCLUDES}
     ${QT_INCLUDES}
-    ${Boost_INCLUDE_DIRS}
     ${LLVM_INCLUDEDIR}
     ${XAPIAN_INCLUDE_DIR}
   )
@@ -152,6 +146,11 @@ endif()
 
 # Set generic compiler flags: turn ON C++11 (C++03 is suxx)...
 if(UNIX AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    # NOTE This project require C++11 support
+    # ATTENTION Set this before call to `use_onixs_ecm()`
+    set(CMAKE_CXX_STANDARD 14)
+    set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
     # Allow GNU extensions
     add_definitions(-D_DEFAULT_SOURCE)
     add_definitions(-D_GNU_SOURCE)
@@ -168,12 +167,6 @@ if(UNIX AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQU
     use_compiler_option(-pipe OUTPUT COMPILER_HAS_PIPE_OPTION)
     use_compiler_option(-Wall OUTPUT COMPILER_HAS_WALL_OPTION)
     use_compiler_option(-Wextra OUTPUT COMPILER_HAS_WEXTRA_OPTION)
-    # TODO I don't know a minimum required version...
-    # Please provide some feedback, if lesser works for you.
-    use_compiler_option(-std=c++1y LANGUAGE CXX OUTPUT CXX_COMPILER_HAS_CPP1Y_OPTION)
-    if(NOT CXX_COMPILER_HAS_CPP1Y_OPTION)
-        message(FATAL_ERROR "C++14 compatible compiler required to build this project (gcc >= 4.9 or clang >= 3.5)")
-    endif()
 
     # Do not link w/ libraries which isn't provide undefined symbols.
     # (they are specified as dependencies for other targets from this
@@ -224,9 +217,6 @@ add_definitions(-DDEBUG_AREA=13040)
 # BUG https://github.com/zaufi/kate-cpp-helper-plugin/issues/6
 set(CMAKE_INSTALL_RPATH "${LLVM_LIBDIR}")
 
-# Render configuration file (used by unit tests)
-configure_file(src/test/config.h.in src/test/config.h @ONLY)
-
 #---------------------------------------------------------
 # Section: Top level installs
 #---------------------------------------------------------
@@ -240,107 +230,6 @@ install(
     DESTINATION ${DATA_INSTALL_DIR}/kate/plugins/katecpphelperplugin
     COMPONENT ${KATE_CPP_HELPER_PLUGIN_PACKAGE}
   )
-
-#---------------------------------------------------------
-# Section: Configure package options
-#---------------------------------------------------------
-set(CPACK_SOURCE_GENERATOR TBZ2)
-set(
-    CPACK_SOURCE_PACKAGE_FILE_NAME "${PROJECT_NAME}-${PROJECT_VERSION}"
-    CACHE INTERNAL "tarball basename"
-  )
-# The following components are regex's to match anywhere (unless anchored)
-# in absolute path + filename to find files or directories to be excluded
-# from source tarball.
-set(CPACK_SOURCE_IGNORE_FILES
-    "\\\\.gitignore$"
-    "\\\\.kate-swp$"
-    "\\\\.tar\\\\.gz$"
-    "^.*/\\\\.git.*$"
-    "\\\\.kcrash\\\\.txt$"
-    "^~.*$"
-    "build"
-    "\\\\.travis\\\\.yml"
-  )
-
-# Include CPack support
-include(CPack)
-if(DISTRIB_PKG_FMT STREQUAL "DEB")
-    set(CPACK_GENERATOR ${DISTRIB_PKG_FMT})
-    set(REPREPRO_CUSTOM_OPTIONS "--ask-passphrase")
-    include(AddPackage)
-
-    if(CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "DebugFull")
-        set(CPACK_BUILD_FLAVOUR "-dbg")
-    else()
-        set(CPACK_BUILD_FLAVOUR "")
-    endif()
-
-    set(
-        _SIGN_KEY_ID
-        "37925FE2"
-        CACHE STRING "GPG key ID to be used to sign result packages"
-      )
-    set(
-        _SIGN_USER_NAME
-        "builder"
-        CACHE STRING "User name to be used to sign packages (builder)"
-      )
-    set(
-        _DEB_REPOSITORY
-        "$ENV{HOME}/ubuntu.repo"
-        CACHE FILEPATH "Path to repository to deploy .deb packages (using `reprepro`)"
-     )
-
-    set_common_package_options(
-        PROJECT_VERSION "${PROJECT_VERSION}"
-        VENDOR_NAME "Alex Turbov"
-        VENDOR_CONTACT "Alex Turbov <i.zaufi@gmail.com>"
-        BUILD_FLAVOUR "${CPACK_BUILD_FLAVOUR}"
-        PACKAGE_INSTALL_PREFIX "/usr"
-        README_FILE ${PROJECT_SOURCE_DIR}/README.md
-        LICENSE_FILE ${PROJECT_SOURCE_DIR}/LICENSE
-        SIGN_BY ${_SIGN_USER_NAME}
-        SIGN_WITH ${_SIGN_KEY_ID}
-        ALLOW_DEPLOY_PACKAGES
-        DEPLOY_TO ${_DEB_REPOSITORY}
-      )
-
-    # Obtain distribution codename according LSB
-    include(GetDistribInfo)
-
-    # Specifying precise versions of some packages which are distinct
-    # in different distributions.
-    if(DISTRIB_CODENAME STREQUAL "precise")
-        set(BOOST_DEV_VERSION_PKG_DEP "1.48")
-    elseif(DISTRIB_CODENAME STREQUAL "quantal")
-        set(BOOST_DEV_VERSION_PKG_DEP "1.50")
-    elseif(DISTRIB_CODENAME STREQUAL "raring")
-        set(BOOST_DEV_VERSION_PKG_DEP "1.53")
-    elseif(DISTRIB_CODENAME STREQUAL "saucy")
-        set(BOOST_DEV_VERSION_PKG_DEP "1.54")
-    else()
-        message(STATUS "WARNING: Target distribution codename is unknown!")
-    endif()
-    set(BOOST_VERSION_PKG_DEP "${BOOST_DEV_VERSION_PKG_DEP}.0")
-
-    add_package(
-        NAME kate-cpp-helper-plugin
-        SUMMARY "Kate C++ Helper Plugin"
-        DESCRIPTION "Plugin for KDE Advanced Text Editor"
-        HOMEPAGE "http://zaufi.github.io/kate-cpp-helper-plugin.html"
-        VERSION "${PROJECT_VERSION}-0ubuntu1"
-        SECTION "editors"
-        DEPENDS
-            "libboost-filesystem${BOOST_VERSION_PKG_DEP}"
-            "libboost-system${BOOST_VERSION_PKG_DEP}"
-            "libboost-serialization${BOOST_VERSION_PKG_DEP}"
-            "libclang1-3.3"
-            "libxapian22"
-            "kate"
-        REPLACES "kate-cpp-helper-plugin${CPACK_BUILD_FLAVOUR} (<= ${PROJECT_VERSION})"
-     )
-endif()
 
 #---------------------------------------------------------
 # Section: Dive into subdirs after main configuration

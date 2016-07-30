@@ -1,4 +1,8 @@
+include(AddBoostTests)
 add_definitions(-UQT_NO_STL)
+
+# Render configuration file (used by unit tests)
+configure_file(config.h.in config.h @ONLY)
 
 #
 # Unit tests executable
@@ -26,10 +30,10 @@ target_link_libraries(
     sharedcode4testsmoc
     sharedcode4tests
     sharedcode4testsmoc
-    ${Boost_FILESYSTEM_LIBRARY}
-    ${Boost_SERIALIZATION_LIBRARY}
-    ${Boost_SYSTEM_LIBRARY}
-    ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}
+    Boost::filesystem
+    Boost::serialization
+    Boost::system
+    Boost::unit_test_framework
     ${KDE4_KTEXTEDITOR_LIBS}
     ${KDE4_KFILE_LIBS}
     ${LIBCLANG_LIBRARY}
@@ -55,9 +59,9 @@ target_link_libraries(
     indexer_unit_tests
     sharedcode4tests
     sharedcode4testsmoc
-    ${Boost_FILESYSTEM_LIBRARY}
-    ${Boost_SERIALIZATION_LIBRARY}
-    ${Boost_SYSTEM_LIBRARY}
+    Boost::filesystem
+    Boost::serialization
+    Boost::system
     ${KDE4_KTEXTEDITOR_LIBS}
     ${KDE4_KDEUI_LIBRARY}
     ${LIBCLANG_LIBRARY}
