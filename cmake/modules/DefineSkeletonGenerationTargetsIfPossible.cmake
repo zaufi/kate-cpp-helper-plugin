@@ -36,7 +36,7 @@ include(CMakeParseArguments)
 
 set(_DSGT_BASE_DIR "${CMAKE_CURRENT_LIST_DIR}")
 
-# Check if `autogen` and `awk` both are installed
+# Check if `autogen` installed
 find_program(AUTOGEN_EXECUTABLE autogen)
 
 
@@ -61,6 +61,7 @@ function(define_skeleton_generation_targets)
             HEADER_EXT
             IMPL_EXT
             TEST_FILE_SUFFIX
+            TEST_NAME_SUFFIX
             PROJECT_PREFIX
             PROJECT_LICENSE
             PROJECT_NAMESPACE
@@ -125,8 +126,12 @@ function(define_skeleton_generation_targets)
         set(NO_LICENSE "yes")
     elseif(define_skeleton_generation_targets_PROJECT_LICENSE STREQUAL "GPL")
         set(PROJECT_LICENSE "gpl")
+    elseif(define_skeleton_generation_targets_PROJECT_LICENSE STREQUAL "GPL-2")
+        set(PROJECT_LICENSE "gplv2")
     elseif(define_skeleton_generation_targets_PROJECT_LICENSE STREQUAL "LGPL")
         set(PROJECT_LICENSE "lgpl")
+    elseif(define_skeleton_generation_targets_PROJECT_LICENSE STREQUAL "LGPL-2")
+        set(PROJECT_LICENSE "lgplv2")
     elseif(define_skeleton_generation_targets_PROJECT_LICENSE STREQUAL "BSD")
         set(PROJECT_LICENSE "bsd")
     else()
@@ -166,6 +171,11 @@ function(define_skeleton_generation_targets)
         else()
             set(_filename_suffix "_tester")
         endif()
+        if(define_skeleton_generation_targets_TEST_NAME_SUFFIX)
+            set(TESTNAME_SUFFIX "${define_skeleton_generation_targets_TEST_NAME_SUFFIX}")
+        else()
+            set(TESTNAME_SUFFIX "_test")
+        endif()
 
         configure_file(
             ${_DSGT_BASE_DIR}/class_tester.tpl.in
@@ -197,7 +207,7 @@ endfunction()
 
 # X-Chewy-RepoBase: https://raw.githubusercontent.com/mutanabbi/chewy-cmake-rep/master/
 # X-Chewy-Path: DefineSkeletonGenerationTargetsIfPossible.cmake
-# X-Chewy-Version: 6.5
+# X-Chewy-Version: 6.13
 # X-Chewy-Description: Add targets to generate class header/implementation and unit-tests skeleton files
 # X-Chewy-AddonFile: TestCMakeLists.txt.in
 # X-Chewy-AddonFile: class.tpl.in

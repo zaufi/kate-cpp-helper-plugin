@@ -16,7 +16,7 @@
  */[+ ENDIF +]
 
 // Project specific includes
-#include <[+ filename +].@SKELETON_HEADER_EXT@>
+#include <[+ classname +].@SKELETON_HEADER_EXT@>
 
 // Standard includes
 #include <boost/test/auto_unit_test.hpp>
@@ -30,7 +30,7 @@
 // using boost::test_tools::output_test_stream;
 
 // Your first test function :)
-BOOST_AUTO_TEST_CASE([+ classname +]_test)
+BOOST_AUTO_TEST_CASE([+ classname +]@TESTNAME_SUFFIX@)
 {
     // Your test code here...
 }

@@ -1,12 +1,12 @@
 # - Interact with TeamCity via serive messages
 #
-# See also: http://confluence.jetbrains.com/display/TCD8/Build+Script+Interaction+with+TeamCity
+# See also: https://confluence.jetbrains.com/display/TCD10/Build+Script+Interaction+with+TeamCity
 #
 # TODO Docs!
 #
 
 #=============================================================================
-# Copyright 2012-2014 by Alex Turbov <i.zaufi@gmail.com>
+# Copyright 2012-2016 by Alex Turbov <i.zaufi@gmail.com>
 #
 # Distributed under the OSI-approved BSD License (the "License");
 # see accompanying file LICENSE for details.
@@ -36,7 +36,7 @@ macro(tc_escape_string VAR)
     string(REPLACE "]"   "|]" ${VAR} "${${VAR}}")
 endmacro()
 
-function(_tc_bare_message NAME )
+function(_tc_bare_message NAME)
     if(NOT "$ENV{TEAMCITY_PROCESS_FLOW_ID}" STREQUAL "")
         # Setup message start
         set(_message "##teamcity[${NAME}")
@@ -51,7 +51,7 @@ function(_tc_bare_message NAME )
     endif()
 endfunction()
 
-function(_tc_message NAME )
+function(_tc_message NAME)
     if(NOT "$ENV{TEAMCITY_PROCESS_FLOW_ID}" STREQUAL "")
         # Setup message start
         string(TIMESTAMP _timestamp "%Y-%m-%dT%H:%M:%S.000" UTC)
@@ -135,8 +135,7 @@ endfunction()
 list(APPEND _TC_MESSAGE_STATUSES NORMAL WARNING FAILURE ERROR)
 function(tc_message STATUS TEXT)
     # Check status
-    list(FIND _TC_MESSAGE_STATUSES ${STATUS} _status)
-    if(_status EQUAL -1)
+    if(NOT STATUS IN_LIST _TC_MESSAGE_STATUSES)
         message(FATAL_ERROR "tc_message called with invalid status")
     endif()
 
@@ -306,14 +305,14 @@ endfunction()
 function(tc_set_param NAME VALUE)
     tc_escape_string(NAME)
     tc_escape_string(VALUE)
-    _tc_bare_message("setParameter" "'name=${NAME}'" "value='${VALUE}'")
+    _tc_bare_message("setParameter" "name='${NAME}'" "value='${VALUE}'")
 endfunction()
 
 ##teamcity[buildStatisticValue key='<valueTypeKey>' value='<value>']
 function(tc_build_stats KEY VALUE)
     tc_escape_string(KEY)
     tc_escape_string(VALUE)
-    _tc_bare_message("buildStatisticValue" "'key=${KEY}'" "value='${VALUE}'")
+    _tc_bare_message("buildStatisticValue" "key='${KEY}'" "value='${VALUE}'")
 endfunction()
 
 ##teamcity[enableServiceMessages]
@@ -328,5 +327,5 @@ endfunction()
 
 # X-Chewy-RepoBase: https://raw.githubusercontent.com/mutanabbi/chewy-cmake-rep/master/
 # X-Chewy-Path: TeamCityIntegration.cmake
-# X-Chewy-Version: 1.1
+# X-Chewy-Version: 1.3
 # X-Chewy-Description: Interact w/ TeamCity via service messages

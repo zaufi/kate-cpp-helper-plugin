@@ -20,7 +20,7 @@
 #
 
 #=============================================================================
-# Copyright 2014 by Alex Turbov <i.zaufi@gmail.com>
+# Copyright 2014-2015 by Alex Turbov <i.zaufi@gmail.com>
 #
 # Distributed under the OSI-approved BSD License (the "License");
 # see accompanying file LICENSE for details.
@@ -39,7 +39,35 @@ set(_GDD_BASE_DIR "${CMAKE_CURRENT_LIST_DIR}")
 # check if doxygen is even installed
 find_package(Doxygen)
 
-if(NOT DOXYGEN_FOUND)
+# Finding other tools have any sense only if `doxygen` has found
+if(DOXYGEN_FOUND)
+    # Try to find `mscgen` as well
+    find_program(
+        DOXYGEN_MSCGEN_EXECUTABLE
+        NAMES mscgen
+        DOC "Message Sequence Chart renderer (http://www.mcternan.me.uk/mscgen/)"
+      )
+    if(NOT DOXYGEN_MSCGEN_EXECUTABLE)
+        message(
+            STATUS
+                "WARNING: Message Sequence Chart renderer not found. "
+                "Please get a copy from http://www.mcternan.me.uk/mscgen/"
+          )
+    endif()
+    # Try to find `dia` as well
+    find_program(
+        DOXYGEN_DIA_EXECUTABLE
+        NAMES dia
+        DOC "Diagram/flowchart creation program (https://wiki.gnome.org/Apps/Dia)"
+      )
+    if(NOT DOXYGEN_DIA_EXECUTABLE)
+        message(
+            STATUS
+                "WARNING: Dia not found. "
+                "Please get a copy from https://wiki.gnome.org/Apps/Dia."
+          )
+    endif()
+else()
     message(
         STATUS
             "WARNING: Doxygen not found. "
@@ -47,32 +75,15 @@ if(NOT DOXYGEN_FOUND)
       )
 endif()
 
-# Try to find `mscgen` as well
-find_program(
-    DOXYGEN_MSCGEN_EXECUTABLE
-    NAMES mscgen
-    DOC "Message Sequence Chart renderer (http://www.mcternan.me.uk/mscgen/)"
-  )
-if(NOT DOXYGEN_MSCGEN_EXECUTABLE)
-    message(
-        STATUS
-            "WARNING: Message Sequence Chart renderer not found. "
-            "Please get a copy from http://www.mcternan.me.uk/mscgen/"
-      )
-endif()
-# Try to find `dia` as well
-find_program(
-    DOXYGEN_DIA_EXECUTABLE
-    NAMES mscgen
-    DOC "Diagram/flowchart creation program (https://wiki.gnome.org/Apps/Dia)"
-  )
-if(NOT DOXYGEN_DIA_EXECUTABLE)
-    message(
-        STATUS
-            "WARNING: Dia not found. "
-            "Please get a copy from https://wiki.gnome.org/Apps/Dia."
-      )
-endif()
+function(_list_to_quoted_strings LIST_VARIABLE)
+    if(DEFINED ${LIST_VARIABLE})
+        foreach(_in IN LISTS ${LIST_VARIABLE})
+            string(APPEND _inputs " \"${_in}\"")
+        endforeach()
+        set(${LIST_VARIABLE} "${_inputs}" PARENT_SCOPE)
+        unset(_inputs)
+    endif()
+endfunction()
 
 function(generate_doxygen_documentation target)
     set(_options)
@@ -121,7 +132,7 @@ function(generate_doxygen_documentation target)
         set(DOXYGEN_RECURSIVE YES)
     endif()
     if(NOT DEFINED DOXYGEN_INPUT)
-        set(DOXYGEN_INPUT "\"${PROJECT_SOURCE_DIR}\" \"${PROJECT_BINARY_DIR}\"")
+        set(DOXYGEN_INPUT "${PROJECT_SOURCE_DIR}" "${PROJECT_BINARY_DIR}")
     endif()
     if(NOT DEFINED DOXYGEN_OUTPUT_DIRECTORY)
         set(DOXYGEN_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/doc")
@@ -129,11 +140,22 @@ function(generate_doxygen_documentation target)
     if(NOT DEFINED DOXYGEN_GENERATE_LATEX)
         set(DOXYGEN_GENERATE_LATEX NO)
     endif()
+    if(NOT DEFINED DOXYGEN_WARN_FORMAT)
+        if("${CMAKE_BUILD_TOOL}" MATCHES "(msdev|devenv)")
+            set(DOXYGEN_WARN_FORMAT "\"$file($line) : $text \"")
+        endif()
+    endif()
     # Handle appendable options
     set(
         DOXYGEN_EXCLUDE_PATTERNS
-        "${DOXYGEN_EXCLUDE_PATTERNS} */.git/* */.svn/* */.hg/* *_tester.cc */CMakeFiles/* */cmake/* */_CPack_Packages/*"
+        "${DOXYGEN_EXCLUDE_PATTERNS} */.git/* */.svn/* */.hg/* *_tester.cc */CMakeFiles/* */cmake/* */_CPack_Packages/* DartConfiguration.tcl"
       )
+
+    # Transform lists into space separated strings
+    # TODO Review doxygen options and add more list variables
+    foreach(_item DOXYGEN_INPUT DOXYGEN_EXCLUDE)
+        _list_to_quoted_strings(${_item})
+    endforeach()
 
     # Get other defaults from generated file
     include("${_GDD_BASE_DIR}/DoxygenDefaults.cmake")
@@ -155,7 +177,7 @@ endfunction()
 
 # X-Chewy-RepoBase: https://raw.githubusercontent.com/mutanabbi/chewy-cmake-rep/master/
 # X-Chewy-Path: GenerateDoxygenDocumentation.cmake
-# X-Chewy-Version: 1.2
+# X-Chewy-Version: 2.0
 # X-Chewy-Description: Add a target to generate doxygen documentation
 # X-Chewy-AddonFile: Doxyfile.in
 # X-Chewy-AddonFile: DoxygenDefaults.cmake

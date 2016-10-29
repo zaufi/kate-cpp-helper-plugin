@@ -1,5 +1,5 @@
 #
-# Copyright 2013 by Alex Turbov <i.zaufi@gmail.com>
+# Copyright 2013-2014 by Alex Turbov <i.zaufi@gmail.com>
 #
 # Options common to all generated packages
 #
@@ -9,22 +9,21 @@
 #
 
 set(CPACK_PROJECT_VERSION "@set_common_package_options_PROJECT_VERSION@")
-set(CPACK_BUILD_FLAVOUR "@set_common_package_options_BUILD_FLAVOUR@")
 
 set(CPACK_PACKAGE_VENDOR "@set_common_package_options_VENDOR_NAME@")
 set(CPACK_PACKAGE_CONTACT "@set_common_package_options_VENDOR_CONTACT@")
 set(CPACK_PACKAGE_SIGNER "@set_common_package_options_SIGN_BY@")
+set(CPACK_PACKAGE_SIGN_KEY_ID "@set_common_package_options_SIGN_WITH@")
 
 set(CPACK_RESOURCE_FILE_LICENSE "@set_common_package_options_LICENSE_FILE@")
 set(CPACK_RESOURCE_FILE_README "@set_common_package_options_README_FILE@")
+set(CPACK_PACKAGE_DESCRIPTION_FILE "@set_common_package_options_README_FILE@")
 
 set(CPACK_INSTALL_PREFIX "@set_common_package_options_PACKAGE_INSTALL_PREFIX@")
 
-set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "@set_common_package_options_ARCHITECTURE@")
+set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "@set_common_package_options_HOMEPAGE@")
+set(CPACK_RPM_PACKAGE_URL "@set_common_package_options_HOMEPAGE@")
 
-set(CPACK_DEB_PACKAGES_REPO "@set_common_package_options_USE_REPO@")
-set(CPACK_DEB_PACKAGES_REPO_COMPONENT "@set_common_package_options_REPO_COMPONENT@")
-
-set(CPACK_DISTRIB_CODENAME "@set_common_package_options_DISTRIB_CODENAME@")
+set(CPACK_ALL_PACKAGES_TARGET_NAME "@set_common_package_options_ALL_PACKAGES_TARGET_NAME@")
 
 # kate: hl cmake;

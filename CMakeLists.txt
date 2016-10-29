@@ -13,16 +13,7 @@ cmake_policy(SET CMP0059 NEW)
 #---------------------------------------------------------
 # Section: Init cmake
 #---------------------------------------------------------
-# Include build number if specified
-# NOTE This feature used by build server to make a packages that
-# would differ from previous build.
-if (BUILD_NUMBER)
-    set(_TWEAK_VERSION_TAIL ".${BUILD_NUMBER}")
-endif()
-if (NOT _TWEAK_VERSION_TAIL AND "$ENV{BUILD_NUMBER}")
-    set(_TWEAK_VERSION_TAIL ".$ENV{BUILD_NUMBER}")
-endif()
-project(KateCppHelperPlugin VERSION 1.0.6${_TWEAK_VERSION_TAIL} LANGUAGES C CXX)
+project(KateCppHelperPlugin VERSION 1.0.6 LANGUAGES C CXX)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/modules")
 
@@ -85,9 +76,6 @@ find_library(KATE_INTERFACES_LIB NAMES libkateinterfaces.so libkateinterfaces.so
 find_package(LibClang 3.8 REQUIRED)
 
 # find boost
-set(NEEDED_BOOST_COMPONENTS
-  )
-
 if(BUILD_TESTING)
     set(AUX_BOOST_COMPONENTS  unit_test_framework)
 else()
@@ -146,8 +134,7 @@ endif()
 
 # Set generic compiler flags: turn ON C++11 (C++03 is suxx)...
 if(UNIX AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-    # NOTE This project require C++11 support
-    # ATTENTION Set this before call to `use_onixs_ecm()`
+    # NOTE This project require C++14 support
     set(CMAKE_CXX_STANDARD 14)
     set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -157,6 +144,7 @@ if(UNIX AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQU
 
     # BOOST_PP (boost <= 1.55.0) do not recognize clang as a compiler w/ variadic macros support,
     # so lets force it!
+    # TODO Still need this?
     if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
         add_definitions(-DBOOST_PP_VARIADICS=1)
     endif()
