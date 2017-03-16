@@ -1,6 +1,8 @@
 #
 # Find clang C API library
 #
+# NOTE Use this module for LLVM/Clang < 4.x
+#
 
 #=============================================================================
 # Copyright 2012-2013 by Alex Turbov <i.zaufi@gmail.com>
@@ -22,7 +24,7 @@ if(LibClang_FIND_VERSION_EXACT)
     if(LibClang_FIND_VERSION_MAJOR AND LibClang_FIND_VERSION_MINOR)
         set(_llvm_config_programs llvm-config-${LibClang_FIND_VERSION_MAJOR}.${LibClang_FIND_VERSION_MINOR})
     else()
-        message(FATAL_ERROR "EXACT version mutch requested, but no version specified!")
+        message(FATAL_ERROR "EXACT version match requested, but no version specified!")
     endif()
 else()
     set(_llvm_config_programs
@@ -94,6 +96,8 @@ if(LIBCLANG_LIBRARY)
       )
 
     message(STATUS "Found Clang C API: ${LIBCLANG_LIBRARY} (version ${LIBCLANG_VERSION})")
+
+    # TODO Add imported target
 endif()
 
 find_package_handle_standard_args(
@@ -104,6 +108,6 @@ find_package_handle_standard_args(
 
 # X-Chewy-RepoBase: https://raw.githubusercontent.com/mutanabbi/chewy-cmake-rep/master/
 # X-Chewy-Path: FindLibClang.cmake
-# X-Chewy-Version: 2.1
+# X-Chewy-Version: 2.2
 # X-Chewy-Description: Find clang C API library
 # X-Chewy-AddonFile: libclang_get_version.cpp

@@ -89,7 +89,7 @@ target_link_libraries(
         ${KDE4_KDEUI_LIBS}
         ${KDE4_KFILE_LIBS}
         ${KDE4_KTEXTEDITOR_LIBS}
-        ${LIBCLANG_LIBRARY}
+        libclang
         ${XAPIAN_LIBRARIES}
   )
 

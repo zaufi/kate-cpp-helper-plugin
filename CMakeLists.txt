@@ -2,7 +2,7 @@
 # Copyright 2012-2015 by Alex Turbov <i.zaufi@gmail.com>
 #
 
-cmake_minimum_required(VERSION 3.6)
+cmake_minimum_required(VERSION 3.8)
 
 cmake_policy(SET CMP0022 NEW)
 cmake_policy(SET CMP0028 NEW)
@@ -13,7 +13,7 @@ cmake_policy(SET CMP0059 NEW)
 #---------------------------------------------------------
 # Section: Init cmake
 #---------------------------------------------------------
-project(KateCppHelperPlugin VERSION 1.0.6 LANGUAGES C CXX)
+project(KateCppHelperPlugin VERSION 1.0.7 LANGUAGES C CXX)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/modules")
 
@@ -73,7 +73,9 @@ find_library(KATE_INTERFACES_LIB NAMES libkateinterfaces.so libkateinterfaces.so
 
 # TODO I don't know a minimum required version...
 # Please provide some feedback, if lesser works for you.
-find_package(LibClang 3.8 REQUIRED)
+# find_package(LibClang 3.8 REQUIRED)
+# ALERT OK, lets move to CLang >= 4.0 !!!
+find_package(Clang REQUIRED)
 
 # find boost
 if(BUILD_TESTING)
@@ -83,7 +85,7 @@ else()
 endif()
 
 find_package(
-    Boost 1.61 REQUIRED
+    Boost 1.63 REQUIRED
     COMPONENTS
         filesystem
         serialization
@@ -109,7 +111,7 @@ include_directories(
     ${PROJECT_BINARY_DIR}/src
     ${KDE4_INCLUDES}
     ${QT_INCLUDES}
-    ${LLVM_INCLUDEDIR}
+    ${LLVM_INCLUDE_DIRS}
     ${XAPIAN_INCLUDE_DIR}
   )
 
@@ -196,14 +198,14 @@ add_definitions(-DQT_USE_QSTRINGBUILDER)
 # NOTE Disable trivial Qt keywords due conflicts w/ some Xapian headers
 add_definitions(-DQT_NO_KEYWORDS)
 # Add LLVM definitions
-add_definitions(${LLVM_CXXFLAGS})
+add_definitions(${LLVM_DEFINITIONS})
 # Use Kate plugins debug area as default
 # TODO Register private debug area?
 add_definitions(-DDEBUG_AREA=13040)
 
 # Keep RPATH to found libraries (particularly LLVM's) in installed .so file
 # BUG https://github.com/zaufi/kate-cpp-helper-plugin/issues/6
-set(CMAKE_INSTALL_RPATH "${LLVM_LIBDIR}")
+set(CMAKE_INSTALL_RPATH "${LLVM_LIBRARY_DIR}")
 
 #---------------------------------------------------------
 # Section: Top level installs

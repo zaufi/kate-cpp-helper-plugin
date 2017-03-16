@@ -34,9 +34,9 @@ target_link_libraries(
     Boost::serialization
     Boost::system
     Boost::unit_test_framework
+    libclang
     ${KDE4_KTEXTEDITOR_LIBS}
     ${KDE4_KFILE_LIBS}
-    ${LIBCLANG_LIBRARY}
     ${XAPIAN_LIBRARIES}
   )
 
@@ -64,7 +64,7 @@ target_link_libraries(
     Boost::system
     ${KDE4_KTEXTEDITOR_LIBS}
     ${KDE4_KDEUI_LIBRARY}
-    ${LIBCLANG_LIBRARY}
+    libclang
     ${QT_QTTEST_LIBRARY_RELEASE}
     ${XAPIAN_LIBRARIES}
   )
@@ -81,7 +81,7 @@ target_link_libraries(
     indexing_test
     sharedcode4tests
     ${KDE4_KDECORE_LIBRARY}
-    ${LIBCLANG_LIBRARY}
+    libclang
   )
 
 configure_file(data/test_manifest.in data/fake.db/manifest)
